@@ -28,14 +28,3 @@ export const ContractType = {
 } as const
 
 export type ContractType = (typeof ContractType)[keyof typeof ContractType]
-
-
-export const StatusModule = {
-  MEDEWERKER: 'MEDEWERKER',
-  BESTELLING: 'BESTELLING',
-  LEVERING: 'LEVERING',
-  VOORRAAD: 'VOORRAAD',
-  PLANNING: 'PLANNING'
-} as const
-
-export type StatusModule = (typeof StatusModule)[keyof typeof StatusModule]

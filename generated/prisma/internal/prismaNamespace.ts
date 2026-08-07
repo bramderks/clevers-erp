@@ -2901,20 +2901,6 @@ export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
- * Reference to a field of type 'StatusModule'
- */
-export type EnumStatusModuleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'StatusModule'>
-    
-
-
-/**
- * Reference to a field of type 'StatusModule[]'
- */
-export type ListEnumStatusModuleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'StatusModule[]'>
-    
-
-
-/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>

@@ -314,23 +314,6 @@ export type DecimalWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedDecimalFilter<$PrismaModel>
 }
 
-export type EnumStatusModuleFilter<$PrismaModel = never> = {
-  equals?: $Enums.StatusModule | Prisma.EnumStatusModuleFieldRefInput<$PrismaModel>
-  in?: $Enums.StatusModule[] | Prisma.ListEnumStatusModuleFieldRefInput<$PrismaModel>
-  notIn?: $Enums.StatusModule[] | Prisma.ListEnumStatusModuleFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumStatusModuleFilter<$PrismaModel> | $Enums.StatusModule
-}
-
-export type EnumStatusModuleWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.StatusModule | Prisma.EnumStatusModuleFieldRefInput<$PrismaModel>
-  in?: $Enums.StatusModule[] | Prisma.ListEnumStatusModuleFieldRefInput<$PrismaModel>
-  notIn?: $Enums.StatusModule[] | Prisma.ListEnumStatusModuleFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumStatusModuleWithAggregatesFilter<$PrismaModel> | $Enums.StatusModule
-  _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumStatusModuleFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumStatusModuleFilter<$PrismaModel>
-}
-
 export type NestedStringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>
   in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
@@ -615,23 +598,6 @@ export type NestedDecimalWithAggregatesFilter<$PrismaModel = never> = {
   _sum?: Prisma.NestedDecimalFilter<$PrismaModel>
   _min?: Prisma.NestedDecimalFilter<$PrismaModel>
   _max?: Prisma.NestedDecimalFilter<$PrismaModel>
-}
-
-export type NestedEnumStatusModuleFilter<$PrismaModel = never> = {
-  equals?: $Enums.StatusModule | Prisma.EnumStatusModuleFieldRefInput<$PrismaModel>
-  in?: $Enums.StatusModule[] | Prisma.ListEnumStatusModuleFieldRefInput<$PrismaModel>
-  notIn?: $Enums.StatusModule[] | Prisma.ListEnumStatusModuleFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumStatusModuleFilter<$PrismaModel> | $Enums.StatusModule
-}
-
-export type NestedEnumStatusModuleWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.StatusModule | Prisma.EnumStatusModuleFieldRefInput<$PrismaModel>
-  in?: $Enums.StatusModule[] | Prisma.ListEnumStatusModuleFieldRefInput<$PrismaModel>
-  notIn?: $Enums.StatusModule[] | Prisma.ListEnumStatusModuleFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumStatusModuleWithAggregatesFilter<$PrismaModel> | $Enums.StatusModule
-  _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumStatusModuleFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumStatusModuleFilter<$PrismaModel>
 }
 
 

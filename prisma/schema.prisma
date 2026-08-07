@@ -623,14 +623,6 @@ model LeveringRegel {
 /// INSTELLINGEN
 /// ======================================================
 
-enum StatusModule {
-  MEDEWERKER
-  BESTELLING
-  LEVERING
-  VOORRAAD
-  PLANNING
-}
-
 model Status {
   id String @id @default(cuid())
 
@@ -638,7 +630,7 @@ model Status {
   /// Algemeen
   /// =====================================================
 
-  module StatusModule
+  module String
 
   code String
 

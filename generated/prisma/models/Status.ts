@@ -36,7 +36,7 @@ export type StatusSumAggregateOutputType = {
 
 export type StatusMinAggregateOutputType = {
   id: string | null
-  module: $Enums.StatusModule | null
+  module: string | null
   code: string | null
   naam: string | null
   omschrijving: string | null
@@ -51,7 +51,7 @@ export type StatusMinAggregateOutputType = {
 
 export type StatusMaxAggregateOutputType = {
   id: string | null
-  module: $Enums.StatusModule | null
+  module: string | null
   code: string | null
   naam: string | null
   omschrijving: string | null
@@ -223,7 +223,7 @@ export type StatusGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalA
 
 export type StatusGroupByOutputType = {
   id: string
-  module: $Enums.StatusModule
+  module: string
   code: string
   naam: string
   omschrijving: string | null
@@ -261,7 +261,7 @@ export type StatusWhereInput = {
   OR?: Prisma.StatusWhereInput[]
   NOT?: Prisma.StatusWhereInput | Prisma.StatusWhereInput[]
   id?: Prisma.StringFilter<"Status"> | string
-  module?: Prisma.EnumStatusModuleFilter<"Status"> | $Enums.StatusModule
+  module?: Prisma.StringFilter<"Status"> | string
   code?: Prisma.StringFilter<"Status"> | string
   naam?: Prisma.StringFilter<"Status"> | string
   omschrijving?: Prisma.StringNullableFilter<"Status"> | string | null
@@ -301,7 +301,7 @@ export type StatusWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.StatusWhereInput | Prisma.StatusWhereInput[]
   OR?: Prisma.StatusWhereInput[]
   NOT?: Prisma.StatusWhereInput | Prisma.StatusWhereInput[]
-  module?: Prisma.EnumStatusModuleFilter<"Status"> | $Enums.StatusModule
+  module?: Prisma.StringFilter<"Status"> | string
   code?: Prisma.StringFilter<"Status"> | string
   naam?: Prisma.StringFilter<"Status"> | string
   omschrijving?: Prisma.StringNullableFilter<"Status"> | string | null
@@ -342,7 +342,7 @@ export type StatusScalarWhereWithAggregatesInput = {
   OR?: Prisma.StatusScalarWhereWithAggregatesInput[]
   NOT?: Prisma.StatusScalarWhereWithAggregatesInput | Prisma.StatusScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Status"> | string
-  module?: Prisma.EnumStatusModuleWithAggregatesFilter<"Status"> | $Enums.StatusModule
+  module?: Prisma.StringWithAggregatesFilter<"Status"> | string
   code?: Prisma.StringWithAggregatesFilter<"Status"> | string
   naam?: Prisma.StringWithAggregatesFilter<"Status"> | string
   omschrijving?: Prisma.StringNullableWithAggregatesFilter<"Status"> | string | null
@@ -357,7 +357,7 @@ export type StatusScalarWhereWithAggregatesInput = {
 
 export type StatusCreateInput = {
   id?: string
-  module: $Enums.StatusModule
+  module: string
   code: string
   naam: string
   omschrijving?: string | null
@@ -375,7 +375,7 @@ export type StatusCreateInput = {
 
 export type StatusUncheckedCreateInput = {
   id?: string
-  module: $Enums.StatusModule
+  module: string
   code: string
   naam: string
   omschrijving?: string | null
@@ -393,7 +393,7 @@ export type StatusUncheckedCreateInput = {
 
 export type StatusUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  module?: Prisma.EnumStatusModuleFieldUpdateOperationsInput | $Enums.StatusModule
+  module?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
   omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -411,7 +411,7 @@ export type StatusUpdateInput = {
 
 export type StatusUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  module?: Prisma.EnumStatusModuleFieldUpdateOperationsInput | $Enums.StatusModule
+  module?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
   omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -429,7 +429,7 @@ export type StatusUncheckedUpdateInput = {
 
 export type StatusCreateManyInput = {
   id?: string
-  module: $Enums.StatusModule
+  module: string
   code: string
   naam: string
   omschrijving?: string | null
@@ -444,7 +444,7 @@ export type StatusCreateManyInput = {
 
 export type StatusUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  module?: Prisma.EnumStatusModuleFieldUpdateOperationsInput | $Enums.StatusModule
+  module?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
   omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -459,7 +459,7 @@ export type StatusUpdateManyMutationInput = {
 
 export type StatusUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  module?: Prisma.EnumStatusModuleFieldUpdateOperationsInput | $Enums.StatusModule
+  module?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
   omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -478,7 +478,7 @@ export type StatusScalarRelationFilter = {
 }
 
 export type StatusModuleCodeCompoundUniqueInput = {
-  module: $Enums.StatusModule
+  module: string
   code: string
 }
 
@@ -577,13 +577,9 @@ export type StatusUpdateOneRequiredWithoutVoorraadTellingenNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.StatusUpdateToOneWithWhereWithoutVoorraadTellingenInput, Prisma.StatusUpdateWithoutVoorraadTellingenInput>, Prisma.StatusUncheckedUpdateWithoutVoorraadTellingenInput>
 }
 
-export type EnumStatusModuleFieldUpdateOperationsInput = {
-  set?: $Enums.StatusModule
-}
-
 export type StatusCreateWithoutMedewerkersInput = {
   id?: string
-  module: $Enums.StatusModule
+  module: string
   code: string
   naam: string
   omschrijving?: string | null
@@ -600,7 +596,7 @@ export type StatusCreateWithoutMedewerkersInput = {
 
 export type StatusUncheckedCreateWithoutMedewerkersInput = {
   id?: string
-  module: $Enums.StatusModule
+  module: string
   code: string
   naam: string
   omschrijving?: string | null
@@ -633,7 +629,7 @@ export type StatusUpdateToOneWithWhereWithoutMedewerkersInput = {
 
 export type StatusUpdateWithoutMedewerkersInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  module?: Prisma.EnumStatusModuleFieldUpdateOperationsInput | $Enums.StatusModule
+  module?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
   omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -650,7 +646,7 @@ export type StatusUpdateWithoutMedewerkersInput = {
 
 export type StatusUncheckedUpdateWithoutMedewerkersInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  module?: Prisma.EnumStatusModuleFieldUpdateOperationsInput | $Enums.StatusModule
+  module?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
   omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -667,7 +663,7 @@ export type StatusUncheckedUpdateWithoutMedewerkersInput = {
 
 export type StatusCreateWithoutBestellingenInput = {
   id?: string
-  module: $Enums.StatusModule
+  module: string
   code: string
   naam: string
   omschrijving?: string | null
@@ -684,7 +680,7 @@ export type StatusCreateWithoutBestellingenInput = {
 
 export type StatusUncheckedCreateWithoutBestellingenInput = {
   id?: string
-  module: $Enums.StatusModule
+  module: string
   code: string
   naam: string
   omschrijving?: string | null
@@ -717,7 +713,7 @@ export type StatusUpdateToOneWithWhereWithoutBestellingenInput = {
 
 export type StatusUpdateWithoutBestellingenInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  module?: Prisma.EnumStatusModuleFieldUpdateOperationsInput | $Enums.StatusModule
+  module?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
   omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -734,7 +730,7 @@ export type StatusUpdateWithoutBestellingenInput = {
 
 export type StatusUncheckedUpdateWithoutBestellingenInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  module?: Prisma.EnumStatusModuleFieldUpdateOperationsInput | $Enums.StatusModule
+  module?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
   omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -751,7 +747,7 @@ export type StatusUncheckedUpdateWithoutBestellingenInput = {
 
 export type StatusCreateWithoutVoorraadTellingenInput = {
   id?: string
-  module: $Enums.StatusModule
+  module: string
   code: string
   naam: string
   omschrijving?: string | null
@@ -768,7 +764,7 @@ export type StatusCreateWithoutVoorraadTellingenInput = {
 
 export type StatusUncheckedCreateWithoutVoorraadTellingenInput = {
   id?: string
-  module: $Enums.StatusModule
+  module: string
   code: string
   naam: string
   omschrijving?: string | null
@@ -801,7 +797,7 @@ export type StatusUpdateToOneWithWhereWithoutVoorraadTellingenInput = {
 
 export type StatusUpdateWithoutVoorraadTellingenInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  module?: Prisma.EnumStatusModuleFieldUpdateOperationsInput | $Enums.StatusModule
+  module?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
   omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -818,7 +814,7 @@ export type StatusUpdateWithoutVoorraadTellingenInput = {
 
 export type StatusUncheckedUpdateWithoutVoorraadTellingenInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  module?: Prisma.EnumStatusModuleFieldUpdateOperationsInput | $Enums.StatusModule
+  module?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
   omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -975,7 +971,7 @@ export type $StatusPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
      * Algemeen
      * =====================================================
      */
-    module: $Enums.StatusModule
+    module: string
     code: string
     naam: string
     omschrijving: string | null
@@ -1423,7 +1419,7 @@ export interface Prisma__StatusClient<T, Null = never, ExtArgs extends runtime.T
  */
 export interface StatusFieldRefs {
   readonly id: Prisma.FieldRef<"Status", 'String'>
-  readonly module: Prisma.FieldRef<"Status", 'StatusModule'>
+  readonly module: Prisma.FieldRef<"Status", 'String'>
   readonly code: Prisma.FieldRef<"Status", 'String'>
   readonly naam: Prisma.FieldRef<"Status", 'String'>
   readonly omschrijving: Prisma.FieldRef<"Status", 'String'>

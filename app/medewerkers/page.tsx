@@ -4,7 +4,6 @@ import { medewerkerService } from "@/lib/services/medewerker.service";
 
 import PageLayout from "@/components/ui/PageLayout";
 import PageToolbar from "@/components/ui/PageToolbar";
-import SearchInput from "@/components/ui/SearchInput";
 import StatCard from "@/components/ui/StatCard";
 import Button from "@/components/ui/Button";
 import DataGrid from "@/components/ui/DataGrid";
@@ -46,15 +45,15 @@ export default async function MedewerkersPage() {
         />
       </div>
 
-      <PageToolbar
-        title={<SearchInput value="" onChange={() => {}} />}
-        actions={
-          <Button>
-            <UserPlus size={18} />
-            <span>Nieuwe medewerker</span>
-          </Button>
-        }
-      />
+<PageToolbar
+  title="Medewerkers"
+  actions={
+    <Button>
+      <UserPlus size={18} />
+      <span>Nieuwe medewerker</span>
+    </Button>
+  }
+/>
 
       <DataGrid
         data={medewerkers}

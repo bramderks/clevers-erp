@@ -6,12 +6,22 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+
     "seed": "tsx prisma/seed.ts",
+
     "prisma:merge": "node prisma/merge-schema.mjs",
     "prisma:generate": "npm run prisma:merge && prisma generate",
+    "prisma:validate": "npm run prisma:merge && prisma validate",
     "prisma:push": "npm run prisma:merge && prisma db push",
-    "prisma:validate": "npm run prisma:merge && prisma validate"
+    "prisma:seed": "npm run prisma:push && npm run seed",
+    "prisma:reset": "npm run prisma:push && npm run seed",
+    "prisma:check": "npm run prisma:generate && npm run typecheck",
+
+    "dev:sync": "npm run prisma:push && prisma generate && npm run seed && npm run typecheck",
+    "dev:check": "npm run prisma:push && prisma generate && npm run seed && npm run build"
   },
   "dependencies": {
     "@auth/core": "^0.41.3",
@@ -29,6 +39,8 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "tailwind-merge": "^3.6.0",
+    "@hookform/resolvers": "^5.2.2",
+"react-hook-form": "^7.65.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
