@@ -2469,17 +2469,24 @@ export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typ
 export const MedewerkerScalarFieldEnum = {
   id: 'id',
   personeelsnummer: 'personeelsnummer',
+  aanhef: 'aanhef',
   voornaam: 'voornaam',
   tussenvoegsel: 'tussenvoegsel',
   achternaam: 'achternaam',
   roepnaam: 'roepnaam',
+  geboortedatum: 'geboortedatum',
   email: 'email',
   telefoon: 'telefoon',
   wachtwoordHash: 'wachtwoordHash',
-  geboortedatum: 'geboortedatum',
+  statusId: 'statusId',
+  aanmeldingOp: 'aanmeldingOp',
+  geactiveerdOp: 'geactiveerdOp',
+  geactiveerdDoor: 'geactiveerdDoor',
   actief: 'actief',
   contractType: 'contractType',
   contractUren: 'contractUren',
+  datumInDienst: 'datumInDienst',
+  datumUitDienst: 'datumUitDienst',
   aangemaaktOp: 'aangemaaktOp',
   gewijzigdOp: 'gewijzigdOp'
 } as const
@@ -2491,7 +2498,8 @@ export const MedewerkerVestigingScalarFieldEnum = {
   id: 'id',
   medewerkerId: 'medewerkerId',
   vestigingId: 'vestigingId',
-  hoofdvestiging: 'hoofdvestiging'
+  hoofdvestiging: 'hoofdvestiging',
+  aangemaaktOp: 'aangemaaktOp'
 } as const
 
 export type MedewerkerVestigingScalarFieldEnum = (typeof MedewerkerVestigingScalarFieldEnum)[keyof typeof MedewerkerVestigingScalarFieldEnum]
@@ -2500,7 +2508,8 @@ export type MedewerkerVestigingScalarFieldEnum = (typeof MedewerkerVestigingScal
 export const MedewerkerRolScalarFieldEnum = {
   id: 'id',
   medewerkerId: 'medewerkerId',
-  rolId: 'rolId'
+  rolId: 'rolId',
+  aangemaaktOp: 'aangemaaktOp'
 } as const
 
 export type MedewerkerRolScalarFieldEnum = (typeof MedewerkerRolScalarFieldEnum)[keyof typeof MedewerkerRolScalarFieldEnum]
@@ -2710,9 +2719,13 @@ export type LeveringRegelScalarFieldEnum = (typeof LeveringRegelScalarFieldEnum)
 
 export const StatusScalarFieldEnum = {
   id: 'id',
+  module: 'module',
   code: 'code',
   naam: 'naam',
-  module: 'module',
+  omschrijving: 'omschrijving',
+  kleur: 'kleur',
+  icoon: 'icoon',
+  cssClass: 'cssClass',
   volgorde: 'volgorde',
   actief: 'actief',
   aangemaaktOp: 'aangemaaktOp',
@@ -2727,6 +2740,7 @@ export const InstellingScalarFieldEnum = {
   sleutel: 'sleutel',
   waarde: 'waarde',
   omschrijving: 'omschrijving',
+  categorie: 'categorie',
   aangemaaktOp: 'aangemaaktOp',
   gewijzigdOp: 'gewijzigdOp'
 } as const
@@ -2831,6 +2845,34 @@ export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$Prisma
 
 
 /**
+ * Reference to a field of type 'Aanhef'
+ */
+export type EnumAanhefFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Aanhef'>
+    
+
+
+/**
+ * Reference to a field of type 'Aanhef[]'
+ */
+export type ListEnumAanhefFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Aanhef[]'>
+    
+
+
+/**
+ * Reference to a field of type 'ContractType'
+ */
+export type EnumContractTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ContractType'>
+    
+
+
+/**
+ * Reference to a field of type 'ContractType[]'
+ */
+export type ListEnumContractTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ContractType[]'>
+    
+
+
+/**
  * Reference to a field of type 'Decimal'
  */
 export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
@@ -2855,6 +2897,20 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'In
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+/**
+ * Reference to a field of type 'StatusModule'
+ */
+export type EnumStatusModuleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'StatusModule'>
+    
+
+
+/**
+ * Reference to a field of type 'StatusModule[]'
+ */
+export type ListEnumStatusModuleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'StatusModule[]'>
     
 
 

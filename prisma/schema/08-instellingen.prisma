@@ -2,27 +2,64 @@
 /// INSTELLINGEN
 /// ======================================================
 
+enum StatusModule {
+  MEDEWERKER
+  BESTELLING
+  LEVERING
+  VOORRAAD
+  PLANNING
+}
+
 model Status {
   id String @id @default(cuid())
 
-  code String @unique
+  /// =====================================================
+  /// Algemeen
+  /// =====================================================
+
+  module StatusModule
+
+  code String
 
   naam String
 
-  module String
+  omschrijving String?
 
-  volgorde Int
+  /// =====================================================
+  /// Weergave
+  /// =====================================================
+
+  kleur String?
+
+  icoon String?
+
+  cssClass String?
+
+  volgorde Int @default(0)
 
   actief Boolean @default(true)
+
+  /// =====================================================
+  /// Relaties
+  /// =====================================================
+
+  medewerkers Medewerker[]
 
   bestellingen Bestelling[]
 
   voorraadTellingen VoorraadTelling[]
 
+  /// =====================================================
+  /// Audit
+  /// =====================================================
+
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt
 
+  @@unique([module, code])
+
   @@index([module])
+  @@index([actief])
   @@index([volgorde])
 }
 
@@ -35,6 +72,10 @@ model Instelling {
 
   omschrijving String?
 
+  categorie String?
+
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt
+
+  @@index([categorie])
 }

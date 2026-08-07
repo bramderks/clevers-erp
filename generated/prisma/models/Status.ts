@@ -36,9 +36,13 @@ export type StatusSumAggregateOutputType = {
 
 export type StatusMinAggregateOutputType = {
   id: string | null
+  module: $Enums.StatusModule | null
   code: string | null
   naam: string | null
-  module: string | null
+  omschrijving: string | null
+  kleur: string | null
+  icoon: string | null
+  cssClass: string | null
   volgorde: number | null
   actief: boolean | null
   aangemaaktOp: Date | null
@@ -47,9 +51,13 @@ export type StatusMinAggregateOutputType = {
 
 export type StatusMaxAggregateOutputType = {
   id: string | null
+  module: $Enums.StatusModule | null
   code: string | null
   naam: string | null
-  module: string | null
+  omschrijving: string | null
+  kleur: string | null
+  icoon: string | null
+  cssClass: string | null
   volgorde: number | null
   actief: boolean | null
   aangemaaktOp: Date | null
@@ -58,9 +66,13 @@ export type StatusMaxAggregateOutputType = {
 
 export type StatusCountAggregateOutputType = {
   id: number
+  module: number
   code: number
   naam: number
-  module: number
+  omschrijving: number
+  kleur: number
+  icoon: number
+  cssClass: number
   volgorde: number
   actief: number
   aangemaaktOp: number
@@ -79,9 +91,13 @@ export type StatusSumAggregateInputType = {
 
 export type StatusMinAggregateInputType = {
   id?: true
+  module?: true
   code?: true
   naam?: true
-  module?: true
+  omschrijving?: true
+  kleur?: true
+  icoon?: true
+  cssClass?: true
   volgorde?: true
   actief?: true
   aangemaaktOp?: true
@@ -90,9 +106,13 @@ export type StatusMinAggregateInputType = {
 
 export type StatusMaxAggregateInputType = {
   id?: true
+  module?: true
   code?: true
   naam?: true
-  module?: true
+  omschrijving?: true
+  kleur?: true
+  icoon?: true
+  cssClass?: true
   volgorde?: true
   actief?: true
   aangemaaktOp?: true
@@ -101,9 +121,13 @@ export type StatusMaxAggregateInputType = {
 
 export type StatusCountAggregateInputType = {
   id?: true
+  module?: true
   code?: true
   naam?: true
-  module?: true
+  omschrijving?: true
+  kleur?: true
+  icoon?: true
+  cssClass?: true
   volgorde?: true
   actief?: true
   aangemaaktOp?: true
@@ -199,9 +223,13 @@ export type StatusGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalA
 
 export type StatusGroupByOutputType = {
   id: string
+  module: $Enums.StatusModule
   code: string
   naam: string
-  module: string
+  omschrijving: string | null
+  kleur: string | null
+  icoon: string | null
+  cssClass: string | null
   volgorde: number
   actief: boolean
   aangemaaktOp: Date
@@ -233,51 +261,71 @@ export type StatusWhereInput = {
   OR?: Prisma.StatusWhereInput[]
   NOT?: Prisma.StatusWhereInput | Prisma.StatusWhereInput[]
   id?: Prisma.StringFilter<"Status"> | string
+  module?: Prisma.EnumStatusModuleFilter<"Status"> | $Enums.StatusModule
   code?: Prisma.StringFilter<"Status"> | string
   naam?: Prisma.StringFilter<"Status"> | string
-  module?: Prisma.StringFilter<"Status"> | string
+  omschrijving?: Prisma.StringNullableFilter<"Status"> | string | null
+  kleur?: Prisma.StringNullableFilter<"Status"> | string | null
+  icoon?: Prisma.StringNullableFilter<"Status"> | string | null
+  cssClass?: Prisma.StringNullableFilter<"Status"> | string | null
   volgorde?: Prisma.IntFilter<"Status"> | number
   actief?: Prisma.BoolFilter<"Status"> | boolean
   aangemaaktOp?: Prisma.DateTimeFilter<"Status"> | Date | string
   gewijzigdOp?: Prisma.DateTimeFilter<"Status"> | Date | string
+  medewerkers?: Prisma.MedewerkerListRelationFilter
   bestellingen?: Prisma.BestellingListRelationFilter
   voorraadTellingen?: Prisma.VoorraadTellingListRelationFilter
 }
 
 export type StatusOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  module?: Prisma.SortOrder
   code?: Prisma.SortOrder
   naam?: Prisma.SortOrder
-  module?: Prisma.SortOrder
+  omschrijving?: Prisma.SortOrderInput | Prisma.SortOrder
+  kleur?: Prisma.SortOrderInput | Prisma.SortOrder
+  icoon?: Prisma.SortOrderInput | Prisma.SortOrder
+  cssClass?: Prisma.SortOrderInput | Prisma.SortOrder
   volgorde?: Prisma.SortOrder
   actief?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
+  medewerkers?: Prisma.MedewerkerOrderByRelationAggregateInput
   bestellingen?: Prisma.BestellingOrderByRelationAggregateInput
   voorraadTellingen?: Prisma.VoorraadTellingOrderByRelationAggregateInput
 }
 
 export type StatusWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  code?: string
+  module_code?: Prisma.StatusModuleCodeCompoundUniqueInput
   AND?: Prisma.StatusWhereInput | Prisma.StatusWhereInput[]
   OR?: Prisma.StatusWhereInput[]
   NOT?: Prisma.StatusWhereInput | Prisma.StatusWhereInput[]
+  module?: Prisma.EnumStatusModuleFilter<"Status"> | $Enums.StatusModule
+  code?: Prisma.StringFilter<"Status"> | string
   naam?: Prisma.StringFilter<"Status"> | string
-  module?: Prisma.StringFilter<"Status"> | string
+  omschrijving?: Prisma.StringNullableFilter<"Status"> | string | null
+  kleur?: Prisma.StringNullableFilter<"Status"> | string | null
+  icoon?: Prisma.StringNullableFilter<"Status"> | string | null
+  cssClass?: Prisma.StringNullableFilter<"Status"> | string | null
   volgorde?: Prisma.IntFilter<"Status"> | number
   actief?: Prisma.BoolFilter<"Status"> | boolean
   aangemaaktOp?: Prisma.DateTimeFilter<"Status"> | Date | string
   gewijzigdOp?: Prisma.DateTimeFilter<"Status"> | Date | string
+  medewerkers?: Prisma.MedewerkerListRelationFilter
   bestellingen?: Prisma.BestellingListRelationFilter
   voorraadTellingen?: Prisma.VoorraadTellingListRelationFilter
-}, "id" | "code">
+}, "id" | "module_code">
 
 export type StatusOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  module?: Prisma.SortOrder
   code?: Prisma.SortOrder
   naam?: Prisma.SortOrder
-  module?: Prisma.SortOrder
+  omschrijving?: Prisma.SortOrderInput | Prisma.SortOrder
+  kleur?: Prisma.SortOrderInput | Prisma.SortOrder
+  icoon?: Prisma.SortOrderInput | Prisma.SortOrder
+  cssClass?: Prisma.SortOrderInput | Prisma.SortOrder
   volgorde?: Prisma.SortOrder
   actief?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
@@ -294,9 +342,13 @@ export type StatusScalarWhereWithAggregatesInput = {
   OR?: Prisma.StatusScalarWhereWithAggregatesInput[]
   NOT?: Prisma.StatusScalarWhereWithAggregatesInput | Prisma.StatusScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Status"> | string
+  module?: Prisma.EnumStatusModuleWithAggregatesFilter<"Status"> | $Enums.StatusModule
   code?: Prisma.StringWithAggregatesFilter<"Status"> | string
   naam?: Prisma.StringWithAggregatesFilter<"Status"> | string
-  module?: Prisma.StringWithAggregatesFilter<"Status"> | string
+  omschrijving?: Prisma.StringNullableWithAggregatesFilter<"Status"> | string | null
+  kleur?: Prisma.StringNullableWithAggregatesFilter<"Status"> | string | null
+  icoon?: Prisma.StringNullableWithAggregatesFilter<"Status"> | string | null
+  cssClass?: Prisma.StringNullableWithAggregatesFilter<"Status"> | string | null
   volgorde?: Prisma.IntWithAggregatesFilter<"Status"> | number
   actief?: Prisma.BoolWithAggregatesFilter<"Status"> | boolean
   aangemaaktOp?: Prisma.DateTimeWithAggregatesFilter<"Status"> | Date | string
@@ -305,62 +357,86 @@ export type StatusScalarWhereWithAggregatesInput = {
 
 export type StatusCreateInput = {
   id?: string
+  module: $Enums.StatusModule
   code: string
   naam: string
-  module: string
-  volgorde: number
+  omschrijving?: string | null
+  kleur?: string | null
+  icoon?: string | null
+  cssClass?: string | null
+  volgorde?: number
   actief?: boolean
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  medewerkers?: Prisma.MedewerkerCreateNestedManyWithoutStatusInput
   bestellingen?: Prisma.BestellingCreateNestedManyWithoutStatusInput
   voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutStatusInput
 }
 
 export type StatusUncheckedCreateInput = {
   id?: string
+  module: $Enums.StatusModule
   code: string
   naam: string
-  module: string
-  volgorde: number
+  omschrijving?: string | null
+  kleur?: string | null
+  icoon?: string | null
+  cssClass?: string | null
+  volgorde?: number
   actief?: boolean
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  medewerkers?: Prisma.MedewerkerUncheckedCreateNestedManyWithoutStatusInput
   bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutStatusInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutStatusInput
 }
 
 export type StatusUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  module?: Prisma.EnumStatusModuleFieldUpdateOperationsInput | $Enums.StatusModule
   code?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
-  module?: Prisma.StringFieldUpdateOperationsInput | string
+  omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  kleur?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  icoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cssClass?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   volgorde?: Prisma.IntFieldUpdateOperationsInput | number
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  medewerkers?: Prisma.MedewerkerUpdateManyWithoutStatusNestedInput
   bestellingen?: Prisma.BestellingUpdateManyWithoutStatusNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutStatusNestedInput
 }
 
 export type StatusUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  module?: Prisma.EnumStatusModuleFieldUpdateOperationsInput | $Enums.StatusModule
   code?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
-  module?: Prisma.StringFieldUpdateOperationsInput | string
+  omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  kleur?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  icoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cssClass?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   volgorde?: Prisma.IntFieldUpdateOperationsInput | number
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  medewerkers?: Prisma.MedewerkerUncheckedUpdateManyWithoutStatusNestedInput
   bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutStatusNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutStatusNestedInput
 }
 
 export type StatusCreateManyInput = {
   id?: string
+  module: $Enums.StatusModule
   code: string
   naam: string
-  module: string
-  volgorde: number
+  omschrijving?: string | null
+  kleur?: string | null
+  icoon?: string | null
+  cssClass?: string | null
+  volgorde?: number
   actief?: boolean
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
@@ -368,9 +444,13 @@ export type StatusCreateManyInput = {
 
 export type StatusUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  module?: Prisma.EnumStatusModuleFieldUpdateOperationsInput | $Enums.StatusModule
   code?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
-  module?: Prisma.StringFieldUpdateOperationsInput | string
+  omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  kleur?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  icoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cssClass?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   volgorde?: Prisma.IntFieldUpdateOperationsInput | number
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -379,9 +459,13 @@ export type StatusUpdateManyMutationInput = {
 
 export type StatusUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  module?: Prisma.EnumStatusModuleFieldUpdateOperationsInput | $Enums.StatusModule
   code?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
-  module?: Prisma.StringFieldUpdateOperationsInput | string
+  omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  kleur?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  icoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cssClass?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   volgorde?: Prisma.IntFieldUpdateOperationsInput | number
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -393,11 +477,20 @@ export type StatusScalarRelationFilter = {
   isNot?: Prisma.StatusWhereInput
 }
 
+export type StatusModuleCodeCompoundUniqueInput = {
+  module: $Enums.StatusModule
+  code: string
+}
+
 export type StatusCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  module?: Prisma.SortOrder
   code?: Prisma.SortOrder
   naam?: Prisma.SortOrder
-  module?: Prisma.SortOrder
+  omschrijving?: Prisma.SortOrder
+  kleur?: Prisma.SortOrder
+  icoon?: Prisma.SortOrder
+  cssClass?: Prisma.SortOrder
   volgorde?: Prisma.SortOrder
   actief?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
@@ -410,9 +503,13 @@ export type StatusAvgOrderByAggregateInput = {
 
 export type StatusMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  module?: Prisma.SortOrder
   code?: Prisma.SortOrder
   naam?: Prisma.SortOrder
-  module?: Prisma.SortOrder
+  omschrijving?: Prisma.SortOrder
+  kleur?: Prisma.SortOrder
+  icoon?: Prisma.SortOrder
+  cssClass?: Prisma.SortOrder
   volgorde?: Prisma.SortOrder
   actief?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
@@ -421,9 +518,13 @@ export type StatusMaxOrderByAggregateInput = {
 
 export type StatusMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  module?: Prisma.SortOrder
   code?: Prisma.SortOrder
   naam?: Prisma.SortOrder
-  module?: Prisma.SortOrder
+  omschrijving?: Prisma.SortOrder
+  kleur?: Prisma.SortOrder
+  icoon?: Prisma.SortOrder
+  cssClass?: Prisma.SortOrder
   volgorde?: Prisma.SortOrder
   actief?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
@@ -432,6 +533,20 @@ export type StatusMinOrderByAggregateInput = {
 
 export type StatusSumOrderByAggregateInput = {
   volgorde?: Prisma.SortOrder
+}
+
+export type StatusCreateNestedOneWithoutMedewerkersInput = {
+  create?: Prisma.XOR<Prisma.StatusCreateWithoutMedewerkersInput, Prisma.StatusUncheckedCreateWithoutMedewerkersInput>
+  connectOrCreate?: Prisma.StatusCreateOrConnectWithoutMedewerkersInput
+  connect?: Prisma.StatusWhereUniqueInput
+}
+
+export type StatusUpdateOneRequiredWithoutMedewerkersNestedInput = {
+  create?: Prisma.XOR<Prisma.StatusCreateWithoutMedewerkersInput, Prisma.StatusUncheckedCreateWithoutMedewerkersInput>
+  connectOrCreate?: Prisma.StatusCreateOrConnectWithoutMedewerkersInput
+  upsert?: Prisma.StatusUpsertWithoutMedewerkersInput
+  connect?: Prisma.StatusWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.StatusUpdateToOneWithWhereWithoutMedewerkersInput, Prisma.StatusUpdateWithoutMedewerkersInput>, Prisma.StatusUncheckedUpdateWithoutMedewerkersInput>
 }
 
 export type StatusCreateNestedOneWithoutBestellingenInput = {
@@ -462,27 +577,125 @@ export type StatusUpdateOneRequiredWithoutVoorraadTellingenNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.StatusUpdateToOneWithWhereWithoutVoorraadTellingenInput, Prisma.StatusUpdateWithoutVoorraadTellingenInput>, Prisma.StatusUncheckedUpdateWithoutVoorraadTellingenInput>
 }
 
-export type StatusCreateWithoutBestellingenInput = {
+export type EnumStatusModuleFieldUpdateOperationsInput = {
+  set?: $Enums.StatusModule
+}
+
+export type StatusCreateWithoutMedewerkersInput = {
   id?: string
+  module: $Enums.StatusModule
   code: string
   naam: string
-  module: string
-  volgorde: number
+  omschrijving?: string | null
+  kleur?: string | null
+  icoon?: string | null
+  cssClass?: string | null
+  volgorde?: number
   actief?: boolean
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  bestellingen?: Prisma.BestellingCreateNestedManyWithoutStatusInput
+  voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutStatusInput
+}
+
+export type StatusUncheckedCreateWithoutMedewerkersInput = {
+  id?: string
+  module: $Enums.StatusModule
+  code: string
+  naam: string
+  omschrijving?: string | null
+  kleur?: string | null
+  icoon?: string | null
+  cssClass?: string | null
+  volgorde?: number
+  actief?: boolean
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutStatusInput
+  voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutStatusInput
+}
+
+export type StatusCreateOrConnectWithoutMedewerkersInput = {
+  where: Prisma.StatusWhereUniqueInput
+  create: Prisma.XOR<Prisma.StatusCreateWithoutMedewerkersInput, Prisma.StatusUncheckedCreateWithoutMedewerkersInput>
+}
+
+export type StatusUpsertWithoutMedewerkersInput = {
+  update: Prisma.XOR<Prisma.StatusUpdateWithoutMedewerkersInput, Prisma.StatusUncheckedUpdateWithoutMedewerkersInput>
+  create: Prisma.XOR<Prisma.StatusCreateWithoutMedewerkersInput, Prisma.StatusUncheckedCreateWithoutMedewerkersInput>
+  where?: Prisma.StatusWhereInput
+}
+
+export type StatusUpdateToOneWithWhereWithoutMedewerkersInput = {
+  where?: Prisma.StatusWhereInput
+  data: Prisma.XOR<Prisma.StatusUpdateWithoutMedewerkersInput, Prisma.StatusUncheckedUpdateWithoutMedewerkersInput>
+}
+
+export type StatusUpdateWithoutMedewerkersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  module?: Prisma.EnumStatusModuleFieldUpdateOperationsInput | $Enums.StatusModule
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  kleur?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  icoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cssClass?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volgorde?: Prisma.IntFieldUpdateOperationsInput | number
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  bestellingen?: Prisma.BestellingUpdateManyWithoutStatusNestedInput
+  voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutStatusNestedInput
+}
+
+export type StatusUncheckedUpdateWithoutMedewerkersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  module?: Prisma.EnumStatusModuleFieldUpdateOperationsInput | $Enums.StatusModule
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  kleur?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  icoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cssClass?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  volgorde?: Prisma.IntFieldUpdateOperationsInput | number
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutStatusNestedInput
+  voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutStatusNestedInput
+}
+
+export type StatusCreateWithoutBestellingenInput = {
+  id?: string
+  module: $Enums.StatusModule
+  code: string
+  naam: string
+  omschrijving?: string | null
+  kleur?: string | null
+  icoon?: string | null
+  cssClass?: string | null
+  volgorde?: number
+  actief?: boolean
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  medewerkers?: Prisma.MedewerkerCreateNestedManyWithoutStatusInput
   voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutStatusInput
 }
 
 export type StatusUncheckedCreateWithoutBestellingenInput = {
   id?: string
+  module: $Enums.StatusModule
   code: string
   naam: string
-  module: string
-  volgorde: number
+  omschrijving?: string | null
+  kleur?: string | null
+  icoon?: string | null
+  cssClass?: string | null
+  volgorde?: number
   actief?: boolean
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  medewerkers?: Prisma.MedewerkerUncheckedCreateNestedManyWithoutStatusInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutStatusInput
 }
 
@@ -504,49 +717,69 @@ export type StatusUpdateToOneWithWhereWithoutBestellingenInput = {
 
 export type StatusUpdateWithoutBestellingenInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  module?: Prisma.EnumStatusModuleFieldUpdateOperationsInput | $Enums.StatusModule
   code?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
-  module?: Prisma.StringFieldUpdateOperationsInput | string
+  omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  kleur?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  icoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cssClass?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   volgorde?: Prisma.IntFieldUpdateOperationsInput | number
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  medewerkers?: Prisma.MedewerkerUpdateManyWithoutStatusNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutStatusNestedInput
 }
 
 export type StatusUncheckedUpdateWithoutBestellingenInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  module?: Prisma.EnumStatusModuleFieldUpdateOperationsInput | $Enums.StatusModule
   code?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
-  module?: Prisma.StringFieldUpdateOperationsInput | string
+  omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  kleur?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  icoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cssClass?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   volgorde?: Prisma.IntFieldUpdateOperationsInput | number
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  medewerkers?: Prisma.MedewerkerUncheckedUpdateManyWithoutStatusNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutStatusNestedInput
 }
 
 export type StatusCreateWithoutVoorraadTellingenInput = {
   id?: string
+  module: $Enums.StatusModule
   code: string
   naam: string
-  module: string
-  volgorde: number
+  omschrijving?: string | null
+  kleur?: string | null
+  icoon?: string | null
+  cssClass?: string | null
+  volgorde?: number
   actief?: boolean
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  medewerkers?: Prisma.MedewerkerCreateNestedManyWithoutStatusInput
   bestellingen?: Prisma.BestellingCreateNestedManyWithoutStatusInput
 }
 
 export type StatusUncheckedCreateWithoutVoorraadTellingenInput = {
   id?: string
+  module: $Enums.StatusModule
   code: string
   naam: string
-  module: string
-  volgorde: number
+  omschrijving?: string | null
+  kleur?: string | null
+  icoon?: string | null
+  cssClass?: string | null
+  volgorde?: number
   actief?: boolean
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  medewerkers?: Prisma.MedewerkerUncheckedCreateNestedManyWithoutStatusInput
   bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutStatusInput
 }
 
@@ -568,25 +801,35 @@ export type StatusUpdateToOneWithWhereWithoutVoorraadTellingenInput = {
 
 export type StatusUpdateWithoutVoorraadTellingenInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  module?: Prisma.EnumStatusModuleFieldUpdateOperationsInput | $Enums.StatusModule
   code?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
-  module?: Prisma.StringFieldUpdateOperationsInput | string
+  omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  kleur?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  icoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cssClass?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   volgorde?: Prisma.IntFieldUpdateOperationsInput | number
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  medewerkers?: Prisma.MedewerkerUpdateManyWithoutStatusNestedInput
   bestellingen?: Prisma.BestellingUpdateManyWithoutStatusNestedInput
 }
 
 export type StatusUncheckedUpdateWithoutVoorraadTellingenInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  module?: Prisma.EnumStatusModuleFieldUpdateOperationsInput | $Enums.StatusModule
   code?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
-  module?: Prisma.StringFieldUpdateOperationsInput | string
+  omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  kleur?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  icoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cssClass?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   volgorde?: Prisma.IntFieldUpdateOperationsInput | number
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  medewerkers?: Prisma.MedewerkerUncheckedUpdateManyWithoutStatusNestedInput
   bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutStatusNestedInput
 }
 
@@ -596,11 +839,13 @@ export type StatusUncheckedUpdateWithoutVoorraadTellingenInput = {
  */
 
 export type StatusCountOutputType = {
+  medewerkers: number
   bestellingen: number
   voorraadTellingen: number
 }
 
 export type StatusCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  medewerkers?: boolean | StatusCountOutputTypeCountMedewerkersArgs
   bestellingen?: boolean | StatusCountOutputTypeCountBestellingenArgs
   voorraadTellingen?: boolean | StatusCountOutputTypeCountVoorraadTellingenArgs
 }
@@ -613,6 +858,13 @@ export type StatusCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Exten
    * Select specific fields to fetch from the StatusCountOutputType
    */
   select?: Prisma.StatusCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * StatusCountOutputType without action
+ */
+export type StatusCountOutputTypeCountMedewerkersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MedewerkerWhereInput
 }
 
 /**
@@ -632,13 +884,18 @@ export type StatusCountOutputTypeCountVoorraadTellingenArgs<ExtArgs extends runt
 
 export type StatusSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  module?: boolean
   code?: boolean
   naam?: boolean
-  module?: boolean
+  omschrijving?: boolean
+  kleur?: boolean
+  icoon?: boolean
+  cssClass?: boolean
   volgorde?: boolean
   actief?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
+  medewerkers?: boolean | Prisma.Status$medewerkersArgs<ExtArgs>
   bestellingen?: boolean | Prisma.Status$bestellingenArgs<ExtArgs>
   voorraadTellingen?: boolean | Prisma.Status$voorraadTellingenArgs<ExtArgs>
   _count?: boolean | Prisma.StatusCountOutputTypeDefaultArgs<ExtArgs>
@@ -646,9 +903,13 @@ export type StatusSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
 
 export type StatusSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  module?: boolean
   code?: boolean
   naam?: boolean
-  module?: boolean
+  omschrijving?: boolean
+  kleur?: boolean
+  icoon?: boolean
+  cssClass?: boolean
   volgorde?: boolean
   actief?: boolean
   aangemaaktOp?: boolean
@@ -657,9 +918,13 @@ export type StatusSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
 
 export type StatusSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  module?: boolean
   code?: boolean
   naam?: boolean
-  module?: boolean
+  omschrijving?: boolean
+  kleur?: boolean
+  icoon?: boolean
+  cssClass?: boolean
   volgorde?: boolean
   actief?: boolean
   aangemaaktOp?: boolean
@@ -668,17 +933,22 @@ export type StatusSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
 
 export type StatusSelectScalar = {
   id?: boolean
+  module?: boolean
   code?: boolean
   naam?: boolean
-  module?: boolean
+  omschrijving?: boolean
+  kleur?: boolean
+  icoon?: boolean
+  cssClass?: boolean
   volgorde?: boolean
   actief?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
 }
 
-export type StatusOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "code" | "naam" | "module" | "volgorde" | "actief" | "aangemaaktOp" | "gewijzigdOp", ExtArgs["result"]["status"]>
+export type StatusOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "module" | "code" | "naam" | "omschrijving" | "kleur" | "icoon" | "cssClass" | "volgorde" | "actief" | "aangemaaktOp" | "gewijzigdOp", ExtArgs["result"]["status"]>
 export type StatusInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  medewerkers?: boolean | Prisma.Status$medewerkersArgs<ExtArgs>
   bestellingen?: boolean | Prisma.Status$bestellingenArgs<ExtArgs>
   voorraadTellingen?: boolean | Prisma.Status$voorraadTellingenArgs<ExtArgs>
   _count?: boolean | Prisma.StatusCountOutputTypeDefaultArgs<ExtArgs>
@@ -689,16 +959,41 @@ export type StatusIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
 export type $StatusPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Status"
   objects: {
+    /**
+     * =====================================================
+     * Relaties
+     * =====================================================
+     */
+    medewerkers: Prisma.$MedewerkerPayload<ExtArgs>[]
     bestellingen: Prisma.$BestellingPayload<ExtArgs>[]
     voorraadTellingen: Prisma.$VoorraadTellingPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    /**
+     * =====================================================
+     * Algemeen
+     * =====================================================
+     */
+    module: $Enums.StatusModule
     code: string
     naam: string
-    module: string
+    omschrijving: string | null
+    /**
+     * =====================================================
+     * Weergave
+     * =====================================================
+     */
+    kleur: string | null
+    icoon: string | null
+    cssClass: string | null
     volgorde: number
     actief: boolean
+    /**
+     * =====================================================
+     * Audit
+     * =====================================================
+     */
     aangemaaktOp: Date
     gewijzigdOp: Date
   }, ExtArgs["result"]["status"]>
@@ -1095,6 +1390,7 @@ readonly fields: StatusFieldRefs;
  */
 export interface Prisma__StatusClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  medewerkers<T extends Prisma.Status$medewerkersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Status$medewerkersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MedewerkerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   bestellingen<T extends Prisma.Status$bestellingenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Status$bestellingenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BestellingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   voorraadTellingen<T extends Prisma.Status$voorraadTellingenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Status$voorraadTellingenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VoorraadTellingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -1127,9 +1423,13 @@ export interface Prisma__StatusClient<T, Null = never, ExtArgs extends runtime.T
  */
 export interface StatusFieldRefs {
   readonly id: Prisma.FieldRef<"Status", 'String'>
+  readonly module: Prisma.FieldRef<"Status", 'StatusModule'>
   readonly code: Prisma.FieldRef<"Status", 'String'>
   readonly naam: Prisma.FieldRef<"Status", 'String'>
-  readonly module: Prisma.FieldRef<"Status", 'String'>
+  readonly omschrijving: Prisma.FieldRef<"Status", 'String'>
+  readonly kleur: Prisma.FieldRef<"Status", 'String'>
+  readonly icoon: Prisma.FieldRef<"Status", 'String'>
+  readonly cssClass: Prisma.FieldRef<"Status", 'String'>
   readonly volgorde: Prisma.FieldRef<"Status", 'Int'>
   readonly actief: Prisma.FieldRef<"Status", 'Boolean'>
   readonly aangemaaktOp: Prisma.FieldRef<"Status", 'DateTime'>
@@ -1524,6 +1824,30 @@ export type StatusDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Intern
    * Limit how many Statuses to delete.
    */
   limit?: number
+}
+
+/**
+ * Status.medewerkers
+ */
+export type Status$medewerkersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Medewerker
+   */
+  select?: Prisma.MedewerkerSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Medewerker
+   */
+  omit?: Prisma.MedewerkerOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MedewerkerInclude<ExtArgs> | null
+  where?: Prisma.MedewerkerWhereInput
+  orderBy?: Prisma.MedewerkerOrderByWithRelationInput | Prisma.MedewerkerOrderByWithRelationInput[]
+  cursor?: Prisma.MedewerkerWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MedewerkerScalarFieldEnum | Prisma.MedewerkerScalarFieldEnum[]
 }
 
 /**

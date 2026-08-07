@@ -3,68 +3,109 @@ import type { Prisma, PrismaClient } from "../../generated/prisma/client";
 type PrismaTx = Prisma.TransactionClient | PrismaClient;
 
 const STATUSSEN = [
-  // ===========================
+  // =====================================================
+  // MEDEWERKERS
+  // =====================================================
+
+  {
+    module: "MEDEWERKER",
+    code: "AANGEMELD",
+    naam: "Aangemeld",
+    omschrijving: "Nieuwe medewerker heeft zich aangemeld.",
+    kleur: "blue",
+    icoon: "user-plus",
+    volgorde: 1,
+  },
+  {
+    module: "MEDEWERKER",
+    code: "IN_BEHANDELING",
+    naam: "In behandeling",
+    omschrijving: "Aanmelding wordt verwerkt.",
+    kleur: "amber",
+    icoon: "clock",
+    volgorde: 2,
+  },
+  {
+    module: "MEDEWERKER",
+    code: "ACTIEF",
+    naam: "Actief",
+    omschrijving: "Medewerker is actief.",
+    kleur: "green",
+    icoon: "check-circle",
+    volgorde: 3,
+  },
+  {
+    module: "MEDEWERKER",
+    code: "GEBLOKKEERD",
+    naam: "Geblokkeerd",
+    omschrijving: "Account is tijdelijk geblokkeerd.",
+    kleur: "red",
+    icoon: "ban",
+    volgorde: 4,
+  },
+  {
+    module: "MEDEWERKER",
+    code: "UIT_DIENST",
+    naam: "Uit dienst",
+    omschrijving: "Medewerker is uit dienst.",
+    kleur: "slate",
+    icoon: "user-minus",
+    volgorde: 5,
+  },
+
+  // =====================================================
   // BESTELLINGEN
-  // ===========================
+  // =====================================================
 
   {
-    code: "BEST_CONCEPT",
+    module: "BESTELLING",
+    code: "CONCEPT",
     naam: "Concept",
-    module: "BESTELLING",
-    volgorde: 10,
+    omschrijving: "Bestelling is nog niet verzonden.",
+    kleur: "slate",
+    icoon: "file",
+    volgorde: 1,
   },
   {
-    code: "BEST_OPEN",
-    naam: "Open",
     module: "BESTELLING",
-    volgorde: 20,
+    code: "VERZONDEN",
+    naam: "Verzonden",
+    omschrijving: "Bestelling is verzonden.",
+    kleur: "blue",
+    icoon: "send",
+    volgorde: 2,
   },
   {
-    code: "BEST_BESTELD",
-    naam: "Besteld",
     module: "BESTELLING",
-    volgorde: 30,
-  },
-  {
-    code: "BEST_GELEVERD",
+    code: "GELEVERD",
     naam: "Geleverd",
-    module: "BESTELLING",
-    volgorde: 40,
-  },
-  {
-    code: "BEST_AFGEROND",
-    naam: "Afgerond",
-    module: "BESTELLING",
-    volgorde: 50,
-  },
-  {
-    code: "BEST_GEANNULEERD",
-    naam: "Geannuleerd",
-    module: "BESTELLING",
-    volgorde: 99,
+    omschrijving: "Bestelling is geleverd.",
+    kleur: "green",
+    icoon: "package-check",
+    volgorde: 3,
   },
 
-  // ===========================
+  // =====================================================
   // VOORRAAD
-  // ===========================
+  // =====================================================
 
   {
-    code: "VOORRAAD_OPEN",
+    module: "VOORRAAD",
+    code: "OPEN",
     naam: "Open",
-    module: "VOORRAAD",
-    volgorde: 10,
+    omschrijving: "Voorraadtelling is geopend.",
+    kleur: "blue",
+    icoon: "box",
+    volgorde: 1,
   },
   {
-    code: "VOORRAAD_CONCEPT",
-    naam: "Concept",
     module: "VOORRAAD",
-    volgorde: 20,
-  },
-  {
-    code: "VOORRAAD_AFGEROND",
+    code: "AFGEROND",
     naam: "Afgerond",
-    module: "VOORRAAD",
-    volgorde: 30,
+    omschrijving: "Voorraadtelling is afgerond.",
+    kleur: "green",
+    icoon: "check-circle",
+    volgorde: 2,
   },
 ] as const;
 
@@ -74,18 +115,26 @@ export async function seedStatussen(prisma: PrismaTx) {
   for (const status of STATUSSEN) {
     await prisma.status.upsert({
       where: {
-        code: status.code,
+        module_code: {
+          module: status.module,
+          code: status.code,
+        },
       },
       update: {
         naam: status.naam,
-        module: status.module,
+        omschrijving: status.omschrijving,
+        kleur: status.kleur,
+        icoon: status.icoon,
         volgorde: status.volgorde,
         actief: true,
       },
       create: {
+        module: status.module,
         code: status.code,
         naam: status.naam,
-        module: status.module,
+        omschrijving: status.omschrijving,
+        kleur: status.kleur,
+        icoon: status.icoon,
         volgorde: status.volgorde,
         actief: true,
       },

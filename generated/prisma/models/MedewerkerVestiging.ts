@@ -29,6 +29,7 @@ export type MedewerkerVestigingMinAggregateOutputType = {
   medewerkerId: string | null
   vestigingId: string | null
   hoofdvestiging: boolean | null
+  aangemaaktOp: Date | null
 }
 
 export type MedewerkerVestigingMaxAggregateOutputType = {
@@ -36,6 +37,7 @@ export type MedewerkerVestigingMaxAggregateOutputType = {
   medewerkerId: string | null
   vestigingId: string | null
   hoofdvestiging: boolean | null
+  aangemaaktOp: Date | null
 }
 
 export type MedewerkerVestigingCountAggregateOutputType = {
@@ -43,6 +45,7 @@ export type MedewerkerVestigingCountAggregateOutputType = {
   medewerkerId: number
   vestigingId: number
   hoofdvestiging: number
+  aangemaaktOp: number
   _all: number
 }
 
@@ -52,6 +55,7 @@ export type MedewerkerVestigingMinAggregateInputType = {
   medewerkerId?: true
   vestigingId?: true
   hoofdvestiging?: true
+  aangemaaktOp?: true
 }
 
 export type MedewerkerVestigingMaxAggregateInputType = {
@@ -59,6 +63,7 @@ export type MedewerkerVestigingMaxAggregateInputType = {
   medewerkerId?: true
   vestigingId?: true
   hoofdvestiging?: true
+  aangemaaktOp?: true
 }
 
 export type MedewerkerVestigingCountAggregateInputType = {
@@ -66,6 +71,7 @@ export type MedewerkerVestigingCountAggregateInputType = {
   medewerkerId?: true
   vestigingId?: true
   hoofdvestiging?: true
+  aangemaaktOp?: true
   _all?: true
 }
 
@@ -146,6 +152,7 @@ export type MedewerkerVestigingGroupByOutputType = {
   medewerkerId: string
   vestigingId: string
   hoofdvestiging: boolean
+  aangemaaktOp: Date
   _count: MedewerkerVestigingCountAggregateOutputType | null
   _min: MedewerkerVestigingMinAggregateOutputType | null
   _max: MedewerkerVestigingMaxAggregateOutputType | null
@@ -174,6 +181,7 @@ export type MedewerkerVestigingWhereInput = {
   medewerkerId?: Prisma.StringFilter<"MedewerkerVestiging"> | string
   vestigingId?: Prisma.StringFilter<"MedewerkerVestiging"> | string
   hoofdvestiging?: Prisma.BoolFilter<"MedewerkerVestiging"> | boolean
+  aangemaaktOp?: Prisma.DateTimeFilter<"MedewerkerVestiging"> | Date | string
   medewerker?: Prisma.XOR<Prisma.MedewerkerScalarRelationFilter, Prisma.MedewerkerWhereInput>
   vestiging?: Prisma.XOR<Prisma.VestigingScalarRelationFilter, Prisma.VestigingWhereInput>
 }
@@ -183,6 +191,7 @@ export type MedewerkerVestigingOrderByWithRelationInput = {
   medewerkerId?: Prisma.SortOrder
   vestigingId?: Prisma.SortOrder
   hoofdvestiging?: Prisma.SortOrder
+  aangemaaktOp?: Prisma.SortOrder
   medewerker?: Prisma.MedewerkerOrderByWithRelationInput
   vestiging?: Prisma.VestigingOrderByWithRelationInput
 }
@@ -196,6 +205,7 @@ export type MedewerkerVestigingWhereUniqueInput = Prisma.AtLeast<{
   medewerkerId?: Prisma.StringFilter<"MedewerkerVestiging"> | string
   vestigingId?: Prisma.StringFilter<"MedewerkerVestiging"> | string
   hoofdvestiging?: Prisma.BoolFilter<"MedewerkerVestiging"> | boolean
+  aangemaaktOp?: Prisma.DateTimeFilter<"MedewerkerVestiging"> | Date | string
   medewerker?: Prisma.XOR<Prisma.MedewerkerScalarRelationFilter, Prisma.MedewerkerWhereInput>
   vestiging?: Prisma.XOR<Prisma.VestigingScalarRelationFilter, Prisma.VestigingWhereInput>
 }, "id" | "medewerkerId_vestigingId">
@@ -205,6 +215,7 @@ export type MedewerkerVestigingOrderByWithAggregationInput = {
   medewerkerId?: Prisma.SortOrder
   vestigingId?: Prisma.SortOrder
   hoofdvestiging?: Prisma.SortOrder
+  aangemaaktOp?: Prisma.SortOrder
   _count?: Prisma.MedewerkerVestigingCountOrderByAggregateInput
   _max?: Prisma.MedewerkerVestigingMaxOrderByAggregateInput
   _min?: Prisma.MedewerkerVestigingMinOrderByAggregateInput
@@ -218,11 +229,13 @@ export type MedewerkerVestigingScalarWhereWithAggregatesInput = {
   medewerkerId?: Prisma.StringWithAggregatesFilter<"MedewerkerVestiging"> | string
   vestigingId?: Prisma.StringWithAggregatesFilter<"MedewerkerVestiging"> | string
   hoofdvestiging?: Prisma.BoolWithAggregatesFilter<"MedewerkerVestiging"> | boolean
+  aangemaaktOp?: Prisma.DateTimeWithAggregatesFilter<"MedewerkerVestiging"> | Date | string
 }
 
 export type MedewerkerVestigingCreateInput = {
   id?: string
   hoofdvestiging?: boolean
+  aangemaaktOp?: Date | string
   medewerker: Prisma.MedewerkerCreateNestedOneWithoutVestigingenInput
   vestiging: Prisma.VestigingCreateNestedOneWithoutMedewerkersInput
 }
@@ -232,11 +245,13 @@ export type MedewerkerVestigingUncheckedCreateInput = {
   medewerkerId: string
   vestigingId: string
   hoofdvestiging?: boolean
+  aangemaaktOp?: Date | string
 }
 
 export type MedewerkerVestigingUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   hoofdvestiging?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   medewerker?: Prisma.MedewerkerUpdateOneRequiredWithoutVestigingenNestedInput
   vestiging?: Prisma.VestigingUpdateOneRequiredWithoutMedewerkersNestedInput
 }
@@ -246,6 +261,7 @@ export type MedewerkerVestigingUncheckedUpdateInput = {
   medewerkerId?: Prisma.StringFieldUpdateOperationsInput | string
   vestigingId?: Prisma.StringFieldUpdateOperationsInput | string
   hoofdvestiging?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MedewerkerVestigingCreateManyInput = {
@@ -253,11 +269,13 @@ export type MedewerkerVestigingCreateManyInput = {
   medewerkerId: string
   vestigingId: string
   hoofdvestiging?: boolean
+  aangemaaktOp?: Date | string
 }
 
 export type MedewerkerVestigingUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   hoofdvestiging?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MedewerkerVestigingUncheckedUpdateManyInput = {
@@ -265,6 +283,7 @@ export type MedewerkerVestigingUncheckedUpdateManyInput = {
   medewerkerId?: Prisma.StringFieldUpdateOperationsInput | string
   vestigingId?: Prisma.StringFieldUpdateOperationsInput | string
   hoofdvestiging?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MedewerkerVestigingListRelationFilter = {
@@ -287,6 +306,7 @@ export type MedewerkerVestigingCountOrderByAggregateInput = {
   medewerkerId?: Prisma.SortOrder
   vestigingId?: Prisma.SortOrder
   hoofdvestiging?: Prisma.SortOrder
+  aangemaaktOp?: Prisma.SortOrder
 }
 
 export type MedewerkerVestigingMaxOrderByAggregateInput = {
@@ -294,6 +314,7 @@ export type MedewerkerVestigingMaxOrderByAggregateInput = {
   medewerkerId?: Prisma.SortOrder
   vestigingId?: Prisma.SortOrder
   hoofdvestiging?: Prisma.SortOrder
+  aangemaaktOp?: Prisma.SortOrder
 }
 
 export type MedewerkerVestigingMinOrderByAggregateInput = {
@@ -301,6 +322,7 @@ export type MedewerkerVestigingMinOrderByAggregateInput = {
   medewerkerId?: Prisma.SortOrder
   vestigingId?: Prisma.SortOrder
   hoofdvestiging?: Prisma.SortOrder
+  aangemaaktOp?: Prisma.SortOrder
 }
 
 export type MedewerkerVestigingCreateNestedManyWithoutVestigingInput = {
@@ -390,6 +412,7 @@ export type MedewerkerVestigingUncheckedUpdateManyWithoutMedewerkerNestedInput =
 export type MedewerkerVestigingCreateWithoutVestigingInput = {
   id?: string
   hoofdvestiging?: boolean
+  aangemaaktOp?: Date | string
   medewerker: Prisma.MedewerkerCreateNestedOneWithoutVestigingenInput
 }
 
@@ -397,6 +420,7 @@ export type MedewerkerVestigingUncheckedCreateWithoutVestigingInput = {
   id?: string
   medewerkerId: string
   hoofdvestiging?: boolean
+  aangemaaktOp?: Date | string
 }
 
 export type MedewerkerVestigingCreateOrConnectWithoutVestigingInput = {
@@ -433,11 +457,13 @@ export type MedewerkerVestigingScalarWhereInput = {
   medewerkerId?: Prisma.StringFilter<"MedewerkerVestiging"> | string
   vestigingId?: Prisma.StringFilter<"MedewerkerVestiging"> | string
   hoofdvestiging?: Prisma.BoolFilter<"MedewerkerVestiging"> | boolean
+  aangemaaktOp?: Prisma.DateTimeFilter<"MedewerkerVestiging"> | Date | string
 }
 
 export type MedewerkerVestigingCreateWithoutMedewerkerInput = {
   id?: string
   hoofdvestiging?: boolean
+  aangemaaktOp?: Date | string
   vestiging: Prisma.VestigingCreateNestedOneWithoutMedewerkersInput
 }
 
@@ -445,6 +471,7 @@ export type MedewerkerVestigingUncheckedCreateWithoutMedewerkerInput = {
   id?: string
   vestigingId: string
   hoofdvestiging?: boolean
+  aangemaaktOp?: Date | string
 }
 
 export type MedewerkerVestigingCreateOrConnectWithoutMedewerkerInput = {
@@ -477,11 +504,13 @@ export type MedewerkerVestigingCreateManyVestigingInput = {
   id?: string
   medewerkerId: string
   hoofdvestiging?: boolean
+  aangemaaktOp?: Date | string
 }
 
 export type MedewerkerVestigingUpdateWithoutVestigingInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   hoofdvestiging?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   medewerker?: Prisma.MedewerkerUpdateOneRequiredWithoutVestigingenNestedInput
 }
 
@@ -489,23 +518,27 @@ export type MedewerkerVestigingUncheckedUpdateWithoutVestigingInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   medewerkerId?: Prisma.StringFieldUpdateOperationsInput | string
   hoofdvestiging?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MedewerkerVestigingUncheckedUpdateManyWithoutVestigingInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   medewerkerId?: Prisma.StringFieldUpdateOperationsInput | string
   hoofdvestiging?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MedewerkerVestigingCreateManyMedewerkerInput = {
   id?: string
   vestigingId: string
   hoofdvestiging?: boolean
+  aangemaaktOp?: Date | string
 }
 
 export type MedewerkerVestigingUpdateWithoutMedewerkerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   hoofdvestiging?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   vestiging?: Prisma.VestigingUpdateOneRequiredWithoutMedewerkersNestedInput
 }
 
@@ -513,12 +546,14 @@ export type MedewerkerVestigingUncheckedUpdateWithoutMedewerkerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   vestigingId?: Prisma.StringFieldUpdateOperationsInput | string
   hoofdvestiging?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MedewerkerVestigingUncheckedUpdateManyWithoutMedewerkerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   vestigingId?: Prisma.StringFieldUpdateOperationsInput | string
   hoofdvestiging?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -528,6 +563,7 @@ export type MedewerkerVestigingSelect<ExtArgs extends runtime.Types.Extensions.I
   medewerkerId?: boolean
   vestigingId?: boolean
   hoofdvestiging?: boolean
+  aangemaaktOp?: boolean
   medewerker?: boolean | Prisma.MedewerkerDefaultArgs<ExtArgs>
   vestiging?: boolean | Prisma.VestigingDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["medewerkerVestiging"]>
@@ -537,6 +573,7 @@ export type MedewerkerVestigingSelectCreateManyAndReturn<ExtArgs extends runtime
   medewerkerId?: boolean
   vestigingId?: boolean
   hoofdvestiging?: boolean
+  aangemaaktOp?: boolean
   medewerker?: boolean | Prisma.MedewerkerDefaultArgs<ExtArgs>
   vestiging?: boolean | Prisma.VestigingDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["medewerkerVestiging"]>
@@ -546,6 +583,7 @@ export type MedewerkerVestigingSelectUpdateManyAndReturn<ExtArgs extends runtime
   medewerkerId?: boolean
   vestigingId?: boolean
   hoofdvestiging?: boolean
+  aangemaaktOp?: boolean
   medewerker?: boolean | Prisma.MedewerkerDefaultArgs<ExtArgs>
   vestiging?: boolean | Prisma.VestigingDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["medewerkerVestiging"]>
@@ -555,9 +593,10 @@ export type MedewerkerVestigingSelectScalar = {
   medewerkerId?: boolean
   vestigingId?: boolean
   hoofdvestiging?: boolean
+  aangemaaktOp?: boolean
 }
 
-export type MedewerkerVestigingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "medewerkerId" | "vestigingId" | "hoofdvestiging", ExtArgs["result"]["medewerkerVestiging"]>
+export type MedewerkerVestigingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "medewerkerId" | "vestigingId" | "hoofdvestiging" | "aangemaaktOp", ExtArgs["result"]["medewerkerVestiging"]>
 export type MedewerkerVestigingInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   medewerker?: boolean | Prisma.MedewerkerDefaultArgs<ExtArgs>
   vestiging?: boolean | Prisma.VestigingDefaultArgs<ExtArgs>
@@ -582,6 +621,7 @@ export type $MedewerkerVestigingPayload<ExtArgs extends runtime.Types.Extensions
     medewerkerId: string
     vestigingId: string
     hoofdvestiging: boolean
+    aangemaaktOp: Date
   }, ExtArgs["result"]["medewerkerVestiging"]>
   composites: {}
 }
@@ -1011,6 +1051,7 @@ export interface MedewerkerVestigingFieldRefs {
   readonly medewerkerId: Prisma.FieldRef<"MedewerkerVestiging", 'String'>
   readonly vestigingId: Prisma.FieldRef<"MedewerkerVestiging", 'String'>
   readonly hoofdvestiging: Prisma.FieldRef<"MedewerkerVestiging", 'Boolean'>
+  readonly aangemaaktOp: Prisma.FieldRef<"MedewerkerVestiging", 'DateTime'>
 }
     
 

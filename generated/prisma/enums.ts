@@ -9,7 +9,33 @@
 * 🟢 You can import this file directly.
 */
 
+export const Aanhef = {
+  DHR: 'DHR',
+  MEVR: 'MEVR',
+  ANDERS: 'ANDERS',
+  GEEN_OPGAVE: 'GEEN_OPGAVE'
+} as const
+
+export type Aanhef = (typeof Aanhef)[keyof typeof Aanhef]
 
 
-// This file is empty because there are no enums in the schema.
-export {}
+export const ContractType = {
+  OPROEP: 'OPROEP',
+  TIJDELIJK: 'TIJDELIJK',
+  VAST: 'VAST',
+  STAGIAIR: 'STAGIAIR',
+  VAKANTIEKRACHT: 'VAKANTIEKRACHT'
+} as const
+
+export type ContractType = (typeof ContractType)[keyof typeof ContractType]
+
+
+export const StatusModule = {
+  MEDEWERKER: 'MEDEWERKER',
+  BESTELLING: 'BESTELLING',
+  LEVERING: 'LEVERING',
+  VOORRAAD: 'VOORRAAD',
+  PLANNING: 'PLANNING'
+} as const
+
+export type StatusModule = (typeof StatusModule)[keyof typeof StatusModule]

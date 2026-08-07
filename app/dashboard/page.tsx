@@ -1,108 +1,138 @@
 import { prisma } from "@/lib/prisma";
 
-import PageHeader from "@/components/ui/PageHeader";
-import StatCard from "@/components/ui/StatCard";
+import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
+import PageHeader from "@/components/ui/PageHeader";
 
 export default async function DashboardPage() {
   const [
-    vestigingen,
     gebruikers,
-    rollen,
+    medewerkers,
+    vestigingen,
+    producten,
+    bestellingen,
   ] = await Promise.all([
-    prisma.vestiging.count(),
     prisma.systeemGebruiker.count(),
-    prisma.rol.count(),
+    prisma.medewerker.count(),
+    prisma.vestiging.count(),
+    prisma.product.count(),
+    prisma.bestelling.count(),
   ]);
 
   return (
-    <main>
-
+    <main className="space-y-8">
       <PageHeader
         title="Dashboard"
-        subtitle="Welkom bij Clevers ERP"
+        subtitle="Welkom in Clevers ERP."
       />
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-
-        <StatCard
+      <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
+        <Card
           title="Vestigingen"
-          value={vestigingen}
-        />
-
-        <StatCard
-          title="Gebruikers"
-          value={gebruikers}
-        />
-
-        <StatCard
-          title="Rollen"
-          value={rollen}
-        />
-
-        <StatCard
-          title="Medewerkers"
-          value={0}
-        />
-
-      </div>
-
-      <div className="mt-8 grid gap-6 xl:grid-cols-2">
-
-        <Card>
-
-          <h2 className="mb-4 text-xl font-semibold">
-            Systeemstatus
-          </h2>
-
-          <div className="space-y-3">
-
-            <div className="flex justify-between">
-
-              <span>Database</span>
-
-              <span className="text-green-600 font-semibold">
-                Online
-              </span>
-
-            </div>
-
-            <div className="flex justify-between">
-
-              <span>Authenticatie</span>
-
-              <span className="text-green-600 font-semibold">
-                Actief
-              </span>
-
-            </div>
-
-            <div className="flex justify-between">
-
-              <span>Versie</span>
-
-              <span>1.0</span>
-
-            </div>
-
-          </div>
-
-        </Card>
-
-        <Card>
-
-          <h2 className="mb-4 text-xl font-semibold">
-            Vandaag
-          </h2>
-
-          <p className="text-slate-500">
-            Geen meldingen.
+          description="Actieve vestigingen"
+        >
+          <p className="text-4xl font-bold text-slate-900">
+            {vestigingen}
           </p>
-
         </Card>
 
-      </div>
+        <Card
+          title="Systeemgebruikers"
+          description="ERP gebruikers"
+        >
+          <p className="text-4xl font-bold text-slate-900">
+            {gebruikers}
+          </p>
+        </Card>
 
+        <Card
+          title="Medewerkers"
+          description="Totaal medewerkers"
+        >
+          <p className="text-4xl font-bold text-slate-900">
+            {medewerkers}
+          </p>
+        </Card>
+
+        <Card
+          title="Producten"
+          description="Actieve producten"
+        >
+          <p className="text-4xl font-bold text-slate-900">
+            {producten}
+          </p>
+        </Card>
+
+        <Card
+          title="Bestellingen"
+          description="Totaal geregistreerd"
+        >
+          <p className="text-4xl font-bold text-slate-900">
+            {bestellingen}
+          </p>
+        </Card>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-2">
+        <Card
+          title="Systeemstatus"
+          description="Controle van de basisomgeving"
+        >
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span>Database</span>
+              <Badge variant="success">Online</Badge>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span>Prisma</span>
+              <Badge variant="success">Verbonden</Badge>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span>Build</span>
+              <Badge variant="success">Succesvol</Badge>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span>Seed</span>
+              <Badge variant="success">Voltooid</Badge>
+            </div>
+          </div>
+        </Card>
+
+        <Card
+          title="Projectstatus"
+          description="Clevers ERP"
+        >
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between">
+              <span>Database</span>
+              <strong>100%</strong>
+            </div>
+
+            <div className="flex justify-between">
+              <span>Authenticatie</span>
+              <strong>Start</strong>
+            </div>
+
+            <div className="flex justify-between">
+              <span>Planning</span>
+              <strong>0%</strong>
+            </div>
+
+            <div className="flex justify-between">
+              <span>Voorraad</span>
+              <strong>0%</strong>
+            </div>
+
+            <div className="flex justify-between">
+              <span>Bestellingen</span>
+              <strong>0%</strong>
+            </div>
+          </div>
+        </Card>
+      </section>
     </main>
   );
 }

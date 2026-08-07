@@ -28,18 +28,21 @@ export type MedewerkerRolMinAggregateOutputType = {
   id: string | null
   medewerkerId: string | null
   rolId: string | null
+  aangemaaktOp: Date | null
 }
 
 export type MedewerkerRolMaxAggregateOutputType = {
   id: string | null
   medewerkerId: string | null
   rolId: string | null
+  aangemaaktOp: Date | null
 }
 
 export type MedewerkerRolCountAggregateOutputType = {
   id: number
   medewerkerId: number
   rolId: number
+  aangemaaktOp: number
   _all: number
 }
 
@@ -48,18 +51,21 @@ export type MedewerkerRolMinAggregateInputType = {
   id?: true
   medewerkerId?: true
   rolId?: true
+  aangemaaktOp?: true
 }
 
 export type MedewerkerRolMaxAggregateInputType = {
   id?: true
   medewerkerId?: true
   rolId?: true
+  aangemaaktOp?: true
 }
 
 export type MedewerkerRolCountAggregateInputType = {
   id?: true
   medewerkerId?: true
   rolId?: true
+  aangemaaktOp?: true
   _all?: true
 }
 
@@ -139,6 +145,7 @@ export type MedewerkerRolGroupByOutputType = {
   id: string
   medewerkerId: string
   rolId: string
+  aangemaaktOp: Date
   _count: MedewerkerRolCountAggregateOutputType | null
   _min: MedewerkerRolMinAggregateOutputType | null
   _max: MedewerkerRolMaxAggregateOutputType | null
@@ -166,6 +173,7 @@ export type MedewerkerRolWhereInput = {
   id?: Prisma.StringFilter<"MedewerkerRol"> | string
   medewerkerId?: Prisma.StringFilter<"MedewerkerRol"> | string
   rolId?: Prisma.StringFilter<"MedewerkerRol"> | string
+  aangemaaktOp?: Prisma.DateTimeFilter<"MedewerkerRol"> | Date | string
   medewerker?: Prisma.XOR<Prisma.MedewerkerScalarRelationFilter, Prisma.MedewerkerWhereInput>
   rol?: Prisma.XOR<Prisma.RolScalarRelationFilter, Prisma.RolWhereInput>
 }
@@ -174,6 +182,7 @@ export type MedewerkerRolOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   medewerkerId?: Prisma.SortOrder
   rolId?: Prisma.SortOrder
+  aangemaaktOp?: Prisma.SortOrder
   medewerker?: Prisma.MedewerkerOrderByWithRelationInput
   rol?: Prisma.RolOrderByWithRelationInput
 }
@@ -186,6 +195,7 @@ export type MedewerkerRolWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.MedewerkerRolWhereInput | Prisma.MedewerkerRolWhereInput[]
   medewerkerId?: Prisma.StringFilter<"MedewerkerRol"> | string
   rolId?: Prisma.StringFilter<"MedewerkerRol"> | string
+  aangemaaktOp?: Prisma.DateTimeFilter<"MedewerkerRol"> | Date | string
   medewerker?: Prisma.XOR<Prisma.MedewerkerScalarRelationFilter, Prisma.MedewerkerWhereInput>
   rol?: Prisma.XOR<Prisma.RolScalarRelationFilter, Prisma.RolWhereInput>
 }, "id" | "medewerkerId_rolId">
@@ -194,6 +204,7 @@ export type MedewerkerRolOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   medewerkerId?: Prisma.SortOrder
   rolId?: Prisma.SortOrder
+  aangemaaktOp?: Prisma.SortOrder
   _count?: Prisma.MedewerkerRolCountOrderByAggregateInput
   _max?: Prisma.MedewerkerRolMaxOrderByAggregateInput
   _min?: Prisma.MedewerkerRolMinOrderByAggregateInput
@@ -206,10 +217,12 @@ export type MedewerkerRolScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"MedewerkerRol"> | string
   medewerkerId?: Prisma.StringWithAggregatesFilter<"MedewerkerRol"> | string
   rolId?: Prisma.StringWithAggregatesFilter<"MedewerkerRol"> | string
+  aangemaaktOp?: Prisma.DateTimeWithAggregatesFilter<"MedewerkerRol"> | Date | string
 }
 
 export type MedewerkerRolCreateInput = {
   id?: string
+  aangemaaktOp?: Date | string
   medewerker: Prisma.MedewerkerCreateNestedOneWithoutRollenInput
   rol: Prisma.RolCreateNestedOneWithoutMedewerkerRollenInput
 }
@@ -218,10 +231,12 @@ export type MedewerkerRolUncheckedCreateInput = {
   id?: string
   medewerkerId: string
   rolId: string
+  aangemaaktOp?: Date | string
 }
 
 export type MedewerkerRolUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   medewerker?: Prisma.MedewerkerUpdateOneRequiredWithoutRollenNestedInput
   rol?: Prisma.RolUpdateOneRequiredWithoutMedewerkerRollenNestedInput
 }
@@ -230,22 +245,26 @@ export type MedewerkerRolUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   medewerkerId?: Prisma.StringFieldUpdateOperationsInput | string
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MedewerkerRolCreateManyInput = {
   id?: string
   medewerkerId: string
   rolId: string
+  aangemaaktOp?: Date | string
 }
 
 export type MedewerkerRolUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MedewerkerRolUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   medewerkerId?: Prisma.StringFieldUpdateOperationsInput | string
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MedewerkerRolListRelationFilter = {
@@ -267,18 +286,21 @@ export type MedewerkerRolCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   medewerkerId?: Prisma.SortOrder
   rolId?: Prisma.SortOrder
+  aangemaaktOp?: Prisma.SortOrder
 }
 
 export type MedewerkerRolMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   medewerkerId?: Prisma.SortOrder
   rolId?: Prisma.SortOrder
+  aangemaaktOp?: Prisma.SortOrder
 }
 
 export type MedewerkerRolMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   medewerkerId?: Prisma.SortOrder
   rolId?: Prisma.SortOrder
+  aangemaaktOp?: Prisma.SortOrder
 }
 
 export type MedewerkerRolCreateNestedManyWithoutRolInput = {
@@ -367,12 +389,14 @@ export type MedewerkerRolUncheckedUpdateManyWithoutMedewerkerNestedInput = {
 
 export type MedewerkerRolCreateWithoutRolInput = {
   id?: string
+  aangemaaktOp?: Date | string
   medewerker: Prisma.MedewerkerCreateNestedOneWithoutRollenInput
 }
 
 export type MedewerkerRolUncheckedCreateWithoutRolInput = {
   id?: string
   medewerkerId: string
+  aangemaaktOp?: Date | string
 }
 
 export type MedewerkerRolCreateOrConnectWithoutRolInput = {
@@ -408,16 +432,19 @@ export type MedewerkerRolScalarWhereInput = {
   id?: Prisma.StringFilter<"MedewerkerRol"> | string
   medewerkerId?: Prisma.StringFilter<"MedewerkerRol"> | string
   rolId?: Prisma.StringFilter<"MedewerkerRol"> | string
+  aangemaaktOp?: Prisma.DateTimeFilter<"MedewerkerRol"> | Date | string
 }
 
 export type MedewerkerRolCreateWithoutMedewerkerInput = {
   id?: string
+  aangemaaktOp?: Date | string
   rol: Prisma.RolCreateNestedOneWithoutMedewerkerRollenInput
 }
 
 export type MedewerkerRolUncheckedCreateWithoutMedewerkerInput = {
   id?: string
   rolId: string
+  aangemaaktOp?: Date | string
 }
 
 export type MedewerkerRolCreateOrConnectWithoutMedewerkerInput = {
@@ -449,41 +476,49 @@ export type MedewerkerRolUpdateManyWithWhereWithoutMedewerkerInput = {
 export type MedewerkerRolCreateManyRolInput = {
   id?: string
   medewerkerId: string
+  aangemaaktOp?: Date | string
 }
 
 export type MedewerkerRolUpdateWithoutRolInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   medewerker?: Prisma.MedewerkerUpdateOneRequiredWithoutRollenNestedInput
 }
 
 export type MedewerkerRolUncheckedUpdateWithoutRolInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   medewerkerId?: Prisma.StringFieldUpdateOperationsInput | string
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MedewerkerRolUncheckedUpdateManyWithoutRolInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   medewerkerId?: Prisma.StringFieldUpdateOperationsInput | string
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MedewerkerRolCreateManyMedewerkerInput = {
   id?: string
   rolId: string
+  aangemaaktOp?: Date | string
 }
 
 export type MedewerkerRolUpdateWithoutMedewerkerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   rol?: Prisma.RolUpdateOneRequiredWithoutMedewerkerRollenNestedInput
 }
 
 export type MedewerkerRolUncheckedUpdateWithoutMedewerkerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MedewerkerRolUncheckedUpdateManyWithoutMedewerkerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -492,6 +527,7 @@ export type MedewerkerRolSelect<ExtArgs extends runtime.Types.Extensions.Interna
   id?: boolean
   medewerkerId?: boolean
   rolId?: boolean
+  aangemaaktOp?: boolean
   medewerker?: boolean | Prisma.MedewerkerDefaultArgs<ExtArgs>
   rol?: boolean | Prisma.RolDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["medewerkerRol"]>
@@ -500,6 +536,7 @@ export type MedewerkerRolSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   id?: boolean
   medewerkerId?: boolean
   rolId?: boolean
+  aangemaaktOp?: boolean
   medewerker?: boolean | Prisma.MedewerkerDefaultArgs<ExtArgs>
   rol?: boolean | Prisma.RolDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["medewerkerRol"]>
@@ -508,6 +545,7 @@ export type MedewerkerRolSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   id?: boolean
   medewerkerId?: boolean
   rolId?: boolean
+  aangemaaktOp?: boolean
   medewerker?: boolean | Prisma.MedewerkerDefaultArgs<ExtArgs>
   rol?: boolean | Prisma.RolDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["medewerkerRol"]>
@@ -516,9 +554,10 @@ export type MedewerkerRolSelectScalar = {
   id?: boolean
   medewerkerId?: boolean
   rolId?: boolean
+  aangemaaktOp?: boolean
 }
 
-export type MedewerkerRolOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "medewerkerId" | "rolId", ExtArgs["result"]["medewerkerRol"]>
+export type MedewerkerRolOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "medewerkerId" | "rolId" | "aangemaaktOp", ExtArgs["result"]["medewerkerRol"]>
 export type MedewerkerRolInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   medewerker?: boolean | Prisma.MedewerkerDefaultArgs<ExtArgs>
   rol?: boolean | Prisma.RolDefaultArgs<ExtArgs>
@@ -542,6 +581,7 @@ export type $MedewerkerRolPayload<ExtArgs extends runtime.Types.Extensions.Inter
     id: string
     medewerkerId: string
     rolId: string
+    aangemaaktOp: Date
   }, ExtArgs["result"]["medewerkerRol"]>
   composites: {}
 }
@@ -970,6 +1010,7 @@ export interface MedewerkerRolFieldRefs {
   readonly id: Prisma.FieldRef<"MedewerkerRol", 'String'>
   readonly medewerkerId: Prisma.FieldRef<"MedewerkerRol", 'String'>
   readonly rolId: Prisma.FieldRef<"MedewerkerRol", 'String'>
+  readonly aangemaaktOp: Prisma.FieldRef<"MedewerkerRol", 'DateTime'>
 }
     
 

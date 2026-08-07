@@ -29,6 +29,7 @@ export type InstellingMinAggregateOutputType = {
   sleutel: string | null
   waarde: string | null
   omschrijving: string | null
+  categorie: string | null
   aangemaaktOp: Date | null
   gewijzigdOp: Date | null
 }
@@ -38,6 +39,7 @@ export type InstellingMaxAggregateOutputType = {
   sleutel: string | null
   waarde: string | null
   omschrijving: string | null
+  categorie: string | null
   aangemaaktOp: Date | null
   gewijzigdOp: Date | null
 }
@@ -47,6 +49,7 @@ export type InstellingCountAggregateOutputType = {
   sleutel: number
   waarde: number
   omschrijving: number
+  categorie: number
   aangemaaktOp: number
   gewijzigdOp: number
   _all: number
@@ -58,6 +61,7 @@ export type InstellingMinAggregateInputType = {
   sleutel?: true
   waarde?: true
   omschrijving?: true
+  categorie?: true
   aangemaaktOp?: true
   gewijzigdOp?: true
 }
@@ -67,6 +71,7 @@ export type InstellingMaxAggregateInputType = {
   sleutel?: true
   waarde?: true
   omschrijving?: true
+  categorie?: true
   aangemaaktOp?: true
   gewijzigdOp?: true
 }
@@ -76,6 +81,7 @@ export type InstellingCountAggregateInputType = {
   sleutel?: true
   waarde?: true
   omschrijving?: true
+  categorie?: true
   aangemaaktOp?: true
   gewijzigdOp?: true
   _all?: true
@@ -158,6 +164,7 @@ export type InstellingGroupByOutputType = {
   sleutel: string
   waarde: string
   omschrijving: string | null
+  categorie: string | null
   aangemaaktOp: Date
   gewijzigdOp: Date
   _count: InstellingCountAggregateOutputType | null
@@ -188,6 +195,7 @@ export type InstellingWhereInput = {
   sleutel?: Prisma.StringFilter<"Instelling"> | string
   waarde?: Prisma.StringFilter<"Instelling"> | string
   omschrijving?: Prisma.StringNullableFilter<"Instelling"> | string | null
+  categorie?: Prisma.StringNullableFilter<"Instelling"> | string | null
   aangemaaktOp?: Prisma.DateTimeFilter<"Instelling"> | Date | string
   gewijzigdOp?: Prisma.DateTimeFilter<"Instelling"> | Date | string
 }
@@ -197,6 +205,7 @@ export type InstellingOrderByWithRelationInput = {
   sleutel?: Prisma.SortOrder
   waarde?: Prisma.SortOrder
   omschrijving?: Prisma.SortOrderInput | Prisma.SortOrder
+  categorie?: Prisma.SortOrderInput | Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
 }
@@ -209,6 +218,7 @@ export type InstellingWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.InstellingWhereInput | Prisma.InstellingWhereInput[]
   waarde?: Prisma.StringFilter<"Instelling"> | string
   omschrijving?: Prisma.StringNullableFilter<"Instelling"> | string | null
+  categorie?: Prisma.StringNullableFilter<"Instelling"> | string | null
   aangemaaktOp?: Prisma.DateTimeFilter<"Instelling"> | Date | string
   gewijzigdOp?: Prisma.DateTimeFilter<"Instelling"> | Date | string
 }, "id" | "sleutel">
@@ -218,6 +228,7 @@ export type InstellingOrderByWithAggregationInput = {
   sleutel?: Prisma.SortOrder
   waarde?: Prisma.SortOrder
   omschrijving?: Prisma.SortOrderInput | Prisma.SortOrder
+  categorie?: Prisma.SortOrderInput | Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
   _count?: Prisma.InstellingCountOrderByAggregateInput
@@ -233,6 +244,7 @@ export type InstellingScalarWhereWithAggregatesInput = {
   sleutel?: Prisma.StringWithAggregatesFilter<"Instelling"> | string
   waarde?: Prisma.StringWithAggregatesFilter<"Instelling"> | string
   omschrijving?: Prisma.StringNullableWithAggregatesFilter<"Instelling"> | string | null
+  categorie?: Prisma.StringNullableWithAggregatesFilter<"Instelling"> | string | null
   aangemaaktOp?: Prisma.DateTimeWithAggregatesFilter<"Instelling"> | Date | string
   gewijzigdOp?: Prisma.DateTimeWithAggregatesFilter<"Instelling"> | Date | string
 }
@@ -242,6 +254,7 @@ export type InstellingCreateInput = {
   sleutel: string
   waarde: string
   omschrijving?: string | null
+  categorie?: string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
 }
@@ -251,6 +264,7 @@ export type InstellingUncheckedCreateInput = {
   sleutel: string
   waarde: string
   omschrijving?: string | null
+  categorie?: string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
 }
@@ -260,6 +274,7 @@ export type InstellingUpdateInput = {
   sleutel?: Prisma.StringFieldUpdateOperationsInput | string
   waarde?: Prisma.StringFieldUpdateOperationsInput | string
   omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  categorie?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -269,6 +284,7 @@ export type InstellingUncheckedUpdateInput = {
   sleutel?: Prisma.StringFieldUpdateOperationsInput | string
   waarde?: Prisma.StringFieldUpdateOperationsInput | string
   omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  categorie?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -278,6 +294,7 @@ export type InstellingCreateManyInput = {
   sleutel: string
   waarde: string
   omschrijving?: string | null
+  categorie?: string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
 }
@@ -287,6 +304,7 @@ export type InstellingUpdateManyMutationInput = {
   sleutel?: Prisma.StringFieldUpdateOperationsInput | string
   waarde?: Prisma.StringFieldUpdateOperationsInput | string
   omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  categorie?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -296,6 +314,7 @@ export type InstellingUncheckedUpdateManyInput = {
   sleutel?: Prisma.StringFieldUpdateOperationsInput | string
   waarde?: Prisma.StringFieldUpdateOperationsInput | string
   omschrijving?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  categorie?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -305,6 +324,7 @@ export type InstellingCountOrderByAggregateInput = {
   sleutel?: Prisma.SortOrder
   waarde?: Prisma.SortOrder
   omschrijving?: Prisma.SortOrder
+  categorie?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
 }
@@ -314,6 +334,7 @@ export type InstellingMaxOrderByAggregateInput = {
   sleutel?: Prisma.SortOrder
   waarde?: Prisma.SortOrder
   omschrijving?: Prisma.SortOrder
+  categorie?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
 }
@@ -323,6 +344,7 @@ export type InstellingMinOrderByAggregateInput = {
   sleutel?: Prisma.SortOrder
   waarde?: Prisma.SortOrder
   omschrijving?: Prisma.SortOrder
+  categorie?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
 }
@@ -334,6 +356,7 @@ export type InstellingSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   sleutel?: boolean
   waarde?: boolean
   omschrijving?: boolean
+  categorie?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
 }, ExtArgs["result"]["instelling"]>
@@ -343,6 +366,7 @@ export type InstellingSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   sleutel?: boolean
   waarde?: boolean
   omschrijving?: boolean
+  categorie?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
 }, ExtArgs["result"]["instelling"]>
@@ -352,6 +376,7 @@ export type InstellingSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   sleutel?: boolean
   waarde?: boolean
   omschrijving?: boolean
+  categorie?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
 }, ExtArgs["result"]["instelling"]>
@@ -361,11 +386,12 @@ export type InstellingSelectScalar = {
   sleutel?: boolean
   waarde?: boolean
   omschrijving?: boolean
+  categorie?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
 }
 
-export type InstellingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "sleutel" | "waarde" | "omschrijving" | "aangemaaktOp" | "gewijzigdOp", ExtArgs["result"]["instelling"]>
+export type InstellingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "sleutel" | "waarde" | "omschrijving" | "categorie" | "aangemaaktOp" | "gewijzigdOp", ExtArgs["result"]["instelling"]>
 
 export type $InstellingPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Instelling"
@@ -375,6 +401,7 @@ export type $InstellingPayload<ExtArgs extends runtime.Types.Extensions.Internal
     sleutel: string
     waarde: string
     omschrijving: string | null
+    categorie: string | null
     aangemaaktOp: Date
     gewijzigdOp: Date
   }, ExtArgs["result"]["instelling"]>
@@ -804,6 +831,7 @@ export interface InstellingFieldRefs {
   readonly sleutel: Prisma.FieldRef<"Instelling", 'String'>
   readonly waarde: Prisma.FieldRef<"Instelling", 'String'>
   readonly omschrijving: Prisma.FieldRef<"Instelling", 'String'>
+  readonly categorie: Prisma.FieldRef<"Instelling", 'String'>
   readonly aangemaaktOp: Prisma.FieldRef<"Instelling", 'DateTime'>
   readonly gewijzigdOp: Prisma.FieldRef<"Instelling", 'DateTime'>
 }

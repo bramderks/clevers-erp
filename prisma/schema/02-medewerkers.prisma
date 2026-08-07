@@ -2,38 +2,91 @@
 /// MEDEWERKERS
 /// ======================================================
 
+enum Aanhef {
+  DHR
+  MEVR
+  ANDERS
+  GEEN_OPGAVE
+}
+
+enum ContractType {
+  OPROEP
+  TIJDELIJK
+  VAST
+  STAGIAIR
+  VAKANTIEKRACHT
+}
+
 model Medewerker {
   id String @id @default(cuid())
 
+  /// -----------------------------------------------------
+  /// Persoon
+  /// -----------------------------------------------------
+
   personeelsnummer String? @unique
+
+  aanhef Aanhef
 
   voornaam String
   tussenvoegsel String?
   achternaam String
   roepnaam String?
 
-  email String? @unique
-  telefoon String?
+  geboortedatum DateTime
 
-  wachtwoordHash String?
+  /// -----------------------------------------------------
+  /// Contact
+  /// -----------------------------------------------------
 
-  geboortedatum DateTime?
+  email String @unique
+  telefoon String
 
-  actief Boolean @default(true)
+  /// -----------------------------------------------------
+  /// Account
+  /// -----------------------------------------------------
 
-  contractType String?
+  wachtwoordHash String
+
+  statusId String
+  status Status @relation(fields: [statusId], references: [id], onDelete: Restrict)
+
+  aanmeldingOp DateTime @default(now())
+  geactiveerdOp DateTime?
+  geactiveerdDoor String?
+
+  actief Boolean @default(false)
+
+  /// -----------------------------------------------------
+  /// Dienstverband
+  /// -----------------------------------------------------
+
+  contractType ContractType?
   contractUren Decimal? @db.Decimal(5,2)
+
+  datumInDienst DateTime?
+  datumUitDienst DateTime?
+
+  /// -----------------------------------------------------
+  /// Relaties
+  /// -----------------------------------------------------
 
   vestigingen MedewerkerVestiging[]
   rollen MedewerkerRol[]
-tags      MedewerkerTag[]
-diensten  DienstBezetting[]
+  tags MedewerkerTag[]
+  diensten DienstBezetting[]
+
+  /// -----------------------------------------------------
+  /// Audit
+  /// -----------------------------------------------------
 
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt
 
+  @@index([statusId])
   @@index([actief])
   @@index([achternaam])
+  @@index([voornaam])
 }
 
 model MedewerkerVestiging {
@@ -46,6 +99,8 @@ model MedewerkerVestiging {
 
   medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
   vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  aangemaaktOp DateTime @default(now())
 
   @@unique([medewerkerId, vestigingId])
 
@@ -61,6 +116,8 @@ model MedewerkerRol {
 
   medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
   rol Rol @relation(fields: [rolId], references: [id], onDelete: Cascade)
+
+  aangemaaktOp DateTime @default(now())
 
   @@unique([medewerkerId, rolId])
 

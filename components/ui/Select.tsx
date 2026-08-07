@@ -1,19 +1,26 @@
-import type { InputHTMLAttributes } from "react";
+import type { SelectHTMLAttributes } from "react";
 
-type InputProps = InputHTMLAttributes<HTMLInputElement> & {
+type Option = {
+  value: string;
   label: string;
+};
+
+type Props = SelectHTMLAttributes<HTMLSelectElement> & {
+  label: string;
+  options: Option[];
   error?: string;
   hint?: string;
 };
 
-export default function Input({
+export default function Select({
   label,
+  options,
   error,
   hint,
   className = "",
   id,
   ...props
-}: InputProps) {
+}: Props) {
   const inputId = id ?? props.name ?? label;
 
   return (
@@ -25,19 +32,27 @@ export default function Input({
         {label}
       </label>
 
-      <input
+      <select
         id={inputId}
         {...props}
         className={[
           "w-full rounded-xl border bg-white px-4 py-3 text-slate-900 transition",
-          "placeholder:text-slate-400",
           "focus:outline-none focus:ring-2",
           error
             ? "border-red-400 focus:border-red-500 focus:ring-red-200"
             : "border-slate-300 focus:border-cyan-500 focus:ring-cyan-200",
           className,
         ].join(" ")}
-      />
+      >
+        {options.map((option) => (
+          <option
+            key={option.value}
+            value={option.value}
+          >
+            {option.label}
+          </option>
+        ))}
+      </select>
 
       {hint && !error && (
         <p className="text-xs text-slate-500">

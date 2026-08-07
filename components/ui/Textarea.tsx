@@ -1,19 +1,19 @@
-import type { InputHTMLAttributes } from "react";
+import type { TextareaHTMLAttributes } from "react";
 
-type InputProps = InputHTMLAttributes<HTMLInputElement> & {
+type Props = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   label: string;
   error?: string;
   hint?: string;
 };
 
-export default function Input({
+export default function Textarea({
   label,
   error,
   hint,
   className = "",
   id,
   ...props
-}: InputProps) {
+}: Props) {
   const inputId = id ?? props.name ?? label;
 
   return (
@@ -25,13 +25,12 @@ export default function Input({
         {label}
       </label>
 
-      <input
+      <textarea
         id={inputId}
         {...props}
         className={[
-          "w-full rounded-xl border bg-white px-4 py-3 text-slate-900 transition",
-          "placeholder:text-slate-400",
-          "focus:outline-none focus:ring-2",
+          "min-h-32 w-full rounded-xl border bg-white px-4 py-3 text-slate-900 transition",
+          "resize-y focus:outline-none focus:ring-2",
           error
             ? "border-red-400 focus:border-red-500 focus:ring-red-200"
             : "border-slate-300 focus:border-cyan-500 focus:ring-cyan-200",

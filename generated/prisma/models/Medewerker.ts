@@ -37,17 +37,24 @@ export type MedewerkerSumAggregateOutputType = {
 export type MedewerkerMinAggregateOutputType = {
   id: string | null
   personeelsnummer: string | null
+  aanhef: $Enums.Aanhef | null
   voornaam: string | null
   tussenvoegsel: string | null
   achternaam: string | null
   roepnaam: string | null
+  geboortedatum: Date | null
   email: string | null
   telefoon: string | null
   wachtwoordHash: string | null
-  geboortedatum: Date | null
+  statusId: string | null
+  aanmeldingOp: Date | null
+  geactiveerdOp: Date | null
+  geactiveerdDoor: string | null
   actief: boolean | null
-  contractType: string | null
+  contractType: $Enums.ContractType | null
   contractUren: runtime.Decimal | null
+  datumInDienst: Date | null
+  datumUitDienst: Date | null
   aangemaaktOp: Date | null
   gewijzigdOp: Date | null
 }
@@ -55,17 +62,24 @@ export type MedewerkerMinAggregateOutputType = {
 export type MedewerkerMaxAggregateOutputType = {
   id: string | null
   personeelsnummer: string | null
+  aanhef: $Enums.Aanhef | null
   voornaam: string | null
   tussenvoegsel: string | null
   achternaam: string | null
   roepnaam: string | null
+  geboortedatum: Date | null
   email: string | null
   telefoon: string | null
   wachtwoordHash: string | null
-  geboortedatum: Date | null
+  statusId: string | null
+  aanmeldingOp: Date | null
+  geactiveerdOp: Date | null
+  geactiveerdDoor: string | null
   actief: boolean | null
-  contractType: string | null
+  contractType: $Enums.ContractType | null
   contractUren: runtime.Decimal | null
+  datumInDienst: Date | null
+  datumUitDienst: Date | null
   aangemaaktOp: Date | null
   gewijzigdOp: Date | null
 }
@@ -73,17 +87,24 @@ export type MedewerkerMaxAggregateOutputType = {
 export type MedewerkerCountAggregateOutputType = {
   id: number
   personeelsnummer: number
+  aanhef: number
   voornaam: number
   tussenvoegsel: number
   achternaam: number
   roepnaam: number
+  geboortedatum: number
   email: number
   telefoon: number
   wachtwoordHash: number
-  geboortedatum: number
+  statusId: number
+  aanmeldingOp: number
+  geactiveerdOp: number
+  geactiveerdDoor: number
   actief: number
   contractType: number
   contractUren: number
+  datumInDienst: number
+  datumUitDienst: number
   aangemaaktOp: number
   gewijzigdOp: number
   _all: number
@@ -101,17 +122,24 @@ export type MedewerkerSumAggregateInputType = {
 export type MedewerkerMinAggregateInputType = {
   id?: true
   personeelsnummer?: true
+  aanhef?: true
   voornaam?: true
   tussenvoegsel?: true
   achternaam?: true
   roepnaam?: true
+  geboortedatum?: true
   email?: true
   telefoon?: true
   wachtwoordHash?: true
-  geboortedatum?: true
+  statusId?: true
+  aanmeldingOp?: true
+  geactiveerdOp?: true
+  geactiveerdDoor?: true
   actief?: true
   contractType?: true
   contractUren?: true
+  datumInDienst?: true
+  datumUitDienst?: true
   aangemaaktOp?: true
   gewijzigdOp?: true
 }
@@ -119,17 +147,24 @@ export type MedewerkerMinAggregateInputType = {
 export type MedewerkerMaxAggregateInputType = {
   id?: true
   personeelsnummer?: true
+  aanhef?: true
   voornaam?: true
   tussenvoegsel?: true
   achternaam?: true
   roepnaam?: true
+  geboortedatum?: true
   email?: true
   telefoon?: true
   wachtwoordHash?: true
-  geboortedatum?: true
+  statusId?: true
+  aanmeldingOp?: true
+  geactiveerdOp?: true
+  geactiveerdDoor?: true
   actief?: true
   contractType?: true
   contractUren?: true
+  datumInDienst?: true
+  datumUitDienst?: true
   aangemaaktOp?: true
   gewijzigdOp?: true
 }
@@ -137,17 +172,24 @@ export type MedewerkerMaxAggregateInputType = {
 export type MedewerkerCountAggregateInputType = {
   id?: true
   personeelsnummer?: true
+  aanhef?: true
   voornaam?: true
   tussenvoegsel?: true
   achternaam?: true
   roepnaam?: true
+  geboortedatum?: true
   email?: true
   telefoon?: true
   wachtwoordHash?: true
-  geboortedatum?: true
+  statusId?: true
+  aanmeldingOp?: true
+  geactiveerdOp?: true
+  geactiveerdDoor?: true
   actief?: true
   contractType?: true
   contractUren?: true
+  datumInDienst?: true
+  datumUitDienst?: true
   aangemaaktOp?: true
   gewijzigdOp?: true
   _all?: true
@@ -242,17 +284,24 @@ export type MedewerkerGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inter
 export type MedewerkerGroupByOutputType = {
   id: string
   personeelsnummer: string | null
+  aanhef: $Enums.Aanhef
   voornaam: string
   tussenvoegsel: string | null
   achternaam: string
   roepnaam: string | null
-  email: string | null
-  telefoon: string | null
-  wachtwoordHash: string | null
-  geboortedatum: Date | null
+  geboortedatum: Date
+  email: string
+  telefoon: string
+  wachtwoordHash: string
+  statusId: string
+  aanmeldingOp: Date
+  geactiveerdOp: Date | null
+  geactiveerdDoor: string | null
   actief: boolean
-  contractType: string | null
+  contractType: $Enums.ContractType | null
   contractUren: runtime.Decimal | null
+  datumInDienst: Date | null
+  datumUitDienst: Date | null
   aangemaaktOp: Date
   gewijzigdOp: Date
   _count: MedewerkerCountAggregateOutputType | null
@@ -283,19 +332,27 @@ export type MedewerkerWhereInput = {
   NOT?: Prisma.MedewerkerWhereInput | Prisma.MedewerkerWhereInput[]
   id?: Prisma.StringFilter<"Medewerker"> | string
   personeelsnummer?: Prisma.StringNullableFilter<"Medewerker"> | string | null
+  aanhef?: Prisma.EnumAanhefFilter<"Medewerker"> | $Enums.Aanhef
   voornaam?: Prisma.StringFilter<"Medewerker"> | string
   tussenvoegsel?: Prisma.StringNullableFilter<"Medewerker"> | string | null
   achternaam?: Prisma.StringFilter<"Medewerker"> | string
   roepnaam?: Prisma.StringNullableFilter<"Medewerker"> | string | null
-  email?: Prisma.StringNullableFilter<"Medewerker"> | string | null
-  telefoon?: Prisma.StringNullableFilter<"Medewerker"> | string | null
-  wachtwoordHash?: Prisma.StringNullableFilter<"Medewerker"> | string | null
-  geboortedatum?: Prisma.DateTimeNullableFilter<"Medewerker"> | Date | string | null
+  geboortedatum?: Prisma.DateTimeFilter<"Medewerker"> | Date | string
+  email?: Prisma.StringFilter<"Medewerker"> | string
+  telefoon?: Prisma.StringFilter<"Medewerker"> | string
+  wachtwoordHash?: Prisma.StringFilter<"Medewerker"> | string
+  statusId?: Prisma.StringFilter<"Medewerker"> | string
+  aanmeldingOp?: Prisma.DateTimeFilter<"Medewerker"> | Date | string
+  geactiveerdOp?: Prisma.DateTimeNullableFilter<"Medewerker"> | Date | string | null
+  geactiveerdDoor?: Prisma.StringNullableFilter<"Medewerker"> | string | null
   actief?: Prisma.BoolFilter<"Medewerker"> | boolean
-  contractType?: Prisma.StringNullableFilter<"Medewerker"> | string | null
+  contractType?: Prisma.EnumContractTypeNullableFilter<"Medewerker"> | $Enums.ContractType | null
   contractUren?: Prisma.DecimalNullableFilter<"Medewerker"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.DateTimeNullableFilter<"Medewerker"> | Date | string | null
+  datumUitDienst?: Prisma.DateTimeNullableFilter<"Medewerker"> | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFilter<"Medewerker"> | Date | string
   gewijzigdOp?: Prisma.DateTimeFilter<"Medewerker"> | Date | string
+  status?: Prisma.XOR<Prisma.StatusScalarRelationFilter, Prisma.StatusWhereInput>
   vestigingen?: Prisma.MedewerkerVestigingListRelationFilter
   rollen?: Prisma.MedewerkerRolListRelationFilter
   tags?: Prisma.MedewerkerTagListRelationFilter
@@ -305,19 +362,27 @@ export type MedewerkerWhereInput = {
 export type MedewerkerOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   personeelsnummer?: Prisma.SortOrderInput | Prisma.SortOrder
+  aanhef?: Prisma.SortOrder
   voornaam?: Prisma.SortOrder
   tussenvoegsel?: Prisma.SortOrderInput | Prisma.SortOrder
   achternaam?: Prisma.SortOrder
   roepnaam?: Prisma.SortOrderInput | Prisma.SortOrder
-  email?: Prisma.SortOrderInput | Prisma.SortOrder
-  telefoon?: Prisma.SortOrderInput | Prisma.SortOrder
-  wachtwoordHash?: Prisma.SortOrderInput | Prisma.SortOrder
-  geboortedatum?: Prisma.SortOrderInput | Prisma.SortOrder
+  geboortedatum?: Prisma.SortOrder
+  email?: Prisma.SortOrder
+  telefoon?: Prisma.SortOrder
+  wachtwoordHash?: Prisma.SortOrder
+  statusId?: Prisma.SortOrder
+  aanmeldingOp?: Prisma.SortOrder
+  geactiveerdOp?: Prisma.SortOrderInput | Prisma.SortOrder
+  geactiveerdDoor?: Prisma.SortOrderInput | Prisma.SortOrder
   actief?: Prisma.SortOrder
   contractType?: Prisma.SortOrderInput | Prisma.SortOrder
   contractUren?: Prisma.SortOrderInput | Prisma.SortOrder
+  datumInDienst?: Prisma.SortOrderInput | Prisma.SortOrder
+  datumUitDienst?: Prisma.SortOrderInput | Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
+  status?: Prisma.StatusOrderByWithRelationInput
   vestigingen?: Prisma.MedewerkerVestigingOrderByRelationAggregateInput
   rollen?: Prisma.MedewerkerRolOrderByRelationAggregateInput
   tags?: Prisma.MedewerkerTagOrderByRelationAggregateInput
@@ -331,18 +396,26 @@ export type MedewerkerWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.MedewerkerWhereInput | Prisma.MedewerkerWhereInput[]
   OR?: Prisma.MedewerkerWhereInput[]
   NOT?: Prisma.MedewerkerWhereInput | Prisma.MedewerkerWhereInput[]
+  aanhef?: Prisma.EnumAanhefFilter<"Medewerker"> | $Enums.Aanhef
   voornaam?: Prisma.StringFilter<"Medewerker"> | string
   tussenvoegsel?: Prisma.StringNullableFilter<"Medewerker"> | string | null
   achternaam?: Prisma.StringFilter<"Medewerker"> | string
   roepnaam?: Prisma.StringNullableFilter<"Medewerker"> | string | null
-  telefoon?: Prisma.StringNullableFilter<"Medewerker"> | string | null
-  wachtwoordHash?: Prisma.StringNullableFilter<"Medewerker"> | string | null
-  geboortedatum?: Prisma.DateTimeNullableFilter<"Medewerker"> | Date | string | null
+  geboortedatum?: Prisma.DateTimeFilter<"Medewerker"> | Date | string
+  telefoon?: Prisma.StringFilter<"Medewerker"> | string
+  wachtwoordHash?: Prisma.StringFilter<"Medewerker"> | string
+  statusId?: Prisma.StringFilter<"Medewerker"> | string
+  aanmeldingOp?: Prisma.DateTimeFilter<"Medewerker"> | Date | string
+  geactiveerdOp?: Prisma.DateTimeNullableFilter<"Medewerker"> | Date | string | null
+  geactiveerdDoor?: Prisma.StringNullableFilter<"Medewerker"> | string | null
   actief?: Prisma.BoolFilter<"Medewerker"> | boolean
-  contractType?: Prisma.StringNullableFilter<"Medewerker"> | string | null
+  contractType?: Prisma.EnumContractTypeNullableFilter<"Medewerker"> | $Enums.ContractType | null
   contractUren?: Prisma.DecimalNullableFilter<"Medewerker"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.DateTimeNullableFilter<"Medewerker"> | Date | string | null
+  datumUitDienst?: Prisma.DateTimeNullableFilter<"Medewerker"> | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFilter<"Medewerker"> | Date | string
   gewijzigdOp?: Prisma.DateTimeFilter<"Medewerker"> | Date | string
+  status?: Prisma.XOR<Prisma.StatusScalarRelationFilter, Prisma.StatusWhereInput>
   vestigingen?: Prisma.MedewerkerVestigingListRelationFilter
   rollen?: Prisma.MedewerkerRolListRelationFilter
   tags?: Prisma.MedewerkerTagListRelationFilter
@@ -352,17 +425,24 @@ export type MedewerkerWhereUniqueInput = Prisma.AtLeast<{
 export type MedewerkerOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   personeelsnummer?: Prisma.SortOrderInput | Prisma.SortOrder
+  aanhef?: Prisma.SortOrder
   voornaam?: Prisma.SortOrder
   tussenvoegsel?: Prisma.SortOrderInput | Prisma.SortOrder
   achternaam?: Prisma.SortOrder
   roepnaam?: Prisma.SortOrderInput | Prisma.SortOrder
-  email?: Prisma.SortOrderInput | Prisma.SortOrder
-  telefoon?: Prisma.SortOrderInput | Prisma.SortOrder
-  wachtwoordHash?: Prisma.SortOrderInput | Prisma.SortOrder
-  geboortedatum?: Prisma.SortOrderInput | Prisma.SortOrder
+  geboortedatum?: Prisma.SortOrder
+  email?: Prisma.SortOrder
+  telefoon?: Prisma.SortOrder
+  wachtwoordHash?: Prisma.SortOrder
+  statusId?: Prisma.SortOrder
+  aanmeldingOp?: Prisma.SortOrder
+  geactiveerdOp?: Prisma.SortOrderInput | Prisma.SortOrder
+  geactiveerdDoor?: Prisma.SortOrderInput | Prisma.SortOrder
   actief?: Prisma.SortOrder
   contractType?: Prisma.SortOrderInput | Prisma.SortOrder
   contractUren?: Prisma.SortOrderInput | Prisma.SortOrder
+  datumInDienst?: Prisma.SortOrderInput | Prisma.SortOrder
+  datumUitDienst?: Prisma.SortOrderInput | Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
   _count?: Prisma.MedewerkerCountOrderByAggregateInput
@@ -378,17 +458,24 @@ export type MedewerkerScalarWhereWithAggregatesInput = {
   NOT?: Prisma.MedewerkerScalarWhereWithAggregatesInput | Prisma.MedewerkerScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Medewerker"> | string
   personeelsnummer?: Prisma.StringNullableWithAggregatesFilter<"Medewerker"> | string | null
+  aanhef?: Prisma.EnumAanhefWithAggregatesFilter<"Medewerker"> | $Enums.Aanhef
   voornaam?: Prisma.StringWithAggregatesFilter<"Medewerker"> | string
   tussenvoegsel?: Prisma.StringNullableWithAggregatesFilter<"Medewerker"> | string | null
   achternaam?: Prisma.StringWithAggregatesFilter<"Medewerker"> | string
   roepnaam?: Prisma.StringNullableWithAggregatesFilter<"Medewerker"> | string | null
-  email?: Prisma.StringNullableWithAggregatesFilter<"Medewerker"> | string | null
-  telefoon?: Prisma.StringNullableWithAggregatesFilter<"Medewerker"> | string | null
-  wachtwoordHash?: Prisma.StringNullableWithAggregatesFilter<"Medewerker"> | string | null
-  geboortedatum?: Prisma.DateTimeNullableWithAggregatesFilter<"Medewerker"> | Date | string | null
+  geboortedatum?: Prisma.DateTimeWithAggregatesFilter<"Medewerker"> | Date | string
+  email?: Prisma.StringWithAggregatesFilter<"Medewerker"> | string
+  telefoon?: Prisma.StringWithAggregatesFilter<"Medewerker"> | string
+  wachtwoordHash?: Prisma.StringWithAggregatesFilter<"Medewerker"> | string
+  statusId?: Prisma.StringWithAggregatesFilter<"Medewerker"> | string
+  aanmeldingOp?: Prisma.DateTimeWithAggregatesFilter<"Medewerker"> | Date | string
+  geactiveerdOp?: Prisma.DateTimeNullableWithAggregatesFilter<"Medewerker"> | Date | string | null
+  geactiveerdDoor?: Prisma.StringNullableWithAggregatesFilter<"Medewerker"> | string | null
   actief?: Prisma.BoolWithAggregatesFilter<"Medewerker"> | boolean
-  contractType?: Prisma.StringNullableWithAggregatesFilter<"Medewerker"> | string | null
+  contractType?: Prisma.EnumContractTypeNullableWithAggregatesFilter<"Medewerker"> | $Enums.ContractType | null
   contractUren?: Prisma.DecimalNullableWithAggregatesFilter<"Medewerker"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.DateTimeNullableWithAggregatesFilter<"Medewerker"> | Date | string | null
+  datumUitDienst?: Prisma.DateTimeNullableWithAggregatesFilter<"Medewerker"> | Date | string | null
   aangemaaktOp?: Prisma.DateTimeWithAggregatesFilter<"Medewerker"> | Date | string
   gewijzigdOp?: Prisma.DateTimeWithAggregatesFilter<"Medewerker"> | Date | string
 }
@@ -396,19 +483,26 @@ export type MedewerkerScalarWhereWithAggregatesInput = {
 export type MedewerkerCreateInput = {
   id?: string
   personeelsnummer?: string | null
+  aanhef: $Enums.Aanhef
   voornaam: string
   tussenvoegsel?: string | null
   achternaam: string
   roepnaam?: string | null
-  email?: string | null
-  telefoon?: string | null
-  wachtwoordHash?: string | null
-  geboortedatum?: Date | string | null
+  geboortedatum: Date | string
+  email: string
+  telefoon: string
+  wachtwoordHash: string
+  aanmeldingOp?: Date | string
+  geactiveerdOp?: Date | string | null
+  geactiveerdDoor?: string | null
   actief?: boolean
-  contractType?: string | null
+  contractType?: $Enums.ContractType | null
   contractUren?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Date | string | null
+  datumUitDienst?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  status: Prisma.StatusCreateNestedOneWithoutMedewerkersInput
   vestigingen?: Prisma.MedewerkerVestigingCreateNestedManyWithoutMedewerkerInput
   rollen?: Prisma.MedewerkerRolCreateNestedManyWithoutMedewerkerInput
   tags?: Prisma.MedewerkerTagCreateNestedManyWithoutMedewerkerInput
@@ -418,17 +512,24 @@ export type MedewerkerCreateInput = {
 export type MedewerkerUncheckedCreateInput = {
   id?: string
   personeelsnummer?: string | null
+  aanhef: $Enums.Aanhef
   voornaam: string
   tussenvoegsel?: string | null
   achternaam: string
   roepnaam?: string | null
-  email?: string | null
-  telefoon?: string | null
-  wachtwoordHash?: string | null
-  geboortedatum?: Date | string | null
+  geboortedatum: Date | string
+  email: string
+  telefoon: string
+  wachtwoordHash: string
+  statusId: string
+  aanmeldingOp?: Date | string
+  geactiveerdOp?: Date | string | null
+  geactiveerdDoor?: string | null
   actief?: boolean
-  contractType?: string | null
+  contractType?: $Enums.ContractType | null
   contractUren?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Date | string | null
+  datumUitDienst?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
   vestigingen?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutMedewerkerInput
@@ -440,19 +541,26 @@ export type MedewerkerUncheckedCreateInput = {
 export type MedewerkerUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   personeelsnummer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aanhef?: Prisma.EnumAanhefFieldUpdateOperationsInput | $Enums.Aanhef
   voornaam?: Prisma.StringFieldUpdateOperationsInput | string
   tussenvoegsel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   achternaam?: Prisma.StringFieldUpdateOperationsInput | string
   roepnaam?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  telefoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  wachtwoordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  geboortedatum?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geboortedatum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  telefoon?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  aanmeldingOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  geactiveerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geactiveerdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  contractType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractType?: Prisma.NullableEnumContractTypeFieldUpdateOperationsInput | $Enums.ContractType | null
   contractUren?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  datumUitDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.StatusUpdateOneRequiredWithoutMedewerkersNestedInput
   vestigingen?: Prisma.MedewerkerVestigingUpdateManyWithoutMedewerkerNestedInput
   rollen?: Prisma.MedewerkerRolUpdateManyWithoutMedewerkerNestedInput
   tags?: Prisma.MedewerkerTagUpdateManyWithoutMedewerkerNestedInput
@@ -462,17 +570,24 @@ export type MedewerkerUpdateInput = {
 export type MedewerkerUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   personeelsnummer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aanhef?: Prisma.EnumAanhefFieldUpdateOperationsInput | $Enums.Aanhef
   voornaam?: Prisma.StringFieldUpdateOperationsInput | string
   tussenvoegsel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   achternaam?: Prisma.StringFieldUpdateOperationsInput | string
   roepnaam?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  telefoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  wachtwoordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  geboortedatum?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geboortedatum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  telefoon?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  statusId?: Prisma.StringFieldUpdateOperationsInput | string
+  aanmeldingOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  geactiveerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geactiveerdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  contractType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractType?: Prisma.NullableEnumContractTypeFieldUpdateOperationsInput | $Enums.ContractType | null
   contractUren?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  datumUitDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   vestigingen?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutMedewerkerNestedInput
@@ -484,17 +599,24 @@ export type MedewerkerUncheckedUpdateInput = {
 export type MedewerkerCreateManyInput = {
   id?: string
   personeelsnummer?: string | null
+  aanhef: $Enums.Aanhef
   voornaam: string
   tussenvoegsel?: string | null
   achternaam: string
   roepnaam?: string | null
-  email?: string | null
-  telefoon?: string | null
-  wachtwoordHash?: string | null
-  geboortedatum?: Date | string | null
+  geboortedatum: Date | string
+  email: string
+  telefoon: string
+  wachtwoordHash: string
+  statusId: string
+  aanmeldingOp?: Date | string
+  geactiveerdOp?: Date | string | null
+  geactiveerdDoor?: string | null
   actief?: boolean
-  contractType?: string | null
+  contractType?: $Enums.ContractType | null
   contractUren?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Date | string | null
+  datumUitDienst?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
 }
@@ -502,17 +624,23 @@ export type MedewerkerCreateManyInput = {
 export type MedewerkerUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   personeelsnummer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aanhef?: Prisma.EnumAanhefFieldUpdateOperationsInput | $Enums.Aanhef
   voornaam?: Prisma.StringFieldUpdateOperationsInput | string
   tussenvoegsel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   achternaam?: Prisma.StringFieldUpdateOperationsInput | string
   roepnaam?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  telefoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  wachtwoordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  geboortedatum?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geboortedatum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  telefoon?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  aanmeldingOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  geactiveerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geactiveerdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  contractType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractType?: Prisma.NullableEnumContractTypeFieldUpdateOperationsInput | $Enums.ContractType | null
   contractUren?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  datumUitDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -520,17 +648,24 @@ export type MedewerkerUpdateManyMutationInput = {
 export type MedewerkerUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   personeelsnummer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aanhef?: Prisma.EnumAanhefFieldUpdateOperationsInput | $Enums.Aanhef
   voornaam?: Prisma.StringFieldUpdateOperationsInput | string
   tussenvoegsel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   achternaam?: Prisma.StringFieldUpdateOperationsInput | string
   roepnaam?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  telefoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  wachtwoordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  geboortedatum?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geboortedatum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  telefoon?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  statusId?: Prisma.StringFieldUpdateOperationsInput | string
+  aanmeldingOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  geactiveerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geactiveerdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  contractType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractType?: Prisma.NullableEnumContractTypeFieldUpdateOperationsInput | $Enums.ContractType | null
   contractUren?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  datumUitDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -538,17 +673,24 @@ export type MedewerkerUncheckedUpdateManyInput = {
 export type MedewerkerCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   personeelsnummer?: Prisma.SortOrder
+  aanhef?: Prisma.SortOrder
   voornaam?: Prisma.SortOrder
   tussenvoegsel?: Prisma.SortOrder
   achternaam?: Prisma.SortOrder
   roepnaam?: Prisma.SortOrder
+  geboortedatum?: Prisma.SortOrder
   email?: Prisma.SortOrder
   telefoon?: Prisma.SortOrder
   wachtwoordHash?: Prisma.SortOrder
-  geboortedatum?: Prisma.SortOrder
+  statusId?: Prisma.SortOrder
+  aanmeldingOp?: Prisma.SortOrder
+  geactiveerdOp?: Prisma.SortOrder
+  geactiveerdDoor?: Prisma.SortOrder
   actief?: Prisma.SortOrder
   contractType?: Prisma.SortOrder
   contractUren?: Prisma.SortOrder
+  datumInDienst?: Prisma.SortOrder
+  datumUitDienst?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
 }
@@ -560,17 +702,24 @@ export type MedewerkerAvgOrderByAggregateInput = {
 export type MedewerkerMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   personeelsnummer?: Prisma.SortOrder
+  aanhef?: Prisma.SortOrder
   voornaam?: Prisma.SortOrder
   tussenvoegsel?: Prisma.SortOrder
   achternaam?: Prisma.SortOrder
   roepnaam?: Prisma.SortOrder
+  geboortedatum?: Prisma.SortOrder
   email?: Prisma.SortOrder
   telefoon?: Prisma.SortOrder
   wachtwoordHash?: Prisma.SortOrder
-  geboortedatum?: Prisma.SortOrder
+  statusId?: Prisma.SortOrder
+  aanmeldingOp?: Prisma.SortOrder
+  geactiveerdOp?: Prisma.SortOrder
+  geactiveerdDoor?: Prisma.SortOrder
   actief?: Prisma.SortOrder
   contractType?: Prisma.SortOrder
   contractUren?: Prisma.SortOrder
+  datumInDienst?: Prisma.SortOrder
+  datumUitDienst?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
 }
@@ -578,17 +727,24 @@ export type MedewerkerMaxOrderByAggregateInput = {
 export type MedewerkerMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   personeelsnummer?: Prisma.SortOrder
+  aanhef?: Prisma.SortOrder
   voornaam?: Prisma.SortOrder
   tussenvoegsel?: Prisma.SortOrder
   achternaam?: Prisma.SortOrder
   roepnaam?: Prisma.SortOrder
+  geboortedatum?: Prisma.SortOrder
   email?: Prisma.SortOrder
   telefoon?: Prisma.SortOrder
   wachtwoordHash?: Prisma.SortOrder
-  geboortedatum?: Prisma.SortOrder
+  statusId?: Prisma.SortOrder
+  aanmeldingOp?: Prisma.SortOrder
+  geactiveerdOp?: Prisma.SortOrder
+  geactiveerdDoor?: Prisma.SortOrder
   actief?: Prisma.SortOrder
   contractType?: Prisma.SortOrder
   contractUren?: Prisma.SortOrder
+  datumInDienst?: Prisma.SortOrder
+  datumUitDienst?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
 }
@@ -605,6 +761,24 @@ export type MedewerkerScalarRelationFilter = {
 export type MedewerkerNullableScalarRelationFilter = {
   is?: Prisma.MedewerkerWhereInput | null
   isNot?: Prisma.MedewerkerWhereInput | null
+}
+
+export type MedewerkerListRelationFilter = {
+  every?: Prisma.MedewerkerWhereInput
+  some?: Prisma.MedewerkerWhereInput
+  none?: Prisma.MedewerkerWhereInput
+}
+
+export type MedewerkerOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder
+}
+
+export type EnumAanhefFieldUpdateOperationsInput = {
+  set?: $Enums.Aanhef
+}
+
+export type NullableEnumContractTypeFieldUpdateOperationsInput = {
+  set?: $Enums.ContractType | null
 }
 
 export type NullableDecimalFieldUpdateOperationsInput = {
@@ -673,22 +847,71 @@ export type MedewerkerUpdateOneWithoutDienstenNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.MedewerkerUpdateToOneWithWhereWithoutDienstenInput, Prisma.MedewerkerUpdateWithoutDienstenInput>, Prisma.MedewerkerUncheckedUpdateWithoutDienstenInput>
 }
 
+export type MedewerkerCreateNestedManyWithoutStatusInput = {
+  create?: Prisma.XOR<Prisma.MedewerkerCreateWithoutStatusInput, Prisma.MedewerkerUncheckedCreateWithoutStatusInput> | Prisma.MedewerkerCreateWithoutStatusInput[] | Prisma.MedewerkerUncheckedCreateWithoutStatusInput[]
+  connectOrCreate?: Prisma.MedewerkerCreateOrConnectWithoutStatusInput | Prisma.MedewerkerCreateOrConnectWithoutStatusInput[]
+  createMany?: Prisma.MedewerkerCreateManyStatusInputEnvelope
+  connect?: Prisma.MedewerkerWhereUniqueInput | Prisma.MedewerkerWhereUniqueInput[]
+}
+
+export type MedewerkerUncheckedCreateNestedManyWithoutStatusInput = {
+  create?: Prisma.XOR<Prisma.MedewerkerCreateWithoutStatusInput, Prisma.MedewerkerUncheckedCreateWithoutStatusInput> | Prisma.MedewerkerCreateWithoutStatusInput[] | Prisma.MedewerkerUncheckedCreateWithoutStatusInput[]
+  connectOrCreate?: Prisma.MedewerkerCreateOrConnectWithoutStatusInput | Prisma.MedewerkerCreateOrConnectWithoutStatusInput[]
+  createMany?: Prisma.MedewerkerCreateManyStatusInputEnvelope
+  connect?: Prisma.MedewerkerWhereUniqueInput | Prisma.MedewerkerWhereUniqueInput[]
+}
+
+export type MedewerkerUpdateManyWithoutStatusNestedInput = {
+  create?: Prisma.XOR<Prisma.MedewerkerCreateWithoutStatusInput, Prisma.MedewerkerUncheckedCreateWithoutStatusInput> | Prisma.MedewerkerCreateWithoutStatusInput[] | Prisma.MedewerkerUncheckedCreateWithoutStatusInput[]
+  connectOrCreate?: Prisma.MedewerkerCreateOrConnectWithoutStatusInput | Prisma.MedewerkerCreateOrConnectWithoutStatusInput[]
+  upsert?: Prisma.MedewerkerUpsertWithWhereUniqueWithoutStatusInput | Prisma.MedewerkerUpsertWithWhereUniqueWithoutStatusInput[]
+  createMany?: Prisma.MedewerkerCreateManyStatusInputEnvelope
+  set?: Prisma.MedewerkerWhereUniqueInput | Prisma.MedewerkerWhereUniqueInput[]
+  disconnect?: Prisma.MedewerkerWhereUniqueInput | Prisma.MedewerkerWhereUniqueInput[]
+  delete?: Prisma.MedewerkerWhereUniqueInput | Prisma.MedewerkerWhereUniqueInput[]
+  connect?: Prisma.MedewerkerWhereUniqueInput | Prisma.MedewerkerWhereUniqueInput[]
+  update?: Prisma.MedewerkerUpdateWithWhereUniqueWithoutStatusInput | Prisma.MedewerkerUpdateWithWhereUniqueWithoutStatusInput[]
+  updateMany?: Prisma.MedewerkerUpdateManyWithWhereWithoutStatusInput | Prisma.MedewerkerUpdateManyWithWhereWithoutStatusInput[]
+  deleteMany?: Prisma.MedewerkerScalarWhereInput | Prisma.MedewerkerScalarWhereInput[]
+}
+
+export type MedewerkerUncheckedUpdateManyWithoutStatusNestedInput = {
+  create?: Prisma.XOR<Prisma.MedewerkerCreateWithoutStatusInput, Prisma.MedewerkerUncheckedCreateWithoutStatusInput> | Prisma.MedewerkerCreateWithoutStatusInput[] | Prisma.MedewerkerUncheckedCreateWithoutStatusInput[]
+  connectOrCreate?: Prisma.MedewerkerCreateOrConnectWithoutStatusInput | Prisma.MedewerkerCreateOrConnectWithoutStatusInput[]
+  upsert?: Prisma.MedewerkerUpsertWithWhereUniqueWithoutStatusInput | Prisma.MedewerkerUpsertWithWhereUniqueWithoutStatusInput[]
+  createMany?: Prisma.MedewerkerCreateManyStatusInputEnvelope
+  set?: Prisma.MedewerkerWhereUniqueInput | Prisma.MedewerkerWhereUniqueInput[]
+  disconnect?: Prisma.MedewerkerWhereUniqueInput | Prisma.MedewerkerWhereUniqueInput[]
+  delete?: Prisma.MedewerkerWhereUniqueInput | Prisma.MedewerkerWhereUniqueInput[]
+  connect?: Prisma.MedewerkerWhereUniqueInput | Prisma.MedewerkerWhereUniqueInput[]
+  update?: Prisma.MedewerkerUpdateWithWhereUniqueWithoutStatusInput | Prisma.MedewerkerUpdateWithWhereUniqueWithoutStatusInput[]
+  updateMany?: Prisma.MedewerkerUpdateManyWithWhereWithoutStatusInput | Prisma.MedewerkerUpdateManyWithWhereWithoutStatusInput[]
+  deleteMany?: Prisma.MedewerkerScalarWhereInput | Prisma.MedewerkerScalarWhereInput[]
+}
+
 export type MedewerkerCreateWithoutVestigingenInput = {
   id?: string
   personeelsnummer?: string | null
+  aanhef: $Enums.Aanhef
   voornaam: string
   tussenvoegsel?: string | null
   achternaam: string
   roepnaam?: string | null
-  email?: string | null
-  telefoon?: string | null
-  wachtwoordHash?: string | null
-  geboortedatum?: Date | string | null
+  geboortedatum: Date | string
+  email: string
+  telefoon: string
+  wachtwoordHash: string
+  aanmeldingOp?: Date | string
+  geactiveerdOp?: Date | string | null
+  geactiveerdDoor?: string | null
   actief?: boolean
-  contractType?: string | null
+  contractType?: $Enums.ContractType | null
   contractUren?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Date | string | null
+  datumUitDienst?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  status: Prisma.StatusCreateNestedOneWithoutMedewerkersInput
   rollen?: Prisma.MedewerkerRolCreateNestedManyWithoutMedewerkerInput
   tags?: Prisma.MedewerkerTagCreateNestedManyWithoutMedewerkerInput
   diensten?: Prisma.DienstBezettingCreateNestedManyWithoutMedewerkerInput
@@ -697,17 +920,24 @@ export type MedewerkerCreateWithoutVestigingenInput = {
 export type MedewerkerUncheckedCreateWithoutVestigingenInput = {
   id?: string
   personeelsnummer?: string | null
+  aanhef: $Enums.Aanhef
   voornaam: string
   tussenvoegsel?: string | null
   achternaam: string
   roepnaam?: string | null
-  email?: string | null
-  telefoon?: string | null
-  wachtwoordHash?: string | null
-  geboortedatum?: Date | string | null
+  geboortedatum: Date | string
+  email: string
+  telefoon: string
+  wachtwoordHash: string
+  statusId: string
+  aanmeldingOp?: Date | string
+  geactiveerdOp?: Date | string | null
+  geactiveerdDoor?: string | null
   actief?: boolean
-  contractType?: string | null
+  contractType?: $Enums.ContractType | null
   contractUren?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Date | string | null
+  datumUitDienst?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
   rollen?: Prisma.MedewerkerRolUncheckedCreateNestedManyWithoutMedewerkerInput
@@ -734,19 +964,26 @@ export type MedewerkerUpdateToOneWithWhereWithoutVestigingenInput = {
 export type MedewerkerUpdateWithoutVestigingenInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   personeelsnummer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aanhef?: Prisma.EnumAanhefFieldUpdateOperationsInput | $Enums.Aanhef
   voornaam?: Prisma.StringFieldUpdateOperationsInput | string
   tussenvoegsel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   achternaam?: Prisma.StringFieldUpdateOperationsInput | string
   roepnaam?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  telefoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  wachtwoordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  geboortedatum?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geboortedatum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  telefoon?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  aanmeldingOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  geactiveerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geactiveerdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  contractType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractType?: Prisma.NullableEnumContractTypeFieldUpdateOperationsInput | $Enums.ContractType | null
   contractUren?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  datumUitDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.StatusUpdateOneRequiredWithoutMedewerkersNestedInput
   rollen?: Prisma.MedewerkerRolUpdateManyWithoutMedewerkerNestedInput
   tags?: Prisma.MedewerkerTagUpdateManyWithoutMedewerkerNestedInput
   diensten?: Prisma.DienstBezettingUpdateManyWithoutMedewerkerNestedInput
@@ -755,17 +992,24 @@ export type MedewerkerUpdateWithoutVestigingenInput = {
 export type MedewerkerUncheckedUpdateWithoutVestigingenInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   personeelsnummer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aanhef?: Prisma.EnumAanhefFieldUpdateOperationsInput | $Enums.Aanhef
   voornaam?: Prisma.StringFieldUpdateOperationsInput | string
   tussenvoegsel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   achternaam?: Prisma.StringFieldUpdateOperationsInput | string
   roepnaam?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  telefoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  wachtwoordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  geboortedatum?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geboortedatum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  telefoon?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  statusId?: Prisma.StringFieldUpdateOperationsInput | string
+  aanmeldingOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  geactiveerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geactiveerdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  contractType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractType?: Prisma.NullableEnumContractTypeFieldUpdateOperationsInput | $Enums.ContractType | null
   contractUren?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  datumUitDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   rollen?: Prisma.MedewerkerRolUncheckedUpdateManyWithoutMedewerkerNestedInput
@@ -776,19 +1020,26 @@ export type MedewerkerUncheckedUpdateWithoutVestigingenInput = {
 export type MedewerkerCreateWithoutRollenInput = {
   id?: string
   personeelsnummer?: string | null
+  aanhef: $Enums.Aanhef
   voornaam: string
   tussenvoegsel?: string | null
   achternaam: string
   roepnaam?: string | null
-  email?: string | null
-  telefoon?: string | null
-  wachtwoordHash?: string | null
-  geboortedatum?: Date | string | null
+  geboortedatum: Date | string
+  email: string
+  telefoon: string
+  wachtwoordHash: string
+  aanmeldingOp?: Date | string
+  geactiveerdOp?: Date | string | null
+  geactiveerdDoor?: string | null
   actief?: boolean
-  contractType?: string | null
+  contractType?: $Enums.ContractType | null
   contractUren?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Date | string | null
+  datumUitDienst?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  status: Prisma.StatusCreateNestedOneWithoutMedewerkersInput
   vestigingen?: Prisma.MedewerkerVestigingCreateNestedManyWithoutMedewerkerInput
   tags?: Prisma.MedewerkerTagCreateNestedManyWithoutMedewerkerInput
   diensten?: Prisma.DienstBezettingCreateNestedManyWithoutMedewerkerInput
@@ -797,17 +1048,24 @@ export type MedewerkerCreateWithoutRollenInput = {
 export type MedewerkerUncheckedCreateWithoutRollenInput = {
   id?: string
   personeelsnummer?: string | null
+  aanhef: $Enums.Aanhef
   voornaam: string
   tussenvoegsel?: string | null
   achternaam: string
   roepnaam?: string | null
-  email?: string | null
-  telefoon?: string | null
-  wachtwoordHash?: string | null
-  geboortedatum?: Date | string | null
+  geboortedatum: Date | string
+  email: string
+  telefoon: string
+  wachtwoordHash: string
+  statusId: string
+  aanmeldingOp?: Date | string
+  geactiveerdOp?: Date | string | null
+  geactiveerdDoor?: string | null
   actief?: boolean
-  contractType?: string | null
+  contractType?: $Enums.ContractType | null
   contractUren?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Date | string | null
+  datumUitDienst?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
   vestigingen?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutMedewerkerInput
@@ -834,19 +1092,26 @@ export type MedewerkerUpdateToOneWithWhereWithoutRollenInput = {
 export type MedewerkerUpdateWithoutRollenInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   personeelsnummer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aanhef?: Prisma.EnumAanhefFieldUpdateOperationsInput | $Enums.Aanhef
   voornaam?: Prisma.StringFieldUpdateOperationsInput | string
   tussenvoegsel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   achternaam?: Prisma.StringFieldUpdateOperationsInput | string
   roepnaam?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  telefoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  wachtwoordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  geboortedatum?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geboortedatum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  telefoon?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  aanmeldingOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  geactiveerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geactiveerdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  contractType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractType?: Prisma.NullableEnumContractTypeFieldUpdateOperationsInput | $Enums.ContractType | null
   contractUren?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  datumUitDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.StatusUpdateOneRequiredWithoutMedewerkersNestedInput
   vestigingen?: Prisma.MedewerkerVestigingUpdateManyWithoutMedewerkerNestedInput
   tags?: Prisma.MedewerkerTagUpdateManyWithoutMedewerkerNestedInput
   diensten?: Prisma.DienstBezettingUpdateManyWithoutMedewerkerNestedInput
@@ -855,17 +1120,24 @@ export type MedewerkerUpdateWithoutRollenInput = {
 export type MedewerkerUncheckedUpdateWithoutRollenInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   personeelsnummer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aanhef?: Prisma.EnumAanhefFieldUpdateOperationsInput | $Enums.Aanhef
   voornaam?: Prisma.StringFieldUpdateOperationsInput | string
   tussenvoegsel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   achternaam?: Prisma.StringFieldUpdateOperationsInput | string
   roepnaam?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  telefoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  wachtwoordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  geboortedatum?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geboortedatum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  telefoon?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  statusId?: Prisma.StringFieldUpdateOperationsInput | string
+  aanmeldingOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  geactiveerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geactiveerdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  contractType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractType?: Prisma.NullableEnumContractTypeFieldUpdateOperationsInput | $Enums.ContractType | null
   contractUren?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  datumUitDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   vestigingen?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutMedewerkerNestedInput
@@ -876,19 +1148,26 @@ export type MedewerkerUncheckedUpdateWithoutRollenInput = {
 export type MedewerkerCreateWithoutTagsInput = {
   id?: string
   personeelsnummer?: string | null
+  aanhef: $Enums.Aanhef
   voornaam: string
   tussenvoegsel?: string | null
   achternaam: string
   roepnaam?: string | null
-  email?: string | null
-  telefoon?: string | null
-  wachtwoordHash?: string | null
-  geboortedatum?: Date | string | null
+  geboortedatum: Date | string
+  email: string
+  telefoon: string
+  wachtwoordHash: string
+  aanmeldingOp?: Date | string
+  geactiveerdOp?: Date | string | null
+  geactiveerdDoor?: string | null
   actief?: boolean
-  contractType?: string | null
+  contractType?: $Enums.ContractType | null
   contractUren?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Date | string | null
+  datumUitDienst?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  status: Prisma.StatusCreateNestedOneWithoutMedewerkersInput
   vestigingen?: Prisma.MedewerkerVestigingCreateNestedManyWithoutMedewerkerInput
   rollen?: Prisma.MedewerkerRolCreateNestedManyWithoutMedewerkerInput
   diensten?: Prisma.DienstBezettingCreateNestedManyWithoutMedewerkerInput
@@ -897,17 +1176,24 @@ export type MedewerkerCreateWithoutTagsInput = {
 export type MedewerkerUncheckedCreateWithoutTagsInput = {
   id?: string
   personeelsnummer?: string | null
+  aanhef: $Enums.Aanhef
   voornaam: string
   tussenvoegsel?: string | null
   achternaam: string
   roepnaam?: string | null
-  email?: string | null
-  telefoon?: string | null
-  wachtwoordHash?: string | null
-  geboortedatum?: Date | string | null
+  geboortedatum: Date | string
+  email: string
+  telefoon: string
+  wachtwoordHash: string
+  statusId: string
+  aanmeldingOp?: Date | string
+  geactiveerdOp?: Date | string | null
+  geactiveerdDoor?: string | null
   actief?: boolean
-  contractType?: string | null
+  contractType?: $Enums.ContractType | null
   contractUren?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Date | string | null
+  datumUitDienst?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
   vestigingen?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutMedewerkerInput
@@ -934,19 +1220,26 @@ export type MedewerkerUpdateToOneWithWhereWithoutTagsInput = {
 export type MedewerkerUpdateWithoutTagsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   personeelsnummer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aanhef?: Prisma.EnumAanhefFieldUpdateOperationsInput | $Enums.Aanhef
   voornaam?: Prisma.StringFieldUpdateOperationsInput | string
   tussenvoegsel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   achternaam?: Prisma.StringFieldUpdateOperationsInput | string
   roepnaam?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  telefoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  wachtwoordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  geboortedatum?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geboortedatum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  telefoon?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  aanmeldingOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  geactiveerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geactiveerdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  contractType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractType?: Prisma.NullableEnumContractTypeFieldUpdateOperationsInput | $Enums.ContractType | null
   contractUren?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  datumUitDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.StatusUpdateOneRequiredWithoutMedewerkersNestedInput
   vestigingen?: Prisma.MedewerkerVestigingUpdateManyWithoutMedewerkerNestedInput
   rollen?: Prisma.MedewerkerRolUpdateManyWithoutMedewerkerNestedInput
   diensten?: Prisma.DienstBezettingUpdateManyWithoutMedewerkerNestedInput
@@ -955,17 +1248,24 @@ export type MedewerkerUpdateWithoutTagsInput = {
 export type MedewerkerUncheckedUpdateWithoutTagsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   personeelsnummer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aanhef?: Prisma.EnumAanhefFieldUpdateOperationsInput | $Enums.Aanhef
   voornaam?: Prisma.StringFieldUpdateOperationsInput | string
   tussenvoegsel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   achternaam?: Prisma.StringFieldUpdateOperationsInput | string
   roepnaam?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  telefoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  wachtwoordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  geboortedatum?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geboortedatum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  telefoon?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  statusId?: Prisma.StringFieldUpdateOperationsInput | string
+  aanmeldingOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  geactiveerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geactiveerdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  contractType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractType?: Prisma.NullableEnumContractTypeFieldUpdateOperationsInput | $Enums.ContractType | null
   contractUren?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  datumUitDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   vestigingen?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutMedewerkerNestedInput
@@ -976,19 +1276,26 @@ export type MedewerkerUncheckedUpdateWithoutTagsInput = {
 export type MedewerkerCreateWithoutDienstenInput = {
   id?: string
   personeelsnummer?: string | null
+  aanhef: $Enums.Aanhef
   voornaam: string
   tussenvoegsel?: string | null
   achternaam: string
   roepnaam?: string | null
-  email?: string | null
-  telefoon?: string | null
-  wachtwoordHash?: string | null
-  geboortedatum?: Date | string | null
+  geboortedatum: Date | string
+  email: string
+  telefoon: string
+  wachtwoordHash: string
+  aanmeldingOp?: Date | string
+  geactiveerdOp?: Date | string | null
+  geactiveerdDoor?: string | null
   actief?: boolean
-  contractType?: string | null
+  contractType?: $Enums.ContractType | null
   contractUren?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Date | string | null
+  datumUitDienst?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  status: Prisma.StatusCreateNestedOneWithoutMedewerkersInput
   vestigingen?: Prisma.MedewerkerVestigingCreateNestedManyWithoutMedewerkerInput
   rollen?: Prisma.MedewerkerRolCreateNestedManyWithoutMedewerkerInput
   tags?: Prisma.MedewerkerTagCreateNestedManyWithoutMedewerkerInput
@@ -997,17 +1304,24 @@ export type MedewerkerCreateWithoutDienstenInput = {
 export type MedewerkerUncheckedCreateWithoutDienstenInput = {
   id?: string
   personeelsnummer?: string | null
+  aanhef: $Enums.Aanhef
   voornaam: string
   tussenvoegsel?: string | null
   achternaam: string
   roepnaam?: string | null
-  email?: string | null
-  telefoon?: string | null
-  wachtwoordHash?: string | null
-  geboortedatum?: Date | string | null
+  geboortedatum: Date | string
+  email: string
+  telefoon: string
+  wachtwoordHash: string
+  statusId: string
+  aanmeldingOp?: Date | string
+  geactiveerdOp?: Date | string | null
+  geactiveerdDoor?: string | null
   actief?: boolean
-  contractType?: string | null
+  contractType?: $Enums.ContractType | null
   contractUren?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Date | string | null
+  datumUitDienst?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
   vestigingen?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutMedewerkerInput
@@ -1034,19 +1348,26 @@ export type MedewerkerUpdateToOneWithWhereWithoutDienstenInput = {
 export type MedewerkerUpdateWithoutDienstenInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   personeelsnummer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aanhef?: Prisma.EnumAanhefFieldUpdateOperationsInput | $Enums.Aanhef
   voornaam?: Prisma.StringFieldUpdateOperationsInput | string
   tussenvoegsel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   achternaam?: Prisma.StringFieldUpdateOperationsInput | string
   roepnaam?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  telefoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  wachtwoordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  geboortedatum?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geboortedatum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  telefoon?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  aanmeldingOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  geactiveerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geactiveerdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  contractType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractType?: Prisma.NullableEnumContractTypeFieldUpdateOperationsInput | $Enums.ContractType | null
   contractUren?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  datumUitDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.StatusUpdateOneRequiredWithoutMedewerkersNestedInput
   vestigingen?: Prisma.MedewerkerVestigingUpdateManyWithoutMedewerkerNestedInput
   rollen?: Prisma.MedewerkerRolUpdateManyWithoutMedewerkerNestedInput
   tags?: Prisma.MedewerkerTagUpdateManyWithoutMedewerkerNestedInput
@@ -1055,22 +1376,243 @@ export type MedewerkerUpdateWithoutDienstenInput = {
 export type MedewerkerUncheckedUpdateWithoutDienstenInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   personeelsnummer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aanhef?: Prisma.EnumAanhefFieldUpdateOperationsInput | $Enums.Aanhef
   voornaam?: Prisma.StringFieldUpdateOperationsInput | string
   tussenvoegsel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   achternaam?: Prisma.StringFieldUpdateOperationsInput | string
   roepnaam?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  telefoon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  wachtwoordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  geboortedatum?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geboortedatum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  telefoon?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  statusId?: Prisma.StringFieldUpdateOperationsInput | string
+  aanmeldingOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  geactiveerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geactiveerdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  contractType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractType?: Prisma.NullableEnumContractTypeFieldUpdateOperationsInput | $Enums.ContractType | null
   contractUren?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  datumUitDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   vestigingen?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutMedewerkerNestedInput
   rollen?: Prisma.MedewerkerRolUncheckedUpdateManyWithoutMedewerkerNestedInput
   tags?: Prisma.MedewerkerTagUncheckedUpdateManyWithoutMedewerkerNestedInput
+}
+
+export type MedewerkerCreateWithoutStatusInput = {
+  id?: string
+  personeelsnummer?: string | null
+  aanhef: $Enums.Aanhef
+  voornaam: string
+  tussenvoegsel?: string | null
+  achternaam: string
+  roepnaam?: string | null
+  geboortedatum: Date | string
+  email: string
+  telefoon: string
+  wachtwoordHash: string
+  aanmeldingOp?: Date | string
+  geactiveerdOp?: Date | string | null
+  geactiveerdDoor?: string | null
+  actief?: boolean
+  contractType?: $Enums.ContractType | null
+  contractUren?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Date | string | null
+  datumUitDienst?: Date | string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  vestigingen?: Prisma.MedewerkerVestigingCreateNestedManyWithoutMedewerkerInput
+  rollen?: Prisma.MedewerkerRolCreateNestedManyWithoutMedewerkerInput
+  tags?: Prisma.MedewerkerTagCreateNestedManyWithoutMedewerkerInput
+  diensten?: Prisma.DienstBezettingCreateNestedManyWithoutMedewerkerInput
+}
+
+export type MedewerkerUncheckedCreateWithoutStatusInput = {
+  id?: string
+  personeelsnummer?: string | null
+  aanhef: $Enums.Aanhef
+  voornaam: string
+  tussenvoegsel?: string | null
+  achternaam: string
+  roepnaam?: string | null
+  geboortedatum: Date | string
+  email: string
+  telefoon: string
+  wachtwoordHash: string
+  aanmeldingOp?: Date | string
+  geactiveerdOp?: Date | string | null
+  geactiveerdDoor?: string | null
+  actief?: boolean
+  contractType?: $Enums.ContractType | null
+  contractUren?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Date | string | null
+  datumUitDienst?: Date | string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  vestigingen?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutMedewerkerInput
+  rollen?: Prisma.MedewerkerRolUncheckedCreateNestedManyWithoutMedewerkerInput
+  tags?: Prisma.MedewerkerTagUncheckedCreateNestedManyWithoutMedewerkerInput
+  diensten?: Prisma.DienstBezettingUncheckedCreateNestedManyWithoutMedewerkerInput
+}
+
+export type MedewerkerCreateOrConnectWithoutStatusInput = {
+  where: Prisma.MedewerkerWhereUniqueInput
+  create: Prisma.XOR<Prisma.MedewerkerCreateWithoutStatusInput, Prisma.MedewerkerUncheckedCreateWithoutStatusInput>
+}
+
+export type MedewerkerCreateManyStatusInputEnvelope = {
+  data: Prisma.MedewerkerCreateManyStatusInput | Prisma.MedewerkerCreateManyStatusInput[]
+  skipDuplicates?: boolean
+}
+
+export type MedewerkerUpsertWithWhereUniqueWithoutStatusInput = {
+  where: Prisma.MedewerkerWhereUniqueInput
+  update: Prisma.XOR<Prisma.MedewerkerUpdateWithoutStatusInput, Prisma.MedewerkerUncheckedUpdateWithoutStatusInput>
+  create: Prisma.XOR<Prisma.MedewerkerCreateWithoutStatusInput, Prisma.MedewerkerUncheckedCreateWithoutStatusInput>
+}
+
+export type MedewerkerUpdateWithWhereUniqueWithoutStatusInput = {
+  where: Prisma.MedewerkerWhereUniqueInput
+  data: Prisma.XOR<Prisma.MedewerkerUpdateWithoutStatusInput, Prisma.MedewerkerUncheckedUpdateWithoutStatusInput>
+}
+
+export type MedewerkerUpdateManyWithWhereWithoutStatusInput = {
+  where: Prisma.MedewerkerScalarWhereInput
+  data: Prisma.XOR<Prisma.MedewerkerUpdateManyMutationInput, Prisma.MedewerkerUncheckedUpdateManyWithoutStatusInput>
+}
+
+export type MedewerkerScalarWhereInput = {
+  AND?: Prisma.MedewerkerScalarWhereInput | Prisma.MedewerkerScalarWhereInput[]
+  OR?: Prisma.MedewerkerScalarWhereInput[]
+  NOT?: Prisma.MedewerkerScalarWhereInput | Prisma.MedewerkerScalarWhereInput[]
+  id?: Prisma.StringFilter<"Medewerker"> | string
+  personeelsnummer?: Prisma.StringNullableFilter<"Medewerker"> | string | null
+  aanhef?: Prisma.EnumAanhefFilter<"Medewerker"> | $Enums.Aanhef
+  voornaam?: Prisma.StringFilter<"Medewerker"> | string
+  tussenvoegsel?: Prisma.StringNullableFilter<"Medewerker"> | string | null
+  achternaam?: Prisma.StringFilter<"Medewerker"> | string
+  roepnaam?: Prisma.StringNullableFilter<"Medewerker"> | string | null
+  geboortedatum?: Prisma.DateTimeFilter<"Medewerker"> | Date | string
+  email?: Prisma.StringFilter<"Medewerker"> | string
+  telefoon?: Prisma.StringFilter<"Medewerker"> | string
+  wachtwoordHash?: Prisma.StringFilter<"Medewerker"> | string
+  statusId?: Prisma.StringFilter<"Medewerker"> | string
+  aanmeldingOp?: Prisma.DateTimeFilter<"Medewerker"> | Date | string
+  geactiveerdOp?: Prisma.DateTimeNullableFilter<"Medewerker"> | Date | string | null
+  geactiveerdDoor?: Prisma.StringNullableFilter<"Medewerker"> | string | null
+  actief?: Prisma.BoolFilter<"Medewerker"> | boolean
+  contractType?: Prisma.EnumContractTypeNullableFilter<"Medewerker"> | $Enums.ContractType | null
+  contractUren?: Prisma.DecimalNullableFilter<"Medewerker"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.DateTimeNullableFilter<"Medewerker"> | Date | string | null
+  datumUitDienst?: Prisma.DateTimeNullableFilter<"Medewerker"> | Date | string | null
+  aangemaaktOp?: Prisma.DateTimeFilter<"Medewerker"> | Date | string
+  gewijzigdOp?: Prisma.DateTimeFilter<"Medewerker"> | Date | string
+}
+
+export type MedewerkerCreateManyStatusInput = {
+  id?: string
+  personeelsnummer?: string | null
+  aanhef: $Enums.Aanhef
+  voornaam: string
+  tussenvoegsel?: string | null
+  achternaam: string
+  roepnaam?: string | null
+  geboortedatum: Date | string
+  email: string
+  telefoon: string
+  wachtwoordHash: string
+  aanmeldingOp?: Date | string
+  geactiveerdOp?: Date | string | null
+  geactiveerdDoor?: string | null
+  actief?: boolean
+  contractType?: $Enums.ContractType | null
+  contractUren?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Date | string | null
+  datumUitDienst?: Date | string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+}
+
+export type MedewerkerUpdateWithoutStatusInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  personeelsnummer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aanhef?: Prisma.EnumAanhefFieldUpdateOperationsInput | $Enums.Aanhef
+  voornaam?: Prisma.StringFieldUpdateOperationsInput | string
+  tussenvoegsel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  achternaam?: Prisma.StringFieldUpdateOperationsInput | string
+  roepnaam?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  geboortedatum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  telefoon?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  aanmeldingOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  geactiveerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geactiveerdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  contractType?: Prisma.NullableEnumContractTypeFieldUpdateOperationsInput | $Enums.ContractType | null
+  contractUren?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  datumUitDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  vestigingen?: Prisma.MedewerkerVestigingUpdateManyWithoutMedewerkerNestedInput
+  rollen?: Prisma.MedewerkerRolUpdateManyWithoutMedewerkerNestedInput
+  tags?: Prisma.MedewerkerTagUpdateManyWithoutMedewerkerNestedInput
+  diensten?: Prisma.DienstBezettingUpdateManyWithoutMedewerkerNestedInput
+}
+
+export type MedewerkerUncheckedUpdateWithoutStatusInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  personeelsnummer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aanhef?: Prisma.EnumAanhefFieldUpdateOperationsInput | $Enums.Aanhef
+  voornaam?: Prisma.StringFieldUpdateOperationsInput | string
+  tussenvoegsel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  achternaam?: Prisma.StringFieldUpdateOperationsInput | string
+  roepnaam?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  geboortedatum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  telefoon?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  aanmeldingOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  geactiveerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geactiveerdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  contractType?: Prisma.NullableEnumContractTypeFieldUpdateOperationsInput | $Enums.ContractType | null
+  contractUren?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  datumUitDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  vestigingen?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutMedewerkerNestedInput
+  rollen?: Prisma.MedewerkerRolUncheckedUpdateManyWithoutMedewerkerNestedInput
+  tags?: Prisma.MedewerkerTagUncheckedUpdateManyWithoutMedewerkerNestedInput
+  diensten?: Prisma.DienstBezettingUncheckedUpdateManyWithoutMedewerkerNestedInput
+}
+
+export type MedewerkerUncheckedUpdateManyWithoutStatusInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  personeelsnummer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aanhef?: Prisma.EnumAanhefFieldUpdateOperationsInput | $Enums.Aanhef
+  voornaam?: Prisma.StringFieldUpdateOperationsInput | string
+  tussenvoegsel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  achternaam?: Prisma.StringFieldUpdateOperationsInput | string
+  roepnaam?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  geboortedatum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  telefoon?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  aanmeldingOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  geactiveerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geactiveerdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  contractType?: Prisma.NullableEnumContractTypeFieldUpdateOperationsInput | $Enums.ContractType | null
+  contractUren?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  datumUitDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -1134,19 +1676,27 @@ export type MedewerkerCountOutputTypeCountDienstenArgs<ExtArgs extends runtime.T
 export type MedewerkerSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   personeelsnummer?: boolean
+  aanhef?: boolean
   voornaam?: boolean
   tussenvoegsel?: boolean
   achternaam?: boolean
   roepnaam?: boolean
+  geboortedatum?: boolean
   email?: boolean
   telefoon?: boolean
   wachtwoordHash?: boolean
-  geboortedatum?: boolean
+  statusId?: boolean
+  aanmeldingOp?: boolean
+  geactiveerdOp?: boolean
+  geactiveerdDoor?: boolean
   actief?: boolean
   contractType?: boolean
   contractUren?: boolean
+  datumInDienst?: boolean
+  datumUitDienst?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
+  status?: boolean | Prisma.StatusDefaultArgs<ExtArgs>
   vestigingen?: boolean | Prisma.Medewerker$vestigingenArgs<ExtArgs>
   rollen?: boolean | Prisma.Medewerker$rollenArgs<ExtArgs>
   tags?: boolean | Prisma.Medewerker$tagsArgs<ExtArgs>
@@ -1157,71 +1707,105 @@ export type MedewerkerSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
 export type MedewerkerSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   personeelsnummer?: boolean
+  aanhef?: boolean
   voornaam?: boolean
   tussenvoegsel?: boolean
   achternaam?: boolean
   roepnaam?: boolean
+  geboortedatum?: boolean
   email?: boolean
   telefoon?: boolean
   wachtwoordHash?: boolean
-  geboortedatum?: boolean
+  statusId?: boolean
+  aanmeldingOp?: boolean
+  geactiveerdOp?: boolean
+  geactiveerdDoor?: boolean
   actief?: boolean
   contractType?: boolean
   contractUren?: boolean
+  datumInDienst?: boolean
+  datumUitDienst?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
+  status?: boolean | Prisma.StatusDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["medewerker"]>
 
 export type MedewerkerSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   personeelsnummer?: boolean
+  aanhef?: boolean
   voornaam?: boolean
   tussenvoegsel?: boolean
   achternaam?: boolean
   roepnaam?: boolean
+  geboortedatum?: boolean
   email?: boolean
   telefoon?: boolean
   wachtwoordHash?: boolean
-  geboortedatum?: boolean
+  statusId?: boolean
+  aanmeldingOp?: boolean
+  geactiveerdOp?: boolean
+  geactiveerdDoor?: boolean
   actief?: boolean
   contractType?: boolean
   contractUren?: boolean
+  datumInDienst?: boolean
+  datumUitDienst?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
+  status?: boolean | Prisma.StatusDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["medewerker"]>
 
 export type MedewerkerSelectScalar = {
   id?: boolean
   personeelsnummer?: boolean
+  aanhef?: boolean
   voornaam?: boolean
   tussenvoegsel?: boolean
   achternaam?: boolean
   roepnaam?: boolean
+  geboortedatum?: boolean
   email?: boolean
   telefoon?: boolean
   wachtwoordHash?: boolean
-  geboortedatum?: boolean
+  statusId?: boolean
+  aanmeldingOp?: boolean
+  geactiveerdOp?: boolean
+  geactiveerdDoor?: boolean
   actief?: boolean
   contractType?: boolean
   contractUren?: boolean
+  datumInDienst?: boolean
+  datumUitDienst?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
 }
 
-export type MedewerkerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "personeelsnummer" | "voornaam" | "tussenvoegsel" | "achternaam" | "roepnaam" | "email" | "telefoon" | "wachtwoordHash" | "geboortedatum" | "actief" | "contractType" | "contractUren" | "aangemaaktOp" | "gewijzigdOp", ExtArgs["result"]["medewerker"]>
+export type MedewerkerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "personeelsnummer" | "aanhef" | "voornaam" | "tussenvoegsel" | "achternaam" | "roepnaam" | "geboortedatum" | "email" | "telefoon" | "wachtwoordHash" | "statusId" | "aanmeldingOp" | "geactiveerdOp" | "geactiveerdDoor" | "actief" | "contractType" | "contractUren" | "datumInDienst" | "datumUitDienst" | "aangemaaktOp" | "gewijzigdOp", ExtArgs["result"]["medewerker"]>
 export type MedewerkerInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  status?: boolean | Prisma.StatusDefaultArgs<ExtArgs>
   vestigingen?: boolean | Prisma.Medewerker$vestigingenArgs<ExtArgs>
   rollen?: boolean | Prisma.Medewerker$rollenArgs<ExtArgs>
   tags?: boolean | Prisma.Medewerker$tagsArgs<ExtArgs>
   diensten?: boolean | Prisma.Medewerker$dienstenArgs<ExtArgs>
   _count?: boolean | Prisma.MedewerkerCountOutputTypeDefaultArgs<ExtArgs>
 }
-export type MedewerkerIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
-export type MedewerkerIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type MedewerkerIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  status?: boolean | Prisma.StatusDefaultArgs<ExtArgs>
+}
+export type MedewerkerIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  status?: boolean | Prisma.StatusDefaultArgs<ExtArgs>
+}
 
 export type $MedewerkerPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Medewerker"
   objects: {
+    status: Prisma.$StatusPayload<ExtArgs>
+    /**
+     * -----------------------------------------------------
+     * Relaties
+     * -----------------------------------------------------
+     */
     vestigingen: Prisma.$MedewerkerVestigingPayload<ExtArgs>[]
     rollen: Prisma.$MedewerkerRolPayload<ExtArgs>[]
     tags: Prisma.$MedewerkerTagPayload<ExtArgs>[]
@@ -1229,18 +1813,50 @@ export type $MedewerkerPayload<ExtArgs extends runtime.Types.Extensions.Internal
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    /**
+     * -----------------------------------------------------
+     * Persoon
+     * -----------------------------------------------------
+     */
     personeelsnummer: string | null
+    aanhef: $Enums.Aanhef
     voornaam: string
     tussenvoegsel: string | null
     achternaam: string
     roepnaam: string | null
-    email: string | null
-    telefoon: string | null
-    wachtwoordHash: string | null
-    geboortedatum: Date | null
+    geboortedatum: Date
+    /**
+     * -----------------------------------------------------
+     * Contact
+     * -----------------------------------------------------
+     */
+    email: string
+    telefoon: string
+    /**
+     * -----------------------------------------------------
+     * Account
+     * -----------------------------------------------------
+     */
+    wachtwoordHash: string
+    statusId: string
+    aanmeldingOp: Date
+    geactiveerdOp: Date | null
+    geactiveerdDoor: string | null
     actief: boolean
-    contractType: string | null
+    /**
+     * -----------------------------------------------------
+     * Dienstverband
+     * -----------------------------------------------------
+     */
+    contractType: $Enums.ContractType | null
     contractUren: runtime.Decimal | null
+    datumInDienst: Date | null
+    datumUitDienst: Date | null
+    /**
+     * -----------------------------------------------------
+     * Audit
+     * -----------------------------------------------------
+     */
     aangemaaktOp: Date
     gewijzigdOp: Date
   }, ExtArgs["result"]["medewerker"]>
@@ -1637,6 +2253,7 @@ readonly fields: MedewerkerFieldRefs;
  */
 export interface Prisma__MedewerkerClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  status<T extends Prisma.StatusDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.StatusDefaultArgs<ExtArgs>>): Prisma.Prisma__StatusClient<runtime.Types.Result.GetResult<Prisma.$StatusPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   vestigingen<T extends Prisma.Medewerker$vestigingenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Medewerker$vestigingenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MedewerkerVestigingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   rollen<T extends Prisma.Medewerker$rollenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Medewerker$rollenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MedewerkerRolPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   tags<T extends Prisma.Medewerker$tagsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Medewerker$tagsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MedewerkerTagPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -1672,17 +2289,24 @@ export interface Prisma__MedewerkerClient<T, Null = never, ExtArgs extends runti
 export interface MedewerkerFieldRefs {
   readonly id: Prisma.FieldRef<"Medewerker", 'String'>
   readonly personeelsnummer: Prisma.FieldRef<"Medewerker", 'String'>
+  readonly aanhef: Prisma.FieldRef<"Medewerker", 'Aanhef'>
   readonly voornaam: Prisma.FieldRef<"Medewerker", 'String'>
   readonly tussenvoegsel: Prisma.FieldRef<"Medewerker", 'String'>
   readonly achternaam: Prisma.FieldRef<"Medewerker", 'String'>
   readonly roepnaam: Prisma.FieldRef<"Medewerker", 'String'>
+  readonly geboortedatum: Prisma.FieldRef<"Medewerker", 'DateTime'>
   readonly email: Prisma.FieldRef<"Medewerker", 'String'>
   readonly telefoon: Prisma.FieldRef<"Medewerker", 'String'>
   readonly wachtwoordHash: Prisma.FieldRef<"Medewerker", 'String'>
-  readonly geboortedatum: Prisma.FieldRef<"Medewerker", 'DateTime'>
+  readonly statusId: Prisma.FieldRef<"Medewerker", 'String'>
+  readonly aanmeldingOp: Prisma.FieldRef<"Medewerker", 'DateTime'>
+  readonly geactiveerdOp: Prisma.FieldRef<"Medewerker", 'DateTime'>
+  readonly geactiveerdDoor: Prisma.FieldRef<"Medewerker", 'String'>
   readonly actief: Prisma.FieldRef<"Medewerker", 'Boolean'>
-  readonly contractType: Prisma.FieldRef<"Medewerker", 'String'>
+  readonly contractType: Prisma.FieldRef<"Medewerker", 'ContractType'>
   readonly contractUren: Prisma.FieldRef<"Medewerker", 'Decimal'>
+  readonly datumInDienst: Prisma.FieldRef<"Medewerker", 'DateTime'>
+  readonly datumUitDienst: Prisma.FieldRef<"Medewerker", 'DateTime'>
   readonly aangemaaktOp: Prisma.FieldRef<"Medewerker", 'DateTime'>
   readonly gewijzigdOp: Prisma.FieldRef<"Medewerker", 'DateTime'>
 }
@@ -1939,6 +2563,10 @@ export type MedewerkerCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Exte
    */
   data: Prisma.MedewerkerCreateManyInput | Prisma.MedewerkerCreateManyInput[]
   skipDuplicates?: boolean
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MedewerkerIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -2009,6 +2637,10 @@ export type MedewerkerUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Exte
    * Limit how many Medewerkers to update.
    */
   limit?: number
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MedewerkerIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**

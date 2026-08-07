@@ -1,61 +1,115 @@
-import bcrypt from "bcryptjs";
+import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/prisma";
 import { maakToken } from "@/lib/auth";
 
-export async function POST(req: NextRequest) {
-  const { email, wachtwoord } = await req.json();
+export async function POST(request: Request) {
+  try {
+    const { email, wachtwoord } = await request.json();
 
-  const gebruiker = await prisma.systeemGebruiker.findUnique({
-    where: {
-      email,
-    },
-    include: {
-      rollen: {
-        include: {
-          rol: true,
+    if (!email || !wachtwoord) {
+      return NextResponse.json(
+        {
+          message: "Vul e-mailadres en wachtwoord in.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    const gebruiker = await prisma.systeemGebruiker.findUnique({
+      where: {
+        email: email.toLowerCase(),
+      },
+      include: {
+        rollen: {
+          include: {
+            rol: true,
+          },
         },
       },
-    },
-  });
+    });
 
-  if (!gebruiker) {
+    if (!gebruiker) {
+      return NextResponse.json(
+        {
+          message: "Ongeldige inloggegevens.",
+        },
+        {
+          status: 401,
+        },
+      );
+    }
+
+    if (!gebruiker.actief) {
+      return NextResponse.json(
+        {
+          message: "Dit account is gedeactiveerd.",
+        },
+        {
+          status: 403,
+        },
+      );
+    }
+
+    const geldig = await bcrypt.compare(
+      wachtwoord,
+      gebruiker.wachtwoordHash,
+    );
+
+    if (!geldig) {
+      return NextResponse.json(
+        {
+          message: "Ongeldige inloggegevens.",
+        },
+        {
+          status: 401,
+        },
+      );
+    }
+
+    const token = await maakToken({
+      sub: gebruiker.id,
+      naam: gebruiker.naam,
+      email: gebruiker.email,
+      rollen: gebruiker.rollen.map((r) => r.rol.naam),
+    });
+
+    (await cookies()).set({
+      name: "token",
+      value: token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 12,
+    });
+
+    await prisma.systeemGebruiker.update({
+      where: {
+        id: gebruiker.id,
+      },
+      data: {
+        laatsteLoginOp: new Date(),
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+    });
+  } catch (error) {
+    console.error(error);
+
     return NextResponse.json(
-      { error: "Ongeldige gegevens" },
-      { status: 401 }
+      {
+        message: "Er is een interne fout opgetreden.",
+      },
+      {
+        status: 500,
+      },
     );
   }
-
-  const geldig = await bcrypt.compare(
-    wachtwoord,
-    gebruiker.wachtwoordHash
-  );
-
-  if (!geldig) {
-    return NextResponse.json(
-      { error: "Ongeldige gegevens" },
-      { status: 401 }
-    );
-  }
-
-  const token = await maakToken({
-    id: gebruiker.id,
-    naam: gebruiker.naam,
-    email: gebruiker.email,
-    rollen: gebruiker.rollen.map((r) => r.rol.naam),
-  });
-
-  (await cookies()).set("session", token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: false,
-    path: "/",
-    maxAge: 60 * 60 * 12,
-  });
-
-  return NextResponse.json({
-    success: true,
-  });
 }
