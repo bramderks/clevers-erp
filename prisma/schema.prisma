@@ -1,13 +1,608 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  output   = "../../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
 }
+
+/// ======================================================
+/// PLATFORM
+/// ======================================================
+
+model Vestiging {
+  id String @id @default(cuid())
+
+  code String @unique
+  naam String @unique
+
+  actief Boolean @default(true)
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  medewerkers MedewerkerVestiging[]
+
+  weken Week[]
+  bestellingen Bestelling[]
+  voorraadTellingen VoorraadTelling[]
+  voorraadMutaties VoorraadMutatie[]
+  vestigingProducten VestigingProduct[]
+
+  aangemaaktDoor String?
+  gewijzigdDoor String?
+
+  @@index([actief])
+}
+
+model Rol {
+  id String @id @default(cuid())
+
+  naam String @unique
+
+  omschrijving String?
+
+  medewerkerRollen MedewerkerRol[]
+
+  systeemGebruikerRollen SysteemGebruikerRol[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+}
+
+model SysteemGebruiker {
+  id String @id @default(cuid())
+
+  naam String
+
+  email String @unique
+
+  wachtwoordHash String
+
+  actief Boolean @default(true)
+
+  laatsteLoginOp DateTime?
+
+  rollen SysteemGebruikerRol[]
+
+  auditLogs AuditLog[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([actief])
+}
+
+model SysteemGebruikerRol {
+  id String @id @default(cuid())
+
+  systeemGebruikerId String
+  rolId String
+
+  systeemGebruiker SysteemGebruiker @relation(fields: [systeemGebruikerId], references: [id], onDelete: Cascade)
+
+  rol Rol @relation(fields: [rolId], references: [id], onDelete: Cascade)
+
+  @@unique([systeemGebruikerId, rolId])
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+
+  systeemGebruikerId String?
+
+  systeemGebruiker SysteemGebruiker? @relation(fields: [systeemGebruikerId], references: [id], onDelete: SetNull)
+
+  module String
+
+  actie String
+
+  recordId String?
+
+  details Json?
+
+  aangemaaktOp DateTime @default(now())
+
+  @@index([module])
+
+  @@index([aangemaaktOp])
+}
+
+/// ======================================================
+/// MEDEWERKERS
+/// ======================================================
+
+model Medewerker {
+  id String @id @default(cuid())
+
+  personeelsnummer String? @unique
+
+  voornaam String
+  tussenvoegsel String?
+  achternaam String
+  roepnaam String?
+
+  email String? @unique
+  telefoon String?
+
+  wachtwoordHash String?
+
+  geboortedatum DateTime?
+
+  actief Boolean @default(true)
+
+  contractType String?
+  contractUren Decimal? @db.Decimal(5,2)
+
+  vestigingen MedewerkerVestiging[]
+  rollen MedewerkerRol[]
+  tags MedewerkerTag[]
+
+diensten DienstBezetting[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([actief])
+  @@index([achternaam])
+}
+
+model MedewerkerVestiging {
+  id String @id @default(cuid())
+
+  medewerkerId String
+  vestigingId String
+
+  hoofdvestiging Boolean @default(false)
+
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  @@unique([medewerkerId, vestigingId])
+
+  @@index([medewerkerId])
+  @@index([vestigingId])
+}
+
+model MedewerkerRol {
+  id String @id @default(cuid())
+
+  medewerkerId String
+  rolId String
+
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+  rol Rol @relation(fields: [rolId], references: [id], onDelete: Cascade)
+
+  @@unique([medewerkerId, rolId])
+
+  @@index([medewerkerId])
+  @@index([rolId])
+}
+
+/// ======================================================
+/// PERSONEELSPLANNING
+/// ======================================================
+
+model Tag {
+  id String @id @default(cuid())
+
+  naam String @unique
+
+  volgorde Int
+
+  actief Boolean @default(true)
+
+  medewerkers MedewerkerTag[]
+
+  diensten DienstTag[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([volgorde])
+  @@index([actief])
+}
+
+model MedewerkerTag {
+  id String @id @default(cuid())
+
+  medewerkerId String
+  tagId String
+
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+
+  tag Tag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([medewerkerId, tagId])
+
+  @@index([medewerkerId])
+  @@index([tagId])
+}
+
+model Week {
+  id String @id @default(cuid())
+
+  vestigingId String
+
+  jaar Int
+
+  weeknummer Int
+
+  status String @default("OPEN")
+
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  diensten Dienst[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@unique([vestigingId, jaar, weeknummer])
+}
+
+model Dienst {
+  id String @id @default(cuid())
+
+  weekId String
+
+  datum DateTime
+
+  begintijd DateTime
+
+  eindtijd DateTime
+
+  opmerkingen String?
+
+  week Week @relation(fields: [weekId], references: [id], onDelete: Cascade)
+
+  tags DienstTag[]
+
+  bezetting DienstBezetting[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([datum])
+}
+
+model DienstTag {
+  id String @id @default(cuid())
+
+  dienstId String
+
+  tagId String
+
+  aantal Int @default(1)
+
+  dienst Dienst @relation(fields: [dienstId], references: [id], onDelete: Cascade)
+
+  tag Tag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([dienstId, tagId])
+}
+
+model DienstBezetting {
+  id String @id @default(cuid())
+
+  dienstId String
+
+  medewerkerId String?
+
+  status String @default("OPEN")
+
+  dienst Dienst @relation(fields: [dienstId], references: [id], onDelete: Cascade)
+
+  medewerker Medewerker? @relation(fields: [medewerkerId], references: [id], onDelete: SetNull)
+
+  aangemaaktOp DateTime @default(now())
+
+  @@index([status])
+}
+
+/// ======================================================
+/// PRODUCTEN
+/// ======================================================
+
+model ProductType {
+  id String @id @default(cuid())
+
+  code String @unique
+
+  naam String
+
+  volgorde Int
+
+  actief Boolean @default(true)
+
+  producten Product[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([volgorde])
+  @@index([actief])
+}
+
+model Product {
+  id String @id @default(cuid())
+
+  code String @unique
+
+  naam String
+
+  productTypeId String
+
+  actief Boolean @default(true)
+
+  volgorde Int
+
+  leverancier String?
+
+  artikelnummer String?
+
+  bestelEenheid String?
+
+  voorraadEenheid String?
+
+  productType ProductType @relation(fields: [productTypeId], references: [id], onDelete: Restrict)
+
+  vestigingen VestigingProduct[]
+  bestelRegels BestelRegel[]
+
+voorraadTellingen VoorraadTellingRegel[]
+
+voorraadMutaties VoorraadMutatie[]
+
+leveringen LeveringRegel[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([naam])
+  @@index([actief])
+  @@index([volgorde])
+}
+
+model VestigingProduct {
+  id String @id @default(cuid())
+
+  vestigingId String
+  productId String
+
+  minimumVoorraad Decimal? @db.Decimal(10,2)
+
+  bufferVoorraad Decimal? @db.Decimal(10,2)
+
+  standaardBestelling Decimal? @db.Decimal(10,2)
+
+  actief Boolean @default(true)
+
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([vestigingId, productId])
+
+  @@index([vestigingId])
+  @@index([productId])
+}
+
+/// ======================================================
+/// BESTELLINGEN
+/// ======================================================
+
+model Bestelling {
+  id String @id @default(cuid())
+
+  vestigingId String
+
+  besteldatum DateTime
+
+  leverdatum DateTime?
+
+  statusId String
+
+  opmerkingen String?
+
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  status Status @relation(fields: [statusId], references: [id], onDelete: Restrict)
+
+  regels BestelRegel[]
+  leveringen Levering[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([vestigingId])
+  @@index([besteldatum])
+  @@index([statusId])
+}
+
+model BestelRegel {
+  id String @id @default(cuid())
+
+  bestellingId String
+  productId String
+
+  adviesAantal Decimal @db.Decimal(10,2)
+
+  besteldAantal Decimal @db.Decimal(10,2)
+
+  geleverdAantal Decimal? @db.Decimal(10,2)
+
+  bestelling Bestelling @relation(fields: [bestellingId], references: [id], onDelete: Cascade)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([bestellingId, productId])
+
+  @@index([bestellingId])
+  @@index([productId])
+}
+
+/// ======================================================
+/// VOORRAAD
+/// ======================================================
+
+model VoorraadTelling {
+  id String @id @default(cuid())
+
+  vestigingId String
+
+  teldatum DateTime
+
+  statusId String
+
+  opmerkingen String?
+
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  status Status @relation(fields: [statusId], references: [id], onDelete: Restrict)
+
+  regels VoorraadTellingRegel[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([vestigingId])
+  @@index([teldatum])
+}
+
+model VoorraadTellingRegel {
+  id String @id @default(cuid())
+
+  tellingId String
+
+  productId String
+
+  geteld Decimal @db.Decimal(10,2)
+
+  advies Decimal? @db.Decimal(10,2)
+
+  bestelling Decimal? @db.Decimal(10,2)
+
+  telling VoorraadTelling @relation(fields: [tellingId], references: [id], onDelete: Cascade)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([tellingId, productId])
+
+  @@index([tellingId])
+  @@index([productId])
+}
+
+model VoorraadMutatie {
+  id String @id @default(cuid())
+
+  vestigingId String
+
+  productId String
+
+  aantal Decimal @db.Decimal(10,2)
+
+  reden String
+
+  referentie String?
+
+  opmerkingen String?
+
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  aangemaaktOp DateTime @default(now())
+
+  @@index([vestigingId])
+  @@index([productId])
+}
+
+/// ======================================================
+/// LEVERINGEN
+/// ======================================================
+
+model Levering {
+  id String @id @default(cuid())
+
+  bestellingId String
+
+  leverdatum DateTime
+
+  pakbonNummer String?
+
+  opmerkingen String?
+
+  bestelling Bestelling @relation(fields: [bestellingId], references: [id], onDelete: Restrict)
+
+  regels LeveringRegel[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([leverdatum])
+}
+
+model LeveringRegel {
+  id String @id @default(cuid())
+
+  leveringId String
+  productId String
+
+  besteld Decimal @db.Decimal(10,2)
+
+  geleverd Decimal @db.Decimal(10,2)
+
+  levering Levering @relation(fields: [leveringId], references: [id], onDelete: Cascade)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([leveringId, productId])
+
+  @@index([leveringId])
+  @@index([productId])
+}
+
+/// ======================================================
+/// INSTELLINGEN
+/// ======================================================
+
+model Status {
+  id String @id @default(cuid())
+
+  code String @unique
+
+  naam String
+
+  module String
+
+  volgorde Int
+
+  actief Boolean @default(true)
+
+  bestellingen Bestelling[]
+
+  voorraadTellingen VoorraadTelling[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([module])
+  @@index([volgorde])
+}
+
+model Instelling {
+  id String @id @default(cuid())
+
+  sleutel String @unique
+
+  waarde String
+
+  omschrijving String?
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+}
+
+
+

@@ -1,0 +1,119 @@
+/// ======================================================
+/// PERSONEELSPLANNING
+/// ======================================================
+
+model Tag {
+  id String @id @default(cuid())
+
+  naam String @unique
+
+  volgorde Int
+
+  actief Boolean @default(true)
+
+  medewerkers MedewerkerTag[]
+
+  diensten DienstTag[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([volgorde])
+  @@index([actief])
+}
+
+model MedewerkerTag {
+  id String @id @default(cuid())
+
+  medewerkerId String
+  tagId String
+
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+
+  tag Tag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([medewerkerId, tagId])
+
+  @@index([medewerkerId])
+  @@index([tagId])
+}
+
+model Week {
+  id String @id @default(cuid())
+
+  vestigingId String
+
+  jaar Int
+
+  weeknummer Int
+
+  status String @default("OPEN")
+
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  diensten Dienst[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@unique([vestigingId, jaar, weeknummer])
+}
+
+model Dienst {
+  id String @id @default(cuid())
+
+  weekId String
+
+  datum DateTime
+
+  begintijd DateTime
+
+  eindtijd DateTime
+
+  opmerkingen String?
+
+  week Week @relation(fields: [weekId], references: [id], onDelete: Cascade)
+
+  tags DienstTag[]
+
+  bezetting DienstBezetting[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([datum])
+}
+
+model DienstTag {
+  id String @id @default(cuid())
+
+  dienstId String
+
+  tagId String
+
+  aantal Int @default(1)
+
+  dienst Dienst @relation(fields: [dienstId], references: [id], onDelete: Cascade)
+
+  tag Tag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([dienstId, tagId])
+}
+
+model DienstBezetting {
+  id String @id @default(cuid())
+
+  dienstId String
+
+  medewerkerId String?
+
+  status String @default("OPEN")
+
+  dienst Dienst @relation(fields: [dienstId], references: [id], onDelete: Cascade)
+
+  medewerker Medewerker? @relation(fields: [medewerkerId], references: [id], onDelete: SetNull)
+
+  aangemaaktOp DateTime @default(now())
+
+  @@index([status])
+}

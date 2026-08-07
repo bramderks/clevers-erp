@@ -1,0 +1,75 @@
+/// ======================================================
+/// VOORRAAD
+/// ======================================================
+
+model VoorraadTelling {
+  id String @id @default(cuid())
+
+  vestigingId String
+
+  teldatum DateTime
+
+  statusId String
+
+  opmerkingen String?
+
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  status Status @relation(fields: [statusId], references: [id], onDelete: Restrict)
+
+  regels VoorraadTellingRegel[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([vestigingId])
+  @@index([teldatum])
+}
+
+model VoorraadTellingRegel {
+  id String @id @default(cuid())
+
+  tellingId String
+
+  productId String
+
+  geteld Decimal @db.Decimal(10,2)
+
+  advies Decimal? @db.Decimal(10,2)
+
+  bestelling Decimal? @db.Decimal(10,2)
+
+  telling VoorraadTelling @relation(fields: [tellingId], references: [id], onDelete: Cascade)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([tellingId, productId])
+
+  @@index([tellingId])
+  @@index([productId])
+}
+
+model VoorraadMutatie {
+  id String @id @default(cuid())
+
+  vestigingId String
+
+  productId String
+
+  aantal Decimal @db.Decimal(10,2)
+
+  reden String
+
+  referentie String?
+
+  opmerkingen String?
+
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  aangemaaktOp DateTime @default(now())
+
+  @@index([vestigingId])
+  @@index([productId])
+}

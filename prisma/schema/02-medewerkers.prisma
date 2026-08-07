@@ -1,0 +1,70 @@
+/// ======================================================
+/// MEDEWERKERS
+/// ======================================================
+
+model Medewerker {
+  id String @id @default(cuid())
+
+  personeelsnummer String? @unique
+
+  voornaam String
+  tussenvoegsel String?
+  achternaam String
+  roepnaam String?
+
+  email String? @unique
+  telefoon String?
+
+  wachtwoordHash String?
+
+  geboortedatum DateTime?
+
+  actief Boolean @default(true)
+
+  contractType String?
+  contractUren Decimal? @db.Decimal(5,2)
+
+  vestigingen MedewerkerVestiging[]
+  rollen MedewerkerRol[]
+  tags MedewerkerTag[]
+
+diensten DienstBezetting[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([actief])
+  @@index([achternaam])
+}
+
+model MedewerkerVestiging {
+  id String @id @default(cuid())
+
+  medewerkerId String
+  vestigingId String
+
+  hoofdvestiging Boolean @default(false)
+
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  @@unique([medewerkerId, vestigingId])
+
+  @@index([medewerkerId])
+  @@index([vestigingId])
+}
+
+model MedewerkerRol {
+  id String @id @default(cuid())
+
+  medewerkerId String
+  rolId String
+
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+  rol Rol @relation(fields: [rolId], references: [id], onDelete: Cascade)
+
+  @@unique([medewerkerId, rolId])
+
+  @@index([medewerkerId])
+  @@index([rolId])
+}

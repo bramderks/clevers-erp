@@ -1,0 +1,87 @@
+/// ======================================================
+/// PRODUCTEN
+/// ======================================================
+
+model ProductType {
+  id String @id @default(cuid())
+
+  code String @unique
+
+  naam String
+
+  volgorde Int
+
+  actief Boolean @default(true)
+
+  producten Product[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([volgorde])
+  @@index([actief])
+}
+
+model Product {
+  id String @id @default(cuid())
+
+  code String @unique
+
+  naam String
+
+  productTypeId String
+
+  actief Boolean @default(true)
+
+  volgorde Int
+
+  leverancier String?
+
+  artikelnummer String?
+
+  bestelEenheid String?
+
+  voorraadEenheid String?
+
+  productType ProductType @relation(fields: [productTypeId], references: [id], onDelete: Restrict)
+
+  vestigingen VestigingProduct[]
+  bestelRegels BestelRegel[]
+
+voorraadTellingen VoorraadTellingRegel[]
+
+voorraadMutaties VoorraadMutatie[]
+
+leveringen LeveringRegel[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([naam])
+  @@index([actief])
+  @@index([volgorde])
+}
+
+model VestigingProduct {
+  id String @id @default(cuid())
+
+  vestigingId String
+  productId String
+
+  minimumVoorraad Decimal? @db.Decimal(10,2)
+
+  bufferVoorraad Decimal? @db.Decimal(10,2)
+
+  standaardBestelling Decimal? @db.Decimal(10,2)
+
+  actief Boolean @default(true)
+
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([vestigingId, productId])
+
+  @@index([vestigingId])
+  @@index([productId])
+}

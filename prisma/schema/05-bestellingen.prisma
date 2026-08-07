@@ -1,0 +1,53 @@
+/// ======================================================
+/// BESTELLINGEN
+/// ======================================================
+
+model Bestelling {
+  id String @id @default(cuid())
+
+  vestigingId String
+
+  besteldatum DateTime
+
+  leverdatum DateTime?
+
+  statusId String
+
+  opmerkingen String?
+
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  status Status @relation(fields: [statusId], references: [id], onDelete: Restrict)
+
+  regels BestelRegel[]
+  leveringen Levering[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([vestigingId])
+  @@index([besteldatum])
+  @@index([statusId])
+}
+
+model BestelRegel {
+  id String @id @default(cuid())
+
+  bestellingId String
+  productId String
+
+  adviesAantal Decimal @db.Decimal(10,2)
+
+  besteldAantal Decimal @db.Decimal(10,2)
+
+  geleverdAantal Decimal? @db.Decimal(10,2)
+
+  bestelling Bestelling @relation(fields: [bestellingId], references: [id], onDelete: Cascade)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([bestellingId, productId])
+
+  @@index([bestellingId])
+  @@index([productId])
+}

@@ -6,9 +6,16 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "tsx prisma/seed.ts",
+    "prisma:merge": "node prisma/merge-schema.mjs",
+"prisma:generate": "npm run prisma:merge && prisma generate",
+"prisma:push": "npm run prisma:merge && prisma db push",
+"prisma:validate": "npm run prisma:merge && prisma validate"
   },
   "dependencies": {
+    "@auth/core": "^0.41.3",
+    "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
@@ -16,6 +23,7 @@
     "jose": "^6.2.8",
     "lucide-react": "^1.28.0",
     "next": "16.3.0",
+    "next-auth": "^5.0.0-beta.32",
     "prisma": "^7.9.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -31,7 +39,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "tailwindcss": "^4",
-    "tsx": "^4.23.9",
+    "tsx": "^4.23.10",
     "typescript": "^5"
   }
 }

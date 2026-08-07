@@ -1,0 +1,40 @@
+/// ======================================================
+/// INSTELLINGEN
+/// ======================================================
+
+model Status {
+  id String @id @default(cuid())
+
+  code String @unique
+
+  naam String
+
+  module String
+
+  volgorde Int
+
+  actief Boolean @default(true)
+
+  bestellingen Bestelling[]
+
+  voorraadTellingen VoorraadTelling[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([module])
+  @@index([volgorde])
+}
+
+model Instelling {
+  id String @id @default(cuid())
+
+  sleutel String @unique
+
+  waarde String
+
+  omschrijving String?
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+}

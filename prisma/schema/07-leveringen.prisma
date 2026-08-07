@@ -1,0 +1,44 @@
+/// ======================================================
+/// LEVERINGEN
+/// ======================================================
+
+model Levering {
+  id String @id @default(cuid())
+
+  bestellingId String
+
+  leverdatum DateTime
+
+  pakbonNummer String?
+
+  opmerkingen String?
+
+  bestelling Bestelling @relation(fields: [bestellingId], references: [id], onDelete: Restrict)
+
+  regels LeveringRegel[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([leverdatum])
+}
+
+model LeveringRegel {
+  id String @id @default(cuid())
+
+  leveringId String
+  productId String
+
+  besteld Decimal @db.Decimal(10,2)
+
+  geleverd Decimal @db.Decimal(10,2)
+
+  levering Levering @relation(fields: [leveringId], references: [id], onDelete: Cascade)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([leveringId, productId])
+
+  @@index([leveringId])
+  @@index([productId])
+}

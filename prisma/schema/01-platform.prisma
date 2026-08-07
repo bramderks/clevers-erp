@@ -1,0 +1,101 @@
+/// ======================================================
+/// PLATFORM
+/// ======================================================
+
+model Vestiging {
+  id String @id @default(cuid())
+
+  code String @unique
+  naam String @unique
+
+  actief Boolean @default(true)
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  medewerkers MedewerkerVestiging[]
+
+  weken Week[]
+  bestellingen Bestelling[]
+  voorraadTellingen VoorraadTelling[]
+  voorraadMutaties VoorraadMutatie[]
+  vestigingProducten VestigingProduct[]
+
+  aangemaaktDoor String?
+  gewijzigdDoor String?
+
+  @@index([actief])
+}
+
+model Rol {
+  id String @id @default(cuid())
+
+  naam String @unique
+
+  omschrijving String?
+
+  medewerkerRollen MedewerkerRol[]
+
+  systeemGebruikerRollen SysteemGebruikerRol[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+}
+
+model SysteemGebruiker {
+  id String @id @default(cuid())
+
+  naam String
+
+  email String @unique
+
+  wachtwoordHash String
+
+  actief Boolean @default(true)
+
+  laatsteLoginOp DateTime?
+
+  rollen SysteemGebruikerRol[]
+
+  auditLogs AuditLog[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([actief])
+}
+
+model SysteemGebruikerRol {
+  id String @id @default(cuid())
+
+  systeemGebruikerId String
+  rolId String
+
+  systeemGebruiker SysteemGebruiker @relation(fields: [systeemGebruikerId], references: [id], onDelete: Cascade)
+
+  rol Rol @relation(fields: [rolId], references: [id], onDelete: Cascade)
+
+  @@unique([systeemGebruikerId, rolId])
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+
+  systeemGebruikerId String?
+
+  systeemGebruiker SysteemGebruiker? @relation(fields: [systeemGebruikerId], references: [id], onDelete: SetNull)
+
+  module String
+
+  actie String
+
+  recordId String?
+
+  details Json?
+
+  aangemaaktOp DateTime @default(now())
+
+  @@index([module])
+
+  @@index([aangemaaktOp])
+}
