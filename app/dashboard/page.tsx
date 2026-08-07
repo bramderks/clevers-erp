@@ -11,7 +11,7 @@ export default async function DashboardPage() {
     rollen,
   ] = await Promise.all([
     prisma.vestiging.count(),
-    prisma.gebruiker.count(),
+    prisma.systeemGebruiker.count(),
     prisma.rol.count(),
   ]);
 

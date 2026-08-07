@@ -26,9 +26,8 @@ model Medewerker {
 
   vestigingen MedewerkerVestiging[]
   rollen MedewerkerRol[]
-  tags MedewerkerTag[]
-
-diensten DienstBezetting[]
+tags      MedewerkerTag[]
+diensten  DienstBezetting[]
 
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt

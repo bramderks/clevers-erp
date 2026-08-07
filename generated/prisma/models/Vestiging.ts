@@ -31,6 +31,8 @@ export type VestigingMinAggregateOutputType = {
   actief: boolean | null
   aangemaaktOp: Date | null
   gewijzigdOp: Date | null
+  aangemaaktDoor: string | null
+  gewijzigdDoor: string | null
 }
 
 export type VestigingMaxAggregateOutputType = {
@@ -40,6 +42,8 @@ export type VestigingMaxAggregateOutputType = {
   actief: boolean | null
   aangemaaktOp: Date | null
   gewijzigdOp: Date | null
+  aangemaaktDoor: string | null
+  gewijzigdDoor: string | null
 }
 
 export type VestigingCountAggregateOutputType = {
@@ -49,6 +53,8 @@ export type VestigingCountAggregateOutputType = {
   actief: number
   aangemaaktOp: number
   gewijzigdOp: number
+  aangemaaktDoor: number
+  gewijzigdDoor: number
   _all: number
 }
 
@@ -60,6 +66,8 @@ export type VestigingMinAggregateInputType = {
   actief?: true
   aangemaaktOp?: true
   gewijzigdOp?: true
+  aangemaaktDoor?: true
+  gewijzigdDoor?: true
 }
 
 export type VestigingMaxAggregateInputType = {
@@ -69,6 +77,8 @@ export type VestigingMaxAggregateInputType = {
   actief?: true
   aangemaaktOp?: true
   gewijzigdOp?: true
+  aangemaaktDoor?: true
+  gewijzigdDoor?: true
 }
 
 export type VestigingCountAggregateInputType = {
@@ -78,6 +88,8 @@ export type VestigingCountAggregateInputType = {
   actief?: true
   aangemaaktOp?: true
   gewijzigdOp?: true
+  aangemaaktDoor?: true
+  gewijzigdDoor?: true
   _all?: true
 }
 
@@ -160,6 +172,8 @@ export type VestigingGroupByOutputType = {
   actief: boolean
   aangemaaktOp: Date
   gewijzigdOp: Date
+  aangemaaktDoor: string | null
+  gewijzigdDoor: string | null
   _count: VestigingCountAggregateOutputType | null
   _min: VestigingMinAggregateOutputType | null
   _max: VestigingMaxAggregateOutputType | null
@@ -190,7 +204,14 @@ export type VestigingWhereInput = {
   actief?: Prisma.BoolFilter<"Vestiging"> | boolean
   aangemaaktOp?: Prisma.DateTimeFilter<"Vestiging"> | Date | string
   gewijzigdOp?: Prisma.DateTimeFilter<"Vestiging"> | Date | string
-  gebruikers?: Prisma.GebruikerListRelationFilter
+  aangemaaktDoor?: Prisma.StringNullableFilter<"Vestiging"> | string | null
+  gewijzigdDoor?: Prisma.StringNullableFilter<"Vestiging"> | string | null
+  medewerkers?: Prisma.MedewerkerVestigingListRelationFilter
+  weken?: Prisma.WeekListRelationFilter
+  bestellingen?: Prisma.BestellingListRelationFilter
+  voorraadTellingen?: Prisma.VoorraadTellingListRelationFilter
+  voorraadMutaties?: Prisma.VoorraadMutatieListRelationFilter
+  vestigingProducten?: Prisma.VestigingProductListRelationFilter
 }
 
 export type VestigingOrderByWithRelationInput = {
@@ -200,7 +221,14 @@ export type VestigingOrderByWithRelationInput = {
   actief?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
-  gebruikers?: Prisma.GebruikerOrderByRelationAggregateInput
+  aangemaaktDoor?: Prisma.SortOrderInput | Prisma.SortOrder
+  gewijzigdDoor?: Prisma.SortOrderInput | Prisma.SortOrder
+  medewerkers?: Prisma.MedewerkerVestigingOrderByRelationAggregateInput
+  weken?: Prisma.WeekOrderByRelationAggregateInput
+  bestellingen?: Prisma.BestellingOrderByRelationAggregateInput
+  voorraadTellingen?: Prisma.VoorraadTellingOrderByRelationAggregateInput
+  voorraadMutaties?: Prisma.VoorraadMutatieOrderByRelationAggregateInput
+  vestigingProducten?: Prisma.VestigingProductOrderByRelationAggregateInput
 }
 
 export type VestigingWhereUniqueInput = Prisma.AtLeast<{
@@ -213,7 +241,14 @@ export type VestigingWhereUniqueInput = Prisma.AtLeast<{
   actief?: Prisma.BoolFilter<"Vestiging"> | boolean
   aangemaaktOp?: Prisma.DateTimeFilter<"Vestiging"> | Date | string
   gewijzigdOp?: Prisma.DateTimeFilter<"Vestiging"> | Date | string
-  gebruikers?: Prisma.GebruikerListRelationFilter
+  aangemaaktDoor?: Prisma.StringNullableFilter<"Vestiging"> | string | null
+  gewijzigdDoor?: Prisma.StringNullableFilter<"Vestiging"> | string | null
+  medewerkers?: Prisma.MedewerkerVestigingListRelationFilter
+  weken?: Prisma.WeekListRelationFilter
+  bestellingen?: Prisma.BestellingListRelationFilter
+  voorraadTellingen?: Prisma.VoorraadTellingListRelationFilter
+  voorraadMutaties?: Prisma.VoorraadMutatieListRelationFilter
+  vestigingProducten?: Prisma.VestigingProductListRelationFilter
 }, "id" | "code" | "naam">
 
 export type VestigingOrderByWithAggregationInput = {
@@ -223,6 +258,8 @@ export type VestigingOrderByWithAggregationInput = {
   actief?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
+  aangemaaktDoor?: Prisma.SortOrderInput | Prisma.SortOrder
+  gewijzigdDoor?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.VestigingCountOrderByAggregateInput
   _max?: Prisma.VestigingMaxOrderByAggregateInput
   _min?: Prisma.VestigingMinOrderByAggregateInput
@@ -238,6 +275,8 @@ export type VestigingScalarWhereWithAggregatesInput = {
   actief?: Prisma.BoolWithAggregatesFilter<"Vestiging"> | boolean
   aangemaaktOp?: Prisma.DateTimeWithAggregatesFilter<"Vestiging"> | Date | string
   gewijzigdOp?: Prisma.DateTimeWithAggregatesFilter<"Vestiging"> | Date | string
+  aangemaaktDoor?: Prisma.StringNullableWithAggregatesFilter<"Vestiging"> | string | null
+  gewijzigdDoor?: Prisma.StringNullableWithAggregatesFilter<"Vestiging"> | string | null
 }
 
 export type VestigingCreateInput = {
@@ -247,7 +286,14 @@ export type VestigingCreateInput = {
   actief?: boolean
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
-  gebruikers?: Prisma.GebruikerCreateNestedManyWithoutVestigingInput
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
+  medewerkers?: Prisma.MedewerkerVestigingCreateNestedManyWithoutVestigingInput
+  weken?: Prisma.WeekCreateNestedManyWithoutVestigingInput
+  bestellingen?: Prisma.BestellingCreateNestedManyWithoutVestigingInput
+  voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutVestigingInput
+  voorraadMutaties?: Prisma.VoorraadMutatieCreateNestedManyWithoutVestigingInput
+  vestigingProducten?: Prisma.VestigingProductCreateNestedManyWithoutVestigingInput
 }
 
 export type VestigingUncheckedCreateInput = {
@@ -257,7 +303,14 @@ export type VestigingUncheckedCreateInput = {
   actief?: boolean
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
-  gebruikers?: Prisma.GebruikerUncheckedCreateNestedManyWithoutVestigingInput
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
+  medewerkers?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutVestigingInput
+  weken?: Prisma.WeekUncheckedCreateNestedManyWithoutVestigingInput
+  bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutVestigingInput
+  voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutVestigingInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUncheckedCreateNestedManyWithoutVestigingInput
+  vestigingProducten?: Prisma.VestigingProductUncheckedCreateNestedManyWithoutVestigingInput
 }
 
 export type VestigingUpdateInput = {
@@ -267,7 +320,14 @@ export type VestigingUpdateInput = {
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  gebruikers?: Prisma.GebruikerUpdateManyWithoutVestigingNestedInput
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  medewerkers?: Prisma.MedewerkerVestigingUpdateManyWithoutVestigingNestedInput
+  weken?: Prisma.WeekUpdateManyWithoutVestigingNestedInput
+  bestellingen?: Prisma.BestellingUpdateManyWithoutVestigingNestedInput
+  voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutVestigingNestedInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUpdateManyWithoutVestigingNestedInput
+  vestigingProducten?: Prisma.VestigingProductUpdateManyWithoutVestigingNestedInput
 }
 
 export type VestigingUncheckedUpdateInput = {
@@ -277,7 +337,14 @@ export type VestigingUncheckedUpdateInput = {
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  gebruikers?: Prisma.GebruikerUncheckedUpdateManyWithoutVestigingNestedInput
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  medewerkers?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
+  weken?: Prisma.WeekUncheckedUpdateManyWithoutVestigingNestedInput
+  bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutVestigingNestedInput
+  voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutVestigingNestedInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUncheckedUpdateManyWithoutVestigingNestedInput
+  vestigingProducten?: Prisma.VestigingProductUncheckedUpdateManyWithoutVestigingNestedInput
 }
 
 export type VestigingCreateManyInput = {
@@ -287,6 +354,8 @@ export type VestigingCreateManyInput = {
   actief?: boolean
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
 }
 
 export type VestigingUpdateManyMutationInput = {
@@ -296,6 +365,8 @@ export type VestigingUpdateManyMutationInput = {
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type VestigingUncheckedUpdateManyInput = {
@@ -305,6 +376,8 @@ export type VestigingUncheckedUpdateManyInput = {
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type VestigingCountOrderByAggregateInput = {
@@ -314,6 +387,8 @@ export type VestigingCountOrderByAggregateInput = {
   actief?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
+  aangemaaktDoor?: Prisma.SortOrder
+  gewijzigdDoor?: Prisma.SortOrder
 }
 
 export type VestigingMaxOrderByAggregateInput = {
@@ -323,6 +398,8 @@ export type VestigingMaxOrderByAggregateInput = {
   actief?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
+  aangemaaktDoor?: Prisma.SortOrder
+  gewijzigdDoor?: Prisma.SortOrder
 }
 
 export type VestigingMinOrderByAggregateInput = {
@@ -332,11 +409,13 @@ export type VestigingMinOrderByAggregateInput = {
   actief?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
+  aangemaaktDoor?: Prisma.SortOrder
+  gewijzigdDoor?: Prisma.SortOrder
 }
 
-export type VestigingNullableScalarRelationFilter = {
-  is?: Prisma.VestigingWhereInput | null
-  isNot?: Prisma.VestigingWhereInput | null
+export type VestigingScalarRelationFilter = {
+  is?: Prisma.VestigingWhereInput
+  isNot?: Prisma.VestigingWhereInput
 }
 
 export type StringFieldUpdateOperationsInput = {
@@ -351,72 +430,572 @@ export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
 }
 
-export type VestigingCreateNestedOneWithoutGebruikersInput = {
-  create?: Prisma.XOR<Prisma.VestigingCreateWithoutGebruikersInput, Prisma.VestigingUncheckedCreateWithoutGebruikersInput>
-  connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutGebruikersInput
+export type NullableStringFieldUpdateOperationsInput = {
+  set?: string | null
+}
+
+export type VestigingCreateNestedOneWithoutMedewerkersInput = {
+  create?: Prisma.XOR<Prisma.VestigingCreateWithoutMedewerkersInput, Prisma.VestigingUncheckedCreateWithoutMedewerkersInput>
+  connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutMedewerkersInput
   connect?: Prisma.VestigingWhereUniqueInput
 }
 
-export type VestigingUpdateOneWithoutGebruikersNestedInput = {
-  create?: Prisma.XOR<Prisma.VestigingCreateWithoutGebruikersInput, Prisma.VestigingUncheckedCreateWithoutGebruikersInput>
-  connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutGebruikersInput
-  upsert?: Prisma.VestigingUpsertWithoutGebruikersInput
-  disconnect?: Prisma.VestigingWhereInput | boolean
-  delete?: Prisma.VestigingWhereInput | boolean
+export type VestigingUpdateOneRequiredWithoutMedewerkersNestedInput = {
+  create?: Prisma.XOR<Prisma.VestigingCreateWithoutMedewerkersInput, Prisma.VestigingUncheckedCreateWithoutMedewerkersInput>
+  connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutMedewerkersInput
+  upsert?: Prisma.VestigingUpsertWithoutMedewerkersInput
   connect?: Prisma.VestigingWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.VestigingUpdateToOneWithWhereWithoutGebruikersInput, Prisma.VestigingUpdateWithoutGebruikersInput>, Prisma.VestigingUncheckedUpdateWithoutGebruikersInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.VestigingUpdateToOneWithWhereWithoutMedewerkersInput, Prisma.VestigingUpdateWithoutMedewerkersInput>, Prisma.VestigingUncheckedUpdateWithoutMedewerkersInput>
 }
 
-export type VestigingCreateWithoutGebruikersInput = {
+export type VestigingCreateNestedOneWithoutWekenInput = {
+  create?: Prisma.XOR<Prisma.VestigingCreateWithoutWekenInput, Prisma.VestigingUncheckedCreateWithoutWekenInput>
+  connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutWekenInput
+  connect?: Prisma.VestigingWhereUniqueInput
+}
+
+export type VestigingUpdateOneRequiredWithoutWekenNestedInput = {
+  create?: Prisma.XOR<Prisma.VestigingCreateWithoutWekenInput, Prisma.VestigingUncheckedCreateWithoutWekenInput>
+  connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutWekenInput
+  upsert?: Prisma.VestigingUpsertWithoutWekenInput
+  connect?: Prisma.VestigingWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.VestigingUpdateToOneWithWhereWithoutWekenInput, Prisma.VestigingUpdateWithoutWekenInput>, Prisma.VestigingUncheckedUpdateWithoutWekenInput>
+}
+
+export type VestigingCreateNestedOneWithoutVestigingProductenInput = {
+  create?: Prisma.XOR<Prisma.VestigingCreateWithoutVestigingProductenInput, Prisma.VestigingUncheckedCreateWithoutVestigingProductenInput>
+  connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutVestigingProductenInput
+  connect?: Prisma.VestigingWhereUniqueInput
+}
+
+export type VestigingUpdateOneRequiredWithoutVestigingProductenNestedInput = {
+  create?: Prisma.XOR<Prisma.VestigingCreateWithoutVestigingProductenInput, Prisma.VestigingUncheckedCreateWithoutVestigingProductenInput>
+  connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutVestigingProductenInput
+  upsert?: Prisma.VestigingUpsertWithoutVestigingProductenInput
+  connect?: Prisma.VestigingWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.VestigingUpdateToOneWithWhereWithoutVestigingProductenInput, Prisma.VestigingUpdateWithoutVestigingProductenInput>, Prisma.VestigingUncheckedUpdateWithoutVestigingProductenInput>
+}
+
+export type VestigingCreateNestedOneWithoutBestellingenInput = {
+  create?: Prisma.XOR<Prisma.VestigingCreateWithoutBestellingenInput, Prisma.VestigingUncheckedCreateWithoutBestellingenInput>
+  connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutBestellingenInput
+  connect?: Prisma.VestigingWhereUniqueInput
+}
+
+export type VestigingUpdateOneRequiredWithoutBestellingenNestedInput = {
+  create?: Prisma.XOR<Prisma.VestigingCreateWithoutBestellingenInput, Prisma.VestigingUncheckedCreateWithoutBestellingenInput>
+  connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutBestellingenInput
+  upsert?: Prisma.VestigingUpsertWithoutBestellingenInput
+  connect?: Prisma.VestigingWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.VestigingUpdateToOneWithWhereWithoutBestellingenInput, Prisma.VestigingUpdateWithoutBestellingenInput>, Prisma.VestigingUncheckedUpdateWithoutBestellingenInput>
+}
+
+export type VestigingCreateNestedOneWithoutVoorraadTellingenInput = {
+  create?: Prisma.XOR<Prisma.VestigingCreateWithoutVoorraadTellingenInput, Prisma.VestigingUncheckedCreateWithoutVoorraadTellingenInput>
+  connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutVoorraadTellingenInput
+  connect?: Prisma.VestigingWhereUniqueInput
+}
+
+export type VestigingUpdateOneRequiredWithoutVoorraadTellingenNestedInput = {
+  create?: Prisma.XOR<Prisma.VestigingCreateWithoutVoorraadTellingenInput, Prisma.VestigingUncheckedCreateWithoutVoorraadTellingenInput>
+  connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutVoorraadTellingenInput
+  upsert?: Prisma.VestigingUpsertWithoutVoorraadTellingenInput
+  connect?: Prisma.VestigingWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.VestigingUpdateToOneWithWhereWithoutVoorraadTellingenInput, Prisma.VestigingUpdateWithoutVoorraadTellingenInput>, Prisma.VestigingUncheckedUpdateWithoutVoorraadTellingenInput>
+}
+
+export type VestigingCreateNestedOneWithoutVoorraadMutatiesInput = {
+  create?: Prisma.XOR<Prisma.VestigingCreateWithoutVoorraadMutatiesInput, Prisma.VestigingUncheckedCreateWithoutVoorraadMutatiesInput>
+  connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutVoorraadMutatiesInput
+  connect?: Prisma.VestigingWhereUniqueInput
+}
+
+export type VestigingUpdateOneRequiredWithoutVoorraadMutatiesNestedInput = {
+  create?: Prisma.XOR<Prisma.VestigingCreateWithoutVoorraadMutatiesInput, Prisma.VestigingUncheckedCreateWithoutVoorraadMutatiesInput>
+  connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutVoorraadMutatiesInput
+  upsert?: Prisma.VestigingUpsertWithoutVoorraadMutatiesInput
+  connect?: Prisma.VestigingWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.VestigingUpdateToOneWithWhereWithoutVoorraadMutatiesInput, Prisma.VestigingUpdateWithoutVoorraadMutatiesInput>, Prisma.VestigingUncheckedUpdateWithoutVoorraadMutatiesInput>
+}
+
+export type VestigingCreateWithoutMedewerkersInput = {
   id?: string
   code: string
   naam: string
   actief?: boolean
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
+  weken?: Prisma.WeekCreateNestedManyWithoutVestigingInput
+  bestellingen?: Prisma.BestellingCreateNestedManyWithoutVestigingInput
+  voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutVestigingInput
+  voorraadMutaties?: Prisma.VoorraadMutatieCreateNestedManyWithoutVestigingInput
+  vestigingProducten?: Prisma.VestigingProductCreateNestedManyWithoutVestigingInput
 }
 
-export type VestigingUncheckedCreateWithoutGebruikersInput = {
+export type VestigingUncheckedCreateWithoutMedewerkersInput = {
   id?: string
   code: string
   naam: string
   actief?: boolean
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
+  weken?: Prisma.WeekUncheckedCreateNestedManyWithoutVestigingInput
+  bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutVestigingInput
+  voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutVestigingInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUncheckedCreateNestedManyWithoutVestigingInput
+  vestigingProducten?: Prisma.VestigingProductUncheckedCreateNestedManyWithoutVestigingInput
 }
 
-export type VestigingCreateOrConnectWithoutGebruikersInput = {
+export type VestigingCreateOrConnectWithoutMedewerkersInput = {
   where: Prisma.VestigingWhereUniqueInput
-  create: Prisma.XOR<Prisma.VestigingCreateWithoutGebruikersInput, Prisma.VestigingUncheckedCreateWithoutGebruikersInput>
+  create: Prisma.XOR<Prisma.VestigingCreateWithoutMedewerkersInput, Prisma.VestigingUncheckedCreateWithoutMedewerkersInput>
 }
 
-export type VestigingUpsertWithoutGebruikersInput = {
-  update: Prisma.XOR<Prisma.VestigingUpdateWithoutGebruikersInput, Prisma.VestigingUncheckedUpdateWithoutGebruikersInput>
-  create: Prisma.XOR<Prisma.VestigingCreateWithoutGebruikersInput, Prisma.VestigingUncheckedCreateWithoutGebruikersInput>
+export type VestigingUpsertWithoutMedewerkersInput = {
+  update: Prisma.XOR<Prisma.VestigingUpdateWithoutMedewerkersInput, Prisma.VestigingUncheckedUpdateWithoutMedewerkersInput>
+  create: Prisma.XOR<Prisma.VestigingCreateWithoutMedewerkersInput, Prisma.VestigingUncheckedCreateWithoutMedewerkersInput>
   where?: Prisma.VestigingWhereInput
 }
 
-export type VestigingUpdateToOneWithWhereWithoutGebruikersInput = {
+export type VestigingUpdateToOneWithWhereWithoutMedewerkersInput = {
   where?: Prisma.VestigingWhereInput
-  data: Prisma.XOR<Prisma.VestigingUpdateWithoutGebruikersInput, Prisma.VestigingUncheckedUpdateWithoutGebruikersInput>
+  data: Prisma.XOR<Prisma.VestigingUpdateWithoutMedewerkersInput, Prisma.VestigingUncheckedUpdateWithoutMedewerkersInput>
 }
 
-export type VestigingUpdateWithoutGebruikersInput = {
+export type VestigingUpdateWithoutMedewerkersInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  weken?: Prisma.WeekUpdateManyWithoutVestigingNestedInput
+  bestellingen?: Prisma.BestellingUpdateManyWithoutVestigingNestedInput
+  voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutVestigingNestedInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUpdateManyWithoutVestigingNestedInput
+  vestigingProducten?: Prisma.VestigingProductUpdateManyWithoutVestigingNestedInput
 }
 
-export type VestigingUncheckedUpdateWithoutGebruikersInput = {
+export type VestigingUncheckedUpdateWithoutMedewerkersInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
   actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  weken?: Prisma.WeekUncheckedUpdateManyWithoutVestigingNestedInput
+  bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutVestigingNestedInput
+  voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutVestigingNestedInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUncheckedUpdateManyWithoutVestigingNestedInput
+  vestigingProducten?: Prisma.VestigingProductUncheckedUpdateManyWithoutVestigingNestedInput
+}
+
+export type VestigingCreateWithoutWekenInput = {
+  id?: string
+  code: string
+  naam: string
+  actief?: boolean
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
+  medewerkers?: Prisma.MedewerkerVestigingCreateNestedManyWithoutVestigingInput
+  bestellingen?: Prisma.BestellingCreateNestedManyWithoutVestigingInput
+  voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutVestigingInput
+  voorraadMutaties?: Prisma.VoorraadMutatieCreateNestedManyWithoutVestigingInput
+  vestigingProducten?: Prisma.VestigingProductCreateNestedManyWithoutVestigingInput
+}
+
+export type VestigingUncheckedCreateWithoutWekenInput = {
+  id?: string
+  code: string
+  naam: string
+  actief?: boolean
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
+  medewerkers?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutVestigingInput
+  bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutVestigingInput
+  voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutVestigingInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUncheckedCreateNestedManyWithoutVestigingInput
+  vestigingProducten?: Prisma.VestigingProductUncheckedCreateNestedManyWithoutVestigingInput
+}
+
+export type VestigingCreateOrConnectWithoutWekenInput = {
+  where: Prisma.VestigingWhereUniqueInput
+  create: Prisma.XOR<Prisma.VestigingCreateWithoutWekenInput, Prisma.VestigingUncheckedCreateWithoutWekenInput>
+}
+
+export type VestigingUpsertWithoutWekenInput = {
+  update: Prisma.XOR<Prisma.VestigingUpdateWithoutWekenInput, Prisma.VestigingUncheckedUpdateWithoutWekenInput>
+  create: Prisma.XOR<Prisma.VestigingCreateWithoutWekenInput, Prisma.VestigingUncheckedCreateWithoutWekenInput>
+  where?: Prisma.VestigingWhereInput
+}
+
+export type VestigingUpdateToOneWithWhereWithoutWekenInput = {
+  where?: Prisma.VestigingWhereInput
+  data: Prisma.XOR<Prisma.VestigingUpdateWithoutWekenInput, Prisma.VestigingUncheckedUpdateWithoutWekenInput>
+}
+
+export type VestigingUpdateWithoutWekenInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  medewerkers?: Prisma.MedewerkerVestigingUpdateManyWithoutVestigingNestedInput
+  bestellingen?: Prisma.BestellingUpdateManyWithoutVestigingNestedInput
+  voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutVestigingNestedInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUpdateManyWithoutVestigingNestedInput
+  vestigingProducten?: Prisma.VestigingProductUpdateManyWithoutVestigingNestedInput
+}
+
+export type VestigingUncheckedUpdateWithoutWekenInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  medewerkers?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
+  bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutVestigingNestedInput
+  voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutVestigingNestedInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUncheckedUpdateManyWithoutVestigingNestedInput
+  vestigingProducten?: Prisma.VestigingProductUncheckedUpdateManyWithoutVestigingNestedInput
+}
+
+export type VestigingCreateWithoutVestigingProductenInput = {
+  id?: string
+  code: string
+  naam: string
+  actief?: boolean
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
+  medewerkers?: Prisma.MedewerkerVestigingCreateNestedManyWithoutVestigingInput
+  weken?: Prisma.WeekCreateNestedManyWithoutVestigingInput
+  bestellingen?: Prisma.BestellingCreateNestedManyWithoutVestigingInput
+  voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutVestigingInput
+  voorraadMutaties?: Prisma.VoorraadMutatieCreateNestedManyWithoutVestigingInput
+}
+
+export type VestigingUncheckedCreateWithoutVestigingProductenInput = {
+  id?: string
+  code: string
+  naam: string
+  actief?: boolean
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
+  medewerkers?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutVestigingInput
+  weken?: Prisma.WeekUncheckedCreateNestedManyWithoutVestigingInput
+  bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutVestigingInput
+  voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutVestigingInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUncheckedCreateNestedManyWithoutVestigingInput
+}
+
+export type VestigingCreateOrConnectWithoutVestigingProductenInput = {
+  where: Prisma.VestigingWhereUniqueInput
+  create: Prisma.XOR<Prisma.VestigingCreateWithoutVestigingProductenInput, Prisma.VestigingUncheckedCreateWithoutVestigingProductenInput>
+}
+
+export type VestigingUpsertWithoutVestigingProductenInput = {
+  update: Prisma.XOR<Prisma.VestigingUpdateWithoutVestigingProductenInput, Prisma.VestigingUncheckedUpdateWithoutVestigingProductenInput>
+  create: Prisma.XOR<Prisma.VestigingCreateWithoutVestigingProductenInput, Prisma.VestigingUncheckedCreateWithoutVestigingProductenInput>
+  where?: Prisma.VestigingWhereInput
+}
+
+export type VestigingUpdateToOneWithWhereWithoutVestigingProductenInput = {
+  where?: Prisma.VestigingWhereInput
+  data: Prisma.XOR<Prisma.VestigingUpdateWithoutVestigingProductenInput, Prisma.VestigingUncheckedUpdateWithoutVestigingProductenInput>
+}
+
+export type VestigingUpdateWithoutVestigingProductenInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  medewerkers?: Prisma.MedewerkerVestigingUpdateManyWithoutVestigingNestedInput
+  weken?: Prisma.WeekUpdateManyWithoutVestigingNestedInput
+  bestellingen?: Prisma.BestellingUpdateManyWithoutVestigingNestedInput
+  voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutVestigingNestedInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUpdateManyWithoutVestigingNestedInput
+}
+
+export type VestigingUncheckedUpdateWithoutVestigingProductenInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  medewerkers?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
+  weken?: Prisma.WeekUncheckedUpdateManyWithoutVestigingNestedInput
+  bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutVestigingNestedInput
+  voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutVestigingNestedInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUncheckedUpdateManyWithoutVestigingNestedInput
+}
+
+export type VestigingCreateWithoutBestellingenInput = {
+  id?: string
+  code: string
+  naam: string
+  actief?: boolean
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
+  medewerkers?: Prisma.MedewerkerVestigingCreateNestedManyWithoutVestigingInput
+  weken?: Prisma.WeekCreateNestedManyWithoutVestigingInput
+  voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutVestigingInput
+  voorraadMutaties?: Prisma.VoorraadMutatieCreateNestedManyWithoutVestigingInput
+  vestigingProducten?: Prisma.VestigingProductCreateNestedManyWithoutVestigingInput
+}
+
+export type VestigingUncheckedCreateWithoutBestellingenInput = {
+  id?: string
+  code: string
+  naam: string
+  actief?: boolean
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
+  medewerkers?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutVestigingInput
+  weken?: Prisma.WeekUncheckedCreateNestedManyWithoutVestigingInput
+  voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutVestigingInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUncheckedCreateNestedManyWithoutVestigingInput
+  vestigingProducten?: Prisma.VestigingProductUncheckedCreateNestedManyWithoutVestigingInput
+}
+
+export type VestigingCreateOrConnectWithoutBestellingenInput = {
+  where: Prisma.VestigingWhereUniqueInput
+  create: Prisma.XOR<Prisma.VestigingCreateWithoutBestellingenInput, Prisma.VestigingUncheckedCreateWithoutBestellingenInput>
+}
+
+export type VestigingUpsertWithoutBestellingenInput = {
+  update: Prisma.XOR<Prisma.VestigingUpdateWithoutBestellingenInput, Prisma.VestigingUncheckedUpdateWithoutBestellingenInput>
+  create: Prisma.XOR<Prisma.VestigingCreateWithoutBestellingenInput, Prisma.VestigingUncheckedCreateWithoutBestellingenInput>
+  where?: Prisma.VestigingWhereInput
+}
+
+export type VestigingUpdateToOneWithWhereWithoutBestellingenInput = {
+  where?: Prisma.VestigingWhereInput
+  data: Prisma.XOR<Prisma.VestigingUpdateWithoutBestellingenInput, Prisma.VestigingUncheckedUpdateWithoutBestellingenInput>
+}
+
+export type VestigingUpdateWithoutBestellingenInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  medewerkers?: Prisma.MedewerkerVestigingUpdateManyWithoutVestigingNestedInput
+  weken?: Prisma.WeekUpdateManyWithoutVestigingNestedInput
+  voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutVestigingNestedInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUpdateManyWithoutVestigingNestedInput
+  vestigingProducten?: Prisma.VestigingProductUpdateManyWithoutVestigingNestedInput
+}
+
+export type VestigingUncheckedUpdateWithoutBestellingenInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  medewerkers?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
+  weken?: Prisma.WeekUncheckedUpdateManyWithoutVestigingNestedInput
+  voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutVestigingNestedInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUncheckedUpdateManyWithoutVestigingNestedInput
+  vestigingProducten?: Prisma.VestigingProductUncheckedUpdateManyWithoutVestigingNestedInput
+}
+
+export type VestigingCreateWithoutVoorraadTellingenInput = {
+  id?: string
+  code: string
+  naam: string
+  actief?: boolean
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
+  medewerkers?: Prisma.MedewerkerVestigingCreateNestedManyWithoutVestigingInput
+  weken?: Prisma.WeekCreateNestedManyWithoutVestigingInput
+  bestellingen?: Prisma.BestellingCreateNestedManyWithoutVestigingInput
+  voorraadMutaties?: Prisma.VoorraadMutatieCreateNestedManyWithoutVestigingInput
+  vestigingProducten?: Prisma.VestigingProductCreateNestedManyWithoutVestigingInput
+}
+
+export type VestigingUncheckedCreateWithoutVoorraadTellingenInput = {
+  id?: string
+  code: string
+  naam: string
+  actief?: boolean
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
+  medewerkers?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutVestigingInput
+  weken?: Prisma.WeekUncheckedCreateNestedManyWithoutVestigingInput
+  bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutVestigingInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUncheckedCreateNestedManyWithoutVestigingInput
+  vestigingProducten?: Prisma.VestigingProductUncheckedCreateNestedManyWithoutVestigingInput
+}
+
+export type VestigingCreateOrConnectWithoutVoorraadTellingenInput = {
+  where: Prisma.VestigingWhereUniqueInput
+  create: Prisma.XOR<Prisma.VestigingCreateWithoutVoorraadTellingenInput, Prisma.VestigingUncheckedCreateWithoutVoorraadTellingenInput>
+}
+
+export type VestigingUpsertWithoutVoorraadTellingenInput = {
+  update: Prisma.XOR<Prisma.VestigingUpdateWithoutVoorraadTellingenInput, Prisma.VestigingUncheckedUpdateWithoutVoorraadTellingenInput>
+  create: Prisma.XOR<Prisma.VestigingCreateWithoutVoorraadTellingenInput, Prisma.VestigingUncheckedCreateWithoutVoorraadTellingenInput>
+  where?: Prisma.VestigingWhereInput
+}
+
+export type VestigingUpdateToOneWithWhereWithoutVoorraadTellingenInput = {
+  where?: Prisma.VestigingWhereInput
+  data: Prisma.XOR<Prisma.VestigingUpdateWithoutVoorraadTellingenInput, Prisma.VestigingUncheckedUpdateWithoutVoorraadTellingenInput>
+}
+
+export type VestigingUpdateWithoutVoorraadTellingenInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  medewerkers?: Prisma.MedewerkerVestigingUpdateManyWithoutVestigingNestedInput
+  weken?: Prisma.WeekUpdateManyWithoutVestigingNestedInput
+  bestellingen?: Prisma.BestellingUpdateManyWithoutVestigingNestedInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUpdateManyWithoutVestigingNestedInput
+  vestigingProducten?: Prisma.VestigingProductUpdateManyWithoutVestigingNestedInput
+}
+
+export type VestigingUncheckedUpdateWithoutVoorraadTellingenInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  medewerkers?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
+  weken?: Prisma.WeekUncheckedUpdateManyWithoutVestigingNestedInput
+  bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutVestigingNestedInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUncheckedUpdateManyWithoutVestigingNestedInput
+  vestigingProducten?: Prisma.VestigingProductUncheckedUpdateManyWithoutVestigingNestedInput
+}
+
+export type VestigingCreateWithoutVoorraadMutatiesInput = {
+  id?: string
+  code: string
+  naam: string
+  actief?: boolean
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
+  medewerkers?: Prisma.MedewerkerVestigingCreateNestedManyWithoutVestigingInput
+  weken?: Prisma.WeekCreateNestedManyWithoutVestigingInput
+  bestellingen?: Prisma.BestellingCreateNestedManyWithoutVestigingInput
+  voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutVestigingInput
+  vestigingProducten?: Prisma.VestigingProductCreateNestedManyWithoutVestigingInput
+}
+
+export type VestigingUncheckedCreateWithoutVoorraadMutatiesInput = {
+  id?: string
+  code: string
+  naam: string
+  actief?: boolean
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
+  medewerkers?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutVestigingInput
+  weken?: Prisma.WeekUncheckedCreateNestedManyWithoutVestigingInput
+  bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutVestigingInput
+  voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutVestigingInput
+  vestigingProducten?: Prisma.VestigingProductUncheckedCreateNestedManyWithoutVestigingInput
+}
+
+export type VestigingCreateOrConnectWithoutVoorraadMutatiesInput = {
+  where: Prisma.VestigingWhereUniqueInput
+  create: Prisma.XOR<Prisma.VestigingCreateWithoutVoorraadMutatiesInput, Prisma.VestigingUncheckedCreateWithoutVoorraadMutatiesInput>
+}
+
+export type VestigingUpsertWithoutVoorraadMutatiesInput = {
+  update: Prisma.XOR<Prisma.VestigingUpdateWithoutVoorraadMutatiesInput, Prisma.VestigingUncheckedUpdateWithoutVoorraadMutatiesInput>
+  create: Prisma.XOR<Prisma.VestigingCreateWithoutVoorraadMutatiesInput, Prisma.VestigingUncheckedCreateWithoutVoorraadMutatiesInput>
+  where?: Prisma.VestigingWhereInput
+}
+
+export type VestigingUpdateToOneWithWhereWithoutVoorraadMutatiesInput = {
+  where?: Prisma.VestigingWhereInput
+  data: Prisma.XOR<Prisma.VestigingUpdateWithoutVoorraadMutatiesInput, Prisma.VestigingUncheckedUpdateWithoutVoorraadMutatiesInput>
+}
+
+export type VestigingUpdateWithoutVoorraadMutatiesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  medewerkers?: Prisma.MedewerkerVestigingUpdateManyWithoutVestigingNestedInput
+  weken?: Prisma.WeekUpdateManyWithoutVestigingNestedInput
+  bestellingen?: Prisma.BestellingUpdateManyWithoutVestigingNestedInput
+  voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutVestigingNestedInput
+  vestigingProducten?: Prisma.VestigingProductUpdateManyWithoutVestigingNestedInput
+}
+
+export type VestigingUncheckedUpdateWithoutVoorraadMutatiesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  medewerkers?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
+  weken?: Prisma.WeekUncheckedUpdateManyWithoutVestigingNestedInput
+  bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutVestigingNestedInput
+  voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutVestigingNestedInput
+  vestigingProducten?: Prisma.VestigingProductUncheckedUpdateManyWithoutVestigingNestedInput
 }
 
 
@@ -425,11 +1004,21 @@ export type VestigingUncheckedUpdateWithoutGebruikersInput = {
  */
 
 export type VestigingCountOutputType = {
-  gebruikers: number
+  medewerkers: number
+  weken: number
+  bestellingen: number
+  voorraadTellingen: number
+  voorraadMutaties: number
+  vestigingProducten: number
 }
 
 export type VestigingCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  gebruikers?: boolean | VestigingCountOutputTypeCountGebruikersArgs
+  medewerkers?: boolean | VestigingCountOutputTypeCountMedewerkersArgs
+  weken?: boolean | VestigingCountOutputTypeCountWekenArgs
+  bestellingen?: boolean | VestigingCountOutputTypeCountBestellingenArgs
+  voorraadTellingen?: boolean | VestigingCountOutputTypeCountVoorraadTellingenArgs
+  voorraadMutaties?: boolean | VestigingCountOutputTypeCountVoorraadMutatiesArgs
+  vestigingProducten?: boolean | VestigingCountOutputTypeCountVestigingProductenArgs
 }
 
 /**
@@ -445,8 +1034,43 @@ export type VestigingCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Ex
 /**
  * VestigingCountOutputType without action
  */
-export type VestigingCountOutputTypeCountGebruikersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.GebruikerWhereInput
+export type VestigingCountOutputTypeCountMedewerkersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MedewerkerVestigingWhereInput
+}
+
+/**
+ * VestigingCountOutputType without action
+ */
+export type VestigingCountOutputTypeCountWekenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.WeekWhereInput
+}
+
+/**
+ * VestigingCountOutputType without action
+ */
+export type VestigingCountOutputTypeCountBestellingenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.BestellingWhereInput
+}
+
+/**
+ * VestigingCountOutputType without action
+ */
+export type VestigingCountOutputTypeCountVoorraadTellingenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.VoorraadTellingWhereInput
+}
+
+/**
+ * VestigingCountOutputType without action
+ */
+export type VestigingCountOutputTypeCountVoorraadMutatiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.VoorraadMutatieWhereInput
+}
+
+/**
+ * VestigingCountOutputType without action
+ */
+export type VestigingCountOutputTypeCountVestigingProductenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.VestigingProductWhereInput
 }
 
 
@@ -457,7 +1081,14 @@ export type VestigingSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   actief?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
-  gebruikers?: boolean | Prisma.Vestiging$gebruikersArgs<ExtArgs>
+  aangemaaktDoor?: boolean
+  gewijzigdDoor?: boolean
+  medewerkers?: boolean | Prisma.Vestiging$medewerkersArgs<ExtArgs>
+  weken?: boolean | Prisma.Vestiging$wekenArgs<ExtArgs>
+  bestellingen?: boolean | Prisma.Vestiging$bestellingenArgs<ExtArgs>
+  voorraadTellingen?: boolean | Prisma.Vestiging$voorraadTellingenArgs<ExtArgs>
+  voorraadMutaties?: boolean | Prisma.Vestiging$voorraadMutatiesArgs<ExtArgs>
+  vestigingProducten?: boolean | Prisma.Vestiging$vestigingProductenArgs<ExtArgs>
   _count?: boolean | Prisma.VestigingCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["vestiging"]>
 
@@ -468,6 +1099,8 @@ export type VestigingSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   actief?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
+  aangemaaktDoor?: boolean
+  gewijzigdDoor?: boolean
 }, ExtArgs["result"]["vestiging"]>
 
 export type VestigingSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -477,6 +1110,8 @@ export type VestigingSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   actief?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
+  aangemaaktDoor?: boolean
+  gewijzigdDoor?: boolean
 }, ExtArgs["result"]["vestiging"]>
 
 export type VestigingSelectScalar = {
@@ -486,11 +1121,18 @@ export type VestigingSelectScalar = {
   actief?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
+  aangemaaktDoor?: boolean
+  gewijzigdDoor?: boolean
 }
 
-export type VestigingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "code" | "naam" | "actief" | "aangemaaktOp" | "gewijzigdOp", ExtArgs["result"]["vestiging"]>
+export type VestigingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "code" | "naam" | "actief" | "aangemaaktOp" | "gewijzigdOp" | "aangemaaktDoor" | "gewijzigdDoor", ExtArgs["result"]["vestiging"]>
 export type VestigingInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  gebruikers?: boolean | Prisma.Vestiging$gebruikersArgs<ExtArgs>
+  medewerkers?: boolean | Prisma.Vestiging$medewerkersArgs<ExtArgs>
+  weken?: boolean | Prisma.Vestiging$wekenArgs<ExtArgs>
+  bestellingen?: boolean | Prisma.Vestiging$bestellingenArgs<ExtArgs>
+  voorraadTellingen?: boolean | Prisma.Vestiging$voorraadTellingenArgs<ExtArgs>
+  voorraadMutaties?: boolean | Prisma.Vestiging$voorraadMutatiesArgs<ExtArgs>
+  vestigingProducten?: boolean | Prisma.Vestiging$vestigingProductenArgs<ExtArgs>
   _count?: boolean | Prisma.VestigingCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type VestigingIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -499,7 +1141,12 @@ export type VestigingIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
 export type $VestigingPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Vestiging"
   objects: {
-    gebruikers: Prisma.$GebruikerPayload<ExtArgs>[]
+    medewerkers: Prisma.$MedewerkerVestigingPayload<ExtArgs>[]
+    weken: Prisma.$WeekPayload<ExtArgs>[]
+    bestellingen: Prisma.$BestellingPayload<ExtArgs>[]
+    voorraadTellingen: Prisma.$VoorraadTellingPayload<ExtArgs>[]
+    voorraadMutaties: Prisma.$VoorraadMutatiePayload<ExtArgs>[]
+    vestigingProducten: Prisma.$VestigingProductPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -508,6 +1155,8 @@ export type $VestigingPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     actief: boolean
     aangemaaktOp: Date
     gewijzigdOp: Date
+    aangemaaktDoor: string | null
+    gewijzigdDoor: string | null
   }, ExtArgs["result"]["vestiging"]>
   composites: {}
 }
@@ -902,7 +1551,12 @@ readonly fields: VestigingFieldRefs;
  */
 export interface Prisma__VestigingClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  gebruikers<T extends Prisma.Vestiging$gebruikersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Vestiging$gebruikersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GebruikerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  medewerkers<T extends Prisma.Vestiging$medewerkersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Vestiging$medewerkersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MedewerkerVestigingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  weken<T extends Prisma.Vestiging$wekenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Vestiging$wekenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WeekPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  bestellingen<T extends Prisma.Vestiging$bestellingenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Vestiging$bestellingenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BestellingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  voorraadTellingen<T extends Prisma.Vestiging$voorraadTellingenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Vestiging$voorraadTellingenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VoorraadTellingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  voorraadMutaties<T extends Prisma.Vestiging$voorraadMutatiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Vestiging$voorraadMutatiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VoorraadMutatiePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  vestigingProducten<T extends Prisma.Vestiging$vestigingProductenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Vestiging$vestigingProductenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VestigingProductPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -938,6 +1592,8 @@ export interface VestigingFieldRefs {
   readonly actief: Prisma.FieldRef<"Vestiging", 'Boolean'>
   readonly aangemaaktOp: Prisma.FieldRef<"Vestiging", 'DateTime'>
   readonly gewijzigdOp: Prisma.FieldRef<"Vestiging", 'DateTime'>
+  readonly aangemaaktDoor: Prisma.FieldRef<"Vestiging", 'String'>
+  readonly gewijzigdDoor: Prisma.FieldRef<"Vestiging", 'String'>
 }
     
 
@@ -1331,27 +1987,147 @@ export type VestigingDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Int
 }
 
 /**
- * Vestiging.gebruikers
+ * Vestiging.medewerkers
  */
-export type Vestiging$gebruikersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Vestiging$medewerkersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Gebruiker
+   * Select specific fields to fetch from the MedewerkerVestiging
    */
-  select?: Prisma.GebruikerSelect<ExtArgs> | null
+  select?: Prisma.MedewerkerVestigingSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Gebruiker
+   * Omit specific fields from the MedewerkerVestiging
    */
-  omit?: Prisma.GebruikerOmit<ExtArgs> | null
+  omit?: Prisma.MedewerkerVestigingOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.GebruikerInclude<ExtArgs> | null
-  where?: Prisma.GebruikerWhereInput
-  orderBy?: Prisma.GebruikerOrderByWithRelationInput | Prisma.GebruikerOrderByWithRelationInput[]
-  cursor?: Prisma.GebruikerWhereUniqueInput
+  include?: Prisma.MedewerkerVestigingInclude<ExtArgs> | null
+  where?: Prisma.MedewerkerVestigingWhereInput
+  orderBy?: Prisma.MedewerkerVestigingOrderByWithRelationInput | Prisma.MedewerkerVestigingOrderByWithRelationInput[]
+  cursor?: Prisma.MedewerkerVestigingWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.GebruikerScalarFieldEnum | Prisma.GebruikerScalarFieldEnum[]
+  distinct?: Prisma.MedewerkerVestigingScalarFieldEnum | Prisma.MedewerkerVestigingScalarFieldEnum[]
+}
+
+/**
+ * Vestiging.weken
+ */
+export type Vestiging$wekenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Week
+   */
+  select?: Prisma.WeekSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Week
+   */
+  omit?: Prisma.WeekOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WeekInclude<ExtArgs> | null
+  where?: Prisma.WeekWhereInput
+  orderBy?: Prisma.WeekOrderByWithRelationInput | Prisma.WeekOrderByWithRelationInput[]
+  cursor?: Prisma.WeekWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.WeekScalarFieldEnum | Prisma.WeekScalarFieldEnum[]
+}
+
+/**
+ * Vestiging.bestellingen
+ */
+export type Vestiging$bestellingenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Bestelling
+   */
+  select?: Prisma.BestellingSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Bestelling
+   */
+  omit?: Prisma.BestellingOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.BestellingInclude<ExtArgs> | null
+  where?: Prisma.BestellingWhereInput
+  orderBy?: Prisma.BestellingOrderByWithRelationInput | Prisma.BestellingOrderByWithRelationInput[]
+  cursor?: Prisma.BestellingWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.BestellingScalarFieldEnum | Prisma.BestellingScalarFieldEnum[]
+}
+
+/**
+ * Vestiging.voorraadTellingen
+ */
+export type Vestiging$voorraadTellingenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the VoorraadTelling
+   */
+  select?: Prisma.VoorraadTellingSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the VoorraadTelling
+   */
+  omit?: Prisma.VoorraadTellingOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VoorraadTellingInclude<ExtArgs> | null
+  where?: Prisma.VoorraadTellingWhereInput
+  orderBy?: Prisma.VoorraadTellingOrderByWithRelationInput | Prisma.VoorraadTellingOrderByWithRelationInput[]
+  cursor?: Prisma.VoorraadTellingWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.VoorraadTellingScalarFieldEnum | Prisma.VoorraadTellingScalarFieldEnum[]
+}
+
+/**
+ * Vestiging.voorraadMutaties
+ */
+export type Vestiging$voorraadMutatiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the VoorraadMutatie
+   */
+  select?: Prisma.VoorraadMutatieSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the VoorraadMutatie
+   */
+  omit?: Prisma.VoorraadMutatieOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VoorraadMutatieInclude<ExtArgs> | null
+  where?: Prisma.VoorraadMutatieWhereInput
+  orderBy?: Prisma.VoorraadMutatieOrderByWithRelationInput | Prisma.VoorraadMutatieOrderByWithRelationInput[]
+  cursor?: Prisma.VoorraadMutatieWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.VoorraadMutatieScalarFieldEnum | Prisma.VoorraadMutatieScalarFieldEnum[]
+}
+
+/**
+ * Vestiging.vestigingProducten
+ */
+export type Vestiging$vestigingProductenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the VestigingProduct
+   */
+  select?: Prisma.VestigingProductSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the VestigingProduct
+   */
+  omit?: Prisma.VestigingProductOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VestigingProductInclude<ExtArgs> | null
+  where?: Prisma.VestigingProductWhereInput
+  orderBy?: Prisma.VestigingProductOrderByWithRelationInput | Prisma.VestigingProductOrderByWithRelationInput[]
+  cursor?: Prisma.VestigingProductWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.VestigingProductScalarFieldEnum | Prisma.VestigingProductScalarFieldEnum[]
 }
 
 /**

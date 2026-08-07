@@ -9,9 +9,9 @@
     "lint": "eslint",
     "seed": "tsx prisma/seed.ts",
     "prisma:merge": "node prisma/merge-schema.mjs",
-"prisma:generate": "npm run prisma:merge && prisma generate",
-"prisma:push": "npm run prisma:merge && prisma db push",
-"prisma:validate": "npm run prisma:merge && prisma validate"
+    "prisma:generate": "npm run prisma:merge && prisma generate",
+    "prisma:push": "npm run prisma:merge && prisma db push",
+    "prisma:validate": "npm run prisma:merge && prisma validate"
   },
   "dependencies": {
     "@auth/core": "^0.41.3",
@@ -24,6 +24,7 @@
     "lucide-react": "^1.28.0",
     "next": "16.3.0",
     "next-auth": "^5.0.0-beta.32",
+    "pg": "^8.22.0",
     "prisma": "^7.9.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",

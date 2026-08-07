@@ -1,12 +1,11 @@
 import { prisma } from "@/lib/prisma";
 
-import PageHeader from "@/components/ui/PageHeader";
 import Card from "@/components/ui/Card";
+import PageHeader from "@/components/ui/PageHeader";
 
 export default async function GebruikersPage() {
-  const gebruikers = await prisma.gebruiker.findMany({
+  const gebruikers = await prisma.systeemGebruiker.findMany({
     include: {
-      vestiging: true,
       rollen: {
         include: {
           rol: true,
@@ -19,43 +18,29 @@ export default async function GebruikersPage() {
   });
 
   return (
-    <main>
+    <main className="space-y-6">
       <PageHeader
-        title="Gebruikers"
-        subtitle="Beheer gebruikers en rechten."
+        title="Systeemgebruikers"
+        subtitle="Beheer alle gebruikers van Clevers ERP."
       />
 
       <Card>
-
         <table className="w-full">
-
           <thead>
-
             <tr className="border-b">
-
               <th className="py-3 text-left">Naam</th>
-
               <th className="text-left">E-mail</th>
-
-              <th className="text-left">Vestiging</th>
-
-              <th className="text-left">Rol</th>
-
+              <th className="text-left">Rollen</th>
               <th className="text-left">Status</th>
-
             </tr>
-
           </thead>
 
           <tbody>
-
             {gebruikers.map((gebruiker) => (
-
               <tr
                 key={gebruiker.id}
                 className="border-b last:border-0"
               >
-
                 <td className="py-3">
                   {gebruiker.naam}
                 </td>
@@ -65,17 +50,12 @@ export default async function GebruikersPage() {
                 </td>
 
                 <td>
-                  {gebruiker.vestiging?.naam ?? "-"}
-                </td>
-
-                <td>
                   {gebruiker.rollen
                     .map((r) => r.rol.naam)
                     .join(", ")}
                 </td>
 
                 <td>
-
                   {gebruiker.actief ? (
                     <span className="rounded-full bg-green-100 px-3 py-1 text-sm text-green-700">
                       Actief
@@ -85,19 +65,23 @@ export default async function GebruikersPage() {
                       Inactief
                     </span>
                   )}
-
                 </td>
-
               </tr>
-
             ))}
 
+            {gebruikers.length === 0 && (
+              <tr>
+                <td
+                  colSpan={4}
+                  className="py-8 text-center text-gray-500"
+                >
+                  Geen systeemgebruikers gevonden.
+                </td>
+              </tr>
+            )}
           </tbody>
-
         </table>
-
       </Card>
-
     </main>
   );
 }

@@ -8,7 +8,7 @@ import { maakToken } from "@/lib/auth";
 export async function POST(req: NextRequest) {
   const { email, wachtwoord } = await req.json();
 
-  const gebruiker = await prisma.gebruiker.findUnique({
+  const gebruiker = await prisma.systeemGebruiker.findUnique({
     where: {
       email,
     },

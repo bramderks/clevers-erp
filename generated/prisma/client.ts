@@ -47,17 +47,127 @@ export { Prisma }
  */
 export type Vestiging = Prisma.VestigingModel
 /**
- * Model Gebruiker
- * 
- */
-export type Gebruiker = Prisma.GebruikerModel
-/**
  * Model Rol
  * 
  */
 export type Rol = Prisma.RolModel
 /**
- * Model GebruikerRol
+ * Model SysteemGebruiker
  * 
  */
-export type GebruikerRol = Prisma.GebruikerRolModel
+export type SysteemGebruiker = Prisma.SysteemGebruikerModel
+/**
+ * Model SysteemGebruikerRol
+ * 
+ */
+export type SysteemGebruikerRol = Prisma.SysteemGebruikerRolModel
+/**
+ * Model AuditLog
+ * 
+ */
+export type AuditLog = Prisma.AuditLogModel
+/**
+ * Model Medewerker
+ * 
+ */
+export type Medewerker = Prisma.MedewerkerModel
+/**
+ * Model MedewerkerVestiging
+ * 
+ */
+export type MedewerkerVestiging = Prisma.MedewerkerVestigingModel
+/**
+ * Model MedewerkerRol
+ * 
+ */
+export type MedewerkerRol = Prisma.MedewerkerRolModel
+/**
+ * Model Tag
+ * 
+ */
+export type Tag = Prisma.TagModel
+/**
+ * Model MedewerkerTag
+ * 
+ */
+export type MedewerkerTag = Prisma.MedewerkerTagModel
+/**
+ * Model Week
+ * 
+ */
+export type Week = Prisma.WeekModel
+/**
+ * Model Dienst
+ * 
+ */
+export type Dienst = Prisma.DienstModel
+/**
+ * Model DienstTag
+ * 
+ */
+export type DienstTag = Prisma.DienstTagModel
+/**
+ * Model DienstBezetting
+ * 
+ */
+export type DienstBezetting = Prisma.DienstBezettingModel
+/**
+ * Model ProductType
+ * 
+ */
+export type ProductType = Prisma.ProductTypeModel
+/**
+ * Model Product
+ * 
+ */
+export type Product = Prisma.ProductModel
+/**
+ * Model VestigingProduct
+ * 
+ */
+export type VestigingProduct = Prisma.VestigingProductModel
+/**
+ * Model Bestelling
+ * 
+ */
+export type Bestelling = Prisma.BestellingModel
+/**
+ * Model BestelRegel
+ * 
+ */
+export type BestelRegel = Prisma.BestelRegelModel
+/**
+ * Model VoorraadTelling
+ * 
+ */
+export type VoorraadTelling = Prisma.VoorraadTellingModel
+/**
+ * Model VoorraadTellingRegel
+ * 
+ */
+export type VoorraadTellingRegel = Prisma.VoorraadTellingRegelModel
+/**
+ * Model VoorraadMutatie
+ * 
+ */
+export type VoorraadMutatie = Prisma.VoorraadMutatieModel
+/**
+ * Model Levering
+ * 
+ */
+export type Levering = Prisma.LeveringModel
+/**
+ * Model LeveringRegel
+ * 
+ */
+export type LeveringRegel = Prisma.LeveringRegelModel
+/**
+ * Model Status
+ * 
+ */
+export type Status = Prisma.StatusModel
+/**
+ * Model Instelling
+ * 
+ */
+export type Instelling = Prisma.InstellingModel

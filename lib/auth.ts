@@ -1,10 +1,12 @@
-import { SignJWT, jwtVerify } from "jose";
+import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 
 const secret = new TextEncoder().encode(process.env.AUTH_SECRET!);
 
-export async function maakToken(payload: object) {
+export async function maakToken(payload: JWTPayload) {
   return await new SignJWT(payload)
-    .setProtectedHeader({ alg: "HS256" })
+    .setProtectedHeader({
+      alg: "HS256",
+    })
     .setIssuedAt()
     .setExpirationTime("12h")
     .sign(secret);

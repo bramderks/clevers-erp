@@ -52,9 +52,31 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   Vestiging: 'Vestiging',
-  Gebruiker: 'Gebruiker',
   Rol: 'Rol',
-  GebruikerRol: 'GebruikerRol'
+  SysteemGebruiker: 'SysteemGebruiker',
+  SysteemGebruikerRol: 'SysteemGebruikerRol',
+  AuditLog: 'AuditLog',
+  Medewerker: 'Medewerker',
+  MedewerkerVestiging: 'MedewerkerVestiging',
+  MedewerkerRol: 'MedewerkerRol',
+  Tag: 'Tag',
+  MedewerkerTag: 'MedewerkerTag',
+  Week: 'Week',
+  Dienst: 'Dienst',
+  DienstTag: 'DienstTag',
+  DienstBezetting: 'DienstBezetting',
+  ProductType: 'ProductType',
+  Product: 'Product',
+  VestigingProduct: 'VestigingProduct',
+  Bestelling: 'Bestelling',
+  BestelRegel: 'BestelRegel',
+  VoorraadTelling: 'VoorraadTelling',
+  VoorraadTellingRegel: 'VoorraadTellingRegel',
+  VoorraadMutatie: 'VoorraadMutatie',
+  Levering: 'Levering',
+  LeveringRegel: 'LeveringRegel',
+  Status: 'Status',
+  Instelling: 'Instelling'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -79,42 +101,327 @@ export const VestigingScalarFieldEnum = {
   naam: 'naam',
   actief: 'actief',
   aangemaaktOp: 'aangemaaktOp',
-  gewijzigdOp: 'gewijzigdOp'
+  gewijzigdOp: 'gewijzigdOp',
+  aangemaaktDoor: 'aangemaaktDoor',
+  gewijzigdDoor: 'gewijzigdDoor'
 } as const
 
 export type VestigingScalarFieldEnum = (typeof VestigingScalarFieldEnum)[keyof typeof VestigingScalarFieldEnum]
 
 
-export const GebruikerScalarFieldEnum = {
-  id: 'id',
-  naam: 'naam',
-  email: 'email',
-  wachtwoordHash: 'wachtwoordHash',
-  actief: 'actief',
-  vestigingId: 'vestigingId',
-  aangemaaktOp: 'aangemaaktOp',
-  gewijzigdOp: 'gewijzigdOp'
-} as const
-
-export type GebruikerScalarFieldEnum = (typeof GebruikerScalarFieldEnum)[keyof typeof GebruikerScalarFieldEnum]
-
-
 export const RolScalarFieldEnum = {
   id: 'id',
   naam: 'naam',
-  omschrijving: 'omschrijving'
+  omschrijving: 'omschrijving',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
 } as const
 
 export type RolScalarFieldEnum = (typeof RolScalarFieldEnum)[keyof typeof RolScalarFieldEnum]
 
 
-export const GebruikerRolScalarFieldEnum = {
+export const SysteemGebruikerScalarFieldEnum = {
   id: 'id',
-  gebruikerId: 'gebruikerId',
+  naam: 'naam',
+  email: 'email',
+  wachtwoordHash: 'wachtwoordHash',
+  actief: 'actief',
+  laatsteLoginOp: 'laatsteLoginOp',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type SysteemGebruikerScalarFieldEnum = (typeof SysteemGebruikerScalarFieldEnum)[keyof typeof SysteemGebruikerScalarFieldEnum]
+
+
+export const SysteemGebruikerRolScalarFieldEnum = {
+  id: 'id',
+  systeemGebruikerId: 'systeemGebruikerId',
   rolId: 'rolId'
 } as const
 
-export type GebruikerRolScalarFieldEnum = (typeof GebruikerRolScalarFieldEnum)[keyof typeof GebruikerRolScalarFieldEnum]
+export type SysteemGebruikerRolScalarFieldEnum = (typeof SysteemGebruikerRolScalarFieldEnum)[keyof typeof SysteemGebruikerRolScalarFieldEnum]
+
+
+export const AuditLogScalarFieldEnum = {
+  id: 'id',
+  systeemGebruikerId: 'systeemGebruikerId',
+  module: 'module',
+  actie: 'actie',
+  recordId: 'recordId',
+  details: 'details',
+  aangemaaktOp: 'aangemaaktOp'
+} as const
+
+export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
+
+
+export const MedewerkerScalarFieldEnum = {
+  id: 'id',
+  personeelsnummer: 'personeelsnummer',
+  voornaam: 'voornaam',
+  tussenvoegsel: 'tussenvoegsel',
+  achternaam: 'achternaam',
+  roepnaam: 'roepnaam',
+  email: 'email',
+  telefoon: 'telefoon',
+  wachtwoordHash: 'wachtwoordHash',
+  geboortedatum: 'geboortedatum',
+  actief: 'actief',
+  contractType: 'contractType',
+  contractUren: 'contractUren',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type MedewerkerScalarFieldEnum = (typeof MedewerkerScalarFieldEnum)[keyof typeof MedewerkerScalarFieldEnum]
+
+
+export const MedewerkerVestigingScalarFieldEnum = {
+  id: 'id',
+  medewerkerId: 'medewerkerId',
+  vestigingId: 'vestigingId',
+  hoofdvestiging: 'hoofdvestiging'
+} as const
+
+export type MedewerkerVestigingScalarFieldEnum = (typeof MedewerkerVestigingScalarFieldEnum)[keyof typeof MedewerkerVestigingScalarFieldEnum]
+
+
+export const MedewerkerRolScalarFieldEnum = {
+  id: 'id',
+  medewerkerId: 'medewerkerId',
+  rolId: 'rolId'
+} as const
+
+export type MedewerkerRolScalarFieldEnum = (typeof MedewerkerRolScalarFieldEnum)[keyof typeof MedewerkerRolScalarFieldEnum]
+
+
+export const TagScalarFieldEnum = {
+  id: 'id',
+  naam: 'naam',
+  volgorde: 'volgorde',
+  actief: 'actief',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type TagScalarFieldEnum = (typeof TagScalarFieldEnum)[keyof typeof TagScalarFieldEnum]
+
+
+export const MedewerkerTagScalarFieldEnum = {
+  id: 'id',
+  medewerkerId: 'medewerkerId',
+  tagId: 'tagId'
+} as const
+
+export type MedewerkerTagScalarFieldEnum = (typeof MedewerkerTagScalarFieldEnum)[keyof typeof MedewerkerTagScalarFieldEnum]
+
+
+export const WeekScalarFieldEnum = {
+  id: 'id',
+  vestigingId: 'vestigingId',
+  jaar: 'jaar',
+  weeknummer: 'weeknummer',
+  status: 'status',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type WeekScalarFieldEnum = (typeof WeekScalarFieldEnum)[keyof typeof WeekScalarFieldEnum]
+
+
+export const DienstScalarFieldEnum = {
+  id: 'id',
+  weekId: 'weekId',
+  datum: 'datum',
+  begintijd: 'begintijd',
+  eindtijd: 'eindtijd',
+  opmerkingen: 'opmerkingen',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type DienstScalarFieldEnum = (typeof DienstScalarFieldEnum)[keyof typeof DienstScalarFieldEnum]
+
+
+export const DienstTagScalarFieldEnum = {
+  id: 'id',
+  dienstId: 'dienstId',
+  tagId: 'tagId',
+  aantal: 'aantal'
+} as const
+
+export type DienstTagScalarFieldEnum = (typeof DienstTagScalarFieldEnum)[keyof typeof DienstTagScalarFieldEnum]
+
+
+export const DienstBezettingScalarFieldEnum = {
+  id: 'id',
+  dienstId: 'dienstId',
+  medewerkerId: 'medewerkerId',
+  status: 'status',
+  aangemaaktOp: 'aangemaaktOp'
+} as const
+
+export type DienstBezettingScalarFieldEnum = (typeof DienstBezettingScalarFieldEnum)[keyof typeof DienstBezettingScalarFieldEnum]
+
+
+export const ProductTypeScalarFieldEnum = {
+  id: 'id',
+  code: 'code',
+  naam: 'naam',
+  volgorde: 'volgorde',
+  actief: 'actief',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type ProductTypeScalarFieldEnum = (typeof ProductTypeScalarFieldEnum)[keyof typeof ProductTypeScalarFieldEnum]
+
+
+export const ProductScalarFieldEnum = {
+  id: 'id',
+  code: 'code',
+  naam: 'naam',
+  productTypeId: 'productTypeId',
+  actief: 'actief',
+  volgorde: 'volgorde',
+  leverancier: 'leverancier',
+  artikelnummer: 'artikelnummer',
+  bestelEenheid: 'bestelEenheid',
+  voorraadEenheid: 'voorraadEenheid',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type ProductScalarFieldEnum = (typeof ProductScalarFieldEnum)[keyof typeof ProductScalarFieldEnum]
+
+
+export const VestigingProductScalarFieldEnum = {
+  id: 'id',
+  vestigingId: 'vestigingId',
+  productId: 'productId',
+  minimumVoorraad: 'minimumVoorraad',
+  bufferVoorraad: 'bufferVoorraad',
+  standaardBestelling: 'standaardBestelling',
+  actief: 'actief'
+} as const
+
+export type VestigingProductScalarFieldEnum = (typeof VestigingProductScalarFieldEnum)[keyof typeof VestigingProductScalarFieldEnum]
+
+
+export const BestellingScalarFieldEnum = {
+  id: 'id',
+  vestigingId: 'vestigingId',
+  besteldatum: 'besteldatum',
+  leverdatum: 'leverdatum',
+  statusId: 'statusId',
+  opmerkingen: 'opmerkingen',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type BestellingScalarFieldEnum = (typeof BestellingScalarFieldEnum)[keyof typeof BestellingScalarFieldEnum]
+
+
+export const BestelRegelScalarFieldEnum = {
+  id: 'id',
+  bestellingId: 'bestellingId',
+  productId: 'productId',
+  adviesAantal: 'adviesAantal',
+  besteldAantal: 'besteldAantal',
+  geleverdAantal: 'geleverdAantal'
+} as const
+
+export type BestelRegelScalarFieldEnum = (typeof BestelRegelScalarFieldEnum)[keyof typeof BestelRegelScalarFieldEnum]
+
+
+export const VoorraadTellingScalarFieldEnum = {
+  id: 'id',
+  vestigingId: 'vestigingId',
+  teldatum: 'teldatum',
+  statusId: 'statusId',
+  opmerkingen: 'opmerkingen',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type VoorraadTellingScalarFieldEnum = (typeof VoorraadTellingScalarFieldEnum)[keyof typeof VoorraadTellingScalarFieldEnum]
+
+
+export const VoorraadTellingRegelScalarFieldEnum = {
+  id: 'id',
+  tellingId: 'tellingId',
+  productId: 'productId',
+  geteld: 'geteld',
+  advies: 'advies',
+  bestelling: 'bestelling'
+} as const
+
+export type VoorraadTellingRegelScalarFieldEnum = (typeof VoorraadTellingRegelScalarFieldEnum)[keyof typeof VoorraadTellingRegelScalarFieldEnum]
+
+
+export const VoorraadMutatieScalarFieldEnum = {
+  id: 'id',
+  vestigingId: 'vestigingId',
+  productId: 'productId',
+  aantal: 'aantal',
+  reden: 'reden',
+  referentie: 'referentie',
+  opmerkingen: 'opmerkingen',
+  aangemaaktOp: 'aangemaaktOp'
+} as const
+
+export type VoorraadMutatieScalarFieldEnum = (typeof VoorraadMutatieScalarFieldEnum)[keyof typeof VoorraadMutatieScalarFieldEnum]
+
+
+export const LeveringScalarFieldEnum = {
+  id: 'id',
+  bestellingId: 'bestellingId',
+  leverdatum: 'leverdatum',
+  pakbonNummer: 'pakbonNummer',
+  opmerkingen: 'opmerkingen',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type LeveringScalarFieldEnum = (typeof LeveringScalarFieldEnum)[keyof typeof LeveringScalarFieldEnum]
+
+
+export const LeveringRegelScalarFieldEnum = {
+  id: 'id',
+  leveringId: 'leveringId',
+  productId: 'productId',
+  besteld: 'besteld',
+  geleverd: 'geleverd'
+} as const
+
+export type LeveringRegelScalarFieldEnum = (typeof LeveringRegelScalarFieldEnum)[keyof typeof LeveringRegelScalarFieldEnum]
+
+
+export const StatusScalarFieldEnum = {
+  id: 'id',
+  code: 'code',
+  naam: 'naam',
+  module: 'module',
+  volgorde: 'volgorde',
+  actief: 'actief',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type StatusScalarFieldEnum = (typeof StatusScalarFieldEnum)[keyof typeof StatusScalarFieldEnum]
+
+
+export const InstellingScalarFieldEnum = {
+  id: 'id',
+  sleutel: 'sleutel',
+  waarde: 'waarde',
+  omschrijving: 'omschrijving',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type InstellingScalarFieldEnum = (typeof InstellingScalarFieldEnum)[keyof typeof InstellingScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -123,6 +430,14 @@ export const SortOrder = {
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const QueryMode = {
@@ -139,4 +454,13 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 

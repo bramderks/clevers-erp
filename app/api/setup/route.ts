@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const bestaat = await prisma.gebruiker.findFirst();
+  const bestaat = await prisma.systeemGebruiker.findFirst();
 
   if (bestaat) {
     return NextResponse.json({
@@ -20,7 +20,7 @@ export async function GET() {
     },
   });
 
-  const gebruiker = await prisma.gebruiker.create({
+  const gebruiker = await prisma.systeemGebruiker.create({
     data: {
       naam: "Administrator",
       email: "admin@clevers.local",
