@@ -8,7 +8,7 @@ import {
   Truck,
   BarChart3,
   Settings,
-  IceCreamCone,
+  Building2,
 } from "lucide-react";
 
 export const navigation = [
@@ -79,6 +79,11 @@ export const navigation = [
   {
     group: "Beheer",
     items: [
+      {
+        title: "Vestigingen",
+        href: "/vestigingen",
+        icon: Building2,
+      },
       {
         title: "Instellingen",
         href: "/instellingen",

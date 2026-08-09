@@ -18,25 +18,40 @@ export { Prisma }
 export * as $Enums from './enums'
 export * from './enums';
 /**
+ * Model Organisatie
+ * 
+ */
+export type Organisatie = Prisma.OrganisatieModel
+/**
  * Model Vestiging
  * 
  */
 export type Vestiging = Prisma.VestigingModel
 /**
- * Model Rol
+ * Model OpeningstijdenPeriode
  * 
  */
-export type Rol = Prisma.RolModel
+export type OpeningstijdenPeriode = Prisma.OpeningstijdenPeriodeModel
+/**
+ * Model OrganisatieGebruiker
+ * 
+ */
+export type OrganisatieGebruiker = Prisma.OrganisatieGebruikerModel
 /**
  * Model SysteemGebruiker
  * 
  */
 export type SysteemGebruiker = Prisma.SysteemGebruikerModel
 /**
- * Model SysteemGebruikerRol
+ * Model SysteemGebruikerVestiging
  * 
  */
-export type SysteemGebruikerRol = Prisma.SysteemGebruikerRolModel
+export type SysteemGebruikerVestiging = Prisma.SysteemGebruikerVestigingModel
+/**
+ * Model Rol
+ * 
+ */
+export type Rol = Prisma.RolModel
 /**
  * Model AuditLog
  * 

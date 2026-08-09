@@ -21,10 +21,7 @@ export type Aanhef = (typeof Aanhef)[keyof typeof Aanhef]
 
 export const ContractType = {
   OPROEP: 'OPROEP',
-  TIJDELIJK: 'TIJDELIJK',
-  VAST: 'VAST',
-  STAGIAIR: 'STAGIAIR',
-  VAKANTIEKRACHT: 'VAKANTIEKRACHT'
+  VAST: 'VAST'
 } as const
 
 export type ContractType = (typeof ContractType)[keyof typeof ContractType]

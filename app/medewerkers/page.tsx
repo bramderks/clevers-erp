@@ -23,9 +23,13 @@ export default async function MedewerkersPage() {
       (medewerker) => medewerker.actief,
     ).length;
 
+  const inactieveMedewerkers =
+    medewerkers.length -
+    actieveMedewerkers;
+
   return (
     <PageLayout>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Medewerkers"
           value={medewerkers.length}
@@ -37,21 +41,21 @@ export default async function MedewerkersPage() {
           title="Actief"
           value={actieveMedewerkers}
           subtitle="Actieve medewerkers"
+          icon={<Users size={20} />}
         />
 
         <StatCard
           title="Inactief"
-          value={
-            medewerkers.length -
-            actieveMedewerkers
-          }
+          value={inactieveMedewerkers}
           subtitle="Niet actief"
+          icon={<Users size={20} />}
         />
 
         <StatCard
           title="Vestigingen"
           value="2"
           subtitle="Nijmegen / Roermond"
+          icon={<Users size={20} />}
         />
       </div>
 
@@ -99,8 +103,8 @@ export default async function MedewerkersPage() {
             title: "Vestiging",
             render: (medewerker) => {
               if (
-                medewerker.vestigingen
-                  .length === 0
+                medewerker.vestigingen.length ===
+                0
               ) {
                 return (
                   <span className="text-sm text-slate-400">
@@ -160,7 +164,8 @@ export default async function MedewerkersPage() {
             title: "Rol",
             render: (medewerker) => {
               if (
-                medewerker.rollen.length === 0
+                medewerker.rollen.length ===
+                0
               ) {
                 return (
                   <span className="text-sm text-slate-400">

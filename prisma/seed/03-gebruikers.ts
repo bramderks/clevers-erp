@@ -48,6 +48,7 @@ const TEST_MEDEWERKER = {
 
 export async function seedGebruikers(
   prisma: PrismaTx,
+  organisatieId: string,
 ) {
   console.log("→ Systeemgebruikers");
 
@@ -85,21 +86,26 @@ export async function seedGebruikers(
         },
       });
 
-    await prisma.systeemGebruikerRol.upsert({
+    await prisma.organisatieGebruiker.upsert({
       where: {
-        systeemGebruikerId_rolId: {
+        organisatieId_systeemGebruikerId: {
+          organisatieId,
           systeemGebruikerId:
             gebruiker.id,
-          rolId: rol.id,
         },
       },
 
-      update: {},
+      update: {
+        rolId: rol.id,
+        actief: true,
+      },
 
       create: {
+        organisatieId,
         systeemGebruikerId:
           gebruiker.id,
         rolId: rol.id,
+        actief: true,
       },
     });
 
@@ -129,7 +135,10 @@ export async function seedGebruikers(
   const vestiging =
     await prisma.vestiging.findUniqueOrThrow({
       where: {
-        code: TEST_MEDEWERKER.vestigingCode,
+        organisatieId_code: {
+          organisatieId,
+          code: TEST_MEDEWERKER.vestigingCode,
+        },
       },
     });
 
@@ -140,6 +149,26 @@ export async function seedGebruikers(
       },
     });
 
+  const systeemGebruiker =
+    await prisma.systeemGebruiker.upsert({
+      where: {
+        email: TEST_MEDEWERKER.email,
+      },
+
+      update: {
+        naam: `${TEST_MEDEWERKER.voornaam} ${TEST_MEDEWERKER.achternaam}`,
+        wachtwoordHash,
+        actief: true,
+      },
+
+      create: {
+        naam: `${TEST_MEDEWERKER.voornaam} ${TEST_MEDEWERKER.achternaam}`,
+        email: TEST_MEDEWERKER.email,
+        wachtwoordHash,
+        actief: true,
+      },
+    });
+
   const medewerker =
     await prisma.medewerker.upsert({
       where: {
@@ -147,6 +176,8 @@ export async function seedGebruikers(
       },
 
       update: {
+        systeemGebruikerId:
+          systeemGebruiker.id,
         personeelsnummer:
           TEST_MEDEWERKER.personeelsnummer,
         aanhef: TEST_MEDEWERKER.aanhef,
@@ -160,7 +191,6 @@ export async function seedGebruikers(
           TEST_MEDEWERKER.geboortedatum,
         telefoon:
           TEST_MEDEWERKER.telefoon,
-        wachtwoordHash,
         statusId: status.id,
         actief: true,
         contractType:
@@ -172,6 +202,11 @@ export async function seedGebruikers(
       },
 
       create: {
+        systeemGebruiker: {
+          connect: {
+            id: systeemGebruiker.id,
+          },
+        },
         personeelsnummer:
           TEST_MEDEWERKER.personeelsnummer,
         aanhef: TEST_MEDEWERKER.aanhef,
@@ -187,8 +222,11 @@ export async function seedGebruikers(
           TEST_MEDEWERKER.email,
         telefoon:
           TEST_MEDEWERKER.telefoon,
-        wachtwoordHash,
-        statusId: status.id,
+        status: {
+          connect: {
+            id: status.id,
+          },
+        },
         actief: true,
         contractType:
           TEST_MEDEWERKER.contractType,
@@ -198,6 +236,29 @@ export async function seedGebruikers(
           TEST_MEDEWERKER.datumInDienst,
       },
     });
+
+  await prisma.organisatieGebruiker.upsert({
+    where: {
+      organisatieId_systeemGebruikerId: {
+        organisatieId,
+        systeemGebruikerId:
+          systeemGebruiker.id,
+      },
+    },
+
+    update: {
+      rolId: rol.id,
+      actief: true,
+    },
+
+    create: {
+      organisatieId,
+      systeemGebruikerId:
+        systeemGebruiker.id,
+      rolId: rol.id,
+      actief: true,
+    },
+  });
 
   await prisma.medewerkerVestiging.upsert({
     where: {

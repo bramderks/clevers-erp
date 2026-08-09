@@ -31,8 +31,8 @@ export * from "./enums"
  * const prisma = new PrismaClient({
  *   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL })
  * })
- * // Fetch zero or more Vestigings
- * const vestigings = await prisma.vestiging.findMany()
+ * // Fetch zero or more Organisaties
+ * const organisaties = await prisma.organisatie.findMany()
  * ```
  * 
  * Read more in our [docs](https://pris.ly/d/client).
@@ -42,25 +42,40 @@ export type PrismaClient<LogOpts extends Prisma.LogLevel = never, OmitOpts exten
 export { Prisma }
 
 /**
+ * Model Organisatie
+ * 
+ */
+export type Organisatie = Prisma.OrganisatieModel
+/**
  * Model Vestiging
  * 
  */
 export type Vestiging = Prisma.VestigingModel
 /**
- * Model Rol
+ * Model OpeningstijdenPeriode
  * 
  */
-export type Rol = Prisma.RolModel
+export type OpeningstijdenPeriode = Prisma.OpeningstijdenPeriodeModel
+/**
+ * Model OrganisatieGebruiker
+ * 
+ */
+export type OrganisatieGebruiker = Prisma.OrganisatieGebruikerModel
 /**
  * Model SysteemGebruiker
  * 
  */
 export type SysteemGebruiker = Prisma.SysteemGebruikerModel
 /**
- * Model SysteemGebruikerRol
+ * Model SysteemGebruikerVestiging
  * 
  */
-export type SysteemGebruikerRol = Prisma.SysteemGebruikerRolModel
+export type SysteemGebruikerVestiging = Prisma.SysteemGebruikerVestigingModel
+/**
+ * Model Rol
+ * 
+ */
+export type Rol = Prisma.RolModel
 /**
  * Model AuditLog
  * 

@@ -24,13 +24,6 @@ export async function POST(request: Request) {
       where: {
         email: email.toLowerCase(),
       },
-      include: {
-        rollen: {
-          include: {
-            rol: true,
-          },
-        },
-      },
     });
 
     if (!gebruiker) {
@@ -75,7 +68,6 @@ export async function POST(request: Request) {
       sub: gebruiker.id,
       naam: gebruiker.naam,
       email: gebruiker.email,
-      rollen: gebruiker.rollen.map((r) => r.rol.naam),
     });
 
     (await cookies()).set({

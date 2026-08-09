@@ -2,9 +2,11 @@ import { cookies } from "next/headers";
 import { jwtVerify, SignJWT, type JWTPayload } from "jose";
 
 import { prisma } from "@/lib/prisma";
-import { permissions } from "@/lib/permissions";
+import { roles } from "@/lib/roles";
 
-const secret = new TextEncoder().encode(process.env.AUTH_SECRET!);
+const secret = new TextEncoder().encode(
+  process.env.AUTH_SECRET!,
+);
 
 export async function maakToken(payload: JWTPayload) {
   return new SignJWT(payload)
@@ -24,7 +26,6 @@ export async function controleerToken(token: string) {
 
 export async function getCurrentUser() {
   const cookieStore = await cookies();
-
   const token = cookieStore.get("token")?.value;
 
   if (!token) {
@@ -43,11 +44,18 @@ export async function getCurrentUser() {
         id: payload.sub as string,
       },
       include: {
-        rollen: {
+        organisaties: {
           include: {
+            organisatie: true,
             rol: true,
           },
         },
+        vestigingToegang: {
+          include: {
+            vestiging: true,
+          },
+        },
+        medewerker: true,
       },
     });
   } catch {
@@ -61,37 +69,243 @@ export async function isAuthenticated() {
   return gebruiker !== null;
 }
 
-export async function isSuperAdmin() {
+export async function heeftRol(
+  rolNaam: string,
+  organisatieId?: string,
+) {
   const gebruiker = await getCurrentUser();
 
   if (!gebruiker) {
     return false;
   }
 
-  return gebruiker.rollen.some(
-    (r) => r.rol.naam === "Super Admin",
+  return gebruiker.organisaties.some(
+    (relatie) =>
+      relatie.actief &&
+      relatie.organisatie.actief &&
+      (!organisatieId ||
+        relatie.organisatieId === organisatieId) &&
+      relatie.rol.naam.toLowerCase() === rolNaam.toLowerCase(),
   );
 }
 
-export async function hasPermission(permission: string) {
+export async function isEigenaar(
+  organisatieId?: string,
+) {
+  return heeftRol("Eigenaar", organisatieId);
+}
+
+export async function heeftOrganisatieToegang(
+  organisatieId: string,
+) {
   const gebruiker = await getCurrentUser();
 
   if (!gebruiker) {
+    return false;
+  }
+
+  return gebruiker.organisaties.some(
+    (relatie) =>
+      relatie.organisatieId === organisatieId &&
+      relatie.actief &&
+      relatie.organisatie.actief,
+  );
+}
+
+export async function heeftVestigingToegang(
+  vestigingId: string,
+) {
+  const gebruiker = await getCurrentUser();
+
+  if (!gebruiker) {
+    return false;
+  }
+
+  const vestiging = await prisma.vestiging.findUnique({
+    where: {
+      id: vestigingId,
+    },
+    select: {
+      organisatieId: true,
+      actief: true,
+    },
+  });
+
+  if (!vestiging?.actief) {
+    return false;
+  }
+
+  const organisatieRelatie = gebruiker.organisaties.find(
+    (relatie) =>
+      relatie.organisatieId === vestiging.organisatieId &&
+      relatie.actief &&
+      relatie.organisatie.actief,
+  );
+
+  if (!organisatieRelatie) {
     return false;
   }
 
   if (
-    gebruiker.rollen.some(
-      (r) => r.rol.naam === "Super Admin",
-    )
+    organisatieRelatie.rol.naam.toLowerCase() ===
+    "eigenaar"
   ) {
     return true;
   }
 
-  // Placeholder.
-  // In de volgende stap koppelen we rollen automatisch
-  // aan permissions via lib/roles.ts.
-  return permission === permissions.dashboard.view;
+  return gebruiker.vestigingToegang.some(
+    (toegang) =>
+      toegang.vestigingId === vestigingId &&
+      toegang.actief &&
+      toegang.vestiging.actief &&
+      toegang.vestiging.organisatieId ===
+        vestiging.organisatieId,
+  );
+}
+
+export async function heeftVestigingToegangBinnenOrganisatie(
+  vestigingId: string,
+  organisatieId: string,
+) {
+  const gebruiker = await getCurrentUser();
+
+  if (!gebruiker) {
+    return false;
+  }
+
+  const organisatie = gebruiker.organisaties.find(
+    (relatie) =>
+      relatie.organisatieId === organisatieId &&
+      relatie.actief &&
+      relatie.organisatie.actief,
+  );
+
+  if (!organisatie) {
+    return false;
+  }
+
+  if (
+    organisatie.rol.naam.toLowerCase() ===
+    "eigenaar"
+  ) {
+    return true;
+  }
+
+  return gebruiker.vestigingToegang.some(
+    (toegang) =>
+      toegang.vestigingId === vestigingId &&
+      toegang.actief &&
+      toegang.vestiging.actief &&
+      toegang.vestiging.organisatieId ===
+        organisatieId,
+  );
+}
+
+export async function hasPermission(
+  permission: string,
+  organisatieId?: string,
+) {
+  const gebruiker = await getCurrentUser();
+
+  if (!gebruiker) {
+    return false;
+  }
+
+  const relaties = gebruiker.organisaties.filter(
+    (relatie) =>
+      relatie.actief &&
+      relatie.organisatie.actief &&
+      (!organisatieId ||
+        relatie.organisatieId === organisatieId),
+  );
+
+  return relaties.some((relatie) => {
+    const rolDefinitie = Object.values(roles).find(
+      (rol) =>
+        rol.naam.toLowerCase() ===
+        relatie.rol.naam.toLowerCase(),
+    );
+
+    if (!rolDefinitie) {
+      return false;
+    }
+
+    return rolDefinitie.permissions.some(
+      (toegestanePermission) =>
+        toegestanePermission === permission,
+    );
+  });
+}
+
+export async function hasPermissionForVestiging(
+  permission: string,
+  vestigingId: string,
+) {
+  const gebruiker = await getCurrentUser();
+
+  if (!gebruiker) {
+    return false;
+  }
+
+  const vestiging = await prisma.vestiging.findUnique({
+    where: {
+      id: vestigingId,
+    },
+    select: {
+      organisatieId: true,
+      actief: true,
+    },
+  });
+
+  if (!vestiging?.actief) {
+    return false;
+  }
+
+  const organisatieRelatie = gebruiker.organisaties.find(
+    (relatie) =>
+      relatie.organisatieId === vestiging.organisatieId &&
+      relatie.actief &&
+      relatie.organisatie.actief,
+  );
+
+  if (!organisatieRelatie) {
+    return false;
+  }
+
+  const rolDefinitie = Object.values(roles).find(
+    (rol) =>
+      rol.naam.toLowerCase() ===
+      organisatieRelatie.rol.naam.toLowerCase(),
+  );
+
+  if (!rolDefinitie) {
+    return false;
+  }
+
+  const heeftPermission = rolDefinitie.permissions.some(
+    (toegestanePermission) =>
+      toegestanePermission === permission,
+  );
+
+  if (!heeftPermission) {
+    return false;
+  }
+
+  if (
+    organisatieRelatie.rol.naam.toLowerCase() ===
+    "eigenaar"
+  ) {
+    return true;
+  }
+
+  return gebruiker.vestigingToegang.some(
+    (toegang) =>
+      toegang.vestigingId === vestigingId &&
+      toegang.actief &&
+      toegang.vestiging.actief &&
+      toegang.vestiging.organisatieId ===
+        vestiging.organisatieId,
+  );
 }
 
 export async function logout() {

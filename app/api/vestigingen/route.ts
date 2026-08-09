@@ -1,25 +1,200 @@
 import { NextRequest, NextResponse } from "next/server";
+
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
-  const vestigingen = await prisma.vestiging.findMany({
-    orderBy: {
-      naam: "asc",
-    },
-  });
+function parseDatum(
+  value: unknown,
+  veldnaam: string,
+): Date | null {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return null;
+  }
 
-  return NextResponse.json(vestigingen);
+  if (typeof value !== "string") {
+    throw new Error(
+      `${veldnaam} moet een geldige datum zijn.`,
+    );
+  }
+
+  const datum = new Date(value);
+
+  if (Number.isNaN(datum.getTime())) {
+    throw new Error(
+      `${veldnaam} is ongeldig.`,
+    );
+  }
+
+  return datum;
 }
 
-export async function POST(req: NextRequest) {
-  const body = await req.json();
+function controleerSeizoen(
+  seizoenStart: Date | null,
+  seizoenEinde: Date | null,
+) {
+  if (
+    seizoenStart &&
+    seizoenEinde &&
+    seizoenStart > seizoenEinde
+  ) {
+    throw new Error(
+      "Seizoenstart moet vóór de seizoeneinde liggen.",
+    );
+  }
+}
 
-  const vestiging = await prisma.vestiging.create({
-    data: {
-      code: body.code,
-      naam: body.naam,
-    },
-  });
+export async function GET() {
+  try {
+    const vestigingen =
+      await prisma.vestiging.findMany({
+        orderBy: {
+          naam: "asc",
+        },
+      });
 
-  return NextResponse.json(vestiging);
+    return NextResponse.json(
+      vestigingen,
+    );
+  } catch (error) {
+    console.error(
+      "Fout bij ophalen vestigingen:",
+      error,
+    );
+
+    return NextResponse.json(
+      {
+        error:
+          "De vestigingen konden niet worden opgehaald.",
+      },
+      { status: 500 },
+    );
+  }
+}
+
+export async function POST(
+  req: NextRequest,
+) {
+  try {
+    const gebruiker =
+      await getCurrentUser();
+
+    if (!gebruiker) {
+      return NextResponse.json(
+        {
+          error:
+            "Je moet ingelogd zijn.",
+        },
+        { status: 401 },
+      );
+    }
+
+    const organisatieRelatie =
+      gebruiker.organisaties.find(
+        (relatie) =>
+          relatie.actief &&
+          relatie.organisatie.actief &&
+          relatie.rol.naam.toLowerCase() ===
+            "eigenaar",
+      );
+
+    if (!organisatieRelatie) {
+      return NextResponse.json(
+        {
+          error:
+            "Alleen een eigenaar kan een vestiging aanmaken.",
+        },
+        { status: 403 },
+      );
+    }
+
+    const body =
+      await req.json();
+
+    if (
+      typeof body.code !== "string" ||
+      body.code.trim().length === 0
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Code is verplicht.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (
+      typeof body.naam !== "string" ||
+      body.naam.trim().length === 0
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Naam is verplicht.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const seizoenStart =
+      parseDatum(
+        body.seizoenStart,
+        "Seizoenstart",
+      );
+
+    const seizoenEinde =
+      parseDatum(
+        body.seizoenEinde,
+        "Seizoeneinde",
+      );
+
+    controleerSeizoen(
+      seizoenStart,
+      seizoenEinde,
+    );
+
+    const vestiging =
+      await prisma.vestiging.create({
+        data: {
+          code: body.code.trim(),
+          naam: body.naam.trim(),
+
+          seizoenStart,
+          seizoenEinde,
+
+          organisatie: {
+            connect: {
+              id:
+                organisatieRelatie.organisatieId,
+            },
+          },
+        },
+      });
+
+    return NextResponse.json(
+      vestiging,
+      { status: 201 },
+    );
+  } catch (error) {
+    console.error(
+      "Fout bij aanmaken vestiging:",
+      error,
+    );
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : "De vestiging kon niet worden aangemaakt.";
+
+    return NextResponse.json(
+      {
+        error: message,
+      },
+      { status: 400 },
+    );
+  }
 }

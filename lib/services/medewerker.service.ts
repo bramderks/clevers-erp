@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-
 import { medewerkerRepository } from "@/lib/repositories/medewerker.repository";
 
 type MedewerkerUpdateData = {
@@ -17,15 +16,11 @@ type MedewerkerUpdateData = {
   email?: string;
   telefoon?: string;
 
-  contractType?:
-    | "OPROEP"
-    | "TIJDELIJK"
-    | "VAST"
-    | "STAGIAIR"
-    | "VAKANTIEKRACHT"
-    | null;
+  contractType?: "OPROEP" | "VAST" | null;
 
   contractUren?: number | null;
+
+  uurloon?: number | null;
 
   datumInDienst?: Date | null;
   datumUitDienst?: Date | null;
@@ -56,7 +51,8 @@ export const medewerkerService = {
   },
 
   async getById(id: string) {
-    const medewerker = await medewerkerRepository.findById(id);
+    const medewerker =
+      await medewerkerRepository.findById(id);
 
     if (!medewerker) {
       throw new Error("Medewerker niet gevonden.");
@@ -77,7 +73,8 @@ export const medewerkerService = {
   async inBehandeling(id: string) {
     await this.getById(id);
 
-    const statusId = await getStatusId("IN_BEHANDELING");
+    const statusId =
+      await getStatusId("IN_BEHANDELING");
 
     return medewerkerRepository.updateStatus(
       id,
@@ -140,10 +137,13 @@ export const medewerkerService = {
     id: string,
     geactiveerdDoor: string,
   ) {
-    const medewerker = await this.getById(id);
+    const medewerker =
+      await this.getById(id);
 
     if (medewerker.actief) {
-      throw new Error("Deze medewerker is al actief.");
+      throw new Error(
+        "Deze medewerker is al actief.",
+      );
     }
 
     if (!geactiveerdDoor) {
@@ -152,7 +152,8 @@ export const medewerkerService = {
       );
     }
 
-    const statusId = await getStatusId("ACTIEF");
+    const statusId =
+      await getStatusId("ACTIEF");
 
     return medewerkerRepository.setActivatie(
       id,
@@ -162,13 +163,17 @@ export const medewerkerService = {
   },
 
   async deactiveer(id: string) {
-    const medewerker = await this.getById(id);
+    const medewerker =
+      await this.getById(id);
 
     if (!medewerker.actief) {
-      throw new Error("Deze medewerker is al inactief.");
+      throw new Error(
+        "Deze medewerker is al inactief.",
+      );
     }
 
-    const statusId = await getStatusId("GEBLOKKEERD");
+    const statusId =
+      await getStatusId("GEBLOKKEERD");
 
     return medewerkerRepository.updateStatus(
       id,
@@ -180,7 +185,8 @@ export const medewerkerService = {
   async uitDienst(id: string) {
     await this.getById(id);
 
-    const statusId = await getStatusId("UIT_DIENST");
+    const statusId =
+      await getStatusId("UIT_DIENST");
 
     return medewerkerRepository.updateStatus(
       id,

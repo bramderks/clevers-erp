@@ -8,10 +8,13 @@
  *
  * 🟢 You can import this file directly.
  */
+export type * from './models/Organisatie'
 export type * from './models/Vestiging'
-export type * from './models/Rol'
+export type * from './models/OpeningstijdenPeriode'
+export type * from './models/OrganisatieGebruiker'
 export type * from './models/SysteemGebruiker'
-export type * from './models/SysteemGebruikerRol'
+export type * from './models/SysteemGebruikerVestiging'
+export type * from './models/Rol'
 export type * from './models/AuditLog'
 export type * from './models/Medewerker'
 export type * from './models/MedewerkerVestiging'

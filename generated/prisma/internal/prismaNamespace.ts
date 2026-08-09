@@ -397,10 +397,13 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 
 export const ModelName = {
+  Organisatie: 'Organisatie',
   Vestiging: 'Vestiging',
-  Rol: 'Rol',
+  OpeningstijdenPeriode: 'OpeningstijdenPeriode',
+  OrganisatieGebruiker: 'OrganisatieGebruiker',
   SysteemGebruiker: 'SysteemGebruiker',
-  SysteemGebruikerRol: 'SysteemGebruikerRol',
+  SysteemGebruikerVestiging: 'SysteemGebruikerVestiging',
+  Rol: 'Rol',
   AuditLog: 'AuditLog',
   Medewerker: 'Medewerker',
   MedewerkerVestiging: 'MedewerkerVestiging',
@@ -439,10 +442,84 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "vestiging" | "rol" | "systeemGebruiker" | "systeemGebruikerRol" | "auditLog" | "medewerker" | "medewerkerVestiging" | "medewerkerRol" | "tag" | "medewerkerTag" | "week" | "beschikbaarheid" | "dienst" | "dienstTag" | "dienstBezetting" | "productType" | "product" | "vestigingProduct" | "bestelling" | "bestelRegel" | "voorraadTelling" | "voorraadTellingRegel" | "voorraadMutatie" | "levering" | "leveringRegel" | "status" | "instelling"
+    modelProps: "organisatie" | "vestiging" | "openingstijdenPeriode" | "organisatieGebruiker" | "systeemGebruiker" | "systeemGebruikerVestiging" | "rol" | "auditLog" | "medewerker" | "medewerkerVestiging" | "medewerkerRol" | "tag" | "medewerkerTag" | "week" | "beschikbaarheid" | "dienst" | "dienstTag" | "dienstBezetting" | "productType" | "product" | "vestigingProduct" | "bestelling" | "bestelRegel" | "voorraadTelling" | "voorraadTellingRegel" | "voorraadMutatie" | "levering" | "leveringRegel" | "status" | "instelling"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
+    Organisatie: {
+      payload: Prisma.$OrganisatiePayload<ExtArgs>
+      fields: Prisma.OrganisatieFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.OrganisatieFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatiePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.OrganisatieFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatiePayload>
+        }
+        findFirst: {
+          args: Prisma.OrganisatieFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatiePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.OrganisatieFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatiePayload>
+        }
+        findMany: {
+          args: Prisma.OrganisatieFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatiePayload>[]
+        }
+        create: {
+          args: Prisma.OrganisatieCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatiePayload>
+        }
+        createMany: {
+          args: Prisma.OrganisatieCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.OrganisatieCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatiePayload>[]
+        }
+        delete: {
+          args: Prisma.OrganisatieDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatiePayload>
+        }
+        update: {
+          args: Prisma.OrganisatieUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatiePayload>
+        }
+        deleteMany: {
+          args: Prisma.OrganisatieDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.OrganisatieUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.OrganisatieUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatiePayload>[]
+        }
+        upsert: {
+          args: Prisma.OrganisatieUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatiePayload>
+        }
+        aggregate: {
+          args: Prisma.OrganisatieAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateOrganisatie>
+        }
+        groupBy: {
+          args: Prisma.OrganisatieGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.OrganisatieGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.OrganisatieCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.OrganisatieCountAggregateOutputType> | number
+        }
+      }
+    }
     Vestiging: {
       payload: Prisma.$VestigingPayload<ExtArgs>
       fields: Prisma.VestigingFieldRefs
@@ -517,77 +594,151 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    Rol: {
-      payload: Prisma.$RolPayload<ExtArgs>
-      fields: Prisma.RolFieldRefs
+    OpeningstijdenPeriode: {
+      payload: Prisma.$OpeningstijdenPeriodePayload<ExtArgs>
+      fields: Prisma.OpeningstijdenPeriodeFieldRefs
       operations: {
         findUnique: {
-          args: Prisma.RolFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload> | null
+          args: Prisma.OpeningstijdenPeriodeFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OpeningstijdenPeriodePayload> | null
         }
         findUniqueOrThrow: {
-          args: Prisma.RolFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload>
+          args: Prisma.OpeningstijdenPeriodeFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OpeningstijdenPeriodePayload>
         }
         findFirst: {
-          args: Prisma.RolFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload> | null
+          args: Prisma.OpeningstijdenPeriodeFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OpeningstijdenPeriodePayload> | null
         }
         findFirstOrThrow: {
-          args: Prisma.RolFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload>
+          args: Prisma.OpeningstijdenPeriodeFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OpeningstijdenPeriodePayload>
         }
         findMany: {
-          args: Prisma.RolFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload>[]
+          args: Prisma.OpeningstijdenPeriodeFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OpeningstijdenPeriodePayload>[]
         }
         create: {
-          args: Prisma.RolCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload>
+          args: Prisma.OpeningstijdenPeriodeCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OpeningstijdenPeriodePayload>
         }
         createMany: {
-          args: Prisma.RolCreateManyArgs<ExtArgs>
+          args: Prisma.OpeningstijdenPeriodeCreateManyArgs<ExtArgs>
           result: BatchPayload
         }
         createManyAndReturn: {
-          args: Prisma.RolCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload>[]
+          args: Prisma.OpeningstijdenPeriodeCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OpeningstijdenPeriodePayload>[]
         }
         delete: {
-          args: Prisma.RolDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload>
+          args: Prisma.OpeningstijdenPeriodeDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OpeningstijdenPeriodePayload>
         }
         update: {
-          args: Prisma.RolUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload>
+          args: Prisma.OpeningstijdenPeriodeUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OpeningstijdenPeriodePayload>
         }
         deleteMany: {
-          args: Prisma.RolDeleteManyArgs<ExtArgs>
+          args: Prisma.OpeningstijdenPeriodeDeleteManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateMany: {
-          args: Prisma.RolUpdateManyArgs<ExtArgs>
+          args: Prisma.OpeningstijdenPeriodeUpdateManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateManyAndReturn: {
-          args: Prisma.RolUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload>[]
+          args: Prisma.OpeningstijdenPeriodeUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OpeningstijdenPeriodePayload>[]
         }
         upsert: {
-          args: Prisma.RolUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload>
+          args: Prisma.OpeningstijdenPeriodeUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OpeningstijdenPeriodePayload>
         }
         aggregate: {
-          args: Prisma.RolAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateRol>
+          args: Prisma.OpeningstijdenPeriodeAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateOpeningstijdenPeriode>
         }
         groupBy: {
-          args: Prisma.RolGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.RolGroupByOutputType>[]
+          args: Prisma.OpeningstijdenPeriodeGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.OpeningstijdenPeriodeGroupByOutputType>[]
         }
         count: {
-          args: Prisma.RolCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.RolCountAggregateOutputType> | number
+          args: Prisma.OpeningstijdenPeriodeCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.OpeningstijdenPeriodeCountAggregateOutputType> | number
+        }
+      }
+    }
+    OrganisatieGebruiker: {
+      payload: Prisma.$OrganisatieGebruikerPayload<ExtArgs>
+      fields: Prisma.OrganisatieGebruikerFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.OrganisatieGebruikerFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatieGebruikerPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.OrganisatieGebruikerFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatieGebruikerPayload>
+        }
+        findFirst: {
+          args: Prisma.OrganisatieGebruikerFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatieGebruikerPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.OrganisatieGebruikerFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatieGebruikerPayload>
+        }
+        findMany: {
+          args: Prisma.OrganisatieGebruikerFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatieGebruikerPayload>[]
+        }
+        create: {
+          args: Prisma.OrganisatieGebruikerCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatieGebruikerPayload>
+        }
+        createMany: {
+          args: Prisma.OrganisatieGebruikerCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.OrganisatieGebruikerCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatieGebruikerPayload>[]
+        }
+        delete: {
+          args: Prisma.OrganisatieGebruikerDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatieGebruikerPayload>
+        }
+        update: {
+          args: Prisma.OrganisatieGebruikerUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatieGebruikerPayload>
+        }
+        deleteMany: {
+          args: Prisma.OrganisatieGebruikerDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.OrganisatieGebruikerUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.OrganisatieGebruikerUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatieGebruikerPayload>[]
+        }
+        upsert: {
+          args: Prisma.OrganisatieGebruikerUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganisatieGebruikerPayload>
+        }
+        aggregate: {
+          args: Prisma.OrganisatieGebruikerAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateOrganisatieGebruiker>
+        }
+        groupBy: {
+          args: Prisma.OrganisatieGebruikerGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.OrganisatieGebruikerGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.OrganisatieGebruikerCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.OrganisatieGebruikerCountAggregateOutputType> | number
         }
       }
     }
@@ -665,77 +816,151 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    SysteemGebruikerRol: {
-      payload: Prisma.$SysteemGebruikerRolPayload<ExtArgs>
-      fields: Prisma.SysteemGebruikerRolFieldRefs
+    SysteemGebruikerVestiging: {
+      payload: Prisma.$SysteemGebruikerVestigingPayload<ExtArgs>
+      fields: Prisma.SysteemGebruikerVestigingFieldRefs
       operations: {
         findUnique: {
-          args: Prisma.SysteemGebruikerRolFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerRolPayload> | null
+          args: Prisma.SysteemGebruikerVestigingFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerVestigingPayload> | null
         }
         findUniqueOrThrow: {
-          args: Prisma.SysteemGebruikerRolFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerRolPayload>
+          args: Prisma.SysteemGebruikerVestigingFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerVestigingPayload>
         }
         findFirst: {
-          args: Prisma.SysteemGebruikerRolFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerRolPayload> | null
+          args: Prisma.SysteemGebruikerVestigingFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerVestigingPayload> | null
         }
         findFirstOrThrow: {
-          args: Prisma.SysteemGebruikerRolFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerRolPayload>
+          args: Prisma.SysteemGebruikerVestigingFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerVestigingPayload>
         }
         findMany: {
-          args: Prisma.SysteemGebruikerRolFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerRolPayload>[]
+          args: Prisma.SysteemGebruikerVestigingFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerVestigingPayload>[]
         }
         create: {
-          args: Prisma.SysteemGebruikerRolCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerRolPayload>
+          args: Prisma.SysteemGebruikerVestigingCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerVestigingPayload>
         }
         createMany: {
-          args: Prisma.SysteemGebruikerRolCreateManyArgs<ExtArgs>
+          args: Prisma.SysteemGebruikerVestigingCreateManyArgs<ExtArgs>
           result: BatchPayload
         }
         createManyAndReturn: {
-          args: Prisma.SysteemGebruikerRolCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerRolPayload>[]
+          args: Prisma.SysteemGebruikerVestigingCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerVestigingPayload>[]
         }
         delete: {
-          args: Prisma.SysteemGebruikerRolDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerRolPayload>
+          args: Prisma.SysteemGebruikerVestigingDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerVestigingPayload>
         }
         update: {
-          args: Prisma.SysteemGebruikerRolUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerRolPayload>
+          args: Prisma.SysteemGebruikerVestigingUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerVestigingPayload>
         }
         deleteMany: {
-          args: Prisma.SysteemGebruikerRolDeleteManyArgs<ExtArgs>
+          args: Prisma.SysteemGebruikerVestigingDeleteManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateMany: {
-          args: Prisma.SysteemGebruikerRolUpdateManyArgs<ExtArgs>
+          args: Prisma.SysteemGebruikerVestigingUpdateManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateManyAndReturn: {
-          args: Prisma.SysteemGebruikerRolUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerRolPayload>[]
+          args: Prisma.SysteemGebruikerVestigingUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerVestigingPayload>[]
         }
         upsert: {
-          args: Prisma.SysteemGebruikerRolUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerRolPayload>
+          args: Prisma.SysteemGebruikerVestigingUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SysteemGebruikerVestigingPayload>
         }
         aggregate: {
-          args: Prisma.SysteemGebruikerRolAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateSysteemGebruikerRol>
+          args: Prisma.SysteemGebruikerVestigingAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSysteemGebruikerVestiging>
         }
         groupBy: {
-          args: Prisma.SysteemGebruikerRolGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.SysteemGebruikerRolGroupByOutputType>[]
+          args: Prisma.SysteemGebruikerVestigingGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SysteemGebruikerVestigingGroupByOutputType>[]
         }
         count: {
-          args: Prisma.SysteemGebruikerRolCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.SysteemGebruikerRolCountAggregateOutputType> | number
+          args: Prisma.SysteemGebruikerVestigingCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SysteemGebruikerVestigingCountAggregateOutputType> | number
+        }
+      }
+    }
+    Rol: {
+      payload: Prisma.$RolPayload<ExtArgs>
+      fields: Prisma.RolFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RolFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RolFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload>
+        }
+        findFirst: {
+          args: Prisma.RolFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RolFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload>
+        }
+        findMany: {
+          args: Prisma.RolFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload>[]
+        }
+        create: {
+          args: Prisma.RolCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload>
+        }
+        createMany: {
+          args: Prisma.RolCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RolCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload>[]
+        }
+        delete: {
+          args: Prisma.RolDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload>
+        }
+        update: {
+          args: Prisma.RolUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload>
+        }
+        deleteMany: {
+          args: Prisma.RolDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RolUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RolUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload>[]
+        }
+        upsert: {
+          args: Prisma.RolUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RolPayload>
+        }
+        aggregate: {
+          args: Prisma.RolAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRol>
+        }
+        groupBy: {
+          args: Prisma.RolGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RolGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RolCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RolCountAggregateOutputType> | number
         }
       }
     }
@@ -2480,7 +2705,7 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
-export const VestigingScalarFieldEnum = {
+export const OrganisatieScalarFieldEnum = {
   id: 'id',
   code: 'code',
   naam: 'naam',
@@ -2491,18 +2716,51 @@ export const VestigingScalarFieldEnum = {
   gewijzigdDoor: 'gewijzigdDoor'
 } as const
 
+export type OrganisatieScalarFieldEnum = (typeof OrganisatieScalarFieldEnum)[keyof typeof OrganisatieScalarFieldEnum]
+
+
+export const VestigingScalarFieldEnum = {
+  id: 'id',
+  organisatieId: 'organisatieId',
+  code: 'code',
+  naam: 'naam',
+  actief: 'actief',
+  seizoenStart: 'seizoenStart',
+  seizoenEinde: 'seizoenEinde',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp',
+  aangemaaktDoor: 'aangemaaktDoor',
+  gewijzigdDoor: 'gewijzigdDoor'
+} as const
+
 export type VestigingScalarFieldEnum = (typeof VestigingScalarFieldEnum)[keyof typeof VestigingScalarFieldEnum]
 
 
-export const RolScalarFieldEnum = {
+export const OpeningstijdenPeriodeScalarFieldEnum = {
   id: 'id',
-  naam: 'naam',
-  omschrijving: 'omschrijving',
+  vestigingId: 'vestigingId',
+  startDatum: 'startDatum',
+  eindDatum: 'eindDatum',
+  openingstijd: 'openingstijd',
+  sluitingstijd: 'sluitingstijd',
   aangemaaktOp: 'aangemaaktOp',
   gewijzigdOp: 'gewijzigdOp'
 } as const
 
-export type RolScalarFieldEnum = (typeof RolScalarFieldEnum)[keyof typeof RolScalarFieldEnum]
+export type OpeningstijdenPeriodeScalarFieldEnum = (typeof OpeningstijdenPeriodeScalarFieldEnum)[keyof typeof OpeningstijdenPeriodeScalarFieldEnum]
+
+
+export const OrganisatieGebruikerScalarFieldEnum = {
+  id: 'id',
+  organisatieId: 'organisatieId',
+  systeemGebruikerId: 'systeemGebruikerId',
+  rolId: 'rolId',
+  actief: 'actief',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type OrganisatieGebruikerScalarFieldEnum = (typeof OrganisatieGebruikerScalarFieldEnum)[keyof typeof OrganisatieGebruikerScalarFieldEnum]
 
 
 export const SysteemGebruikerScalarFieldEnum = {
@@ -2519,13 +2777,27 @@ export const SysteemGebruikerScalarFieldEnum = {
 export type SysteemGebruikerScalarFieldEnum = (typeof SysteemGebruikerScalarFieldEnum)[keyof typeof SysteemGebruikerScalarFieldEnum]
 
 
-export const SysteemGebruikerRolScalarFieldEnum = {
+export const SysteemGebruikerVestigingScalarFieldEnum = {
   id: 'id',
   systeemGebruikerId: 'systeemGebruikerId',
-  rolId: 'rolId'
+  vestigingId: 'vestigingId',
+  actief: 'actief',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
 } as const
 
-export type SysteemGebruikerRolScalarFieldEnum = (typeof SysteemGebruikerRolScalarFieldEnum)[keyof typeof SysteemGebruikerRolScalarFieldEnum]
+export type SysteemGebruikerVestigingScalarFieldEnum = (typeof SysteemGebruikerVestigingScalarFieldEnum)[keyof typeof SysteemGebruikerVestigingScalarFieldEnum]
+
+
+export const RolScalarFieldEnum = {
+  id: 'id',
+  naam: 'naam',
+  omschrijving: 'omschrijving',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type RolScalarFieldEnum = (typeof RolScalarFieldEnum)[keyof typeof RolScalarFieldEnum]
 
 
 export const AuditLogScalarFieldEnum = {
@@ -2543,6 +2815,7 @@ export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typ
 
 export const MedewerkerScalarFieldEnum = {
   id: 'id',
+  systeemGebruikerId: 'systeemGebruikerId',
   personeelsnummer: 'personeelsnummer',
   aanhef: 'aanhef',
   voornaam: 'voornaam',
@@ -2552,7 +2825,6 @@ export const MedewerkerScalarFieldEnum = {
   geboortedatum: 'geboortedatum',
   email: 'email',
   telefoon: 'telefoon',
-  wachtwoordHash: 'wachtwoordHash',
   statusId: 'statusId',
   aanmeldingOp: 'aanmeldingOp',
   geactiveerdOp: 'geactiveerdOp',
@@ -2560,6 +2832,7 @@ export const MedewerkerScalarFieldEnum = {
   actief: 'actief',
   contractType: 'contractType',
   contractUren: 'contractUren',
+  uurloon: 'uurloon',
   datumInDienst: 'datumInDienst',
   datumUitDienst: 'datumUitDienst',
   aangemaaktOp: 'aangemaaktOp',
@@ -3157,10 +3430,13 @@ export interface PrismaClientOptionsWithAdapter extends PrismaClientBaseOptions 
  */
 export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaClientOptionsWithAdapter
 export type GlobalOmitConfig = {
+  organisatie?: Prisma.OrganisatieOmit
   vestiging?: Prisma.VestigingOmit
-  rol?: Prisma.RolOmit
+  openingstijdenPeriode?: Prisma.OpeningstijdenPeriodeOmit
+  organisatieGebruiker?: Prisma.OrganisatieGebruikerOmit
   systeemGebruiker?: Prisma.SysteemGebruikerOmit
-  systeemGebruikerRol?: Prisma.SysteemGebruikerRolOmit
+  systeemGebruikerVestiging?: Prisma.SysteemGebruikerVestigingOmit
+  rol?: Prisma.RolOmit
   auditLog?: Prisma.AuditLogOmit
   medewerker?: Prisma.MedewerkerOmit
   medewerkerVestiging?: Prisma.MedewerkerVestigingOmit

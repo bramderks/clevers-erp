@@ -206,7 +206,9 @@ export type SysteemGebruikerWhereInput = {
   laatsteLoginOp?: Prisma.DateTimeNullableFilter<"SysteemGebruiker"> | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFilter<"SysteemGebruiker"> | Date | string
   gewijzigdOp?: Prisma.DateTimeFilter<"SysteemGebruiker"> | Date | string
-  rollen?: Prisma.SysteemGebruikerRolListRelationFilter
+  medewerker?: Prisma.XOR<Prisma.MedewerkerNullableScalarRelationFilter, Prisma.MedewerkerWhereInput> | null
+  organisaties?: Prisma.OrganisatieGebruikerListRelationFilter
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
 }
 
@@ -219,7 +221,9 @@ export type SysteemGebruikerOrderByWithRelationInput = {
   laatsteLoginOp?: Prisma.SortOrderInput | Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
-  rollen?: Prisma.SysteemGebruikerRolOrderByRelationAggregateInput
+  medewerker?: Prisma.MedewerkerOrderByWithRelationInput
+  organisaties?: Prisma.OrganisatieGebruikerOrderByRelationAggregateInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingOrderByRelationAggregateInput
   auditLogs?: Prisma.AuditLogOrderByRelationAggregateInput
 }
 
@@ -235,7 +239,9 @@ export type SysteemGebruikerWhereUniqueInput = Prisma.AtLeast<{
   laatsteLoginOp?: Prisma.DateTimeNullableFilter<"SysteemGebruiker"> | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFilter<"SysteemGebruiker"> | Date | string
   gewijzigdOp?: Prisma.DateTimeFilter<"SysteemGebruiker"> | Date | string
-  rollen?: Prisma.SysteemGebruikerRolListRelationFilter
+  medewerker?: Prisma.XOR<Prisma.MedewerkerNullableScalarRelationFilter, Prisma.MedewerkerWhereInput> | null
+  organisaties?: Prisma.OrganisatieGebruikerListRelationFilter
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
 }, "id" | "email">
 
@@ -276,7 +282,9 @@ export type SysteemGebruikerCreateInput = {
   laatsteLoginOp?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
-  rollen?: Prisma.SysteemGebruikerRolCreateNestedManyWithoutSysteemGebruikerInput
+  medewerker?: Prisma.MedewerkerCreateNestedOneWithoutSysteemGebruikerInput
+  organisaties?: Prisma.OrganisatieGebruikerCreateNestedManyWithoutSysteemGebruikerInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingCreateNestedManyWithoutSysteemGebruikerInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutSysteemGebruikerInput
 }
 
@@ -289,7 +297,9 @@ export type SysteemGebruikerUncheckedCreateInput = {
   laatsteLoginOp?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
-  rollen?: Prisma.SysteemGebruikerRolUncheckedCreateNestedManyWithoutSysteemGebruikerInput
+  medewerker?: Prisma.MedewerkerUncheckedCreateNestedOneWithoutSysteemGebruikerInput
+  organisaties?: Prisma.OrganisatieGebruikerUncheckedCreateNestedManyWithoutSysteemGebruikerInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedCreateNestedManyWithoutSysteemGebruikerInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutSysteemGebruikerInput
 }
 
@@ -302,7 +312,9 @@ export type SysteemGebruikerUpdateInput = {
   laatsteLoginOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  rollen?: Prisma.SysteemGebruikerRolUpdateManyWithoutSysteemGebruikerNestedInput
+  medewerker?: Prisma.MedewerkerUpdateOneWithoutSysteemGebruikerNestedInput
+  organisaties?: Prisma.OrganisatieGebruikerUpdateManyWithoutSysteemGebruikerNestedInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUpdateManyWithoutSysteemGebruikerNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutSysteemGebruikerNestedInput
 }
 
@@ -315,7 +327,9 @@ export type SysteemGebruikerUncheckedUpdateInput = {
   laatsteLoginOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  rollen?: Prisma.SysteemGebruikerRolUncheckedUpdateManyWithoutSysteemGebruikerNestedInput
+  medewerker?: Prisma.MedewerkerUncheckedUpdateOneWithoutSysteemGebruikerNestedInput
+  organisaties?: Prisma.OrganisatieGebruikerUncheckedUpdateManyWithoutSysteemGebruikerNestedInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedUpdateManyWithoutSysteemGebruikerNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutSysteemGebruikerNestedInput
 }
 
@@ -352,6 +366,11 @@ export type SysteemGebruikerUncheckedUpdateManyInput = {
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
+export type SysteemGebruikerScalarRelationFilter = {
+  is?: Prisma.SysteemGebruikerWhereInput
+  isNot?: Prisma.SysteemGebruikerWhereInput
+}
+
 export type SysteemGebruikerCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   naam?: Prisma.SortOrder
@@ -385,32 +404,37 @@ export type SysteemGebruikerMinOrderByAggregateInput = {
   gewijzigdOp?: Prisma.SortOrder
 }
 
-export type SysteemGebruikerScalarRelationFilter = {
-  is?: Prisma.SysteemGebruikerWhereInput
-  isNot?: Prisma.SysteemGebruikerWhereInput
-}
-
 export type SysteemGebruikerNullableScalarRelationFilter = {
   is?: Prisma.SysteemGebruikerWhereInput | null
   isNot?: Prisma.SysteemGebruikerWhereInput | null
 }
 
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null
-}
-
-export type SysteemGebruikerCreateNestedOneWithoutRollenInput = {
-  create?: Prisma.XOR<Prisma.SysteemGebruikerCreateWithoutRollenInput, Prisma.SysteemGebruikerUncheckedCreateWithoutRollenInput>
-  connectOrCreate?: Prisma.SysteemGebruikerCreateOrConnectWithoutRollenInput
+export type SysteemGebruikerCreateNestedOneWithoutOrganisatiesInput = {
+  create?: Prisma.XOR<Prisma.SysteemGebruikerCreateWithoutOrganisatiesInput, Prisma.SysteemGebruikerUncheckedCreateWithoutOrganisatiesInput>
+  connectOrCreate?: Prisma.SysteemGebruikerCreateOrConnectWithoutOrganisatiesInput
   connect?: Prisma.SysteemGebruikerWhereUniqueInput
 }
 
-export type SysteemGebruikerUpdateOneRequiredWithoutRollenNestedInput = {
-  create?: Prisma.XOR<Prisma.SysteemGebruikerCreateWithoutRollenInput, Prisma.SysteemGebruikerUncheckedCreateWithoutRollenInput>
-  connectOrCreate?: Prisma.SysteemGebruikerCreateOrConnectWithoutRollenInput
-  upsert?: Prisma.SysteemGebruikerUpsertWithoutRollenInput
+export type SysteemGebruikerUpdateOneRequiredWithoutOrganisatiesNestedInput = {
+  create?: Prisma.XOR<Prisma.SysteemGebruikerCreateWithoutOrganisatiesInput, Prisma.SysteemGebruikerUncheckedCreateWithoutOrganisatiesInput>
+  connectOrCreate?: Prisma.SysteemGebruikerCreateOrConnectWithoutOrganisatiesInput
+  upsert?: Prisma.SysteemGebruikerUpsertWithoutOrganisatiesInput
   connect?: Prisma.SysteemGebruikerWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.SysteemGebruikerUpdateToOneWithWhereWithoutRollenInput, Prisma.SysteemGebruikerUpdateWithoutRollenInput>, Prisma.SysteemGebruikerUncheckedUpdateWithoutRollenInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.SysteemGebruikerUpdateToOneWithWhereWithoutOrganisatiesInput, Prisma.SysteemGebruikerUpdateWithoutOrganisatiesInput>, Prisma.SysteemGebruikerUncheckedUpdateWithoutOrganisatiesInput>
+}
+
+export type SysteemGebruikerCreateNestedOneWithoutVestigingToegangInput = {
+  create?: Prisma.XOR<Prisma.SysteemGebruikerCreateWithoutVestigingToegangInput, Prisma.SysteemGebruikerUncheckedCreateWithoutVestigingToegangInput>
+  connectOrCreate?: Prisma.SysteemGebruikerCreateOrConnectWithoutVestigingToegangInput
+  connect?: Prisma.SysteemGebruikerWhereUniqueInput
+}
+
+export type SysteemGebruikerUpdateOneRequiredWithoutVestigingToegangNestedInput = {
+  create?: Prisma.XOR<Prisma.SysteemGebruikerCreateWithoutVestigingToegangInput, Prisma.SysteemGebruikerUncheckedCreateWithoutVestigingToegangInput>
+  connectOrCreate?: Prisma.SysteemGebruikerCreateOrConnectWithoutVestigingToegangInput
+  upsert?: Prisma.SysteemGebruikerUpsertWithoutVestigingToegangInput
+  connect?: Prisma.SysteemGebruikerWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.SysteemGebruikerUpdateToOneWithWhereWithoutVestigingToegangInput, Prisma.SysteemGebruikerUpdateWithoutVestigingToegangInput>, Prisma.SysteemGebruikerUncheckedUpdateWithoutVestigingToegangInput>
 }
 
 export type SysteemGebruikerCreateNestedOneWithoutAuditLogsInput = {
@@ -429,7 +453,23 @@ export type SysteemGebruikerUpdateOneWithoutAuditLogsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.SysteemGebruikerUpdateToOneWithWhereWithoutAuditLogsInput, Prisma.SysteemGebruikerUpdateWithoutAuditLogsInput>, Prisma.SysteemGebruikerUncheckedUpdateWithoutAuditLogsInput>
 }
 
-export type SysteemGebruikerCreateWithoutRollenInput = {
+export type SysteemGebruikerCreateNestedOneWithoutMedewerkerInput = {
+  create?: Prisma.XOR<Prisma.SysteemGebruikerCreateWithoutMedewerkerInput, Prisma.SysteemGebruikerUncheckedCreateWithoutMedewerkerInput>
+  connectOrCreate?: Prisma.SysteemGebruikerCreateOrConnectWithoutMedewerkerInput
+  connect?: Prisma.SysteemGebruikerWhereUniqueInput
+}
+
+export type SysteemGebruikerUpdateOneWithoutMedewerkerNestedInput = {
+  create?: Prisma.XOR<Prisma.SysteemGebruikerCreateWithoutMedewerkerInput, Prisma.SysteemGebruikerUncheckedCreateWithoutMedewerkerInput>
+  connectOrCreate?: Prisma.SysteemGebruikerCreateOrConnectWithoutMedewerkerInput
+  upsert?: Prisma.SysteemGebruikerUpsertWithoutMedewerkerInput
+  disconnect?: Prisma.SysteemGebruikerWhereInput | boolean
+  delete?: Prisma.SysteemGebruikerWhereInput | boolean
+  connect?: Prisma.SysteemGebruikerWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.SysteemGebruikerUpdateToOneWithWhereWithoutMedewerkerInput, Prisma.SysteemGebruikerUpdateWithoutMedewerkerInput>, Prisma.SysteemGebruikerUncheckedUpdateWithoutMedewerkerInput>
+}
+
+export type SysteemGebruikerCreateWithoutOrganisatiesInput = {
   id?: string
   naam: string
   email: string
@@ -438,10 +478,12 @@ export type SysteemGebruikerCreateWithoutRollenInput = {
   laatsteLoginOp?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  medewerker?: Prisma.MedewerkerCreateNestedOneWithoutSysteemGebruikerInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingCreateNestedManyWithoutSysteemGebruikerInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutSysteemGebruikerInput
 }
 
-export type SysteemGebruikerUncheckedCreateWithoutRollenInput = {
+export type SysteemGebruikerUncheckedCreateWithoutOrganisatiesInput = {
   id?: string
   naam: string
   email: string
@@ -450,26 +492,28 @@ export type SysteemGebruikerUncheckedCreateWithoutRollenInput = {
   laatsteLoginOp?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  medewerker?: Prisma.MedewerkerUncheckedCreateNestedOneWithoutSysteemGebruikerInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedCreateNestedManyWithoutSysteemGebruikerInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutSysteemGebruikerInput
 }
 
-export type SysteemGebruikerCreateOrConnectWithoutRollenInput = {
+export type SysteemGebruikerCreateOrConnectWithoutOrganisatiesInput = {
   where: Prisma.SysteemGebruikerWhereUniqueInput
-  create: Prisma.XOR<Prisma.SysteemGebruikerCreateWithoutRollenInput, Prisma.SysteemGebruikerUncheckedCreateWithoutRollenInput>
+  create: Prisma.XOR<Prisma.SysteemGebruikerCreateWithoutOrganisatiesInput, Prisma.SysteemGebruikerUncheckedCreateWithoutOrganisatiesInput>
 }
 
-export type SysteemGebruikerUpsertWithoutRollenInput = {
-  update: Prisma.XOR<Prisma.SysteemGebruikerUpdateWithoutRollenInput, Prisma.SysteemGebruikerUncheckedUpdateWithoutRollenInput>
-  create: Prisma.XOR<Prisma.SysteemGebruikerCreateWithoutRollenInput, Prisma.SysteemGebruikerUncheckedCreateWithoutRollenInput>
+export type SysteemGebruikerUpsertWithoutOrganisatiesInput = {
+  update: Prisma.XOR<Prisma.SysteemGebruikerUpdateWithoutOrganisatiesInput, Prisma.SysteemGebruikerUncheckedUpdateWithoutOrganisatiesInput>
+  create: Prisma.XOR<Prisma.SysteemGebruikerCreateWithoutOrganisatiesInput, Prisma.SysteemGebruikerUncheckedCreateWithoutOrganisatiesInput>
   where?: Prisma.SysteemGebruikerWhereInput
 }
 
-export type SysteemGebruikerUpdateToOneWithWhereWithoutRollenInput = {
+export type SysteemGebruikerUpdateToOneWithWhereWithoutOrganisatiesInput = {
   where?: Prisma.SysteemGebruikerWhereInput
-  data: Prisma.XOR<Prisma.SysteemGebruikerUpdateWithoutRollenInput, Prisma.SysteemGebruikerUncheckedUpdateWithoutRollenInput>
+  data: Prisma.XOR<Prisma.SysteemGebruikerUpdateWithoutOrganisatiesInput, Prisma.SysteemGebruikerUncheckedUpdateWithoutOrganisatiesInput>
 }
 
-export type SysteemGebruikerUpdateWithoutRollenInput = {
+export type SysteemGebruikerUpdateWithoutOrganisatiesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
@@ -478,10 +522,12 @@ export type SysteemGebruikerUpdateWithoutRollenInput = {
   laatsteLoginOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  medewerker?: Prisma.MedewerkerUpdateOneWithoutSysteemGebruikerNestedInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUpdateManyWithoutSysteemGebruikerNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutSysteemGebruikerNestedInput
 }
 
-export type SysteemGebruikerUncheckedUpdateWithoutRollenInput = {
+export type SysteemGebruikerUncheckedUpdateWithoutOrganisatiesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   naam?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
@@ -490,6 +536,80 @@ export type SysteemGebruikerUncheckedUpdateWithoutRollenInput = {
   laatsteLoginOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  medewerker?: Prisma.MedewerkerUncheckedUpdateOneWithoutSysteemGebruikerNestedInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedUpdateManyWithoutSysteemGebruikerNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutSysteemGebruikerNestedInput
+}
+
+export type SysteemGebruikerCreateWithoutVestigingToegangInput = {
+  id?: string
+  naam: string
+  email: string
+  wachtwoordHash: string
+  actief?: boolean
+  laatsteLoginOp?: Date | string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  medewerker?: Prisma.MedewerkerCreateNestedOneWithoutSysteemGebruikerInput
+  organisaties?: Prisma.OrganisatieGebruikerCreateNestedManyWithoutSysteemGebruikerInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutSysteemGebruikerInput
+}
+
+export type SysteemGebruikerUncheckedCreateWithoutVestigingToegangInput = {
+  id?: string
+  naam: string
+  email: string
+  wachtwoordHash: string
+  actief?: boolean
+  laatsteLoginOp?: Date | string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  medewerker?: Prisma.MedewerkerUncheckedCreateNestedOneWithoutSysteemGebruikerInput
+  organisaties?: Prisma.OrganisatieGebruikerUncheckedCreateNestedManyWithoutSysteemGebruikerInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutSysteemGebruikerInput
+}
+
+export type SysteemGebruikerCreateOrConnectWithoutVestigingToegangInput = {
+  where: Prisma.SysteemGebruikerWhereUniqueInput
+  create: Prisma.XOR<Prisma.SysteemGebruikerCreateWithoutVestigingToegangInput, Prisma.SysteemGebruikerUncheckedCreateWithoutVestigingToegangInput>
+}
+
+export type SysteemGebruikerUpsertWithoutVestigingToegangInput = {
+  update: Prisma.XOR<Prisma.SysteemGebruikerUpdateWithoutVestigingToegangInput, Prisma.SysteemGebruikerUncheckedUpdateWithoutVestigingToegangInput>
+  create: Prisma.XOR<Prisma.SysteemGebruikerCreateWithoutVestigingToegangInput, Prisma.SysteemGebruikerUncheckedCreateWithoutVestigingToegangInput>
+  where?: Prisma.SysteemGebruikerWhereInput
+}
+
+export type SysteemGebruikerUpdateToOneWithWhereWithoutVestigingToegangInput = {
+  where?: Prisma.SysteemGebruikerWhereInput
+  data: Prisma.XOR<Prisma.SysteemGebruikerUpdateWithoutVestigingToegangInput, Prisma.SysteemGebruikerUncheckedUpdateWithoutVestigingToegangInput>
+}
+
+export type SysteemGebruikerUpdateWithoutVestigingToegangInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  laatsteLoginOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  medewerker?: Prisma.MedewerkerUpdateOneWithoutSysteemGebruikerNestedInput
+  organisaties?: Prisma.OrganisatieGebruikerUpdateManyWithoutSysteemGebruikerNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutSysteemGebruikerNestedInput
+}
+
+export type SysteemGebruikerUncheckedUpdateWithoutVestigingToegangInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  laatsteLoginOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  medewerker?: Prisma.MedewerkerUncheckedUpdateOneWithoutSysteemGebruikerNestedInput
+  organisaties?: Prisma.OrganisatieGebruikerUncheckedUpdateManyWithoutSysteemGebruikerNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutSysteemGebruikerNestedInput
 }
 
@@ -502,7 +622,9 @@ export type SysteemGebruikerCreateWithoutAuditLogsInput = {
   laatsteLoginOp?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
-  rollen?: Prisma.SysteemGebruikerRolCreateNestedManyWithoutSysteemGebruikerInput
+  medewerker?: Prisma.MedewerkerCreateNestedOneWithoutSysteemGebruikerInput
+  organisaties?: Prisma.OrganisatieGebruikerCreateNestedManyWithoutSysteemGebruikerInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingCreateNestedManyWithoutSysteemGebruikerInput
 }
 
 export type SysteemGebruikerUncheckedCreateWithoutAuditLogsInput = {
@@ -514,7 +636,9 @@ export type SysteemGebruikerUncheckedCreateWithoutAuditLogsInput = {
   laatsteLoginOp?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
-  rollen?: Prisma.SysteemGebruikerRolUncheckedCreateNestedManyWithoutSysteemGebruikerInput
+  medewerker?: Prisma.MedewerkerUncheckedCreateNestedOneWithoutSysteemGebruikerInput
+  organisaties?: Prisma.OrganisatieGebruikerUncheckedCreateNestedManyWithoutSysteemGebruikerInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedCreateNestedManyWithoutSysteemGebruikerInput
 }
 
 export type SysteemGebruikerCreateOrConnectWithoutAuditLogsInput = {
@@ -542,7 +666,9 @@ export type SysteemGebruikerUpdateWithoutAuditLogsInput = {
   laatsteLoginOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  rollen?: Prisma.SysteemGebruikerRolUpdateManyWithoutSysteemGebruikerNestedInput
+  medewerker?: Prisma.MedewerkerUpdateOneWithoutSysteemGebruikerNestedInput
+  organisaties?: Prisma.OrganisatieGebruikerUpdateManyWithoutSysteemGebruikerNestedInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUpdateManyWithoutSysteemGebruikerNestedInput
 }
 
 export type SysteemGebruikerUncheckedUpdateWithoutAuditLogsInput = {
@@ -554,7 +680,81 @@ export type SysteemGebruikerUncheckedUpdateWithoutAuditLogsInput = {
   laatsteLoginOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  rollen?: Prisma.SysteemGebruikerRolUncheckedUpdateManyWithoutSysteemGebruikerNestedInput
+  medewerker?: Prisma.MedewerkerUncheckedUpdateOneWithoutSysteemGebruikerNestedInput
+  organisaties?: Prisma.OrganisatieGebruikerUncheckedUpdateManyWithoutSysteemGebruikerNestedInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedUpdateManyWithoutSysteemGebruikerNestedInput
+}
+
+export type SysteemGebruikerCreateWithoutMedewerkerInput = {
+  id?: string
+  naam: string
+  email: string
+  wachtwoordHash: string
+  actief?: boolean
+  laatsteLoginOp?: Date | string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  organisaties?: Prisma.OrganisatieGebruikerCreateNestedManyWithoutSysteemGebruikerInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingCreateNestedManyWithoutSysteemGebruikerInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutSysteemGebruikerInput
+}
+
+export type SysteemGebruikerUncheckedCreateWithoutMedewerkerInput = {
+  id?: string
+  naam: string
+  email: string
+  wachtwoordHash: string
+  actief?: boolean
+  laatsteLoginOp?: Date | string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  organisaties?: Prisma.OrganisatieGebruikerUncheckedCreateNestedManyWithoutSysteemGebruikerInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedCreateNestedManyWithoutSysteemGebruikerInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutSysteemGebruikerInput
+}
+
+export type SysteemGebruikerCreateOrConnectWithoutMedewerkerInput = {
+  where: Prisma.SysteemGebruikerWhereUniqueInput
+  create: Prisma.XOR<Prisma.SysteemGebruikerCreateWithoutMedewerkerInput, Prisma.SysteemGebruikerUncheckedCreateWithoutMedewerkerInput>
+}
+
+export type SysteemGebruikerUpsertWithoutMedewerkerInput = {
+  update: Prisma.XOR<Prisma.SysteemGebruikerUpdateWithoutMedewerkerInput, Prisma.SysteemGebruikerUncheckedUpdateWithoutMedewerkerInput>
+  create: Prisma.XOR<Prisma.SysteemGebruikerCreateWithoutMedewerkerInput, Prisma.SysteemGebruikerUncheckedCreateWithoutMedewerkerInput>
+  where?: Prisma.SysteemGebruikerWhereInput
+}
+
+export type SysteemGebruikerUpdateToOneWithWhereWithoutMedewerkerInput = {
+  where?: Prisma.SysteemGebruikerWhereInput
+  data: Prisma.XOR<Prisma.SysteemGebruikerUpdateWithoutMedewerkerInput, Prisma.SysteemGebruikerUncheckedUpdateWithoutMedewerkerInput>
+}
+
+export type SysteemGebruikerUpdateWithoutMedewerkerInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  laatsteLoginOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organisaties?: Prisma.OrganisatieGebruikerUpdateManyWithoutSysteemGebruikerNestedInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUpdateManyWithoutSysteemGebruikerNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutSysteemGebruikerNestedInput
+}
+
+export type SysteemGebruikerUncheckedUpdateWithoutMedewerkerInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  laatsteLoginOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organisaties?: Prisma.OrganisatieGebruikerUncheckedUpdateManyWithoutSysteemGebruikerNestedInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedUpdateManyWithoutSysteemGebruikerNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutSysteemGebruikerNestedInput
 }
 
 
@@ -563,12 +763,14 @@ export type SysteemGebruikerUncheckedUpdateWithoutAuditLogsInput = {
  */
 
 export type SysteemGebruikerCountOutputType = {
-  rollen: number
+  organisaties: number
+  vestigingToegang: number
   auditLogs: number
 }
 
 export type SysteemGebruikerCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  rollen?: boolean | SysteemGebruikerCountOutputTypeCountRollenArgs
+  organisaties?: boolean | SysteemGebruikerCountOutputTypeCountOrganisatiesArgs
+  vestigingToegang?: boolean | SysteemGebruikerCountOutputTypeCountVestigingToegangArgs
   auditLogs?: boolean | SysteemGebruikerCountOutputTypeCountAuditLogsArgs
 }
 
@@ -585,8 +787,15 @@ export type SysteemGebruikerCountOutputTypeDefaultArgs<ExtArgs extends runtime.T
 /**
  * SysteemGebruikerCountOutputType without action
  */
-export type SysteemGebruikerCountOutputTypeCountRollenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.SysteemGebruikerRolWhereInput
+export type SysteemGebruikerCountOutputTypeCountOrganisatiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.OrganisatieGebruikerWhereInput
+}
+
+/**
+ * SysteemGebruikerCountOutputType without action
+ */
+export type SysteemGebruikerCountOutputTypeCountVestigingToegangArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SysteemGebruikerVestigingWhereInput
 }
 
 /**
@@ -606,7 +815,9 @@ export type SysteemGebruikerSelect<ExtArgs extends runtime.Types.Extensions.Inte
   laatsteLoginOp?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
-  rollen?: boolean | Prisma.SysteemGebruiker$rollenArgs<ExtArgs>
+  medewerker?: boolean | Prisma.SysteemGebruiker$medewerkerArgs<ExtArgs>
+  organisaties?: boolean | Prisma.SysteemGebruiker$organisatiesArgs<ExtArgs>
+  vestigingToegang?: boolean | Prisma.SysteemGebruiker$vestigingToegangArgs<ExtArgs>
   auditLogs?: boolean | Prisma.SysteemGebruiker$auditLogsArgs<ExtArgs>
   _count?: boolean | Prisma.SysteemGebruikerCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["systeemGebruiker"]>
@@ -646,7 +857,9 @@ export type SysteemGebruikerSelectScalar = {
 
 export type SysteemGebruikerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "naam" | "email" | "wachtwoordHash" | "actief" | "laatsteLoginOp" | "aangemaaktOp" | "gewijzigdOp", ExtArgs["result"]["systeemGebruiker"]>
 export type SysteemGebruikerInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  rollen?: boolean | Prisma.SysteemGebruiker$rollenArgs<ExtArgs>
+  medewerker?: boolean | Prisma.SysteemGebruiker$medewerkerArgs<ExtArgs>
+  organisaties?: boolean | Prisma.SysteemGebruiker$organisatiesArgs<ExtArgs>
+  vestigingToegang?: boolean | Prisma.SysteemGebruiker$vestigingToegangArgs<ExtArgs>
   auditLogs?: boolean | Prisma.SysteemGebruiker$auditLogsArgs<ExtArgs>
   _count?: boolean | Prisma.SysteemGebruikerCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -656,7 +869,9 @@ export type SysteemGebruikerIncludeUpdateManyAndReturn<ExtArgs extends runtime.T
 export type $SysteemGebruikerPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "SysteemGebruiker"
   objects: {
-    rollen: Prisma.$SysteemGebruikerRolPayload<ExtArgs>[]
+    medewerker: Prisma.$MedewerkerPayload<ExtArgs> | null
+    organisaties: Prisma.$OrganisatieGebruikerPayload<ExtArgs>[]
+    vestigingToegang: Prisma.$SysteemGebruikerVestigingPayload<ExtArgs>[]
     auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1062,7 +1277,9 @@ readonly fields: SysteemGebruikerFieldRefs;
  */
 export interface Prisma__SysteemGebruikerClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  rollen<T extends Prisma.SysteemGebruiker$rollenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SysteemGebruiker$rollenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SysteemGebruikerRolPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  medewerker<T extends Prisma.SysteemGebruiker$medewerkerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SysteemGebruiker$medewerkerArgs<ExtArgs>>): Prisma.Prisma__MedewerkerClient<runtime.Types.Result.GetResult<Prisma.$MedewerkerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  organisaties<T extends Prisma.SysteemGebruiker$organisatiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SysteemGebruiker$organisatiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrganisatieGebruikerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  vestigingToegang<T extends Prisma.SysteemGebruiker$vestigingToegangArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SysteemGebruiker$vestigingToegangArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SysteemGebruikerVestigingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   auditLogs<T extends Prisma.SysteemGebruiker$auditLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SysteemGebruiker$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1494,27 +1711,70 @@ export type SysteemGebruikerDeleteManyArgs<ExtArgs extends runtime.Types.Extensi
 }
 
 /**
- * SysteemGebruiker.rollen
+ * SysteemGebruiker.medewerker
  */
-export type SysteemGebruiker$rollenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type SysteemGebruiker$medewerkerArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the SysteemGebruikerRol
+   * Select specific fields to fetch from the Medewerker
    */
-  select?: Prisma.SysteemGebruikerRolSelect<ExtArgs> | null
+  select?: Prisma.MedewerkerSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the SysteemGebruikerRol
+   * Omit specific fields from the Medewerker
    */
-  omit?: Prisma.SysteemGebruikerRolOmit<ExtArgs> | null
+  omit?: Prisma.MedewerkerOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.SysteemGebruikerRolInclude<ExtArgs> | null
-  where?: Prisma.SysteemGebruikerRolWhereInput
-  orderBy?: Prisma.SysteemGebruikerRolOrderByWithRelationInput | Prisma.SysteemGebruikerRolOrderByWithRelationInput[]
-  cursor?: Prisma.SysteemGebruikerRolWhereUniqueInput
+  include?: Prisma.MedewerkerInclude<ExtArgs> | null
+  where?: Prisma.MedewerkerWhereInput
+}
+
+/**
+ * SysteemGebruiker.organisaties
+ */
+export type SysteemGebruiker$organisatiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the OrganisatieGebruiker
+   */
+  select?: Prisma.OrganisatieGebruikerSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the OrganisatieGebruiker
+   */
+  omit?: Prisma.OrganisatieGebruikerOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.OrganisatieGebruikerInclude<ExtArgs> | null
+  where?: Prisma.OrganisatieGebruikerWhereInput
+  orderBy?: Prisma.OrganisatieGebruikerOrderByWithRelationInput | Prisma.OrganisatieGebruikerOrderByWithRelationInput[]
+  cursor?: Prisma.OrganisatieGebruikerWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.SysteemGebruikerRolScalarFieldEnum | Prisma.SysteemGebruikerRolScalarFieldEnum[]
+  distinct?: Prisma.OrganisatieGebruikerScalarFieldEnum | Prisma.OrganisatieGebruikerScalarFieldEnum[]
+}
+
+/**
+ * SysteemGebruiker.vestigingToegang
+ */
+export type SysteemGebruiker$vestigingToegangArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SysteemGebruikerVestiging
+   */
+  select?: Prisma.SysteemGebruikerVestigingSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the SysteemGebruikerVestiging
+   */
+  omit?: Prisma.SysteemGebruikerVestigingOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SysteemGebruikerVestigingInclude<ExtArgs> | null
+  where?: Prisma.SysteemGebruikerVestigingWhereInput
+  orderBy?: Prisma.SysteemGebruikerVestigingOrderByWithRelationInput | Prisma.SysteemGebruikerVestigingOrderByWithRelationInput[]
+  cursor?: Prisma.SysteemGebruikerVestigingWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SysteemGebruikerVestigingScalarFieldEnum | Prisma.SysteemGebruikerVestigingScalarFieldEnum[]
 }
 
 /**

@@ -13,16 +13,18 @@ type BeschikbaarheidData = {
   opmerking?: string | null;
 };
 
-async function getBeschikbaarheid(
-  id: string,
-) {
+async function getBeschikbaarheid(id: string) {
   const beschikbaarheid =
     await prisma.beschikbaarheid.findUnique({
       where: {
         id,
       },
-        include: {
-        week: true,
+      include: {
+        week: {
+          include: {
+            vestiging: true,
+          },
+        },
         medewerker: true,
       },
     });
@@ -40,6 +42,9 @@ async function getWeek(weekId: string) {
   const week = await prisma.week.findUnique({
     where: {
       id: weekId,
+    },
+    include: {
+      vestiging: true,
     },
   });
 
@@ -80,6 +85,7 @@ async function controleerDeadline(
 
 async function controleerEigenaar(
   gebruikerId: string,
+  organisatieId: string,
 ) {
   if (!gebruikerId) {
     throw new Error(
@@ -93,8 +99,9 @@ async function controleerEigenaar(
         id: gebruikerId,
       },
       include: {
-        rollen: {
+        organisaties: {
           include: {
+            organisatie: true,
             rol: true,
           },
         },
@@ -114,10 +121,13 @@ async function controleerEigenaar(
   }
 
   const isEigenaar =
-    gebruiker.rollen.some(
-      (gebruikerRol) =>
-        gebruikerRol.rol.naam
-          .toLowerCase() === "eigenaar",
+    gebruiker.organisaties.some(
+      (relatie) =>
+        relatie.organisatieId === organisatieId &&
+        relatie.actief &&
+        relatie.organisatie.actief &&
+        relatie.rol.naam.toLowerCase() ===
+          "eigenaar",
     );
 
   if (!isEigenaar) {
@@ -149,18 +159,12 @@ export const beschikbaarheidService = {
       where: {
         weekId,
         ...(medewerkerId
-          ? {
-              medewerkerId,
-            }
+          ? { medewerkerId }
           : {}),
       },
       orderBy: [
-        {
-          datum: "asc",
-        },
-        {
-          begintijd: "asc",
-        },
+        { datum: "asc" },
+        { begintijd: "asc" },
       ],
     });
   },
@@ -180,12 +184,8 @@ export const beschikbaarheidService = {
         },
       },
       orderBy: [
-        {
-          datum: "asc",
-        },
-        {
-          begintijd: "asc",
-        },
+        { datum: "asc" },
+        { begintijd: "asc" },
       ],
     });
   },
@@ -193,13 +193,6 @@ export const beschikbaarheidService = {
   async getById(id: string) {
     return getBeschikbaarheid(id);
   },
-
-  // -----------------------------------------------------
-  // CREATE
-  //
-  // Medewerker mag toevoegen zolang de deadline
-  // nog niet verstreken is.
-  // -----------------------------------------------------
 
   async create(data: {
     medewerkerId: string;
@@ -262,25 +255,12 @@ export const beschikbaarheidService = {
         begintijd: data.begintijd,
         eindtijd: data.eindtijd,
         status:
-          data.status ??
-          "BESCHIKBAAR",
+          data.status ?? "BESCHIKBAAR",
         opmerking:
           data.opmerking ?? null,
       },
     });
   },
-
-  // -----------------------------------------------------
-  // UPDATE
-  //
-  // De bestaande API blijft update() gebruiken.
-  //
-  // Tot deadline:
-  // - eigen beschikbaarheid wijzigen
-  //
-  // Na deadline:
-  // - alleen eigenaar
-  // -----------------------------------------------------
 
   async update(
     id: string,
@@ -292,16 +272,16 @@ export const beschikbaarheidService = {
       await getBeschikbaarheid(id);
 
     const isEigenaar =
-      !!eigenaarId
+      eigenaarId
         ? await this.isEigenaar(
             eigenaarId,
+            bestaande.week.vestiging.organisatieId,
           )
         : false;
 
     if (
       medewerkerId &&
-      bestaande.medewerkerId !==
-        medewerkerId &&
+      bestaande.medewerkerId !== medewerkerId &&
       !isEigenaar
     ) {
       throw new Error(
@@ -311,8 +291,7 @@ export const beschikbaarheidService = {
 
     const deadlineIsVerstreken =
       deadlineVerstreken(
-        bestaande.week
-          .beschikbaarheidDeadline,
+        bestaande.week.beschikbaarheidDeadline,
       );
 
     if (
@@ -338,8 +317,7 @@ export const beschikbaarheidService = {
         begintijd: data.begintijd,
         eindtijd: data.eindtijd,
         status:
-          data.status ??
-          bestaande.status,
+          data.status ?? bestaande.status,
         opmerking:
           data.opmerking ?? null,
       },
@@ -360,16 +338,6 @@ export const beschikbaarheidService = {
     );
   },
 
-  // -----------------------------------------------------
-  // DELETE
-  //
-  // Tot deadline:
-  // - eigen beschikbaarheid verwijderen
-  //
-  // Na deadline:
-  // - alleen eigenaar
-  // -----------------------------------------------------
-
   async delete(
     id: string,
     medewerkerId?: string,
@@ -379,16 +347,16 @@ export const beschikbaarheidService = {
       await getBeschikbaarheid(id);
 
     const isEigenaar =
-      !!eigenaarId
+      eigenaarId
         ? await this.isEigenaar(
             eigenaarId,
+            bestaande.week.vestiging.organisatieId,
           )
         : false;
 
     if (
       medewerkerId &&
-      bestaande.medewerkerId !==
-        medewerkerId &&
+      bestaande.medewerkerId !== medewerkerId &&
       !isEigenaar
     ) {
       throw new Error(
@@ -398,8 +366,7 @@ export const beschikbaarheidService = {
 
     const deadlineIsVerstreken =
       deadlineVerstreken(
-        bestaande.week
-          .beschikbaarheidDeadline,
+        bestaande.week.beschikbaarheidDeadline,
       );
 
     if (
@@ -430,21 +397,18 @@ export const beschikbaarheidService = {
     );
   },
 
-  // -----------------------------------------------------
-  // EIGENAAR
-  // -----------------------------------------------------
-
   async wijzigNaDeadlineDoorEigenaar(
     id: string,
     eigenaarId: string,
     data: BeschikbaarheidData,
   ) {
-    await controleerEigenaar(
-      eigenaarId,
-    );
-
     const bestaande =
       await getBeschikbaarheid(id);
+
+    await controleerEigenaar(
+      eigenaarId,
+      bestaande.week.vestiging.organisatieId,
+    );
 
     controleerTijden(
       data.begintijd,
@@ -460,8 +424,7 @@ export const beschikbaarheidService = {
         begintijd: data.begintijd,
         eindtijd: data.eindtijd,
         status:
-          data.status ??
-          bestaande.status,
+          data.status ?? bestaande.status,
         opmerking:
           data.opmerking ?? null,
       },
@@ -472,11 +435,13 @@ export const beschikbaarheidService = {
     id: string,
     eigenaarId: string,
   ) {
+    const bestaande =
+      await getBeschikbaarheid(id);
+
     await controleerEigenaar(
       eigenaarId,
+      bestaande.week.vestiging.organisatieId,
     );
-
-    await getBeschikbaarheid(id);
 
     return prisma.beschikbaarheid.delete({
       where: {
@@ -487,6 +452,7 @@ export const beschikbaarheidService = {
 
   async isEigenaar(
     gebruikerId: string,
+    organisatieId?: string,
   ) {
     const gebruiker =
       await prisma.systeemGebruiker.findUnique({
@@ -494,8 +460,9 @@ export const beschikbaarheidService = {
           id: gebruikerId,
         },
         include: {
-          rollen: {
+          organisaties: {
             include: {
+              organisatie: true,
               rol: true,
             },
           },
@@ -506,10 +473,15 @@ export const beschikbaarheidService = {
       return false;
     }
 
-    return gebruiker.rollen.some(
-      (gebruikerRol) =>
-        gebruikerRol.rol.naam
-          .toLowerCase() === "eigenaar",
+    return gebruiker.organisaties.some(
+      (relatie) =>
+        relatie.actief &&
+        relatie.organisatie.actief &&
+        (!organisatieId ||
+          relatie.organisatieId ===
+            organisatieId) &&
+        relatie.rol.naam.toLowerCase() ===
+          "eigenaar",
     );
   },
 };

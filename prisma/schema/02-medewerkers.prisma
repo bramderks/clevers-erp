@@ -11,10 +11,7 @@ enum Aanhef {
 
 enum ContractType {
   OPROEP
-  TIJDELIJK
   VAST
-  STAGIAIR
-  VAKANTIEKRACHT
 }
 
 /// ======================================================
@@ -24,9 +21,8 @@ enum ContractType {
 model Medewerker {
   id String @id @default(cuid())
 
-  /// -----------------------------------------------------
-  /// Persoonlijke gegevens
-  /// -----------------------------------------------------
+  systeemGebruikerId String? @unique
+  systeemGebruiker SysteemGebruiker? @relation(fields: [systeemGebruikerId], references: [id], onDelete: SetNull)
 
   personeelsnummer String? @unique
 
@@ -39,18 +35,8 @@ model Medewerker {
 
   geboortedatum DateTime
 
-  /// -----------------------------------------------------
-  /// Contactgegevens
-  /// -----------------------------------------------------
-
   email String @unique
   telefoon String
-
-  /// -----------------------------------------------------
-  /// Account en status
-  /// -----------------------------------------------------
-
-  wachtwoordHash String
 
   statusId String
   status Status @relation(fields: [statusId], references: [id], onDelete: Restrict)
@@ -62,57 +48,29 @@ model Medewerker {
 
   actief Boolean @default(false)
 
-  /// -----------------------------------------------------
-  /// Dienstverband
-  /// -----------------------------------------------------
-
   contractType ContractType?
-
   contractUren Decimal? @db.Decimal(5, 2)
+  uurloon Decimal? @db.Decimal(8, 2)
 
   datumInDienst DateTime?
   datumUitDienst DateTime?
 
-  /// -----------------------------------------------------
-  /// Organisatie
-  /// -----------------------------------------------------
-
   vestigingen MedewerkerVestiging[]
-
-  /// -----------------------------------------------------
-  /// Rollen en tags
-  /// -----------------------------------------------------
 
   rollen MedewerkerRol[]
   tags MedewerkerTag[]
 
-  /// -----------------------------------------------------
-  /// Planning
-  /// -----------------------------------------------------
-
   beschikbaarheden Beschikbaarheid[]
   diensten DienstBezetting[]
 
-  /// -----------------------------------------------------
-  /// Audit
-  /// -----------------------------------------------------
-
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt
-
-  /// -----------------------------------------------------
-  /// Indexen
-  /// -----------------------------------------------------
 
   @@index([statusId])
   @@index([actief])
   @@index([achternaam])
   @@index([voornaam])
 }
-
-/// ======================================================
-/// MEDEWERKER - VESTIGING
-/// ======================================================
 
 model MedewerkerVestiging {
   id String @id @default(cuid())
@@ -128,14 +86,9 @@ model MedewerkerVestiging {
   aangemaaktOp DateTime @default(now())
 
   @@unique([medewerkerId, vestigingId])
-
   @@index([medewerkerId])
   @@index([vestigingId])
 }
-
-/// ======================================================
-/// MEDEWERKER - ROL
-/// ======================================================
 
 model MedewerkerRol {
   id String @id @default(cuid())
@@ -149,7 +102,6 @@ model MedewerkerRol {
   aangemaaktOp DateTime @default(now())
 
   @@unique([medewerkerId, rolId])
-
   @@index([medewerkerId])
   @@index([rolId])
 }

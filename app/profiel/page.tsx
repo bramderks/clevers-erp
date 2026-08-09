@@ -12,16 +12,18 @@ import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 
 export default async function ProfielPage() {
-  const gebruiker =
-    await getCurrentUser();
+  const gebruiker = await getCurrentUser();
 
   if (!gebruiker) {
     return null;
   }
 
-  const rollen = gebruiker.rollen.map(
-    (gebruikerRol) =>
-      gebruikerRol.rol.naam,
+  const rollen = Array.from(
+    new Set(
+      gebruiker.organisaties.map(
+        (relatie) => relatie.rol.naam,
+      ),
+    ),
   );
 
   const initialen =

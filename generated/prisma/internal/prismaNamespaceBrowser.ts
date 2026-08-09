@@ -51,10 +51,13 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
+  Organisatie: 'Organisatie',
   Vestiging: 'Vestiging',
-  Rol: 'Rol',
+  OpeningstijdenPeriode: 'OpeningstijdenPeriode',
+  OrganisatieGebruiker: 'OrganisatieGebruiker',
   SysteemGebruiker: 'SysteemGebruiker',
-  SysteemGebruikerRol: 'SysteemGebruikerRol',
+  SysteemGebruikerVestiging: 'SysteemGebruikerVestiging',
+  Rol: 'Rol',
   AuditLog: 'AuditLog',
   Medewerker: 'Medewerker',
   MedewerkerVestiging: 'MedewerkerVestiging',
@@ -96,7 +99,7 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
-export const VestigingScalarFieldEnum = {
+export const OrganisatieScalarFieldEnum = {
   id: 'id',
   code: 'code',
   naam: 'naam',
@@ -107,18 +110,51 @@ export const VestigingScalarFieldEnum = {
   gewijzigdDoor: 'gewijzigdDoor'
 } as const
 
+export type OrganisatieScalarFieldEnum = (typeof OrganisatieScalarFieldEnum)[keyof typeof OrganisatieScalarFieldEnum]
+
+
+export const VestigingScalarFieldEnum = {
+  id: 'id',
+  organisatieId: 'organisatieId',
+  code: 'code',
+  naam: 'naam',
+  actief: 'actief',
+  seizoenStart: 'seizoenStart',
+  seizoenEinde: 'seizoenEinde',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp',
+  aangemaaktDoor: 'aangemaaktDoor',
+  gewijzigdDoor: 'gewijzigdDoor'
+} as const
+
 export type VestigingScalarFieldEnum = (typeof VestigingScalarFieldEnum)[keyof typeof VestigingScalarFieldEnum]
 
 
-export const RolScalarFieldEnum = {
+export const OpeningstijdenPeriodeScalarFieldEnum = {
   id: 'id',
-  naam: 'naam',
-  omschrijving: 'omschrijving',
+  vestigingId: 'vestigingId',
+  startDatum: 'startDatum',
+  eindDatum: 'eindDatum',
+  openingstijd: 'openingstijd',
+  sluitingstijd: 'sluitingstijd',
   aangemaaktOp: 'aangemaaktOp',
   gewijzigdOp: 'gewijzigdOp'
 } as const
 
-export type RolScalarFieldEnum = (typeof RolScalarFieldEnum)[keyof typeof RolScalarFieldEnum]
+export type OpeningstijdenPeriodeScalarFieldEnum = (typeof OpeningstijdenPeriodeScalarFieldEnum)[keyof typeof OpeningstijdenPeriodeScalarFieldEnum]
+
+
+export const OrganisatieGebruikerScalarFieldEnum = {
+  id: 'id',
+  organisatieId: 'organisatieId',
+  systeemGebruikerId: 'systeemGebruikerId',
+  rolId: 'rolId',
+  actief: 'actief',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type OrganisatieGebruikerScalarFieldEnum = (typeof OrganisatieGebruikerScalarFieldEnum)[keyof typeof OrganisatieGebruikerScalarFieldEnum]
 
 
 export const SysteemGebruikerScalarFieldEnum = {
@@ -135,13 +171,27 @@ export const SysteemGebruikerScalarFieldEnum = {
 export type SysteemGebruikerScalarFieldEnum = (typeof SysteemGebruikerScalarFieldEnum)[keyof typeof SysteemGebruikerScalarFieldEnum]
 
 
-export const SysteemGebruikerRolScalarFieldEnum = {
+export const SysteemGebruikerVestigingScalarFieldEnum = {
   id: 'id',
   systeemGebruikerId: 'systeemGebruikerId',
-  rolId: 'rolId'
+  vestigingId: 'vestigingId',
+  actief: 'actief',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
 } as const
 
-export type SysteemGebruikerRolScalarFieldEnum = (typeof SysteemGebruikerRolScalarFieldEnum)[keyof typeof SysteemGebruikerRolScalarFieldEnum]
+export type SysteemGebruikerVestigingScalarFieldEnum = (typeof SysteemGebruikerVestigingScalarFieldEnum)[keyof typeof SysteemGebruikerVestigingScalarFieldEnum]
+
+
+export const RolScalarFieldEnum = {
+  id: 'id',
+  naam: 'naam',
+  omschrijving: 'omschrijving',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type RolScalarFieldEnum = (typeof RolScalarFieldEnum)[keyof typeof RolScalarFieldEnum]
 
 
 export const AuditLogScalarFieldEnum = {
@@ -159,6 +209,7 @@ export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typ
 
 export const MedewerkerScalarFieldEnum = {
   id: 'id',
+  systeemGebruikerId: 'systeemGebruikerId',
   personeelsnummer: 'personeelsnummer',
   aanhef: 'aanhef',
   voornaam: 'voornaam',
@@ -168,7 +219,6 @@ export const MedewerkerScalarFieldEnum = {
   geboortedatum: 'geboortedatum',
   email: 'email',
   telefoon: 'telefoon',
-  wachtwoordHash: 'wachtwoordHash',
   statusId: 'statusId',
   aanmeldingOp: 'aanmeldingOp',
   geactiveerdOp: 'geactiveerdOp',
@@ -176,6 +226,7 @@ export const MedewerkerScalarFieldEnum = {
   actief: 'actief',
   contractType: 'contractType',
   contractUren: 'contractUren',
+  uurloon: 'uurloon',
   datumInDienst: 'datumInDienst',
   datumUitDienst: 'datumUitDienst',
   aangemaaktOp: 'aangemaaktOp',

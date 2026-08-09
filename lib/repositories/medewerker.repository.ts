@@ -15,15 +15,11 @@ type MedewerkerUpdateData = {
   email?: string;
   telefoon?: string;
 
-  contractType?:
-    | "OPROEP"
-    | "TIJDELIJK"
-    | "VAST"
-    | "STAGIAIR"
-    | "VAKANTIEKRACHT"
-    | null;
+  contractType?: "OPROEP" | "VAST" | null;
 
   contractUren?: number | null;
+
+  uurloon?: number | null;
 
   datumInDienst?: Date | null;
   datumUitDienst?: Date | null;
@@ -119,6 +115,7 @@ export const medewerkerRepository = {
             dienst: {
               include: {
                 week: true,
+
                 tags: {
                   include: {
                     tag: true,
@@ -163,7 +160,9 @@ export const medewerkerRepository = {
 
       data: {
         statusId,
-        ...(actief !== undefined ? { actief } : {}),
+        ...(actief !== undefined
+          ? { actief }
+          : {}),
       },
     });
   },
@@ -192,7 +191,11 @@ export const medewerkerRepository = {
     vestigingIds: string[],
     hoofdvestigingId: string,
   ) {
-    if (!vestigingIds.includes(hoofdvestigingId)) {
+    if (
+      !vestigingIds.includes(
+        hoofdvestigingId,
+      )
+    ) {
       throw new Error(
         "De hoofdvestiging moet ook aan de medewerker gekoppeld zijn.",
       );
@@ -206,11 +209,15 @@ export const medewerkerRepository = {
       });
 
       await tx.medewerkerVestiging.createMany({
-        data: vestigingIds.map((vestigingId) => ({
-          medewerkerId,
-          vestigingId,
-          hoofdvestiging: vestigingId === hoofdvestigingId,
-        })),
+        data: vestigingIds.map(
+          (vestigingId) => ({
+            medewerkerId,
+            vestigingId,
+            hoofdvestiging:
+              vestigingId ===
+              hoofdvestigingId,
+          }),
+        ),
       });
 
       return tx.medewerkerVestiging.findMany({

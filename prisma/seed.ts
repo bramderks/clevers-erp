@@ -28,18 +28,76 @@ async function main() {
   console.log("========================================");
   console.log("");
 
+  // -----------------------------------------------------
+  // ORGANISATIE
+  // -----------------------------------------------------
+
+  console.log("→ Organisatie");
+
+  const organisatie = await prisma.organisatie.upsert({
+    where: {
+      code: "CLEVERS",
+    },
+    update: {
+      naam: "Clevers",
+      actief: true,
+    },
+    create: {
+      code: "CLEVERS",
+      naam: "Clevers",
+      actief: true,
+    },
+  });
+
+  console.log(
+    `   ✓ Organisatie: ${organisatie.naam}`,
+  );
+
+  // -----------------------------------------------------
+  // ROLLEN
+  // -----------------------------------------------------
+
   await seedRollen(prisma);
 
-  const vestigingen =
-    await seedVestigingen(prisma);
+  // -----------------------------------------------------
+  // VESTIGINGEN
+  // -----------------------------------------------------
+
+  const vestigingen = await seedVestigingen(
+    prisma,
+    organisatie.id,
+  );
+
+  // -----------------------------------------------------
+  // STATUSSEN
+  // -----------------------------------------------------
 
   await seedStatussen(prisma);
 
-  await seedGebruikers(prisma);
+  // -----------------------------------------------------
+  // GEBRUIKERS
+  // -----------------------------------------------------
+
+  await seedGebruikers(
+    prisma,
+    organisatie.id,
+  );
+
+  // -----------------------------------------------------
+  // TAGS
+  // -----------------------------------------------------
 
   await seedTags(prisma);
 
+  // -----------------------------------------------------
+  // PRODUCTTYPES
+  // -----------------------------------------------------
+
   await seedProductTypes(prisma);
+
+  // -----------------------------------------------------
+  // INSTELLINGEN
+  // -----------------------------------------------------
 
   await seedInstellingen(
     prisma,

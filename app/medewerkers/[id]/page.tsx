@@ -36,10 +36,12 @@ export default async function MedewerkerPage({
     await getCurrentUser();
 
   const isEigenaar =
-    huidigeGebruiker?.rollen.some(
-      (gebruikerRol) =>
-        gebruikerRol.rol.naam.toLowerCase() ===
-        "eigenaar",
+    huidigeGebruiker?.organisaties.some(
+      (relatie) =>
+        relatie.actief &&
+        relatie.organisatie.actief &&
+        relatie.rol.naam.toLowerCase() ===
+          "eigenaar",
     ) ?? false;
 
   const volledigeNaam = [
@@ -65,11 +67,15 @@ export default async function MedewerkerPage({
     email: medewerker.email,
     telefoon: medewerker.telefoon,
     contractType:
-      medewerker.contractType,
+      medewerker.contractType ?? null,
     contractUren:
-      medewerker.contractUren === null
-        ? null
-        : medewerker.contractUren.toString(),
+      medewerker.contractUren != null
+        ? medewerker.contractUren.toString()
+        : null,
+    uurloon:
+      medewerker.uurloon != null
+        ? medewerker.uurloon.toString()
+        : null,
     datumInDienst:
       medewerker.datumInDienst,
     datumUitDienst:
@@ -79,10 +85,8 @@ export default async function MedewerkerPage({
   const vestigingen =
     medewerker.vestigingen.map(
       (medewerkerVestiging) => ({
-        id: medewerkerVestiging
-          .vestiging.id,
-        naam: medewerkerVestiging
-          .vestiging.naam,
+        id: medewerkerVestiging.vestiging.id,
+        naam: medewerkerVestiging.vestiging.naam,
       }),
     );
 
@@ -191,7 +195,8 @@ export default async function MedewerkerPage({
               </dt>
 
               <dd className="mt-1 text-sm text-slate-700">
-                {medewerker.roepnaam ?? "—"}
+                {medewerker.roepnaam ??
+                  "—"}
               </dd>
             </div>
 
@@ -243,8 +248,22 @@ export default async function MedewerkerPage({
               </dt>
 
               <dd className="mt-1 text-sm text-slate-700">
-                {medewerker.contractUren
+                {medewerker.contractUren != null
                   ? `${medewerker.contractUren} uur`
+                  : "Nog niet ingevuld"}
+              </dd>
+            </div>
+
+            <div>
+              <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                Uurloon
+              </dt>
+
+              <dd className="mt-1 text-sm text-slate-700">
+                {medewerker.uurloon != null
+                  ? `€ ${Number(
+                      medewerker.uurloon,
+                    ).toFixed(2)}`
                   : "Nog niet ingevuld"}
               </dd>
             </div>
@@ -338,10 +357,7 @@ export default async function MedewerkerPage({
                     }
                     variant="default"
                   >
-                    {
-                      medewerkerRol.rol
-                        .naam
-                    }
+                    {medewerkerRol.rol.naam}
                   </Badge>
                 ),
               )}
@@ -411,7 +427,8 @@ export default async function MedewerkerPage({
             </p>
 
             <p className="text-sm text-slate-500">
-              Beschikbaarheden geregistreerd
+              Beschikbaarheden
+              geregistreerd
             </p>
           </div>
         </div>
