@@ -408,6 +408,7 @@ export const ModelName = {
   Tag: 'Tag',
   MedewerkerTag: 'MedewerkerTag',
   Week: 'Week',
+  Beschikbaarheid: 'Beschikbaarheid',
   Dienst: 'Dienst',
   DienstTag: 'DienstTag',
   DienstBezetting: 'DienstBezetting',
@@ -438,7 +439,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "vestiging" | "rol" | "systeemGebruiker" | "systeemGebruikerRol" | "auditLog" | "medewerker" | "medewerkerVestiging" | "medewerkerRol" | "tag" | "medewerkerTag" | "week" | "dienst" | "dienstTag" | "dienstBezetting" | "productType" | "product" | "vestigingProduct" | "bestelling" | "bestelRegel" | "voorraadTelling" | "voorraadTellingRegel" | "voorraadMutatie" | "levering" | "leveringRegel" | "status" | "instelling"
+    modelProps: "vestiging" | "rol" | "systeemGebruiker" | "systeemGebruikerRol" | "auditLog" | "medewerker" | "medewerkerVestiging" | "medewerkerRol" | "tag" | "medewerkerTag" | "week" | "beschikbaarheid" | "dienst" | "dienstTag" | "dienstBezetting" | "productType" | "product" | "vestigingProduct" | "bestelling" | "bestelRegel" | "voorraadTelling" | "voorraadTellingRegel" | "voorraadMutatie" | "levering" | "leveringRegel" | "status" | "instelling"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1253,6 +1254,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.WeekCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.WeekCountAggregateOutputType> | number
+        }
+      }
+    }
+    Beschikbaarheid: {
+      payload: Prisma.$BeschikbaarheidPayload<ExtArgs>
+      fields: Prisma.BeschikbaarheidFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BeschikbaarheidFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BeschikbaarheidPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BeschikbaarheidFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BeschikbaarheidPayload>
+        }
+        findFirst: {
+          args: Prisma.BeschikbaarheidFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BeschikbaarheidPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BeschikbaarheidFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BeschikbaarheidPayload>
+        }
+        findMany: {
+          args: Prisma.BeschikbaarheidFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BeschikbaarheidPayload>[]
+        }
+        create: {
+          args: Prisma.BeschikbaarheidCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BeschikbaarheidPayload>
+        }
+        createMany: {
+          args: Prisma.BeschikbaarheidCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BeschikbaarheidCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BeschikbaarheidPayload>[]
+        }
+        delete: {
+          args: Prisma.BeschikbaarheidDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BeschikbaarheidPayload>
+        }
+        update: {
+          args: Prisma.BeschikbaarheidUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BeschikbaarheidPayload>
+        }
+        deleteMany: {
+          args: Prisma.BeschikbaarheidDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BeschikbaarheidUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BeschikbaarheidUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BeschikbaarheidPayload>[]
+        }
+        upsert: {
+          args: Prisma.BeschikbaarheidUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BeschikbaarheidPayload>
+        }
+        aggregate: {
+          args: Prisma.BeschikbaarheidAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBeschikbaarheid>
+        }
+        groupBy: {
+          args: Prisma.BeschikbaarheidGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BeschikbaarheidGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BeschikbaarheidCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BeschikbaarheidCountAggregateOutputType> | number
         }
       }
     }
@@ -2542,11 +2617,28 @@ export const WeekScalarFieldEnum = {
   jaar: 'jaar',
   weeknummer: 'weeknummer',
   status: 'status',
+  beschikbaarheidDeadline: 'beschikbaarheidDeadline',
   aangemaaktOp: 'aangemaaktOp',
   gewijzigdOp: 'gewijzigdOp'
 } as const
 
 export type WeekScalarFieldEnum = (typeof WeekScalarFieldEnum)[keyof typeof WeekScalarFieldEnum]
+
+
+export const BeschikbaarheidScalarFieldEnum = {
+  id: 'id',
+  weekId: 'weekId',
+  medewerkerId: 'medewerkerId',
+  datum: 'datum',
+  begintijd: 'begintijd',
+  eindtijd: 'eindtijd',
+  status: 'status',
+  opmerking: 'opmerking',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type BeschikbaarheidScalarFieldEnum = (typeof BeschikbaarheidScalarFieldEnum)[keyof typeof BeschikbaarheidScalarFieldEnum]
 
 
 export const DienstScalarFieldEnum = {
@@ -2578,7 +2670,8 @@ export const DienstBezettingScalarFieldEnum = {
   dienstId: 'dienstId',
   medewerkerId: 'medewerkerId',
   status: 'status',
-  aangemaaktOp: 'aangemaaktOp'
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
 } as const
 
 export type DienstBezettingScalarFieldEnum = (typeof DienstBezettingScalarFieldEnum)[keyof typeof DienstBezettingScalarFieldEnum]
@@ -3075,6 +3168,7 @@ export type GlobalOmitConfig = {
   tag?: Prisma.TagOmit
   medewerkerTag?: Prisma.MedewerkerTagOmit
   week?: Prisma.WeekOmit
+  beschikbaarheid?: Prisma.BeschikbaarheidOmit
   dienst?: Prisma.DienstOmit
   dienstTag?: Prisma.DienstTagOmit
   dienstBezetting?: Prisma.DienstBezettingOmit

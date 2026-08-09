@@ -30,17 +30,21 @@ async function main() {
 
   await seedRollen(prisma);
 
-const vestigingen = await seedVestigingen(prisma);
+  const vestigingen =
+    await seedVestigingen(prisma);
 
-await seedGebruikers(prisma);
+  await seedStatussen(prisma);
 
-await seedTags(prisma);
+  await seedGebruikers(prisma);
 
-await seedProductTypes(prisma);
+  await seedTags(prisma);
 
-await seedStatussen(prisma);
+  await seedProductTypes(prisma);
 
-await seedInstellingen(prisma, vestigingen);
+  await seedInstellingen(
+    prisma,
+    vestigingen,
+  );
 
   console.log("");
   console.log("========================================");

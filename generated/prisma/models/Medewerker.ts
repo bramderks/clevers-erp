@@ -356,6 +356,7 @@ export type MedewerkerWhereInput = {
   vestigingen?: Prisma.MedewerkerVestigingListRelationFilter
   rollen?: Prisma.MedewerkerRolListRelationFilter
   tags?: Prisma.MedewerkerTagListRelationFilter
+  beschikbaarheden?: Prisma.BeschikbaarheidListRelationFilter
   diensten?: Prisma.DienstBezettingListRelationFilter
 }
 
@@ -386,6 +387,7 @@ export type MedewerkerOrderByWithRelationInput = {
   vestigingen?: Prisma.MedewerkerVestigingOrderByRelationAggregateInput
   rollen?: Prisma.MedewerkerRolOrderByRelationAggregateInput
   tags?: Prisma.MedewerkerTagOrderByRelationAggregateInput
+  beschikbaarheden?: Prisma.BeschikbaarheidOrderByRelationAggregateInput
   diensten?: Prisma.DienstBezettingOrderByRelationAggregateInput
 }
 
@@ -419,6 +421,7 @@ export type MedewerkerWhereUniqueInput = Prisma.AtLeast<{
   vestigingen?: Prisma.MedewerkerVestigingListRelationFilter
   rollen?: Prisma.MedewerkerRolListRelationFilter
   tags?: Prisma.MedewerkerTagListRelationFilter
+  beschikbaarheden?: Prisma.BeschikbaarheidListRelationFilter
   diensten?: Prisma.DienstBezettingListRelationFilter
 }, "id" | "personeelsnummer" | "email">
 
@@ -506,6 +509,7 @@ export type MedewerkerCreateInput = {
   vestigingen?: Prisma.MedewerkerVestigingCreateNestedManyWithoutMedewerkerInput
   rollen?: Prisma.MedewerkerRolCreateNestedManyWithoutMedewerkerInput
   tags?: Prisma.MedewerkerTagCreateNestedManyWithoutMedewerkerInput
+  beschikbaarheden?: Prisma.BeschikbaarheidCreateNestedManyWithoutMedewerkerInput
   diensten?: Prisma.DienstBezettingCreateNestedManyWithoutMedewerkerInput
 }
 
@@ -535,6 +539,7 @@ export type MedewerkerUncheckedCreateInput = {
   vestigingen?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutMedewerkerInput
   rollen?: Prisma.MedewerkerRolUncheckedCreateNestedManyWithoutMedewerkerInput
   tags?: Prisma.MedewerkerTagUncheckedCreateNestedManyWithoutMedewerkerInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUncheckedCreateNestedManyWithoutMedewerkerInput
   diensten?: Prisma.DienstBezettingUncheckedCreateNestedManyWithoutMedewerkerInput
 }
 
@@ -564,6 +569,7 @@ export type MedewerkerUpdateInput = {
   vestigingen?: Prisma.MedewerkerVestigingUpdateManyWithoutMedewerkerNestedInput
   rollen?: Prisma.MedewerkerRolUpdateManyWithoutMedewerkerNestedInput
   tags?: Prisma.MedewerkerTagUpdateManyWithoutMedewerkerNestedInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUpdateManyWithoutMedewerkerNestedInput
   diensten?: Prisma.DienstBezettingUpdateManyWithoutMedewerkerNestedInput
 }
 
@@ -593,6 +599,7 @@ export type MedewerkerUncheckedUpdateInput = {
   vestigingen?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutMedewerkerNestedInput
   rollen?: Prisma.MedewerkerRolUncheckedUpdateManyWithoutMedewerkerNestedInput
   tags?: Prisma.MedewerkerTagUncheckedUpdateManyWithoutMedewerkerNestedInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUncheckedUpdateManyWithoutMedewerkerNestedInput
   diensten?: Prisma.DienstBezettingUncheckedUpdateManyWithoutMedewerkerNestedInput
 }
 
@@ -831,6 +838,20 @@ export type MedewerkerUpdateOneRequiredWithoutTagsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.MedewerkerUpdateToOneWithWhereWithoutTagsInput, Prisma.MedewerkerUpdateWithoutTagsInput>, Prisma.MedewerkerUncheckedUpdateWithoutTagsInput>
 }
 
+export type MedewerkerCreateNestedOneWithoutBeschikbaarhedenInput = {
+  create?: Prisma.XOR<Prisma.MedewerkerCreateWithoutBeschikbaarhedenInput, Prisma.MedewerkerUncheckedCreateWithoutBeschikbaarhedenInput>
+  connectOrCreate?: Prisma.MedewerkerCreateOrConnectWithoutBeschikbaarhedenInput
+  connect?: Prisma.MedewerkerWhereUniqueInput
+}
+
+export type MedewerkerUpdateOneRequiredWithoutBeschikbaarhedenNestedInput = {
+  create?: Prisma.XOR<Prisma.MedewerkerCreateWithoutBeschikbaarhedenInput, Prisma.MedewerkerUncheckedCreateWithoutBeschikbaarhedenInput>
+  connectOrCreate?: Prisma.MedewerkerCreateOrConnectWithoutBeschikbaarhedenInput
+  upsert?: Prisma.MedewerkerUpsertWithoutBeschikbaarhedenInput
+  connect?: Prisma.MedewerkerWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.MedewerkerUpdateToOneWithWhereWithoutBeschikbaarhedenInput, Prisma.MedewerkerUpdateWithoutBeschikbaarhedenInput>, Prisma.MedewerkerUncheckedUpdateWithoutBeschikbaarhedenInput>
+}
+
 export type MedewerkerCreateNestedOneWithoutDienstenInput = {
   create?: Prisma.XOR<Prisma.MedewerkerCreateWithoutDienstenInput, Prisma.MedewerkerUncheckedCreateWithoutDienstenInput>
   connectOrCreate?: Prisma.MedewerkerCreateOrConnectWithoutDienstenInput
@@ -914,6 +935,7 @@ export type MedewerkerCreateWithoutVestigingenInput = {
   status: Prisma.StatusCreateNestedOneWithoutMedewerkersInput
   rollen?: Prisma.MedewerkerRolCreateNestedManyWithoutMedewerkerInput
   tags?: Prisma.MedewerkerTagCreateNestedManyWithoutMedewerkerInput
+  beschikbaarheden?: Prisma.BeschikbaarheidCreateNestedManyWithoutMedewerkerInput
   diensten?: Prisma.DienstBezettingCreateNestedManyWithoutMedewerkerInput
 }
 
@@ -942,6 +964,7 @@ export type MedewerkerUncheckedCreateWithoutVestigingenInput = {
   gewijzigdOp?: Date | string
   rollen?: Prisma.MedewerkerRolUncheckedCreateNestedManyWithoutMedewerkerInput
   tags?: Prisma.MedewerkerTagUncheckedCreateNestedManyWithoutMedewerkerInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUncheckedCreateNestedManyWithoutMedewerkerInput
   diensten?: Prisma.DienstBezettingUncheckedCreateNestedManyWithoutMedewerkerInput
 }
 
@@ -986,6 +1009,7 @@ export type MedewerkerUpdateWithoutVestigingenInput = {
   status?: Prisma.StatusUpdateOneRequiredWithoutMedewerkersNestedInput
   rollen?: Prisma.MedewerkerRolUpdateManyWithoutMedewerkerNestedInput
   tags?: Prisma.MedewerkerTagUpdateManyWithoutMedewerkerNestedInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUpdateManyWithoutMedewerkerNestedInput
   diensten?: Prisma.DienstBezettingUpdateManyWithoutMedewerkerNestedInput
 }
 
@@ -1014,6 +1038,7 @@ export type MedewerkerUncheckedUpdateWithoutVestigingenInput = {
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   rollen?: Prisma.MedewerkerRolUncheckedUpdateManyWithoutMedewerkerNestedInput
   tags?: Prisma.MedewerkerTagUncheckedUpdateManyWithoutMedewerkerNestedInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUncheckedUpdateManyWithoutMedewerkerNestedInput
   diensten?: Prisma.DienstBezettingUncheckedUpdateManyWithoutMedewerkerNestedInput
 }
 
@@ -1042,6 +1067,7 @@ export type MedewerkerCreateWithoutRollenInput = {
   status: Prisma.StatusCreateNestedOneWithoutMedewerkersInput
   vestigingen?: Prisma.MedewerkerVestigingCreateNestedManyWithoutMedewerkerInput
   tags?: Prisma.MedewerkerTagCreateNestedManyWithoutMedewerkerInput
+  beschikbaarheden?: Prisma.BeschikbaarheidCreateNestedManyWithoutMedewerkerInput
   diensten?: Prisma.DienstBezettingCreateNestedManyWithoutMedewerkerInput
 }
 
@@ -1070,6 +1096,7 @@ export type MedewerkerUncheckedCreateWithoutRollenInput = {
   gewijzigdOp?: Date | string
   vestigingen?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutMedewerkerInput
   tags?: Prisma.MedewerkerTagUncheckedCreateNestedManyWithoutMedewerkerInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUncheckedCreateNestedManyWithoutMedewerkerInput
   diensten?: Prisma.DienstBezettingUncheckedCreateNestedManyWithoutMedewerkerInput
 }
 
@@ -1114,6 +1141,7 @@ export type MedewerkerUpdateWithoutRollenInput = {
   status?: Prisma.StatusUpdateOneRequiredWithoutMedewerkersNestedInput
   vestigingen?: Prisma.MedewerkerVestigingUpdateManyWithoutMedewerkerNestedInput
   tags?: Prisma.MedewerkerTagUpdateManyWithoutMedewerkerNestedInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUpdateManyWithoutMedewerkerNestedInput
   diensten?: Prisma.DienstBezettingUpdateManyWithoutMedewerkerNestedInput
 }
 
@@ -1142,6 +1170,7 @@ export type MedewerkerUncheckedUpdateWithoutRollenInput = {
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   vestigingen?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutMedewerkerNestedInput
   tags?: Prisma.MedewerkerTagUncheckedUpdateManyWithoutMedewerkerNestedInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUncheckedUpdateManyWithoutMedewerkerNestedInput
   diensten?: Prisma.DienstBezettingUncheckedUpdateManyWithoutMedewerkerNestedInput
 }
 
@@ -1170,6 +1199,7 @@ export type MedewerkerCreateWithoutTagsInput = {
   status: Prisma.StatusCreateNestedOneWithoutMedewerkersInput
   vestigingen?: Prisma.MedewerkerVestigingCreateNestedManyWithoutMedewerkerInput
   rollen?: Prisma.MedewerkerRolCreateNestedManyWithoutMedewerkerInput
+  beschikbaarheden?: Prisma.BeschikbaarheidCreateNestedManyWithoutMedewerkerInput
   diensten?: Prisma.DienstBezettingCreateNestedManyWithoutMedewerkerInput
 }
 
@@ -1198,6 +1228,7 @@ export type MedewerkerUncheckedCreateWithoutTagsInput = {
   gewijzigdOp?: Date | string
   vestigingen?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutMedewerkerInput
   rollen?: Prisma.MedewerkerRolUncheckedCreateNestedManyWithoutMedewerkerInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUncheckedCreateNestedManyWithoutMedewerkerInput
   diensten?: Prisma.DienstBezettingUncheckedCreateNestedManyWithoutMedewerkerInput
 }
 
@@ -1242,6 +1273,7 @@ export type MedewerkerUpdateWithoutTagsInput = {
   status?: Prisma.StatusUpdateOneRequiredWithoutMedewerkersNestedInput
   vestigingen?: Prisma.MedewerkerVestigingUpdateManyWithoutMedewerkerNestedInput
   rollen?: Prisma.MedewerkerRolUpdateManyWithoutMedewerkerNestedInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUpdateManyWithoutMedewerkerNestedInput
   diensten?: Prisma.DienstBezettingUpdateManyWithoutMedewerkerNestedInput
 }
 
@@ -1270,6 +1302,139 @@ export type MedewerkerUncheckedUpdateWithoutTagsInput = {
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   vestigingen?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutMedewerkerNestedInput
   rollen?: Prisma.MedewerkerRolUncheckedUpdateManyWithoutMedewerkerNestedInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUncheckedUpdateManyWithoutMedewerkerNestedInput
+  diensten?: Prisma.DienstBezettingUncheckedUpdateManyWithoutMedewerkerNestedInput
+}
+
+export type MedewerkerCreateWithoutBeschikbaarhedenInput = {
+  id?: string
+  personeelsnummer?: string | null
+  aanhef: $Enums.Aanhef
+  voornaam: string
+  tussenvoegsel?: string | null
+  achternaam: string
+  roepnaam?: string | null
+  geboortedatum: Date | string
+  email: string
+  telefoon: string
+  wachtwoordHash: string
+  aanmeldingOp?: Date | string
+  geactiveerdOp?: Date | string | null
+  geactiveerdDoor?: string | null
+  actief?: boolean
+  contractType?: $Enums.ContractType | null
+  contractUren?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Date | string | null
+  datumUitDienst?: Date | string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  status: Prisma.StatusCreateNestedOneWithoutMedewerkersInput
+  vestigingen?: Prisma.MedewerkerVestigingCreateNestedManyWithoutMedewerkerInput
+  rollen?: Prisma.MedewerkerRolCreateNestedManyWithoutMedewerkerInput
+  tags?: Prisma.MedewerkerTagCreateNestedManyWithoutMedewerkerInput
+  diensten?: Prisma.DienstBezettingCreateNestedManyWithoutMedewerkerInput
+}
+
+export type MedewerkerUncheckedCreateWithoutBeschikbaarhedenInput = {
+  id?: string
+  personeelsnummer?: string | null
+  aanhef: $Enums.Aanhef
+  voornaam: string
+  tussenvoegsel?: string | null
+  achternaam: string
+  roepnaam?: string | null
+  geboortedatum: Date | string
+  email: string
+  telefoon: string
+  wachtwoordHash: string
+  statusId: string
+  aanmeldingOp?: Date | string
+  geactiveerdOp?: Date | string | null
+  geactiveerdDoor?: string | null
+  actief?: boolean
+  contractType?: $Enums.ContractType | null
+  contractUren?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Date | string | null
+  datumUitDienst?: Date | string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  vestigingen?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutMedewerkerInput
+  rollen?: Prisma.MedewerkerRolUncheckedCreateNestedManyWithoutMedewerkerInput
+  tags?: Prisma.MedewerkerTagUncheckedCreateNestedManyWithoutMedewerkerInput
+  diensten?: Prisma.DienstBezettingUncheckedCreateNestedManyWithoutMedewerkerInput
+}
+
+export type MedewerkerCreateOrConnectWithoutBeschikbaarhedenInput = {
+  where: Prisma.MedewerkerWhereUniqueInput
+  create: Prisma.XOR<Prisma.MedewerkerCreateWithoutBeschikbaarhedenInput, Prisma.MedewerkerUncheckedCreateWithoutBeschikbaarhedenInput>
+}
+
+export type MedewerkerUpsertWithoutBeschikbaarhedenInput = {
+  update: Prisma.XOR<Prisma.MedewerkerUpdateWithoutBeschikbaarhedenInput, Prisma.MedewerkerUncheckedUpdateWithoutBeschikbaarhedenInput>
+  create: Prisma.XOR<Prisma.MedewerkerCreateWithoutBeschikbaarhedenInput, Prisma.MedewerkerUncheckedCreateWithoutBeschikbaarhedenInput>
+  where?: Prisma.MedewerkerWhereInput
+}
+
+export type MedewerkerUpdateToOneWithWhereWithoutBeschikbaarhedenInput = {
+  where?: Prisma.MedewerkerWhereInput
+  data: Prisma.XOR<Prisma.MedewerkerUpdateWithoutBeschikbaarhedenInput, Prisma.MedewerkerUncheckedUpdateWithoutBeschikbaarhedenInput>
+}
+
+export type MedewerkerUpdateWithoutBeschikbaarhedenInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  personeelsnummer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aanhef?: Prisma.EnumAanhefFieldUpdateOperationsInput | $Enums.Aanhef
+  voornaam?: Prisma.StringFieldUpdateOperationsInput | string
+  tussenvoegsel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  achternaam?: Prisma.StringFieldUpdateOperationsInput | string
+  roepnaam?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  geboortedatum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  telefoon?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  aanmeldingOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  geactiveerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geactiveerdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  contractType?: Prisma.NullableEnumContractTypeFieldUpdateOperationsInput | $Enums.ContractType | null
+  contractUren?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  datumUitDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.StatusUpdateOneRequiredWithoutMedewerkersNestedInput
+  vestigingen?: Prisma.MedewerkerVestigingUpdateManyWithoutMedewerkerNestedInput
+  rollen?: Prisma.MedewerkerRolUpdateManyWithoutMedewerkerNestedInput
+  tags?: Prisma.MedewerkerTagUpdateManyWithoutMedewerkerNestedInput
+  diensten?: Prisma.DienstBezettingUpdateManyWithoutMedewerkerNestedInput
+}
+
+export type MedewerkerUncheckedUpdateWithoutBeschikbaarhedenInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  personeelsnummer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aanhef?: Prisma.EnumAanhefFieldUpdateOperationsInput | $Enums.Aanhef
+  voornaam?: Prisma.StringFieldUpdateOperationsInput | string
+  tussenvoegsel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  achternaam?: Prisma.StringFieldUpdateOperationsInput | string
+  roepnaam?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  geboortedatum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  telefoon?: Prisma.StringFieldUpdateOperationsInput | string
+  wachtwoordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  statusId?: Prisma.StringFieldUpdateOperationsInput | string
+  aanmeldingOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  geactiveerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  geactiveerdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  contractType?: Prisma.NullableEnumContractTypeFieldUpdateOperationsInput | $Enums.ContractType | null
+  contractUren?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  datumInDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  datumUitDienst?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  vestigingen?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutMedewerkerNestedInput
+  rollen?: Prisma.MedewerkerRolUncheckedUpdateManyWithoutMedewerkerNestedInput
+  tags?: Prisma.MedewerkerTagUncheckedUpdateManyWithoutMedewerkerNestedInput
   diensten?: Prisma.DienstBezettingUncheckedUpdateManyWithoutMedewerkerNestedInput
 }
 
@@ -1299,6 +1464,7 @@ export type MedewerkerCreateWithoutDienstenInput = {
   vestigingen?: Prisma.MedewerkerVestigingCreateNestedManyWithoutMedewerkerInput
   rollen?: Prisma.MedewerkerRolCreateNestedManyWithoutMedewerkerInput
   tags?: Prisma.MedewerkerTagCreateNestedManyWithoutMedewerkerInput
+  beschikbaarheden?: Prisma.BeschikbaarheidCreateNestedManyWithoutMedewerkerInput
 }
 
 export type MedewerkerUncheckedCreateWithoutDienstenInput = {
@@ -1327,6 +1493,7 @@ export type MedewerkerUncheckedCreateWithoutDienstenInput = {
   vestigingen?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutMedewerkerInput
   rollen?: Prisma.MedewerkerRolUncheckedCreateNestedManyWithoutMedewerkerInput
   tags?: Prisma.MedewerkerTagUncheckedCreateNestedManyWithoutMedewerkerInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUncheckedCreateNestedManyWithoutMedewerkerInput
 }
 
 export type MedewerkerCreateOrConnectWithoutDienstenInput = {
@@ -1371,6 +1538,7 @@ export type MedewerkerUpdateWithoutDienstenInput = {
   vestigingen?: Prisma.MedewerkerVestigingUpdateManyWithoutMedewerkerNestedInput
   rollen?: Prisma.MedewerkerRolUpdateManyWithoutMedewerkerNestedInput
   tags?: Prisma.MedewerkerTagUpdateManyWithoutMedewerkerNestedInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUpdateManyWithoutMedewerkerNestedInput
 }
 
 export type MedewerkerUncheckedUpdateWithoutDienstenInput = {
@@ -1399,6 +1567,7 @@ export type MedewerkerUncheckedUpdateWithoutDienstenInput = {
   vestigingen?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutMedewerkerNestedInput
   rollen?: Prisma.MedewerkerRolUncheckedUpdateManyWithoutMedewerkerNestedInput
   tags?: Prisma.MedewerkerTagUncheckedUpdateManyWithoutMedewerkerNestedInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUncheckedUpdateManyWithoutMedewerkerNestedInput
 }
 
 export type MedewerkerCreateWithoutStatusInput = {
@@ -1426,6 +1595,7 @@ export type MedewerkerCreateWithoutStatusInput = {
   vestigingen?: Prisma.MedewerkerVestigingCreateNestedManyWithoutMedewerkerInput
   rollen?: Prisma.MedewerkerRolCreateNestedManyWithoutMedewerkerInput
   tags?: Prisma.MedewerkerTagCreateNestedManyWithoutMedewerkerInput
+  beschikbaarheden?: Prisma.BeschikbaarheidCreateNestedManyWithoutMedewerkerInput
   diensten?: Prisma.DienstBezettingCreateNestedManyWithoutMedewerkerInput
 }
 
@@ -1454,6 +1624,7 @@ export type MedewerkerUncheckedCreateWithoutStatusInput = {
   vestigingen?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutMedewerkerInput
   rollen?: Prisma.MedewerkerRolUncheckedCreateNestedManyWithoutMedewerkerInput
   tags?: Prisma.MedewerkerTagUncheckedCreateNestedManyWithoutMedewerkerInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUncheckedCreateNestedManyWithoutMedewerkerInput
   diensten?: Prisma.DienstBezettingUncheckedCreateNestedManyWithoutMedewerkerInput
 }
 
@@ -1560,6 +1731,7 @@ export type MedewerkerUpdateWithoutStatusInput = {
   vestigingen?: Prisma.MedewerkerVestigingUpdateManyWithoutMedewerkerNestedInput
   rollen?: Prisma.MedewerkerRolUpdateManyWithoutMedewerkerNestedInput
   tags?: Prisma.MedewerkerTagUpdateManyWithoutMedewerkerNestedInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUpdateManyWithoutMedewerkerNestedInput
   diensten?: Prisma.DienstBezettingUpdateManyWithoutMedewerkerNestedInput
 }
 
@@ -1588,6 +1760,7 @@ export type MedewerkerUncheckedUpdateWithoutStatusInput = {
   vestigingen?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutMedewerkerNestedInput
   rollen?: Prisma.MedewerkerRolUncheckedUpdateManyWithoutMedewerkerNestedInput
   tags?: Prisma.MedewerkerTagUncheckedUpdateManyWithoutMedewerkerNestedInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUncheckedUpdateManyWithoutMedewerkerNestedInput
   diensten?: Prisma.DienstBezettingUncheckedUpdateManyWithoutMedewerkerNestedInput
 }
 
@@ -1624,6 +1797,7 @@ export type MedewerkerCountOutputType = {
   vestigingen: number
   rollen: number
   tags: number
+  beschikbaarheden: number
   diensten: number
 }
 
@@ -1631,6 +1805,7 @@ export type MedewerkerCountOutputTypeSelect<ExtArgs extends runtime.Types.Extens
   vestigingen?: boolean | MedewerkerCountOutputTypeCountVestigingenArgs
   rollen?: boolean | MedewerkerCountOutputTypeCountRollenArgs
   tags?: boolean | MedewerkerCountOutputTypeCountTagsArgs
+  beschikbaarheden?: boolean | MedewerkerCountOutputTypeCountBeschikbaarhedenArgs
   diensten?: boolean | MedewerkerCountOutputTypeCountDienstenArgs
 }
 
@@ -1668,6 +1843,13 @@ export type MedewerkerCountOutputTypeCountTagsArgs<ExtArgs extends runtime.Types
 /**
  * MedewerkerCountOutputType without action
  */
+export type MedewerkerCountOutputTypeCountBeschikbaarhedenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.BeschikbaarheidWhereInput
+}
+
+/**
+ * MedewerkerCountOutputType without action
+ */
 export type MedewerkerCountOutputTypeCountDienstenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.DienstBezettingWhereInput
 }
@@ -1700,6 +1882,7 @@ export type MedewerkerSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   vestigingen?: boolean | Prisma.Medewerker$vestigingenArgs<ExtArgs>
   rollen?: boolean | Prisma.Medewerker$rollenArgs<ExtArgs>
   tags?: boolean | Prisma.Medewerker$tagsArgs<ExtArgs>
+  beschikbaarheden?: boolean | Prisma.Medewerker$beschikbaarhedenArgs<ExtArgs>
   diensten?: boolean | Prisma.Medewerker$dienstenArgs<ExtArgs>
   _count?: boolean | Prisma.MedewerkerCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["medewerker"]>
@@ -1787,6 +1970,7 @@ export type MedewerkerInclude<ExtArgs extends runtime.Types.Extensions.InternalA
   vestigingen?: boolean | Prisma.Medewerker$vestigingenArgs<ExtArgs>
   rollen?: boolean | Prisma.Medewerker$rollenArgs<ExtArgs>
   tags?: boolean | Prisma.Medewerker$tagsArgs<ExtArgs>
+  beschikbaarheden?: boolean | Prisma.Medewerker$beschikbaarhedenArgs<ExtArgs>
   diensten?: boolean | Prisma.Medewerker$dienstenArgs<ExtArgs>
   _count?: boolean | Prisma.MedewerkerCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -1803,19 +1987,30 @@ export type $MedewerkerPayload<ExtArgs extends runtime.Types.Extensions.Internal
     status: Prisma.$StatusPayload<ExtArgs>
     /**
      * -----------------------------------------------------
-     * Relaties
+     * Organisatie
      * -----------------------------------------------------
      */
     vestigingen: Prisma.$MedewerkerVestigingPayload<ExtArgs>[]
+    /**
+     * -----------------------------------------------------
+     * Rollen en tags
+     * -----------------------------------------------------
+     */
     rollen: Prisma.$MedewerkerRolPayload<ExtArgs>[]
     tags: Prisma.$MedewerkerTagPayload<ExtArgs>[]
+    /**
+     * -----------------------------------------------------
+     * Planning
+     * -----------------------------------------------------
+     */
+    beschikbaarheden: Prisma.$BeschikbaarheidPayload<ExtArgs>[]
     diensten: Prisma.$DienstBezettingPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     /**
      * -----------------------------------------------------
-     * Persoon
+     * Persoonlijke gegevens
      * -----------------------------------------------------
      */
     personeelsnummer: string | null
@@ -1827,14 +2022,14 @@ export type $MedewerkerPayload<ExtArgs extends runtime.Types.Extensions.Internal
     geboortedatum: Date
     /**
      * -----------------------------------------------------
-     * Contact
+     * Contactgegevens
      * -----------------------------------------------------
      */
     email: string
     telefoon: string
     /**
      * -----------------------------------------------------
-     * Account
+     * Account en status
      * -----------------------------------------------------
      */
     wachtwoordHash: string
@@ -2257,6 +2452,7 @@ export interface Prisma__MedewerkerClient<T, Null = never, ExtArgs extends runti
   vestigingen<T extends Prisma.Medewerker$vestigingenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Medewerker$vestigingenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MedewerkerVestigingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   rollen<T extends Prisma.Medewerker$rollenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Medewerker$rollenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MedewerkerRolPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   tags<T extends Prisma.Medewerker$tagsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Medewerker$tagsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MedewerkerTagPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  beschikbaarheden<T extends Prisma.Medewerker$beschikbaarhedenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Medewerker$beschikbaarhedenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BeschikbaarheidPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   diensten<T extends Prisma.Medewerker$dienstenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Medewerker$dienstenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DienstBezettingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2779,6 +2975,30 @@ export type Medewerker$tagsArgs<ExtArgs extends runtime.Types.Extensions.Interna
   take?: number
   skip?: number
   distinct?: Prisma.MedewerkerTagScalarFieldEnum | Prisma.MedewerkerTagScalarFieldEnum[]
+}
+
+/**
+ * Medewerker.beschikbaarheden
+ */
+export type Medewerker$beschikbaarhedenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Beschikbaarheid
+   */
+  select?: Prisma.BeschikbaarheidSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Beschikbaarheid
+   */
+  omit?: Prisma.BeschikbaarheidOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.BeschikbaarheidInclude<ExtArgs> | null
+  where?: Prisma.BeschikbaarheidWhereInput
+  orderBy?: Prisma.BeschikbaarheidOrderByWithRelationInput | Prisma.BeschikbaarheidOrderByWithRelationInput[]
+  cursor?: Prisma.BeschikbaarheidWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.BeschikbaarheidScalarFieldEnum | Prisma.BeschikbaarheidScalarFieldEnum[]
 }
 
 /**

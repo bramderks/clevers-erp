@@ -128,11 +128,15 @@ enum ContractType {
   VAKANTIEKRACHT
 }
 
+/// ======================================================
+/// MEDEWERKER
+/// ======================================================
+
 model Medewerker {
   id String @id @default(cuid())
 
   /// -----------------------------------------------------
-  /// Persoon
+  /// Persoonlijke gegevens
   /// -----------------------------------------------------
 
   personeelsnummer String? @unique
@@ -147,14 +151,14 @@ model Medewerker {
   geboortedatum DateTime
 
   /// -----------------------------------------------------
-  /// Contact
+  /// Contactgegevens
   /// -----------------------------------------------------
 
   email String @unique
   telefoon String
 
   /// -----------------------------------------------------
-  /// Account
+  /// Account en status
   /// -----------------------------------------------------
 
   wachtwoordHash String
@@ -163,6 +167,7 @@ model Medewerker {
   status Status @relation(fields: [statusId], references: [id], onDelete: Restrict)
 
   aanmeldingOp DateTime @default(now())
+
   geactiveerdOp DateTime?
   geactiveerdDoor String?
 
@@ -173,18 +178,30 @@ model Medewerker {
   /// -----------------------------------------------------
 
   contractType ContractType?
-  contractUren Decimal? @db.Decimal(5,2)
+
+  contractUren Decimal? @db.Decimal(5, 2)
 
   datumInDienst DateTime?
   datumUitDienst DateTime?
 
   /// -----------------------------------------------------
-  /// Relaties
+  /// Organisatie
   /// -----------------------------------------------------
 
   vestigingen MedewerkerVestiging[]
+
+  /// -----------------------------------------------------
+  /// Rollen en tags
+  /// -----------------------------------------------------
+
   rollen MedewerkerRol[]
   tags MedewerkerTag[]
+
+  /// -----------------------------------------------------
+  /// Planning
+  /// -----------------------------------------------------
+
+  beschikbaarheden Beschikbaarheid[]
   diensten DienstBezetting[]
 
   /// -----------------------------------------------------
@@ -194,11 +211,19 @@ model Medewerker {
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt
 
+  /// -----------------------------------------------------
+  /// Indexen
+  /// -----------------------------------------------------
+
   @@index([statusId])
   @@index([actief])
   @@index([achternaam])
   @@index([voornaam])
 }
+
+/// ======================================================
+/// MEDEWERKER - VESTIGING
+/// ======================================================
 
 model MedewerkerVestiging {
   id String @id @default(cuid())
@@ -218,6 +243,10 @@ model MedewerkerVestiging {
   @@index([medewerkerId])
   @@index([vestigingId])
 }
+
+/// ======================================================
+/// MEDEWERKER - ROL
+/// ======================================================
 
 model MedewerkerRol {
   id String @id @default(cuid())
@@ -240,17 +269,20 @@ model MedewerkerRol {
 /// PERSONEELSPLANNING
 /// ======================================================
 
+/// ======================================================
+/// TAGS
+/// ======================================================
+
 model Tag {
   id String @id @default(cuid())
 
   naam String @unique
 
-  volgorde Int
+  volgorde Int @default(0)
 
   actief Boolean @default(true)
 
   medewerkers MedewerkerTag[]
-
   diensten DienstTag[]
 
   aangemaaktOp DateTime @default(now())
@@ -260,6 +292,10 @@ model Tag {
   @@index([actief])
 }
 
+/// ======================================================
+/// MEDEWERKER - TAG
+/// ======================================================
+
 model MedewerkerTag {
   id String @id @default(cuid())
 
@@ -267,7 +303,6 @@ model MedewerkerTag {
   tagId String
 
   medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
-
   tag Tag @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@unique([medewerkerId, tagId])
@@ -276,26 +311,101 @@ model MedewerkerTag {
   @@index([tagId])
 }
 
+/// ======================================================
+/// WEEK
+/// ======================================================
+
 model Week {
   id String @id @default(cuid())
 
   vestigingId String
 
   jaar Int
-
   weeknummer Int
 
+  /// OPEN
+  /// IN_PLANNING
+  /// GEPUBLICEERD
+  /// AFGESLOTEN
   status String @default("OPEN")
+
+  /// -----------------------------------------------------
+  /// Beschikbaarheidsdeadline
+  ///
+  /// Tot en met dit moment mag een medewerker zijn/haar
+  /// eigen beschikbaarheid toevoegen, wijzigen en verwijderen.
+  ///
+  /// Na deze deadline kan alleen een eigenaar wijzigingen
+  /// uitvoeren.
+  /// -----------------------------------------------------
+
+  beschikbaarheidDeadline DateTime?
 
   vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
 
   diensten Dienst[]
+  beschikbaarheden Beschikbaarheid[]
 
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt
 
   @@unique([vestigingId, jaar, weeknummer])
+
+  @@index([vestigingId])
+  @@index([jaar, weeknummer])
+  @@index([status])
+  @@index([beschikbaarheidDeadline])
 }
+
+/// ======================================================
+/// BESCHIKBAARHEID
+///
+/// De medewerker geeft hiermee aan wanneer hij/zij
+/// beschikbaar is.
+///
+/// Beschikbaarheid is nadrukkelijk geen planning.
+/// De organisatie gebruikt deze gegevens bij het
+/// samenstellen van de definitieve planning.
+///
+/// Tot de deadline mag de medewerker de eigen
+/// beschikbaarheid toevoegen, wijzigen en verwijderen.
+/// Na de deadline is wijziging alleen toegestaan voor
+/// een eigenaar.
+/// ======================================================
+
+model Beschikbaarheid {
+  id String @id @default(cuid())
+
+  weekId String
+  medewerkerId String
+
+  datum DateTime
+
+  begintijd DateTime
+  eindtijd DateTime
+
+  /// BESCHIKBAAR
+  /// NIET_BESCHIKBAAR
+  /// VOORKEUR
+  status String @default("BESCHIKBAAR")
+
+  opmerking String?
+
+  week Week @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([weekId])
+  @@index([medewerkerId])
+  @@index([datum])
+  @@index([status])
+}
+
+/// ======================================================
+/// DIENST
+/// ======================================================
 
 model Dienst {
   id String @id @default(cuid())
@@ -305,7 +415,6 @@ model Dienst {
   datum DateTime
 
   begintijd DateTime
-
   eindtijd DateTime
 
   opmerkingen String?
@@ -313,30 +422,47 @@ model Dienst {
   week Week @relation(fields: [weekId], references: [id], onDelete: Cascade)
 
   tags DienstTag[]
-
   bezetting DienstBezetting[]
 
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt
 
+  @@index([weekId])
   @@index([datum])
 }
+
+/// ======================================================
+/// DIENST - TAG
+///
+/// Geeft aan welke kwaliteiten/functies voor een dienst
+/// nodig zijn en hoeveel medewerkers daarvan nodig zijn.
+/// ======================================================
 
 model DienstTag {
   id String @id @default(cuid())
 
   dienstId String
-
   tagId String
 
   aantal Int @default(1)
 
   dienst Dienst @relation(fields: [dienstId], references: [id], onDelete: Cascade)
-
   tag Tag @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@unique([dienstId, tagId])
+
+  @@index([dienstId])
+  @@index([tagId])
 }
+
+/// ======================================================
+/// DIENST - BEZETTING
+///
+/// Dit is de daadwerkelijke planning.
+///
+/// medewerkerId blijft optioneel zodat een open
+/// dienstplek kan bestaan voordat deze wordt ingevuld.
+/// ======================================================
 
 model DienstBezetting {
   id String @id @default(cuid())
@@ -345,15 +471,24 @@ model DienstBezetting {
 
   medewerkerId String?
 
+  /// OPEN
+  /// GEPLAND
+  /// BEVESTIGD
+  /// AFGEZEGD
+  /// GEWERKT
   status String @default("OPEN")
 
   dienst Dienst @relation(fields: [dienstId], references: [id], onDelete: Cascade)
-
   medewerker Medewerker? @relation(fields: [medewerkerId], references: [id], onDelete: SetNull)
 
   aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
 
+  @@index([dienstId])
+  @@index([medewerkerId])
   @@index([status])
+
+  @@unique([dienstId, medewerkerId])
 }
 
 /// ======================================================

@@ -30,6 +30,7 @@ export type DienstBezettingMinAggregateOutputType = {
   medewerkerId: string | null
   status: string | null
   aangemaaktOp: Date | null
+  gewijzigdOp: Date | null
 }
 
 export type DienstBezettingMaxAggregateOutputType = {
@@ -38,6 +39,7 @@ export type DienstBezettingMaxAggregateOutputType = {
   medewerkerId: string | null
   status: string | null
   aangemaaktOp: Date | null
+  gewijzigdOp: Date | null
 }
 
 export type DienstBezettingCountAggregateOutputType = {
@@ -46,6 +48,7 @@ export type DienstBezettingCountAggregateOutputType = {
   medewerkerId: number
   status: number
   aangemaaktOp: number
+  gewijzigdOp: number
   _all: number
 }
 
@@ -56,6 +59,7 @@ export type DienstBezettingMinAggregateInputType = {
   medewerkerId?: true
   status?: true
   aangemaaktOp?: true
+  gewijzigdOp?: true
 }
 
 export type DienstBezettingMaxAggregateInputType = {
@@ -64,6 +68,7 @@ export type DienstBezettingMaxAggregateInputType = {
   medewerkerId?: true
   status?: true
   aangemaaktOp?: true
+  gewijzigdOp?: true
 }
 
 export type DienstBezettingCountAggregateInputType = {
@@ -72,6 +77,7 @@ export type DienstBezettingCountAggregateInputType = {
   medewerkerId?: true
   status?: true
   aangemaaktOp?: true
+  gewijzigdOp?: true
   _all?: true
 }
 
@@ -153,6 +159,7 @@ export type DienstBezettingGroupByOutputType = {
   medewerkerId: string | null
   status: string
   aangemaaktOp: Date
+  gewijzigdOp: Date
   _count: DienstBezettingCountAggregateOutputType | null
   _min: DienstBezettingMinAggregateOutputType | null
   _max: DienstBezettingMaxAggregateOutputType | null
@@ -182,6 +189,7 @@ export type DienstBezettingWhereInput = {
   medewerkerId?: Prisma.StringNullableFilter<"DienstBezetting"> | string | null
   status?: Prisma.StringFilter<"DienstBezetting"> | string
   aangemaaktOp?: Prisma.DateTimeFilter<"DienstBezetting"> | Date | string
+  gewijzigdOp?: Prisma.DateTimeFilter<"DienstBezetting"> | Date | string
   dienst?: Prisma.XOR<Prisma.DienstScalarRelationFilter, Prisma.DienstWhereInput>
   medewerker?: Prisma.XOR<Prisma.MedewerkerNullableScalarRelationFilter, Prisma.MedewerkerWhereInput> | null
 }
@@ -192,12 +200,14 @@ export type DienstBezettingOrderByWithRelationInput = {
   medewerkerId?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
+  gewijzigdOp?: Prisma.SortOrder
   dienst?: Prisma.DienstOrderByWithRelationInput
   medewerker?: Prisma.MedewerkerOrderByWithRelationInput
 }
 
 export type DienstBezettingWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  dienstId_medewerkerId?: Prisma.DienstBezettingDienstIdMedewerkerIdCompoundUniqueInput
   AND?: Prisma.DienstBezettingWhereInput | Prisma.DienstBezettingWhereInput[]
   OR?: Prisma.DienstBezettingWhereInput[]
   NOT?: Prisma.DienstBezettingWhereInput | Prisma.DienstBezettingWhereInput[]
@@ -205,9 +215,10 @@ export type DienstBezettingWhereUniqueInput = Prisma.AtLeast<{
   medewerkerId?: Prisma.StringNullableFilter<"DienstBezetting"> | string | null
   status?: Prisma.StringFilter<"DienstBezetting"> | string
   aangemaaktOp?: Prisma.DateTimeFilter<"DienstBezetting"> | Date | string
+  gewijzigdOp?: Prisma.DateTimeFilter<"DienstBezetting"> | Date | string
   dienst?: Prisma.XOR<Prisma.DienstScalarRelationFilter, Prisma.DienstWhereInput>
   medewerker?: Prisma.XOR<Prisma.MedewerkerNullableScalarRelationFilter, Prisma.MedewerkerWhereInput> | null
-}, "id">
+}, "id" | "dienstId_medewerkerId">
 
 export type DienstBezettingOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -215,6 +226,7 @@ export type DienstBezettingOrderByWithAggregationInput = {
   medewerkerId?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
+  gewijzigdOp?: Prisma.SortOrder
   _count?: Prisma.DienstBezettingCountOrderByAggregateInput
   _max?: Prisma.DienstBezettingMaxOrderByAggregateInput
   _min?: Prisma.DienstBezettingMinOrderByAggregateInput
@@ -229,12 +241,14 @@ export type DienstBezettingScalarWhereWithAggregatesInput = {
   medewerkerId?: Prisma.StringNullableWithAggregatesFilter<"DienstBezetting"> | string | null
   status?: Prisma.StringWithAggregatesFilter<"DienstBezetting"> | string
   aangemaaktOp?: Prisma.DateTimeWithAggregatesFilter<"DienstBezetting"> | Date | string
+  gewijzigdOp?: Prisma.DateTimeWithAggregatesFilter<"DienstBezetting"> | Date | string
 }
 
 export type DienstBezettingCreateInput = {
   id?: string
   status?: string
   aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
   dienst: Prisma.DienstCreateNestedOneWithoutBezettingInput
   medewerker?: Prisma.MedewerkerCreateNestedOneWithoutDienstenInput
 }
@@ -245,12 +259,14 @@ export type DienstBezettingUncheckedCreateInput = {
   medewerkerId?: string | null
   status?: string
   aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
 }
 
 export type DienstBezettingUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dienst?: Prisma.DienstUpdateOneRequiredWithoutBezettingNestedInput
   medewerker?: Prisma.MedewerkerUpdateOneWithoutDienstenNestedInput
 }
@@ -261,6 +277,7 @@ export type DienstBezettingUncheckedUpdateInput = {
   medewerkerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type DienstBezettingCreateManyInput = {
@@ -269,12 +286,14 @@ export type DienstBezettingCreateManyInput = {
   medewerkerId?: string | null
   status?: string
   aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
 }
 
 export type DienstBezettingUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type DienstBezettingUncheckedUpdateManyInput = {
@@ -283,6 +302,7 @@ export type DienstBezettingUncheckedUpdateManyInput = {
   medewerkerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type DienstBezettingListRelationFilter = {
@@ -295,12 +315,18 @@ export type DienstBezettingOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
+export type DienstBezettingDienstIdMedewerkerIdCompoundUniqueInput = {
+  dienstId: string
+  medewerkerId: string
+}
+
 export type DienstBezettingCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   dienstId?: Prisma.SortOrder
   medewerkerId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
+  gewijzigdOp?: Prisma.SortOrder
 }
 
 export type DienstBezettingMaxOrderByAggregateInput = {
@@ -309,6 +335,7 @@ export type DienstBezettingMaxOrderByAggregateInput = {
   medewerkerId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
+  gewijzigdOp?: Prisma.SortOrder
 }
 
 export type DienstBezettingMinOrderByAggregateInput = {
@@ -317,6 +344,7 @@ export type DienstBezettingMinOrderByAggregateInput = {
   medewerkerId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
+  gewijzigdOp?: Prisma.SortOrder
 }
 
 export type DienstBezettingCreateNestedManyWithoutMedewerkerInput = {
@@ -407,6 +435,7 @@ export type DienstBezettingCreateWithoutMedewerkerInput = {
   id?: string
   status?: string
   aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
   dienst: Prisma.DienstCreateNestedOneWithoutBezettingInput
 }
 
@@ -415,6 +444,7 @@ export type DienstBezettingUncheckedCreateWithoutMedewerkerInput = {
   dienstId: string
   status?: string
   aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
 }
 
 export type DienstBezettingCreateOrConnectWithoutMedewerkerInput = {
@@ -452,12 +482,14 @@ export type DienstBezettingScalarWhereInput = {
   medewerkerId?: Prisma.StringNullableFilter<"DienstBezetting"> | string | null
   status?: Prisma.StringFilter<"DienstBezetting"> | string
   aangemaaktOp?: Prisma.DateTimeFilter<"DienstBezetting"> | Date | string
+  gewijzigdOp?: Prisma.DateTimeFilter<"DienstBezetting"> | Date | string
 }
 
 export type DienstBezettingCreateWithoutDienstInput = {
   id?: string
   status?: string
   aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
   medewerker?: Prisma.MedewerkerCreateNestedOneWithoutDienstenInput
 }
 
@@ -466,6 +498,7 @@ export type DienstBezettingUncheckedCreateWithoutDienstInput = {
   medewerkerId?: string | null
   status?: string
   aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
 }
 
 export type DienstBezettingCreateOrConnectWithoutDienstInput = {
@@ -499,12 +532,14 @@ export type DienstBezettingCreateManyMedewerkerInput = {
   dienstId: string
   status?: string
   aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
 }
 
 export type DienstBezettingUpdateWithoutMedewerkerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dienst?: Prisma.DienstUpdateOneRequiredWithoutBezettingNestedInput
 }
 
@@ -513,6 +548,7 @@ export type DienstBezettingUncheckedUpdateWithoutMedewerkerInput = {
   dienstId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type DienstBezettingUncheckedUpdateManyWithoutMedewerkerInput = {
@@ -520,6 +556,7 @@ export type DienstBezettingUncheckedUpdateManyWithoutMedewerkerInput = {
   dienstId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type DienstBezettingCreateManyDienstInput = {
@@ -527,12 +564,14 @@ export type DienstBezettingCreateManyDienstInput = {
   medewerkerId?: string | null
   status?: string
   aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
 }
 
 export type DienstBezettingUpdateWithoutDienstInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   medewerker?: Prisma.MedewerkerUpdateOneWithoutDienstenNestedInput
 }
 
@@ -541,6 +580,7 @@ export type DienstBezettingUncheckedUpdateWithoutDienstInput = {
   medewerkerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type DienstBezettingUncheckedUpdateManyWithoutDienstInput = {
@@ -548,6 +588,7 @@ export type DienstBezettingUncheckedUpdateManyWithoutDienstInput = {
   medewerkerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -558,6 +599,7 @@ export type DienstBezettingSelect<ExtArgs extends runtime.Types.Extensions.Inter
   medewerkerId?: boolean
   status?: boolean
   aangemaaktOp?: boolean
+  gewijzigdOp?: boolean
   dienst?: boolean | Prisma.DienstDefaultArgs<ExtArgs>
   medewerker?: boolean | Prisma.DienstBezetting$medewerkerArgs<ExtArgs>
 }, ExtArgs["result"]["dienstBezetting"]>
@@ -568,6 +610,7 @@ export type DienstBezettingSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   medewerkerId?: boolean
   status?: boolean
   aangemaaktOp?: boolean
+  gewijzigdOp?: boolean
   dienst?: boolean | Prisma.DienstDefaultArgs<ExtArgs>
   medewerker?: boolean | Prisma.DienstBezetting$medewerkerArgs<ExtArgs>
 }, ExtArgs["result"]["dienstBezetting"]>
@@ -578,6 +621,7 @@ export type DienstBezettingSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   medewerkerId?: boolean
   status?: boolean
   aangemaaktOp?: boolean
+  gewijzigdOp?: boolean
   dienst?: boolean | Prisma.DienstDefaultArgs<ExtArgs>
   medewerker?: boolean | Prisma.DienstBezetting$medewerkerArgs<ExtArgs>
 }, ExtArgs["result"]["dienstBezetting"]>
@@ -588,9 +632,10 @@ export type DienstBezettingSelectScalar = {
   medewerkerId?: boolean
   status?: boolean
   aangemaaktOp?: boolean
+  gewijzigdOp?: boolean
 }
 
-export type DienstBezettingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "dienstId" | "medewerkerId" | "status" | "aangemaaktOp", ExtArgs["result"]["dienstBezetting"]>
+export type DienstBezettingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "dienstId" | "medewerkerId" | "status" | "aangemaaktOp" | "gewijzigdOp", ExtArgs["result"]["dienstBezetting"]>
 export type DienstBezettingInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   dienst?: boolean | Prisma.DienstDefaultArgs<ExtArgs>
   medewerker?: boolean | Prisma.DienstBezetting$medewerkerArgs<ExtArgs>
@@ -614,8 +659,16 @@ export type $DienstBezettingPayload<ExtArgs extends runtime.Types.Extensions.Int
     id: string
     dienstId: string
     medewerkerId: string | null
+    /**
+     * OPEN
+     * GEPLAND
+     * BEVESTIGD
+     * AFGEZEGD
+     * GEWERKT
+     */
     status: string
     aangemaaktOp: Date
+    gewijzigdOp: Date
   }, ExtArgs["result"]["dienstBezetting"]>
   composites: {}
 }
@@ -1046,6 +1099,7 @@ export interface DienstBezettingFieldRefs {
   readonly medewerkerId: Prisma.FieldRef<"DienstBezetting", 'String'>
   readonly status: Prisma.FieldRef<"DienstBezetting", 'String'>
   readonly aangemaaktOp: Prisma.FieldRef<"DienstBezetting", 'DateTime'>
+  readonly gewijzigdOp: Prisma.FieldRef<"DienstBezetting", 'DateTime'>
 }
     
 

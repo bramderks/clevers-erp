@@ -42,6 +42,7 @@ export type WeekMinAggregateOutputType = {
   jaar: number | null
   weeknummer: number | null
   status: string | null
+  beschikbaarheidDeadline: Date | null
   aangemaaktOp: Date | null
   gewijzigdOp: Date | null
 }
@@ -52,6 +53,7 @@ export type WeekMaxAggregateOutputType = {
   jaar: number | null
   weeknummer: number | null
   status: string | null
+  beschikbaarheidDeadline: Date | null
   aangemaaktOp: Date | null
   gewijzigdOp: Date | null
 }
@@ -62,6 +64,7 @@ export type WeekCountAggregateOutputType = {
   jaar: number
   weeknummer: number
   status: number
+  beschikbaarheidDeadline: number
   aangemaaktOp: number
   gewijzigdOp: number
   _all: number
@@ -84,6 +87,7 @@ export type WeekMinAggregateInputType = {
   jaar?: true
   weeknummer?: true
   status?: true
+  beschikbaarheidDeadline?: true
   aangemaaktOp?: true
   gewijzigdOp?: true
 }
@@ -94,6 +98,7 @@ export type WeekMaxAggregateInputType = {
   jaar?: true
   weeknummer?: true
   status?: true
+  beschikbaarheidDeadline?: true
   aangemaaktOp?: true
   gewijzigdOp?: true
 }
@@ -104,6 +109,7 @@ export type WeekCountAggregateInputType = {
   jaar?: true
   weeknummer?: true
   status?: true
+  beschikbaarheidDeadline?: true
   aangemaaktOp?: true
   gewijzigdOp?: true
   _all?: true
@@ -201,6 +207,7 @@ export type WeekGroupByOutputType = {
   jaar: number
   weeknummer: number
   status: string
+  beschikbaarheidDeadline: Date | null
   aangemaaktOp: Date
   gewijzigdOp: Date
   _count: WeekCountAggregateOutputType | null
@@ -234,10 +241,12 @@ export type WeekWhereInput = {
   jaar?: Prisma.IntFilter<"Week"> | number
   weeknummer?: Prisma.IntFilter<"Week"> | number
   status?: Prisma.StringFilter<"Week"> | string
+  beschikbaarheidDeadline?: Prisma.DateTimeNullableFilter<"Week"> | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFilter<"Week"> | Date | string
   gewijzigdOp?: Prisma.DateTimeFilter<"Week"> | Date | string
   vestiging?: Prisma.XOR<Prisma.VestigingScalarRelationFilter, Prisma.VestigingWhereInput>
   diensten?: Prisma.DienstListRelationFilter
+  beschikbaarheden?: Prisma.BeschikbaarheidListRelationFilter
 }
 
 export type WeekOrderByWithRelationInput = {
@@ -246,10 +255,12 @@ export type WeekOrderByWithRelationInput = {
   jaar?: Prisma.SortOrder
   weeknummer?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  beschikbaarheidDeadline?: Prisma.SortOrderInput | Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
   vestiging?: Prisma.VestigingOrderByWithRelationInput
   diensten?: Prisma.DienstOrderByRelationAggregateInput
+  beschikbaarheden?: Prisma.BeschikbaarheidOrderByRelationAggregateInput
 }
 
 export type WeekWhereUniqueInput = Prisma.AtLeast<{
@@ -262,10 +273,12 @@ export type WeekWhereUniqueInput = Prisma.AtLeast<{
   jaar?: Prisma.IntFilter<"Week"> | number
   weeknummer?: Prisma.IntFilter<"Week"> | number
   status?: Prisma.StringFilter<"Week"> | string
+  beschikbaarheidDeadline?: Prisma.DateTimeNullableFilter<"Week"> | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFilter<"Week"> | Date | string
   gewijzigdOp?: Prisma.DateTimeFilter<"Week"> | Date | string
   vestiging?: Prisma.XOR<Prisma.VestigingScalarRelationFilter, Prisma.VestigingWhereInput>
   diensten?: Prisma.DienstListRelationFilter
+  beschikbaarheden?: Prisma.BeschikbaarheidListRelationFilter
 }, "id" | "vestigingId_jaar_weeknummer">
 
 export type WeekOrderByWithAggregationInput = {
@@ -274,6 +287,7 @@ export type WeekOrderByWithAggregationInput = {
   jaar?: Prisma.SortOrder
   weeknummer?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  beschikbaarheidDeadline?: Prisma.SortOrderInput | Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
   _count?: Prisma.WeekCountOrderByAggregateInput
@@ -292,6 +306,7 @@ export type WeekScalarWhereWithAggregatesInput = {
   jaar?: Prisma.IntWithAggregatesFilter<"Week"> | number
   weeknummer?: Prisma.IntWithAggregatesFilter<"Week"> | number
   status?: Prisma.StringWithAggregatesFilter<"Week"> | string
+  beschikbaarheidDeadline?: Prisma.DateTimeNullableWithAggregatesFilter<"Week"> | Date | string | null
   aangemaaktOp?: Prisma.DateTimeWithAggregatesFilter<"Week"> | Date | string
   gewijzigdOp?: Prisma.DateTimeWithAggregatesFilter<"Week"> | Date | string
 }
@@ -301,10 +316,12 @@ export type WeekCreateInput = {
   jaar: number
   weeknummer: number
   status?: string
+  beschikbaarheidDeadline?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
   vestiging: Prisma.VestigingCreateNestedOneWithoutWekenInput
   diensten?: Prisma.DienstCreateNestedManyWithoutWeekInput
+  beschikbaarheden?: Prisma.BeschikbaarheidCreateNestedManyWithoutWeekInput
 }
 
 export type WeekUncheckedCreateInput = {
@@ -313,9 +330,11 @@ export type WeekUncheckedCreateInput = {
   jaar: number
   weeknummer: number
   status?: string
+  beschikbaarheidDeadline?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
   diensten?: Prisma.DienstUncheckedCreateNestedManyWithoutWeekInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUncheckedCreateNestedManyWithoutWeekInput
 }
 
 export type WeekUpdateInput = {
@@ -323,10 +342,12 @@ export type WeekUpdateInput = {
   jaar?: Prisma.IntFieldUpdateOperationsInput | number
   weeknummer?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  beschikbaarheidDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   vestiging?: Prisma.VestigingUpdateOneRequiredWithoutWekenNestedInput
   diensten?: Prisma.DienstUpdateManyWithoutWeekNestedInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUpdateManyWithoutWeekNestedInput
 }
 
 export type WeekUncheckedUpdateInput = {
@@ -335,9 +356,11 @@ export type WeekUncheckedUpdateInput = {
   jaar?: Prisma.IntFieldUpdateOperationsInput | number
   weeknummer?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  beschikbaarheidDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   diensten?: Prisma.DienstUncheckedUpdateManyWithoutWeekNestedInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUncheckedUpdateManyWithoutWeekNestedInput
 }
 
 export type WeekCreateManyInput = {
@@ -346,6 +369,7 @@ export type WeekCreateManyInput = {
   jaar: number
   weeknummer: number
   status?: string
+  beschikbaarheidDeadline?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
 }
@@ -355,6 +379,7 @@ export type WeekUpdateManyMutationInput = {
   jaar?: Prisma.IntFieldUpdateOperationsInput | number
   weeknummer?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  beschikbaarheidDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -365,6 +390,7 @@ export type WeekUncheckedUpdateManyInput = {
   jaar?: Prisma.IntFieldUpdateOperationsInput | number
   weeknummer?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  beschikbaarheidDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -391,6 +417,7 @@ export type WeekCountOrderByAggregateInput = {
   jaar?: Prisma.SortOrder
   weeknummer?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  beschikbaarheidDeadline?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
 }
@@ -406,6 +433,7 @@ export type WeekMaxOrderByAggregateInput = {
   jaar?: Prisma.SortOrder
   weeknummer?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  beschikbaarheidDeadline?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
 }
@@ -416,6 +444,7 @@ export type WeekMinOrderByAggregateInput = {
   jaar?: Prisma.SortOrder
   weeknummer?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  beschikbaarheidDeadline?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
 }
@@ -472,6 +501,20 @@ export type WeekUncheckedUpdateManyWithoutVestigingNestedInput = {
   deleteMany?: Prisma.WeekScalarWhereInput | Prisma.WeekScalarWhereInput[]
 }
 
+export type WeekCreateNestedOneWithoutBeschikbaarhedenInput = {
+  create?: Prisma.XOR<Prisma.WeekCreateWithoutBeschikbaarhedenInput, Prisma.WeekUncheckedCreateWithoutBeschikbaarhedenInput>
+  connectOrCreate?: Prisma.WeekCreateOrConnectWithoutBeschikbaarhedenInput
+  connect?: Prisma.WeekWhereUniqueInput
+}
+
+export type WeekUpdateOneRequiredWithoutBeschikbaarhedenNestedInput = {
+  create?: Prisma.XOR<Prisma.WeekCreateWithoutBeschikbaarhedenInput, Prisma.WeekUncheckedCreateWithoutBeschikbaarhedenInput>
+  connectOrCreate?: Prisma.WeekCreateOrConnectWithoutBeschikbaarhedenInput
+  upsert?: Prisma.WeekUpsertWithoutBeschikbaarhedenInput
+  connect?: Prisma.WeekWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.WeekUpdateToOneWithWhereWithoutBeschikbaarhedenInput, Prisma.WeekUpdateWithoutBeschikbaarhedenInput>, Prisma.WeekUncheckedUpdateWithoutBeschikbaarhedenInput>
+}
+
 export type WeekCreateNestedOneWithoutDienstenInput = {
   create?: Prisma.XOR<Prisma.WeekCreateWithoutDienstenInput, Prisma.WeekUncheckedCreateWithoutDienstenInput>
   connectOrCreate?: Prisma.WeekCreateOrConnectWithoutDienstenInput
@@ -491,9 +534,11 @@ export type WeekCreateWithoutVestigingInput = {
   jaar: number
   weeknummer: number
   status?: string
+  beschikbaarheidDeadline?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
   diensten?: Prisma.DienstCreateNestedManyWithoutWeekInput
+  beschikbaarheden?: Prisma.BeschikbaarheidCreateNestedManyWithoutWeekInput
 }
 
 export type WeekUncheckedCreateWithoutVestigingInput = {
@@ -501,9 +546,11 @@ export type WeekUncheckedCreateWithoutVestigingInput = {
   jaar: number
   weeknummer: number
   status?: string
+  beschikbaarheidDeadline?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
   diensten?: Prisma.DienstUncheckedCreateNestedManyWithoutWeekInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUncheckedCreateNestedManyWithoutWeekInput
 }
 
 export type WeekCreateOrConnectWithoutVestigingInput = {
@@ -541,8 +588,73 @@ export type WeekScalarWhereInput = {
   jaar?: Prisma.IntFilter<"Week"> | number
   weeknummer?: Prisma.IntFilter<"Week"> | number
   status?: Prisma.StringFilter<"Week"> | string
+  beschikbaarheidDeadline?: Prisma.DateTimeNullableFilter<"Week"> | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFilter<"Week"> | Date | string
   gewijzigdOp?: Prisma.DateTimeFilter<"Week"> | Date | string
+}
+
+export type WeekCreateWithoutBeschikbaarhedenInput = {
+  id?: string
+  jaar: number
+  weeknummer: number
+  status?: string
+  beschikbaarheidDeadline?: Date | string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  vestiging: Prisma.VestigingCreateNestedOneWithoutWekenInput
+  diensten?: Prisma.DienstCreateNestedManyWithoutWeekInput
+}
+
+export type WeekUncheckedCreateWithoutBeschikbaarhedenInput = {
+  id?: string
+  vestigingId: string
+  jaar: number
+  weeknummer: number
+  status?: string
+  beschikbaarheidDeadline?: Date | string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  diensten?: Prisma.DienstUncheckedCreateNestedManyWithoutWeekInput
+}
+
+export type WeekCreateOrConnectWithoutBeschikbaarhedenInput = {
+  where: Prisma.WeekWhereUniqueInput
+  create: Prisma.XOR<Prisma.WeekCreateWithoutBeschikbaarhedenInput, Prisma.WeekUncheckedCreateWithoutBeschikbaarhedenInput>
+}
+
+export type WeekUpsertWithoutBeschikbaarhedenInput = {
+  update: Prisma.XOR<Prisma.WeekUpdateWithoutBeschikbaarhedenInput, Prisma.WeekUncheckedUpdateWithoutBeschikbaarhedenInput>
+  create: Prisma.XOR<Prisma.WeekCreateWithoutBeschikbaarhedenInput, Prisma.WeekUncheckedCreateWithoutBeschikbaarhedenInput>
+  where?: Prisma.WeekWhereInput
+}
+
+export type WeekUpdateToOneWithWhereWithoutBeschikbaarhedenInput = {
+  where?: Prisma.WeekWhereInput
+  data: Prisma.XOR<Prisma.WeekUpdateWithoutBeschikbaarhedenInput, Prisma.WeekUncheckedUpdateWithoutBeschikbaarhedenInput>
+}
+
+export type WeekUpdateWithoutBeschikbaarhedenInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  jaar?: Prisma.IntFieldUpdateOperationsInput | number
+  weeknummer?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  beschikbaarheidDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  vestiging?: Prisma.VestigingUpdateOneRequiredWithoutWekenNestedInput
+  diensten?: Prisma.DienstUpdateManyWithoutWeekNestedInput
+}
+
+export type WeekUncheckedUpdateWithoutBeschikbaarhedenInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  vestigingId?: Prisma.StringFieldUpdateOperationsInput | string
+  jaar?: Prisma.IntFieldUpdateOperationsInput | number
+  weeknummer?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  beschikbaarheidDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  diensten?: Prisma.DienstUncheckedUpdateManyWithoutWeekNestedInput
 }
 
 export type WeekCreateWithoutDienstenInput = {
@@ -550,9 +662,11 @@ export type WeekCreateWithoutDienstenInput = {
   jaar: number
   weeknummer: number
   status?: string
+  beschikbaarheidDeadline?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
   vestiging: Prisma.VestigingCreateNestedOneWithoutWekenInput
+  beschikbaarheden?: Prisma.BeschikbaarheidCreateNestedManyWithoutWeekInput
 }
 
 export type WeekUncheckedCreateWithoutDienstenInput = {
@@ -561,8 +675,10 @@ export type WeekUncheckedCreateWithoutDienstenInput = {
   jaar: number
   weeknummer: number
   status?: string
+  beschikbaarheidDeadline?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  beschikbaarheden?: Prisma.BeschikbaarheidUncheckedCreateNestedManyWithoutWeekInput
 }
 
 export type WeekCreateOrConnectWithoutDienstenInput = {
@@ -586,9 +702,11 @@ export type WeekUpdateWithoutDienstenInput = {
   jaar?: Prisma.IntFieldUpdateOperationsInput | number
   weeknummer?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  beschikbaarheidDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   vestiging?: Prisma.VestigingUpdateOneRequiredWithoutWekenNestedInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUpdateManyWithoutWeekNestedInput
 }
 
 export type WeekUncheckedUpdateWithoutDienstenInput = {
@@ -597,8 +715,10 @@ export type WeekUncheckedUpdateWithoutDienstenInput = {
   jaar?: Prisma.IntFieldUpdateOperationsInput | number
   weeknummer?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  beschikbaarheidDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  beschikbaarheden?: Prisma.BeschikbaarheidUncheckedUpdateManyWithoutWeekNestedInput
 }
 
 export type WeekCreateManyVestigingInput = {
@@ -606,6 +726,7 @@ export type WeekCreateManyVestigingInput = {
   jaar: number
   weeknummer: number
   status?: string
+  beschikbaarheidDeadline?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
 }
@@ -615,9 +736,11 @@ export type WeekUpdateWithoutVestigingInput = {
   jaar?: Prisma.IntFieldUpdateOperationsInput | number
   weeknummer?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  beschikbaarheidDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   diensten?: Prisma.DienstUpdateManyWithoutWeekNestedInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUpdateManyWithoutWeekNestedInput
 }
 
 export type WeekUncheckedUpdateWithoutVestigingInput = {
@@ -625,9 +748,11 @@ export type WeekUncheckedUpdateWithoutVestigingInput = {
   jaar?: Prisma.IntFieldUpdateOperationsInput | number
   weeknummer?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  beschikbaarheidDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   diensten?: Prisma.DienstUncheckedUpdateManyWithoutWeekNestedInput
+  beschikbaarheden?: Prisma.BeschikbaarheidUncheckedUpdateManyWithoutWeekNestedInput
 }
 
 export type WeekUncheckedUpdateManyWithoutVestigingInput = {
@@ -635,6 +760,7 @@ export type WeekUncheckedUpdateManyWithoutVestigingInput = {
   jaar?: Prisma.IntFieldUpdateOperationsInput | number
   weeknummer?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  beschikbaarheidDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -646,10 +772,12 @@ export type WeekUncheckedUpdateManyWithoutVestigingInput = {
 
 export type WeekCountOutputType = {
   diensten: number
+  beschikbaarheden: number
 }
 
 export type WeekCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   diensten?: boolean | WeekCountOutputTypeCountDienstenArgs
+  beschikbaarheden?: boolean | WeekCountOutputTypeCountBeschikbaarhedenArgs
 }
 
 /**
@@ -669,6 +797,13 @@ export type WeekCountOutputTypeCountDienstenArgs<ExtArgs extends runtime.Types.E
   where?: Prisma.DienstWhereInput
 }
 
+/**
+ * WeekCountOutputType without action
+ */
+export type WeekCountOutputTypeCountBeschikbaarhedenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.BeschikbaarheidWhereInput
+}
+
 
 export type WeekSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -676,10 +811,12 @@ export type WeekSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   jaar?: boolean
   weeknummer?: boolean
   status?: boolean
+  beschikbaarheidDeadline?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
   vestiging?: boolean | Prisma.VestigingDefaultArgs<ExtArgs>
   diensten?: boolean | Prisma.Week$dienstenArgs<ExtArgs>
+  beschikbaarheden?: boolean | Prisma.Week$beschikbaarhedenArgs<ExtArgs>
   _count?: boolean | Prisma.WeekCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["week"]>
 
@@ -689,6 +826,7 @@ export type WeekSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   jaar?: boolean
   weeknummer?: boolean
   status?: boolean
+  beschikbaarheidDeadline?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
   vestiging?: boolean | Prisma.VestigingDefaultArgs<ExtArgs>
@@ -700,6 +838,7 @@ export type WeekSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   jaar?: boolean
   weeknummer?: boolean
   status?: boolean
+  beschikbaarheidDeadline?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
   vestiging?: boolean | Prisma.VestigingDefaultArgs<ExtArgs>
@@ -711,14 +850,16 @@ export type WeekSelectScalar = {
   jaar?: boolean
   weeknummer?: boolean
   status?: boolean
+  beschikbaarheidDeadline?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
 }
 
-export type WeekOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "vestigingId" | "jaar" | "weeknummer" | "status" | "aangemaaktOp" | "gewijzigdOp", ExtArgs["result"]["week"]>
+export type WeekOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "vestigingId" | "jaar" | "weeknummer" | "status" | "beschikbaarheidDeadline" | "aangemaaktOp" | "gewijzigdOp", ExtArgs["result"]["week"]>
 export type WeekInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   vestiging?: boolean | Prisma.VestigingDefaultArgs<ExtArgs>
   diensten?: boolean | Prisma.Week$dienstenArgs<ExtArgs>
+  beschikbaarheden?: boolean | Prisma.Week$beschikbaarhedenArgs<ExtArgs>
   _count?: boolean | Prisma.WeekCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type WeekIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -733,13 +874,32 @@ export type $WeekPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   objects: {
     vestiging: Prisma.$VestigingPayload<ExtArgs>
     diensten: Prisma.$DienstPayload<ExtArgs>[]
+    beschikbaarheden: Prisma.$BeschikbaarheidPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     vestigingId: string
     jaar: number
     weeknummer: number
+    /**
+     * OPEN
+     * IN_PLANNING
+     * GEPUBLICEERD
+     * AFGESLOTEN
+     */
     status: string
+    /**
+     * -----------------------------------------------------
+     * Beschikbaarheidsdeadline
+     * 
+     * Tot en met dit moment mag een medewerker zijn/haar
+     * eigen beschikbaarheid toevoegen, wijzigen en verwijderen.
+     * 
+     * Na deze deadline kan alleen een eigenaar wijzigingen
+     * uitvoeren.
+     * -----------------------------------------------------
+     */
+    beschikbaarheidDeadline: Date | null
     aangemaaktOp: Date
     gewijzigdOp: Date
   }, ExtArgs["result"]["week"]>
@@ -1138,6 +1298,7 @@ export interface Prisma__WeekClient<T, Null = never, ExtArgs extends runtime.Typ
   readonly [Symbol.toStringTag]: "PrismaPromise"
   vestiging<T extends Prisma.VestigingDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.VestigingDefaultArgs<ExtArgs>>): Prisma.Prisma__VestigingClient<runtime.Types.Result.GetResult<Prisma.$VestigingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   diensten<T extends Prisma.Week$dienstenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Week$dienstenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DienstPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  beschikbaarheden<T extends Prisma.Week$beschikbaarhedenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Week$beschikbaarhedenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BeschikbaarheidPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1172,6 +1333,7 @@ export interface WeekFieldRefs {
   readonly jaar: Prisma.FieldRef<"Week", 'Int'>
   readonly weeknummer: Prisma.FieldRef<"Week", 'Int'>
   readonly status: Prisma.FieldRef<"Week", 'String'>
+  readonly beschikbaarheidDeadline: Prisma.FieldRef<"Week", 'DateTime'>
   readonly aangemaaktOp: Prisma.FieldRef<"Week", 'DateTime'>
   readonly gewijzigdOp: Prisma.FieldRef<"Week", 'DateTime'>
 }
@@ -1596,6 +1758,30 @@ export type Week$dienstenArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   take?: number
   skip?: number
   distinct?: Prisma.DienstScalarFieldEnum | Prisma.DienstScalarFieldEnum[]
+}
+
+/**
+ * Week.beschikbaarheden
+ */
+export type Week$beschikbaarhedenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Beschikbaarheid
+   */
+  select?: Prisma.BeschikbaarheidSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Beschikbaarheid
+   */
+  omit?: Prisma.BeschikbaarheidOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.BeschikbaarheidInclude<ExtArgs> | null
+  where?: Prisma.BeschikbaarheidWhereInput
+  orderBy?: Prisma.BeschikbaarheidOrderByWithRelationInput | Prisma.BeschikbaarheidOrderByWithRelationInput[]
+  cursor?: Prisma.BeschikbaarheidWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.BeschikbaarheidScalarFieldEnum | Prisma.BeschikbaarheidScalarFieldEnum[]
 }
 
 /**

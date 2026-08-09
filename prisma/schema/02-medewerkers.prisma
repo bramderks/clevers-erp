@@ -17,11 +17,15 @@ enum ContractType {
   VAKANTIEKRACHT
 }
 
+/// ======================================================
+/// MEDEWERKER
+/// ======================================================
+
 model Medewerker {
   id String @id @default(cuid())
 
   /// -----------------------------------------------------
-  /// Persoon
+  /// Persoonlijke gegevens
   /// -----------------------------------------------------
 
   personeelsnummer String? @unique
@@ -36,14 +40,14 @@ model Medewerker {
   geboortedatum DateTime
 
   /// -----------------------------------------------------
-  /// Contact
+  /// Contactgegevens
   /// -----------------------------------------------------
 
   email String @unique
   telefoon String
 
   /// -----------------------------------------------------
-  /// Account
+  /// Account en status
   /// -----------------------------------------------------
 
   wachtwoordHash String
@@ -52,6 +56,7 @@ model Medewerker {
   status Status @relation(fields: [statusId], references: [id], onDelete: Restrict)
 
   aanmeldingOp DateTime @default(now())
+
   geactiveerdOp DateTime?
   geactiveerdDoor String?
 
@@ -62,18 +67,30 @@ model Medewerker {
   /// -----------------------------------------------------
 
   contractType ContractType?
-  contractUren Decimal? @db.Decimal(5,2)
+
+  contractUren Decimal? @db.Decimal(5, 2)
 
   datumInDienst DateTime?
   datumUitDienst DateTime?
 
   /// -----------------------------------------------------
-  /// Relaties
+  /// Organisatie
   /// -----------------------------------------------------
 
   vestigingen MedewerkerVestiging[]
+
+  /// -----------------------------------------------------
+  /// Rollen en tags
+  /// -----------------------------------------------------
+
   rollen MedewerkerRol[]
   tags MedewerkerTag[]
+
+  /// -----------------------------------------------------
+  /// Planning
+  /// -----------------------------------------------------
+
+  beschikbaarheden Beschikbaarheid[]
   diensten DienstBezetting[]
 
   /// -----------------------------------------------------
@@ -83,11 +100,19 @@ model Medewerker {
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt
 
+  /// -----------------------------------------------------
+  /// Indexen
+  /// -----------------------------------------------------
+
   @@index([statusId])
   @@index([actief])
   @@index([achternaam])
   @@index([voornaam])
 }
+
+/// ======================================================
+/// MEDEWERKER - VESTIGING
+/// ======================================================
 
 model MedewerkerVestiging {
   id String @id @default(cuid())
@@ -107,6 +132,10 @@ model MedewerkerVestiging {
   @@index([medewerkerId])
   @@index([vestigingId])
 }
+
+/// ======================================================
+/// MEDEWERKER - ROL
+/// ======================================================
 
 model MedewerkerRol {
   id String @id @default(cuid())

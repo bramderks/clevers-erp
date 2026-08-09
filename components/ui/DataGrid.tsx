@@ -21,22 +21,18 @@ export default function DataGrid<T>({
 }: DataGridProps<T>) {
   if (data.length === 0) {
     return (
-      <>
-        {empty ?? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center text-slate-500">
-            Geen gegevens gevonden.
-          </div>
-        )}
-      </>
+      <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+        {empty ?? "Geen gegevens gevonden."}
+      </div>
     );
   }
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <table className="min-w-full">
-          <thead className="bg-slate-50">
-            <tr>
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-slate-50">
               {columns.map((column) => (
                 <th
                   key={String(column.key)}
@@ -48,8 +44,8 @@ export default function DataGrid<T>({
                     column.align === "center"
                       ? "text-center"
                       : column.align === "right"
-                      ? "text-right"
-                      : "text-left",
+                        ? "text-right"
+                        : "text-left",
                   ].join(" ")}
                 >
                   {column.title}
@@ -72,8 +68,8 @@ export default function DataGrid<T>({
                       column.align === "center"
                         ? "text-center"
                         : column.align === "right"
-                        ? "text-right"
-                        : "text-left",
+                          ? "text-right"
+                          : "text-left",
                     ].join(" ")}
                   >
                     {column.render

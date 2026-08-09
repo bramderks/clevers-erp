@@ -282,7 +282,7 @@ export type TagScalarWhereWithAggregatesInput = {
 export type TagCreateInput = {
   id?: string
   naam: string
-  volgorde: number
+  volgorde?: number
   actief?: boolean
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
@@ -293,7 +293,7 @@ export type TagCreateInput = {
 export type TagUncheckedCreateInput = {
   id?: string
   naam: string
-  volgorde: number
+  volgorde?: number
   actief?: boolean
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
@@ -326,7 +326,7 @@ export type TagUncheckedUpdateInput = {
 export type TagCreateManyInput = {
   id?: string
   naam: string
-  volgorde: number
+  volgorde?: number
   actief?: boolean
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
@@ -429,7 +429,7 @@ export type TagUpdateOneRequiredWithoutDienstenNestedInput = {
 export type TagCreateWithoutMedewerkersInput = {
   id?: string
   naam: string
-  volgorde: number
+  volgorde?: number
   actief?: boolean
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
@@ -439,7 +439,7 @@ export type TagCreateWithoutMedewerkersInput = {
 export type TagUncheckedCreateWithoutMedewerkersInput = {
   id?: string
   naam: string
-  volgorde: number
+  volgorde?: number
   actief?: boolean
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
@@ -485,7 +485,7 @@ export type TagUncheckedUpdateWithoutMedewerkersInput = {
 export type TagCreateWithoutDienstenInput = {
   id?: string
   naam: string
-  volgorde: number
+  volgorde?: number
   actief?: boolean
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
@@ -495,7 +495,7 @@ export type TagCreateWithoutDienstenInput = {
 export type TagUncheckedCreateWithoutDienstenInput = {
   id?: string
   naam: string
-  volgorde: number
+  volgorde?: number
   actief?: boolean
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string

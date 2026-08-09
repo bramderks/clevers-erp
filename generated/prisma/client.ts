@@ -97,6 +97,11 @@ export type MedewerkerTag = Prisma.MedewerkerTagModel
  */
 export type Week = Prisma.WeekModel
 /**
+ * Model Beschikbaarheid
+ * 
+ */
+export type Beschikbaarheid = Prisma.BeschikbaarheidModel
+/**
  * Model Dienst
  * 
  */

@@ -62,6 +62,7 @@ export const ModelName = {
   Tag: 'Tag',
   MedewerkerTag: 'MedewerkerTag',
   Week: 'Week',
+  Beschikbaarheid: 'Beschikbaarheid',
   Dienst: 'Dienst',
   DienstTag: 'DienstTag',
   DienstBezetting: 'DienstBezetting',
@@ -232,11 +233,28 @@ export const WeekScalarFieldEnum = {
   jaar: 'jaar',
   weeknummer: 'weeknummer',
   status: 'status',
+  beschikbaarheidDeadline: 'beschikbaarheidDeadline',
   aangemaaktOp: 'aangemaaktOp',
   gewijzigdOp: 'gewijzigdOp'
 } as const
 
 export type WeekScalarFieldEnum = (typeof WeekScalarFieldEnum)[keyof typeof WeekScalarFieldEnum]
+
+
+export const BeschikbaarheidScalarFieldEnum = {
+  id: 'id',
+  weekId: 'weekId',
+  medewerkerId: 'medewerkerId',
+  datum: 'datum',
+  begintijd: 'begintijd',
+  eindtijd: 'eindtijd',
+  status: 'status',
+  opmerking: 'opmerking',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type BeschikbaarheidScalarFieldEnum = (typeof BeschikbaarheidScalarFieldEnum)[keyof typeof BeschikbaarheidScalarFieldEnum]
 
 
 export const DienstScalarFieldEnum = {
@@ -268,7 +286,8 @@ export const DienstBezettingScalarFieldEnum = {
   dienstId: 'dienstId',
   medewerkerId: 'medewerkerId',
   status: 'status',
-  aangemaaktOp: 'aangemaaktOp'
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
 } as const
 
 export type DienstBezettingScalarFieldEnum = (typeof DienstBezettingScalarFieldEnum)[keyof typeof DienstBezettingScalarFieldEnum]
