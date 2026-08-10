@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import {
+  getCurrentUser,
+  hasPermission,
+} from "@/lib/auth";
+import { permissions } from "@/lib/permissions";
 import { medewerkerService } from "@/lib/services/medewerker.service";
 
 type RouteContext = {
@@ -17,12 +21,14 @@ export async function PATCH(
   try {
     const { id } = await params;
 
-    const gebruiker = await getCurrentUser();
+    const gebruiker =
+      await getCurrentUser();
 
     if (!gebruiker) {
       return NextResponse.json(
         {
-          error: "Je moet ingelogd zijn.",
+          error:
+            "Je moet ingelogd zijn.",
         },
         {
           status: 401,
@@ -33,7 +39,8 @@ export async function PATCH(
     if (!gebruiker.actief) {
       return NextResponse.json(
         {
-          error: "Je account is niet actief.",
+          error:
+            "Je account is niet actief.",
         },
         {
           status: 403,
@@ -63,7 +70,8 @@ export async function PATCH(
     if (!medewerker) {
       return NextResponse.json(
         {
-          error: "Medewerker niet gevonden.",
+          error:
+            "Medewerker niet gevonden.",
         },
         {
           status: 404,
@@ -75,13 +83,16 @@ export async function PATCH(
       ...new Set(
         medewerker.vestigingen.map(
           (medewerkerVestiging) =>
-            medewerkerVestiging.vestiging
+            medewerkerVestiging
+              .vestiging
               .organisatieId,
         ),
       ),
     ];
 
-    if (organisatieIds.length === 0) {
+    if (
+      organisatieIds.length === 0
+    ) {
       return NextResponse.json(
         {
           error:
@@ -93,19 +104,22 @@ export async function PATCH(
       );
     }
 
-    const isEigenaar =
-      gebruiker.organisaties.some(
-        (relatie) =>
-          relatie.actief &&
-          relatie.organisatie.actief &&
-          organisatieIds.includes(
-            relatie.organisatieId,
-          ) &&
-          relatie.rol.naam
-            .toLowerCase() === "eigenaar",
-      );
+    let magBewerken = false;
 
-    if (!isEigenaar) {
+    for (const organisatieId of organisatieIds) {
+      const heeftPermission =
+        await hasPermission(
+          permissions.medewerkers.update,
+          organisatieId,
+        );
+
+      if (heeftPermission) {
+        magBewerken = true;
+        break;
+      }
+    }
+
+    if (!magBewerken) {
       return NextResponse.json(
         {
           error:
@@ -117,60 +131,123 @@ export async function PATCH(
       );
     }
 
-    const body = await request.json();
+    const body =
+      await request.json();
 
     const resultaat =
-      await medewerkerService.update(id, {
-        personeelsnummer:
-          body.personeelsnummer ?? null,
+      await medewerkerService.update(
+        id,
+        {
+          personeelsnummer:
+            body.personeelsnummer ??
+            null,
 
-        aanhef: body.aanhef,
+          aanhef:
+            body.aanhef,
 
-        voornaam: body.voornaam,
+          voornaam:
+            body.voornaam,
 
-        tussenvoegsel:
-          body.tussenvoegsel ?? null,
+          tussenvoegsel:
+            body.tussenvoegsel ??
+            null,
 
-        achternaam: body.achternaam,
+          achternaam:
+            body.achternaam,
 
-        roepnaam:
-          body.roepnaam ?? null,
+          roepnaam:
+            body.roepnaam ??
+            null,
 
-        geboortedatum: new Date(
-          body.geboortedatum,
-        ),
+          geboortedatum:
+            new Date(
+              body.geboortedatum,
+            ),
 
-        email: body.email,
+          email:
+            body.email,
 
-        telefoon: body.telefoon,
+          telefoon:
+            body.telefoon,
 
-        contractType:
-          body.contractType ?? null,
+          contractType:
+            body.contractType ??
+            null,
 
-        contractUren:
-          body.contractUren !== null &&
-          body.contractUren !== undefined &&
-          body.contractUren !== ""
-            ? Number(body.contractUren)
-            : null,
+          contractUren:
+            body.contractUren !==
+              null &&
+            body.contractUren !==
+              undefined &&
+            body.contractUren !==
+              ""
+              ? Number(
+                  body.contractUren,
+                )
+              : null,
 
-        uurloon:
-          body.uurloon !== null &&
-          body.uurloon !== undefined &&
-          body.uurloon !== ""
-            ? Number(body.uurloon)
-            : null,
+          uurloon:
+            body.uurloon !==
+              null &&
+            body.uurloon !==
+              undefined &&
+            body.uurloon !==
+              ""
+              ? Number(
+                  body.uurloon,
+                )
+              : null,
 
-        datumInDienst:
-          body.datumInDienst
-            ? new Date(body.datumInDienst)
-            : null,
+          datumInDienst:
+            body.datumInDienst
+              ? new Date(
+                  body.datumInDienst,
+                )
+              : null,
 
-        datumUitDienst:
-          body.datumUitDienst
-            ? new Date(body.datumUitDienst)
-            : null,
-      });
+          datumUitDienst:
+            body.datumUitDienst
+              ? new Date(
+                  body.datumUitDienst,
+                )
+              : null,
+        },
+      );
+
+    if (
+      body.tagIds !==
+      undefined
+    ) {
+      if (
+        !Array.isArray(
+          body.tagIds,
+        )
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "De planningstags hebben een ongeldig formaat.",
+          },
+          {
+            status: 400,
+          },
+        );
+      }
+
+      const tagIds =
+        body.tagIds.filter(
+          (
+            tagId: unknown,
+          ): tagId is string =>
+            typeof tagId ===
+            "string",
+        );
+
+      await medewerkerService.setTags(
+        id,
+        tagIds,
+      );
+    }
 
     return NextResponse.json({
       id: resultaat.id,

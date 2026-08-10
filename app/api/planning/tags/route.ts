@@ -4,9 +4,18 @@ import { hasPermissionForVestiging } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
+const PLANNING_TAGS = [
+  "Leidinggevende",
+  "Bediening",
+  "Vaatstraat",
+  "Handijs",
+  "BHV",
+] as const;
+
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } =
+      new URL(request.url);
 
     const vestigingId =
       searchParams.get("vestigingId");
@@ -17,7 +26,9 @@ export async function GET(request: Request) {
           fout:
             "vestigingId is verplicht.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
@@ -33,24 +44,32 @@ export async function GET(request: Request) {
           fout:
             "Geen toegang tot planningtags voor deze vestiging.",
         },
-        { status: 403 },
+        {
+          status: 403,
+        },
       );
     }
 
-    const tags = await prisma.tag.findMany({
-      where: {
-        actief: true,
-      },
-      orderBy: {
-        volgorde: "asc",
-      },
-      select: {
-        id: true,
-        naam: true,
-        volgorde: true,
-        actief: true,
-      },
-    });
+    const tags =
+      await prisma.tag.findMany({
+        where: {
+          actief: true,
+          naam: {
+            in: [...PLANNING_TAGS],
+          },
+        },
+
+        orderBy: {
+          volgorde: "asc",
+        },
+
+        select: {
+          id: true,
+          naam: true,
+          volgorde: true,
+          actief: true,
+        },
+      });
 
     return NextResponse.json(tags);
   } catch (error) {
@@ -64,7 +83,9 @@ export async function GET(request: Request) {
         fout:
           "De planningtags konden niet worden opgehaald.",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     );
   }
 }

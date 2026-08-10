@@ -5,14 +5,27 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { maakToken } from "@/lib/auth";
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request,
+) {
   try {
-    const { email, wachtwoord } = await request.json();
+    const body = await request.json();
+
+    const email =
+      typeof body?.email === "string"
+        ? body.email.trim().toLowerCase()
+        : "";
+
+    const wachtwoord =
+      typeof body?.wachtwoord === "string"
+        ? body.wachtwoord
+        : "";
 
     if (!email || !wachtwoord) {
       return NextResponse.json(
         {
-          message: "Vul e-mailadres en wachtwoord in.",
+          message:
+            "Vul e-mailadres en wachtwoord in.",
         },
         {
           status: 400,
@@ -20,16 +33,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const gebruiker = await prisma.systeemGebruiker.findUnique({
-      where: {
-        email: email.toLowerCase(),
-      },
-    });
+    const gebruiker =
+      await prisma.systeemGebruiker.findUnique(
+        {
+          where: {
+            email,
+          },
+        },
+      );
 
     if (!gebruiker) {
       return NextResponse.json(
         {
-          message: "Ongeldige inloggegevens.",
+          message:
+            "Ongeldige inloggegevens.",
         },
         {
           status: 401,
@@ -40,7 +57,8 @@ export async function POST(request: Request) {
     if (!gebruiker.actief) {
       return NextResponse.json(
         {
-          message: "Dit account is gedeactiveerd.",
+          message:
+            "Dit account is gedeactiveerd.",
         },
         {
           status: 403,
@@ -48,15 +66,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const geldig = await bcrypt.compare(
-      wachtwoord,
-      gebruiker.wachtwoordHash,
-    );
+    const geldig =
+      await bcrypt.compare(
+        wachtwoord,
+        gebruiker.wachtwoordHash,
+      );
 
     if (!geldig) {
       return NextResponse.json(
         {
-          message: "Ongeldige inloggegevens.",
+          message:
+            "Ongeldige inloggegevens.",
         },
         {
           status: 401,
@@ -64,40 +84,53 @@ export async function POST(request: Request) {
       );
     }
 
-    const token = await maakToken({
-      sub: gebruiker.id,
-      naam: gebruiker.naam,
-      email: gebruiker.email,
-    });
+    const token =
+      await maakToken({
+        sub: gebruiker.id,
+        naam: gebruiker.naam,
+        email: gebruiker.email,
+      });
 
-    (await cookies()).set({
+    const cookieStore =
+      await cookies();
+
+    cookieStore.set({
       name: "token",
       value: token,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure:
+        process.env.NODE_ENV ===
+        "production",
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 12,
     });
 
-    await prisma.systeemGebruiker.update({
-      where: {
-        id: gebruiker.id,
+    await prisma.systeemGebruiker.update(
+      {
+        where: {
+          id: gebruiker.id,
+        },
+        data: {
+          laatsteLoginOp:
+            new Date(),
+        },
       },
-      data: {
-        laatsteLoginOp: new Date(),
-      },
-    });
+    );
 
     return NextResponse.json({
       success: true,
     });
   } catch (error) {
-    console.error(error);
+    console.error(
+      "Login mislukt:",
+      error,
+    );
 
     return NextResponse.json(
       {
-        message: "Er is een interne fout opgetreden.",
+        message:
+          "Er is een interne fout opgetreden.",
       },
       {
         status: 500,

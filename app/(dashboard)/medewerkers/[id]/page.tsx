@@ -6,8 +6,18 @@ import {
   User,
 } from "lucide-react";
 
-import { getCurrentUser } from "@/lib/auth";
-import { medewerkerService } from "@/lib/services/medewerker.service";
+import {
+  hasPermission,
+} from "@/lib/auth";
+import {
+  permissions,
+} from "@/lib/permissions";
+import {
+  vereisPermission,
+} from "@/lib/requirePermission";
+import {
+  medewerkerService,
+} from "@/lib/services/medewerker.service";
 
 import PageLayout from "@/components/ui/PageLayout";
 import PageToolbar from "@/components/ui/PageToolbar";
@@ -27,22 +37,19 @@ type PageProps = {
 export default async function MedewerkerPage({
   params,
 }: PageProps) {
+  await vereisPermission(
+    permissions.medewerkers.view,
+  );
+
   const { id } = await params;
 
   const medewerker =
     await medewerkerService.getById(id);
 
-  const huidigeGebruiker =
-    await getCurrentUser();
-
-  const isEigenaar =
-    huidigeGebruiker?.organisaties.some(
-      (relatie) =>
-        relatie.actief &&
-        relatie.organisatie.actief &&
-        relatie.rol.naam.toLowerCase() ===
-          "eigenaar",
-    ) ?? false;
+  const magBewerken =
+    await hasPermission(
+      permissions.medewerkers.update,
+    );
 
   const volledigeNaam = [
     medewerker.voornaam,
@@ -80,6 +87,12 @@ export default async function MedewerkerPage({
       medewerker.datumInDienst,
     datumUitDienst:
       medewerker.datumUitDienst,
+    tags: medewerker.tags.map(
+      (medewerkerTag) => ({
+        id: medewerkerTag.tag.id,
+        naam: medewerkerTag.tag.naam,
+      }),
+    ),
   };
 
   const vestigingen =
@@ -367,12 +380,13 @@ export default async function MedewerkerPage({
 
         <Card
           title="Tags"
-          description="Kenmerken voor onder andere de planning."
+          description="Planningstaken die deze medewerker kan uitvoeren."
         >
           {medewerker.tags.length ===
           0 ? (
             <p className="text-sm text-slate-500">
-              Nog geen tags gekoppeld.
+              Nog geen planningstags
+              gekoppeld.
             </p>
           ) : (
             <div className="flex flex-wrap gap-2">
@@ -399,7 +413,7 @@ export default async function MedewerkerPage({
       <BeschikbaarheidPanel
         medewerkerId={medewerker.id}
         vestigingen={vestigingen}
-        isEigenaar={isEigenaar}
+        isEigenaar={magBewerken}
       />
 
       <Card
@@ -434,14 +448,23 @@ export default async function MedewerkerPage({
         </div>
       </Card>
 
-      <Card
-        title="Gegevens bewerken"
-        description="Wijzig de persoonlijke en interne gegevens van deze medewerker."
-      >
-        <MedewerkerForm
-          medewerker={medewerkerFormData}
-        />
-      </Card>
+      {magBewerken && (
+        <Card
+          title="Gegevens bewerken"
+          description="Wijzig de persoonlijke en interne gegevens van deze medewerker."
+        >
+          <MedewerkerForm
+            medewerker={
+              medewerkerFormData
+            }
+            vestigingId={
+              medewerker
+                .vestigingen[0]
+                ?.vestiging.id ?? ""
+            }
+          />
+        </Card>
+      )}
     </PageLayout>
   );
 }

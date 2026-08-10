@@ -88,6 +88,14 @@ async function controleerEigenaar(
     };
   }
 
+  if (!gebruiker.actief) {
+    return {
+      toegestaan: false,
+      status: 403,
+      fout: "Je account is niet actief.",
+    };
+  }
+
   const vestiging =
     await prisma.vestiging.findUnique({
       where: {
@@ -123,7 +131,7 @@ async function controleerEigenaar(
       toegestaan: false,
       status: 403,
       fout:
-        "Alleen een eigenaar kan deze vestiging wijzigen.",
+        "Alleen een eigenaar heeft toegang tot deze vestiging.",
     };
   }
 
@@ -142,6 +150,22 @@ export async function GET(
     const { vestigingId } =
       await context.params;
 
+    const toegang =
+      await controleerEigenaar(
+        vestigingId,
+      );
+
+    if (!toegang.toegestaan) {
+      return NextResponse.json(
+        {
+          error: toegang.fout,
+        },
+        {
+          status: toegang.status,
+        },
+      );
+    }
+
     const vestiging =
       await haalVestigingOp(
         vestigingId,
@@ -153,7 +177,9 @@ export async function GET(
           error:
             "Vestiging niet gevonden.",
         },
-        { status: 404 },
+        {
+          status: 404,
+        },
       );
     }
 
@@ -171,7 +197,9 @@ export async function GET(
         error:
           "De vestiging kon niet worden opgehaald.",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     );
   }
 }
@@ -211,7 +239,9 @@ export async function PATCH(
           error:
             "Vestiging niet gevonden.",
         },
-        { status: 404 },
+        {
+          status: 404,
+        },
       );
     }
 
@@ -226,7 +256,9 @@ export async function PATCH(
       seizoenEinde?: Date | null;
     } = {};
 
-    if (body.code !== undefined) {
+    if (
+      body.code !== undefined
+    ) {
       if (
         typeof body.code !==
           "string" ||
@@ -237,7 +269,9 @@ export async function PATCH(
             error:
               "Code is verplicht.",
           },
-          { status: 400 },
+          {
+            status: 400,
+          },
         );
       }
 
@@ -245,7 +279,9 @@ export async function PATCH(
         body.code.trim();
     }
 
-    if (body.naam !== undefined) {
+    if (
+      body.naam !== undefined
+    ) {
       if (
         typeof body.naam !==
           "string" ||
@@ -256,7 +292,9 @@ export async function PATCH(
             error:
               "Naam is verplicht.",
           },
-          { status: 400 },
+          {
+            status: 400,
+          },
         );
       }
 
@@ -264,7 +302,9 @@ export async function PATCH(
         body.naam.trim();
     }
 
-    if (body.actief !== undefined) {
+    if (
+      body.actief !== undefined
+    ) {
       if (
         typeof body.actief !==
         "boolean"
@@ -274,7 +314,9 @@ export async function PATCH(
             error:
               "Actief moet een boolean zijn.",
           },
-          { status: 400 },
+          {
+            status: 400,
+          },
         );
       }
 
@@ -330,7 +372,9 @@ export async function PATCH(
           error:
             "Er zijn geen wijzigingen opgegeven.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
@@ -360,7 +404,9 @@ export async function PATCH(
       {
         error: message,
       },
-      { status: 400 },
+      {
+        status: 400,
+      },
     );
   }
 }

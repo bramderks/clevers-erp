@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import NieuweVestigingForm from "@/components/vestigingen/NieuweVestigingForm";
 import VestigingSeizoenForm from "@/components/vestigingen/VestigingSeizoenForm";
 
+import { vereisEigenaar } from "@/lib/requirePermission";
+
 function formatteerDatum(
   datum: Date | null,
 ) {
@@ -21,6 +23,8 @@ function formatteerDatum(
 }
 
 export default async function VestigingenPage() {
+  await vereisEigenaar();
+
   const vestigingen =
     await prisma.vestiging.findMany({
       orderBy: {
@@ -29,7 +33,7 @@ export default async function VestigingenPage() {
     });
 
   return (
-    <main className="space-y-6">
+    <main className="space-y-8">
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">
           Vestigingen
@@ -50,8 +54,9 @@ export default async function VestigingenPage() {
           </h2>
 
           <p className="mt-1 text-sm text-gray-500">
-            Het seizoen bepaalt automatisch
-            welke planningweken beschikbaar
+            Het seizoen bepaalt
+            automatisch welke
+            planningweken beschikbaar
             zijn.
           </p>
         </div>
@@ -90,11 +95,15 @@ export default async function VestigingenPage() {
                     className="border-b last:border-b-0"
                   >
                     <td className="p-3 align-top text-sm text-gray-900">
-                      {vestiging.code}
+                      {
+                        vestiging.code
+                      }
                     </td>
 
                     <td className="p-3 align-top text-sm font-medium text-gray-900">
-                      {vestiging.naam}
+                      {
+                        vestiging.naam
+                      }
                     </td>
 
                     <td className="p-3 align-top text-sm text-gray-600">
@@ -150,7 +159,8 @@ export default async function VestigingenPage() {
                     colSpan={5}
                     className="p-6 text-center text-sm text-gray-500"
                   >
-                    Nog geen vestigingen
+                    Nog geen
+                    vestigingen
                     aanwezig.
                   </td>
                 </tr>

@@ -9,7 +9,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import {
   defaultPage,
@@ -32,14 +36,16 @@ export default function Topbar({
   const pathname = usePathname();
   const router = useRouter();
 
-  const [open, setOpen] =
+  const [menuOpen, setMenuOpen] =
     useState(false);
 
-  const [uitloggenBezig, setUitloggenBezig] =
-    useState(false);
+  const [
+    uitloggenBezig,
+    setUitloggenBezig,
+  ] = useState(false);
 
-  const dropdownRef =
-    useRef<HTMLDivElement>(null);
+  const menuRef =
+    useRef<HTMLDivElement | null>(null);
 
   const page =
     pageTitles[
@@ -47,12 +53,15 @@ export default function Topbar({
     ] ?? defaultPage;
 
   const vandaag =
-    new Intl.DateTimeFormat("nl-NL", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }).format(new Date());
+    new Intl.DateTimeFormat(
+      "nl-NL",
+      {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      },
+    ).format(new Date());
 
   const eersteRol =
     gebruiker.rollen[0] ??
@@ -65,62 +74,64 @@ export default function Topbar({
       .filter(Boolean)
       .slice(0, 2)
       .map((deel) =>
-        deel.charAt(0).toUpperCase(),
+        deel
+          .charAt(0)
+          .toUpperCase(),
       )
       .join("") || "G";
 
   useEffect(() => {
-    function handleClickOutside(
+    function sluitMenu(
       event: MouseEvent,
     ) {
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(
+        menuRef.current &&
+        !menuRef.current.contains(
           event.target as Node,
         )
       ) {
-        setOpen(false);
+        setMenuOpen(false);
       }
     }
 
-    if (open) {
+    if (menuOpen) {
       document.addEventListener(
         "mousedown",
-        handleClickOutside,
+        sluitMenu,
       );
     }
 
     return () => {
       document.removeEventListener(
         "mousedown",
-        handleClickOutside,
+        sluitMenu,
       );
     };
-  }, [open]);
+  }, [menuOpen]);
 
   useEffect(() => {
-    function handleEscape(
+    function escapeMenu(
       event: KeyboardEvent,
     ) {
       if (event.key === "Escape") {
-        setOpen(false);
+        setMenuOpen(false);
       }
     }
 
-    if (open) {
+    if (menuOpen) {
       document.addEventListener(
         "keydown",
-        handleEscape,
+        escapeMenu,
       );
     }
 
     return () => {
       document.removeEventListener(
         "keydown",
-        handleEscape,
+        escapeMenu,
       );
     };
-  }, [open]);
+  }, [menuOpen]);
 
   async function handleLogout() {
     if (uitloggenBezig) {
@@ -130,12 +141,11 @@ export default function Topbar({
     setUitloggenBezig(true);
 
     try {
-      const response = await fetch(
-        "/api/logout",
-        {
+      const response =
+        await fetch("/api/logout", {
           method: "POST",
-        },
-      );
+          credentials: "include",
+        });
 
       if (!response.ok) {
         throw new Error(
@@ -143,54 +153,60 @@ export default function Topbar({
         );
       }
 
-      setOpen(false);
+      setMenuOpen(false);
 
       router.replace("/login");
       router.refresh();
     } catch (error) {
-      console.error(error);
+      console.error(
+        "Uitloggen mislukt:",
+        error,
+      );
+
       setUitloggenBezig(false);
     }
   }
 
   return (
     <header
-      className="sticky top-0 z-30 flex h-[76px] items-center justify-between border-b bg-white px-8"
+      className="sticky top-0 z-40 flex h-[76px] shrink-0 items-center justify-between border-b bg-white px-4 lg:px-8"
       style={{
-        borderColor: theme.colors.border,
+        borderColor:
+          theme.colors.border,
       }}
     >
-      <div className="flex min-w-0 items-center gap-8">
-        <div className="min-w-0">
-          <h1 className="text-xl font-semibold text-slate-900">
-            {page.title}
-          </h1>
+      {/* Linkerkant */}
+      <div className="min-w-0">
+        <h1 className="truncate text-xl font-semibold text-slate-900">
+          {page.title}
+        </h1>
 
-          <p className="mt-1 text-sm text-slate-500">
-            {page.subtitle}
-          </p>
-        </div>
+        <p className="mt-1 hidden text-sm text-slate-500 sm:block">
+          {page.subtitle}
+        </p>
+      </div>
 
-        <div className="hidden xl:flex">
-          <div className="relative">
-            <Search
-              size={18}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-            />
+      {/* Midden */}
+      <div className="hidden xl:flex">
+        <div className="relative">
+          <Search
+            size={18}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+          />
 
-            <input
-              placeholder="Zoeken..."
-              className="w-96 rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-12 outline-none transition focus:border-[#A8D8D8] focus:bg-white"
-            />
+          <input
+            placeholder="Zoeken..."
+            className="w-80 rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-12 outline-none transition focus:border-[#A8D8D8] focus:bg-white"
+          />
 
-            <kbd className="absolute right-4 top-1/2 -translate-y-1/2 rounded bg-slate-200 px-2 py-1 text-xs text-slate-600">
-              Ctrl K
-            </kbd>
-          </div>
+          <kbd className="absolute right-4 top-1/2 -translate-y-1/2 rounded bg-slate-200 px-2 py-1 text-xs text-slate-600">
+            Ctrl K
+          </kbd>
         </div>
       </div>
 
-      <div className="flex items-center gap-5">
+      {/* Rechterkant */}
+      <div className="flex items-center gap-3 lg:gap-5">
         <div className="hidden text-right lg:block">
           <p className="font-medium capitalize text-slate-900">
             {vandaag}
@@ -201,6 +217,7 @@ export default function Topbar({
           </p>
         </div>
 
+        {/* Meldingen */}
         <button
           type="button"
           aria-label="Meldingen"
@@ -211,21 +228,28 @@ export default function Topbar({
           <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-red-500" />
         </button>
 
+        {/* Gebruikersmenu */}
         <div
-          ref={dropdownRef}
+          ref={menuRef}
           className="relative"
         >
           <button
             type="button"
-            aria-expanded={open}
+            aria-expanded={menuOpen}
             aria-haspopup="menu"
             onClick={() =>
-              setOpen((waarde) => !waarde)
+              setMenuOpen(
+                (waarde) => !waarde,
+              )
             }
-            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 transition hover:bg-slate-50"
+            className={`flex items-center gap-3 rounded-xl border px-3 py-2 transition ${
+              menuOpen
+                ? "border-slate-300 bg-slate-50"
+                : "border-slate-200 bg-white hover:bg-slate-50"
+            }`}
           >
             <div
-              className="flex h-11 w-11 items-center justify-center rounded-full font-bold"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-bold"
               style={{
                 background:
                   theme.colors.primary,
@@ -234,8 +258,8 @@ export default function Topbar({
               {initialen}
             </div>
 
-            <div className="text-left">
-              <div className="font-semibold text-slate-900">
+            <div className="hidden text-left sm:block">
+              <div className="max-w-[160px] truncate font-semibold text-slate-900">
                 {gebruiker.naam}
               </div>
 
@@ -247,20 +271,21 @@ export default function Topbar({
             <ChevronDown
               size={18}
               className={`transition-transform ${
-                open
+                menuOpen
                   ? "rotate-180"
                   : ""
               }`}
             />
           </button>
 
-          {open && (
+          {menuOpen && (
             <div
               role="menu"
-              className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-xl"
+              className="absolute right-0 top-[calc(100%+8px)] z-[100] w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl"
             >
+              {/* Gebruiker */}
               <div className="border-b border-slate-100 px-3 py-3">
-                <p className="font-semibold text-slate-900">
+                <p className="truncate font-semibold text-slate-900">
                   {gebruiker.naam}
                 </p>
 
@@ -269,14 +294,17 @@ export default function Topbar({
                 </p>
               </div>
 
+              {/* Acties */}
               <div className="py-1">
                 <Link
                   href="/profiel"
                   role="menuitem"
                   onClick={() =>
-                    setOpen(false)
+                    setMenuOpen(
+                      false,
+                    )
                   }
-                  className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-slate-700 transition hover:bg-slate-50"
+                  className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
                   <User
                     size={18}
@@ -291,11 +319,13 @@ export default function Topbar({
                 <button
                   type="button"
                   role="menuitem"
-                  onClick={handleLogout}
+                  onClick={
+                    handleLogout
+                  }
                   disabled={
                     uitloggenBezig
                   }
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <LogOut
                     size={18}

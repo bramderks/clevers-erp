@@ -11,6 +11,8 @@ import {
   Building2,
 } from "lucide-react";
 
+import { permissions } from "@/lib/permissions";
+
 export const navigation = [
   {
     group: "Algemeen",
@@ -19,6 +21,7 @@ export const navigation = [
         title: "Dashboard",
         href: "/dashboard",
         icon: LayoutDashboard,
+        permission: permissions.dashboard.view,
       },
     ],
   },
@@ -30,11 +33,13 @@ export const navigation = [
         title: "Medewerkers",
         href: "/medewerkers",
         icon: Users,
+        permission: permissions.medewerkers.view,
       },
       {
         title: "Planning",
         href: "/planning",
         icon: CalendarDays,
+        permission: permissions.planning.view,
       },
     ],
   },
@@ -46,21 +51,25 @@ export const navigation = [
         title: "Producten",
         href: "/producten",
         icon: Package,
+        permission: permissions.producten.view,
       },
       {
         title: "Voorraad",
         href: "/voorraad",
         icon: Boxes,
+        permission: permissions.voorraad.view,
       },
       {
         title: "Bestellingen",
         href: "/bestellingen",
         icon: ShoppingCart,
+        permission: permissions.bestellingen.view,
       },
       {
         title: "Leveringen",
         href: "/leveringen",
         icon: Truck,
+        permission: permissions.leveringen.view,
       },
     ],
   },
@@ -72,6 +81,7 @@ export const navigation = [
         title: "Rapportages",
         href: "/rapportages",
         icon: BarChart3,
+        permission: permissions.rapportages.view,
       },
     ],
   },
@@ -83,11 +93,13 @@ export const navigation = [
         title: "Vestigingen",
         href: "/vestigingen",
         icon: Building2,
+        ownerOnly: true,
       },
       {
         title: "Instellingen",
         href: "/instellingen",
         icon: Settings,
+        permission: permissions.instellingen.view,
       },
     ],
   },

@@ -2,17 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { medewerkerAanmelden } from "@/modules/medewerkers/aanmelden/service/medewerker-aanmelden.service";
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest,
+) {
   try {
     const body = await request.json();
 
-    const resultaat = await medewerkerAanmelden(body);
+    const resultaat =
+      await medewerkerAanmelden(body);
 
-    return NextResponse.json(resultaat, {
-      status: 201,
-    });
+    return NextResponse.json(
+      resultaat,
+      {
+        status: 201,
+      },
+    );
   } catch (error) {
-    console.error("Aanmelden mislukt:", error);
+    console.error(
+      "Aanmelden mislukt:",
+      error,
+    );
 
     const message =
       error instanceof Error

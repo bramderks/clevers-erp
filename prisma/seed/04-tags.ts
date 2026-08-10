@@ -1,20 +1,38 @@
-import type { Prisma, PrismaClient } from "../../generated/prisma/client";
+import type {
+  Prisma,
+  PrismaClient,
+} from "../../generated/prisma/client";
 
-type PrismaTx = Prisma.TransactionClient | PrismaClient;
+type PrismaTx =
+  | Prisma.TransactionClient
+  | PrismaClient;
 
 const TAGS = [
-  { naam: "Opening", volgorde: 10 },
-  { naam: "Sluiting", volgorde: 20 },
-  { naam: "Scheppen", volgorde: 30 },
-  { naam: "Kassa", volgorde: 40 },
-  { naam: "Coupes", volgorde: 50 },
-  { naam: "Keuken", volgorde: 60 },
-  { naam: "Schoonmaak", volgorde: 70 },
-  { naam: "BHV", volgorde: 80 },
-  { naam: "Floormanager", volgorde: 90 },
+  {
+    naam: "Leidinggevende",
+    volgorde: 10,
+  },
+  {
+    naam: "Bediening",
+    volgorde: 20,
+  },
+  {
+    naam: "Vaatstraat",
+    volgorde: 30,
+  },
+  {
+    naam: "Handijs",
+    volgorde: 40,
+  },
+  {
+    naam: "BHV",
+    volgorde: 50,
+  },
 ] as const;
 
-export async function seedTags(prisma: PrismaTx) {
+export async function seedTags(
+  prisma: PrismaTx,
+) {
   console.log("→ Tags");
 
   for (const tag of TAGS) {
@@ -22,10 +40,12 @@ export async function seedTags(prisma: PrismaTx) {
       where: {
         naam: tag.naam,
       },
+
       update: {
         volgorde: tag.volgorde,
         actief: true,
       },
+
       create: {
         naam: tag.naam,
         volgorde: tag.volgorde,
@@ -34,5 +54,7 @@ export async function seedTags(prisma: PrismaTx) {
     });
   }
 
-  console.log(`   ✓ ${TAGS.length} tags`);
+  console.log(
+    `   ✓ ${TAGS.length} tags`,
+  );
 }

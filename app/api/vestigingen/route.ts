@@ -47,10 +47,67 @@ function controleerSeizoen(
   }
 }
 
+async function haalEigenaar() {
+  const gebruiker =
+    await getCurrentUser();
+
+  if (!gebruiker) {
+    return null;
+  }
+
+  if (!gebruiker.actief) {
+    return null;
+  }
+
+  const eigenaarOrganisaties =
+    gebruiker.organisaties.filter(
+      (relatie) =>
+        relatie.actief &&
+        relatie.organisatie.actief &&
+        relatie.rol.naam.toLowerCase() ===
+          "eigenaar",
+    );
+
+  if (
+    eigenaarOrganisaties.length === 0
+  ) {
+    return null;
+  }
+
+  return {
+    gebruiker,
+    organisatieIds:
+      eigenaarOrganisaties.map(
+        (relatie) =>
+          relatie.organisatieId,
+      ),
+  };
+}
+
 export async function GET() {
   try {
+    const eigenaar =
+      await haalEigenaar();
+
+    if (!eigenaar) {
+      return NextResponse.json(
+        {
+          error:
+            "Je hebt geen toegang tot de vestigingen.",
+        },
+        {
+          status: 403,
+        },
+      );
+    }
+
     const vestigingen =
       await prisma.vestiging.findMany({
+        where: {
+          organisatieId: {
+            in: eigenaar.organisatieIds,
+          },
+        },
         orderBy: {
           naam: "asc",
         },
@@ -70,73 +127,66 @@ export async function GET() {
         error:
           "De vestigingen konden niet worden opgehaald.",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     );
   }
 }
 
 export async function POST(
-  req: NextRequest,
+  request: NextRequest,
 ) {
   try {
-    const gebruiker =
-      await getCurrentUser();
+    const eigenaar =
+      await haalEigenaar();
 
-    if (!gebruiker) {
-      return NextResponse.json(
-        {
-          error:
-            "Je moet ingelogd zijn.",
-        },
-        { status: 401 },
-      );
-    }
-
-    const organisatieRelatie =
-      gebruiker.organisaties.find(
-        (relatie) =>
-          relatie.actief &&
-          relatie.organisatie.actief &&
-          relatie.rol.naam.toLowerCase() ===
-            "eigenaar",
-      );
-
-    if (!organisatieRelatie) {
+    if (!eigenaar) {
       return NextResponse.json(
         {
           error:
             "Alleen een eigenaar kan een vestiging aanmaken.",
         },
-        { status: 403 },
+        {
+          status: 403,
+        },
       );
     }
 
     const body =
-      await req.json();
+      await request.json();
 
     if (
-      typeof body.code !== "string" ||
-      body.code.trim().length === 0
+      typeof body.code !==
+        "string" ||
+      body.code.trim().length ===
+        0
     ) {
       return NextResponse.json(
         {
           error:
             "Code is verplicht.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
     if (
-      typeof body.naam !== "string" ||
-      body.naam.trim().length === 0
+      typeof body.naam !==
+        "string" ||
+      body.naam.trim().length ===
+        0
     ) {
       return NextResponse.json(
         {
           error:
             "Naam is verplicht.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
@@ -162,14 +212,13 @@ export async function POST(
         data: {
           code: body.code.trim(),
           naam: body.naam.trim(),
-
           seizoenStart,
           seizoenEinde,
 
           organisatie: {
             connect: {
-              id:
-                organisatieRelatie.organisatieId,
+              id: eigenaar
+                .organisatieIds[0],
             },
           },
         },
@@ -177,7 +226,9 @@ export async function POST(
 
     return NextResponse.json(
       vestiging,
-      { status: 201 },
+      {
+        status: 201,
+      },
     );
   } catch (error) {
     console.error(
@@ -194,7 +245,9 @@ export async function POST(
       {
         error: message,
       },
-      { status: 400 },
+      {
+        status: 400,
+      },
     );
   }
 }

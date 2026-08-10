@@ -4,7 +4,14 @@ import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import PageHeader from "@/components/ui/PageHeader";
 
+import { permissions } from "@/lib/permissions";
+import { vereisPermission } from "@/lib/requirePermission";
+
 export default async function DashboardPage() {
+  await vereisPermission(
+    permissions.dashboard.view,
+  );
+
   const [
     gebruikers,
     medewerkers,
@@ -21,10 +28,7 @@ export default async function DashboardPage() {
 
   return (
     <main className="space-y-8">
-      <PageHeader
-        title="Dashboard"
-        subtitle="Welkom in Clevers ERP."
-      />
+      <PageHeader title="Dashboard" />
 
       <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
         <Card
@@ -81,22 +85,30 @@ export default async function DashboardPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span>Database</span>
-              <Badge variant="success">Online</Badge>
+              <Badge variant="success">
+                Online
+              </Badge>
             </div>
 
             <div className="flex items-center justify-between">
               <span>Prisma</span>
-              <Badge variant="success">Verbonden</Badge>
+              <Badge variant="success">
+                Verbonden
+              </Badge>
             </div>
 
             <div className="flex items-center justify-between">
               <span>Build</span>
-              <Badge variant="success">Succesvol</Badge>
+              <Badge variant="success">
+                Succesvol
+              </Badge>
             </div>
 
             <div className="flex items-center justify-between">
               <span>Seed</span>
-              <Badge variant="success">Voltooid</Badge>
+              <Badge variant="success">
+                Voltooid
+              </Badge>
             </div>
           </div>
         </Card>

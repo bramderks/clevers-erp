@@ -26,20 +26,26 @@ function parseDate(
   veld: string,
 ) {
   if (!value) {
-    throw new Error(`${veld} is verplicht.`);
+    throw new Error(
+      `${veld} is verplicht.`,
+    );
   }
 
   const datum = new Date(value);
 
   if (Number.isNaN(datum.getTime())) {
-    throw new Error(`${veld} bevat geen geldige datum.`);
+    throw new Error(
+      `${veld} bevat geen geldige datum.`,
+    );
   }
 
   return datum;
 }
 
 function isEigenaar(
-  gebruiker: Awaited<ReturnType<typeof getCurrentUser>>,
+  gebruiker: Awaited<
+    ReturnType<typeof getCurrentUser>
+  >,
 ) {
   if (!gebruiker) {
     return false;
@@ -48,7 +54,9 @@ function isEigenaar(
   return gebruiker.organisaties.some(
     (relatie) =>
       relatie.actief &&
-      relatie.rol.naam.toLowerCase() === "eigenaar",
+      relatie.organisatie.actief &&
+      relatie.rol.naam.toLowerCase() ===
+        "eigenaar",
   );
 }
 
@@ -62,12 +70,14 @@ export async function GET(
       beschikbaarheidId,
     } = await params;
 
-    const gebruiker = await getCurrentUser();
+    const gebruiker =
+      await getCurrentUser();
 
     if (!gebruiker) {
       return NextResponse.json(
         {
-          error: "Je moet ingelogd zijn.",
+          error:
+            "Je moet ingelogd zijn.",
         },
         {
           status: 401,
@@ -81,7 +91,8 @@ export async function GET(
       );
 
     if (
-      beschikbaarheid.medewerkerId !== medewerkerId &&
+      beschikbaarheid.medewerkerId !==
+        medewerkerId &&
       !isEigenaar(gebruiker)
     ) {
       return NextResponse.json(
@@ -99,7 +110,10 @@ export async function GET(
       beschikbaarheid,
     );
   } catch (error) {
-    console.error(error);
+    console.error(
+      "Beschikbaarheid ophalen mislukt:",
+      error,
+    );
 
     const message =
       error instanceof Error
@@ -133,12 +147,14 @@ export async function PATCH(
       beschikbaarheidId,
     } = await params;
 
-    const gebruiker = await getCurrentUser();
+    const gebruiker =
+      await getCurrentUser();
 
     if (!gebruiker) {
       return NextResponse.json(
         {
-          error: "Je moet ingelogd zijn.",
+          error:
+            "Je moet ingelogd zijn.",
         },
         {
           status: 401,
@@ -146,7 +162,8 @@ export async function PATCH(
       );
     }
 
-    const eigenaar = isEigenaar(gebruiker);
+    const eigenaar =
+      isEigenaar(gebruiker);
 
     const body =
       (await request.json()) as RequestBody;
@@ -199,7 +216,10 @@ export async function PATCH(
       beschikbaarheid,
     );
   } catch (error) {
-    console.error(error);
+    console.error(
+      "Beschikbaarheid wijzigen mislukt:",
+      error,
+    );
 
     const message =
       error instanceof Error
@@ -245,12 +265,14 @@ export async function DELETE(
       beschikbaarheidId,
     } = await params;
 
-    const gebruiker = await getCurrentUser();
+    const gebruiker =
+      await getCurrentUser();
 
     if (!gebruiker) {
       return NextResponse.json(
         {
-          error: "Je moet ingelogd zijn.",
+          error:
+            "Je moet ingelogd zijn.",
         },
         {
           status: 401,
@@ -258,7 +280,8 @@ export async function DELETE(
       );
     }
 
-    const eigenaar = isEigenaar(gebruiker);
+    const eigenaar =
+      isEigenaar(gebruiker);
 
     await beschikbaarheidService.delete(
       beschikbaarheidId,
@@ -272,7 +295,10 @@ export async function DELETE(
       success: true,
     });
   } catch (error) {
-    console.error(error);
+    console.error(
+      "Beschikbaarheid verwijderen mislukt:",
+      error,
+    );
 
     const message =
       error instanceof Error

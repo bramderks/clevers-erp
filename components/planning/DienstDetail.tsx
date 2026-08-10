@@ -2,24 +2,17 @@
 
 import { useState } from "react";
 
-import BezettingForm from "@/components/planning/BezettingForm";
-import BezettingOverzicht from "@/components/planning/BezettingOverzicht";
 import type { Dienst } from "@/types/planning";
+
+import BezettingOverzicht from "@/components/planning/BezettingOverzicht";
 
 type DienstDetailProps = {
   dienst: Dienst;
   vestigingId: string;
   bewerkbaar?: boolean;
+  kanVerwijderen?: boolean;
   onGewijzigd?: () => void;
 };
-
-function formatteerDatum(datum: string) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(new Date(datum));
-}
 
 function formatteerTijd(datum: string) {
   return new Intl.DateTimeFormat("nl-NL", {
@@ -28,198 +21,243 @@ function formatteerTijd(datum: string) {
   }).format(new Date(datum));
 }
 
+function bepaalStatus(dienst: Dienst) {
+  if (dienst.bezetting.length === 0) {
+    return "open";
+  }
+
+  const actieveBezetting =
+    dienst.bezetting.filter(
+      (regel) =>
+        regel.status !== "AFGEZEGD",
+    );
+
+  if (actieveBezetting.length === 0) {
+    return "open";
+  }
+
+  const bevestigd =
+    actieveBezetting.every(
+      (regel) =>
+        regel.status === "BEVESTIGD" ||
+        regel.status === "GEWERKT",
+    );
+
+  if (bevestigd) {
+    return "bevestigd";
+  }
+
+  return "onderhandeling";
+}
+
+function statusKlassen(dienst: Dienst) {
+  switch (bepaalStatus(dienst)) {
+    case "bevestigd":
+      return "border-green-300 bg-green-50";
+
+    case "onderhandeling":
+      return "border-amber-400 bg-amber-100";
+
+    default:
+      return "border-red-300 bg-red-50";
+  }
+}
+
 export default function DienstDetail({
   dienst,
-  vestigingId,
   bewerkbaar = true,
+  kanVerwijderen = false,
   onGewijzigd,
 }: DienstDetailProps) {
-  const [toonFormulier, setToonFormulier] =
-    useState(false);
-
-  const [verwijderen, setVerwijderen] =
-    useState(false);
-
-  const [laden, setLaden] =
+  const [bevestigenBezig, setBevestigenBezig] =
     useState(false);
 
   const [fout, setFout] =
     useState<string | null>(null);
 
-  async function verwijderDienst() {
+  const geplandeBezettingen =
+    dienst.bezetting.filter(
+      (regel) =>
+        regel.status === "GEPLAND",
+    );
+
+  async function bevestigBezetting(
+    bezettingId: string,
+  ) {
     try {
-      setLaden(true);
+      setBevestigenBezig(true);
       setFout(null);
 
       const response = await fetch(
-        `/api/planning/diensten/${dienst.id}`,
+        `/api/planning/bezetting/${bezettingId}`,
         {
-          method: "DELETE",
+          method: "PATCH",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            status: "BEVESTIGD",
+          }),
         },
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
           data?.fout ??
-            "De dienst kon niet worden verwijderd.",
+            "De medewerker kon niet worden bevestigd.",
         );
       }
 
       onGewijzigd?.();
     } catch (error) {
       console.error(
-        "Fout bij verwijderen dienst:",
+        "Fout bij bevestigen medewerker:",
         error,
       );
 
       setFout(
         error instanceof Error
           ? error.message
-          : "De dienst kon niet worden verwijderd.",
+          : "De medewerker kon niet worden bevestigd.",
       );
     } finally {
-      setLaden(false);
+      setBevestigenBezig(false);
     }
   }
 
   return (
-    <article className="rounded-lg border bg-white p-3 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="font-semibold capitalize text-gray-900">
-            {formatteerDatum(dienst.datum)}
-          </h3>
+    <article
+      className={`rounded-lg border px-3 py-2 ${statusKlassen(
+        dienst,
+      )}`}
+    >
+      <p className="text-sm font-semibold text-gray-900">
+        {formatteerTijd(
+          dienst.begintijd,
+        )}{" "}
+        -{" "}
+        {formatteerTijd(
+          dienst.eindtijd,
+        )}
+      </p>
 
-          <p className="mt-1 text-sm text-gray-600">
-            {formatteerTijd(dienst.begintijd)} -{" "}
-            {formatteerTijd(dienst.eindtijd)}
-          </p>
-
-          {dienst.opmerkingen && (
-            <p className="mt-3 text-sm text-gray-600">
-              {dienst.opmerkingen}
-            </p>
-          )}
-        </div>
-
-        <div className="text-sm text-gray-500">
-          {dienst.bezetting.length}{" "}
-          {dienst.bezetting.length === 1
-            ? "medewerker"
-            : "medewerkers"}
-        </div>
+      <div className="mt-1">
+        <BezettingOverzicht
+          bezetting={
+            dienst.bezetting
+          }
+        />
       </div>
 
-      {dienst.tags.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2 border-t pt-4">
-          {dienst.tags.map((dienstTag) => (
-            <span
-              key={dienstTag.id}
-              className="rounded-full border bg-gray-50 px-3 py-1 text-xs text-gray-700"
-            >
-              {dienstTag.tag.naam}
-              {dienstTag.aantal > 1 &&
-                ` (${dienstTag.aantal})`}
-            </span>
-          ))}
-        </div>
-      )}
-
-      <div className="mt-5 border-t pt-5">
-        <div className="flex items-center justify-between gap-3">
-          <h4 className="text-sm font-semibold text-gray-900">
-            Bezetting
-          </h4>
-
-          {bewerkbaar && (
-            <button
-              type="button"
-              onClick={() =>
-                setToonFormulier(
-                  (huidig) => !huidig,
-                )
-              }
-              className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
-            >
-              {toonFormulier
-                ? "Annuleren"
-                : "Medewerker inplannen"}
-            </button>
-          )}
-        </div>
-
-        <div className="mt-3">
-          <BezettingOverzicht
-            bezetting={dienst.bezetting}
-          />
-        </div>
-
-        {toonFormulier && bewerkbaar && (
-          <div className="mt-4">
-            <BezettingForm
-              dienstId={dienst.id}
-              vestigingId={vestigingId}
-              onAangemaakt={() => {
-                setToonFormulier(false);
-                onGewijzigd?.();
-              }}
-            />
+      {geplandeBezettingen.length >
+        0 &&
+        bewerkbaar && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {geplandeBezettingen.map(
+              (regel) => (
+                <button
+                  key={regel.id}
+                  type="button"
+                  onClick={() =>
+                    bevestigBezetting(
+                      regel.id,
+                    )
+                  }
+                  disabled={
+                    bevestigenBezig
+                  }
+                  className="rounded-md border border-amber-300 bg-white/70 px-2 py-1 text-[10px] font-medium text-amber-800 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {bevestigenBezig
+                    ? "..."
+                    : `Bevestig ${
+                        regel.medewerker
+                          ? [
+                              regel
+                                .medewerker
+                                .voornaam,
+                              regel
+                                .medewerker
+                                .tussenvoegsel,
+                              regel
+                                .medewerker
+                                .achternaam,
+                            ]
+                              .filter(
+                                Boolean,
+                              )
+                              .join(" ")
+                          : "medewerker"
+                      }`}
+                </button>
+              ),
+            )}
           </div>
         )}
-      </div>
-
-      {bewerkbaar && (
-        <div className="mt-4 flex justify-end border-t pt-3">
-          {!verwijderen ? (
-            <button
-              type="button"
-              onClick={() => {
-                setFout(null);
-                setVerwijderen(true);
-              }}
-              className="text-xs text-gray-400 transition hover:text-red-600"
-            >
-              Verwijderen
-            </button>
-          ) : (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-600">
-                Dienst verwijderen?
-              </span>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setVerwijderen(false)
-                }
-                disabled={laden}
-                className="rounded-md border px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-50"
-              >
-                Nee
-              </button>
-
-              <button
-                type="button"
-                onClick={verwijderDienst}
-                disabled={laden}
-                className="rounded-md bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700 disabled:opacity-50"
-              >
-                {laden
-                  ? "..."
-                  : "Ja, verwijderen"}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
 
       {fout && (
-        <p className="mt-2 text-right text-xs text-red-600">
+        <p className="mt-2 text-[10px] text-red-600">
           {fout}
         </p>
       )}
+
+      {dienst.opmerkingen && (
+        <p className="mt-2 text-[11px] text-gray-500">
+          {dienst.opmerkingen}
+        </p>
+      )}
+
+      {kanVerwijderen &&
+        bewerkbaar && (
+          <div className="mt-2 border-t border-black/5 pt-1.5 text-right">
+            <button
+              type="button"
+              onClick={async () => {
+                if (
+                  !window.confirm(
+                    "Deze dienst verwijderen?",
+                  )
+                ) {
+                  return;
+                }
+
+                try {
+                  const response =
+                    await fetch(
+                      `/api/planning/diensten/${dienst.id}`,
+                      {
+                        method: "DELETE",
+                      },
+                    );
+
+                  const data =
+                    await response.json();
+
+                  if (!response.ok) {
+                    throw new Error(
+                      data?.fout ??
+                        "De dienst kon niet worden verwijderd.",
+                    );
+                  }
+
+                  onGewijzigd?.();
+                } catch (error) {
+                  console.error(
+                    "Fout bij verwijderen dienst:",
+                    error,
+                  );
+                }
+              }}
+              className="text-[9px] text-gray-400 transition hover:text-red-600"
+            >
+              Verwijderen
+            </button>
+          </div>
+        )}
     </article>
   );
 }

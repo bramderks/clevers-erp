@@ -8,7 +8,12 @@ const DATUM_FOUT =
   "Datum moet een geldige datum zijn.";
 
 const TIJD_FOUT =
-  "Begin- en eindtijd moeten geldige datums zijn.";
+  "De begintijd moet een geldige datum zijn.";
+
+const MINIMALE_STARTTIJD_MINUTEN =
+  9 * 60;
+
+const TIJDSTAP_MINUTEN = 15;
 
 async function haalWeekMetVestigingOp(
   weekId: string,
@@ -151,10 +156,14 @@ function isDatumBinnenSeizoen(
     zetBeginVanDag(datum);
 
   const start =
-    zetBeginVanDag(seizoenStart);
+    zetBeginVanDag(
+      seizoenStart,
+    );
 
   const einde =
-    zetEindeVanDag(seizoenEinde);
+    zetEindeVanDag(
+      seizoenEinde,
+    );
 
   return (
     controleDatum >= start &&
@@ -198,7 +207,8 @@ function getISOWeek(
     );
 
   const eersteDag =
-    eersteDonderdag.getUTCDay() || 7;
+    eersteDonderdag.getUTCDay() ||
+    7;
 
   const weeknummer = Math.ceil(
     (
@@ -217,6 +227,163 @@ function getISOWeek(
   };
 }
 
+function minutenVanDag(
+  datum: Date,
+) {
+  return (
+    datum.getHours() * 60 +
+    datum.getMinutes()
+  );
+}
+
+function isTijdOpKwartier(
+  datum: Date,
+) {
+  return (
+    datum.getSeconds() === 0 &&
+    datum.getMilliseconds() === 0 &&
+    datum.getMinutes() %
+      TIJDSTAP_MINUTEN ===
+      0
+  );
+}
+
+function isZelfdeDag(
+  a: Date,
+  b: Date,
+) {
+  return (
+    a.getFullYear() ===
+      b.getFullYear() &&
+    a.getMonth() ===
+      b.getMonth() &&
+    a.getDate() ===
+      b.getDate()
+  );
+}
+
+async function zoekTagOverlaps(
+  weekId: string,
+  datum: Date,
+  begintijd: Date,
+  eindtijd: Date | null,
+  tagIds: string[],
+) {
+  if (
+    tagIds.length === 0 ||
+    !eindtijd
+  ) {
+    return [];
+  }
+
+  const bestaandeDiensten =
+    await prisma.dienst.findMany({
+      where: {
+        weekId,
+        datum: {
+          gte: zetBeginVanDag(
+            datum,
+          ),
+          lte: zetEindeVanDag(
+            datum,
+          ),
+        },
+        tags: {
+          some: {
+            tagId: {
+              in: tagIds,
+            },
+          },
+        },
+      },
+
+      select: {
+        id: true,
+        begintijd: true,
+        eindtijd: true,
+
+        tags: {
+          where: {
+            tagId: {
+              in: tagIds,
+            },
+          },
+
+          select: {
+            tagId: true,
+
+            tag: {
+              select: {
+                naam: true,
+              },
+            },
+          },
+        },
+      },
+
+      orderBy: {
+        begintijd: "asc",
+      },
+    });
+
+  const overlaps: {
+    dienstId: string;
+    tagNaam: string;
+    begintijd: Date;
+    eindtijd: Date;
+  }[] = [];
+
+  for (
+    const dienst of bestaandeDiensten
+  ) {
+    if (
+      !dienst.eindtijd
+    ) {
+      continue;
+    }
+
+    if (
+      dienst.id &&
+      isZelfdeDag(
+        new Date(
+          dienst.begintijd,
+        ),
+        datum,
+      ) &&
+      new Date(
+        dienst.begintijd,
+      ) < eindtijd &&
+      new Date(
+        dienst.eindtijd,
+      ) > begintijd
+    ) {
+      for (
+        const tag of dienst.tags
+      ) {
+        overlaps.push({
+          dienstId:
+            dienst.id,
+
+          tagNaam:
+            tag.tag.naam,
+
+          begintijd:
+            new Date(
+              dienst.begintijd,
+            ),
+
+          eindtijd:
+            new Date(
+              dienst.eindtijd,
+            ),
+        });
+      }
+    }
+  }
+
+  return overlaps;
+}
+
 export async function GET(
   request: Request,
 ) {
@@ -225,7 +392,9 @@ export async function GET(
       new URL(request.url);
 
     const weekId =
-      searchParams.get("weekId");
+      searchParams.get(
+        "weekId",
+      );
 
     if (!weekId) {
       return NextResponse.json(
@@ -233,7 +402,9 @@ export async function GET(
           fout:
             "weekId is verplicht.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
@@ -248,7 +419,9 @@ export async function GET(
           fout:
             "Planningweek niet gevonden.",
         },
-        { status: 404 },
+        {
+          status: 404,
+        },
       );
     }
 
@@ -264,7 +437,9 @@ export async function GET(
           fout:
             "Geen toegang tot deze planning.",
         },
-        { status: 403 },
+        {
+          status: 403,
+        },
       );
     }
 
@@ -273,6 +448,7 @@ export async function GET(
         where: {
           weekId,
         },
+
         orderBy: [
           {
             datum: "asc",
@@ -281,30 +457,37 @@ export async function GET(
             begintijd: "asc",
           },
         ],
+
         include: {
           tags: {
             include: {
               tag: true,
             },
+
             orderBy: {
               tag: {
                 volgorde: "asc",
               },
             },
           },
+
           bezetting: {
             include: {
               medewerker: {
                 select: {
                   id: true,
-                  personeelsnummer: true,
+                  personeelsnummer:
+                    true,
                   aanhef: true,
                   voornaam: true,
-                  tussenvoegsel: true,
-                  achternaam: true,
+                  tussenvoegsel:
+                    true,
+                  achternaam:
+                    true,
                 },
               },
             },
+
             orderBy: {
               aangemaaktOp: "asc",
             },
@@ -326,7 +509,9 @@ export async function GET(
         fout:
           "De diensten konden niet worden opgehaald.",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     );
   }
 }
@@ -350,15 +535,16 @@ export async function POST(
     if (
       !weekId ||
       !datum ||
-      !begintijd ||
-      !eindtijd
+      !begintijd
     ) {
       return NextResponse.json(
         {
           fout:
-            "weekId, datum, begintijd en eindtijd zijn verplicht.",
+            "weekId, datum en begintijd zijn verplicht.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
@@ -373,7 +559,9 @@ export async function POST(
           fout:
             "Planningweek niet gevonden.",
         },
-        { status: 404 },
+        {
+          status: 404,
+        },
       );
     }
 
@@ -389,7 +577,9 @@ export async function POST(
           fout:
             "Je hebt geen rechten om een dienst aan te maken.",
         },
-        { status: 403 },
+        {
+          status: 403,
+        },
       );
     }
 
@@ -400,7 +590,9 @@ export async function POST(
       new Date(begintijd);
 
     const eindtijdWaarde =
-      new Date(eindtijd);
+      eindtijd
+        ? new Date(eindtijd)
+        : null;
 
     if (
       Number.isNaN(
@@ -411,57 +603,152 @@ export async function POST(
         {
           fout: DATUM_FOUT,
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
     if (
       Number.isNaN(
         begintijdWaarde.getTime(),
-      ) ||
-      Number.isNaN(
-        eindtijdWaarde.getTime(),
       )
     ) {
       return NextResponse.json(
         {
           fout: TIJD_FOUT,
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
     if (
+      eindtijdWaarde &&
+      Number.isNaN(
+        eindtijdWaarde.getTime(),
+      )
+    ) {
+      return NextResponse.json(
+        {
+          fout:
+            "De eindtijd moet een geldige datum zijn.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (
+      eindtijdWaarde &&
       eindtijdWaarde <=
-      begintijdWaarde
+        begintijdWaarde
     ) {
       return NextResponse.json(
         {
           fout:
             "Eindtijd moet na de begintijd liggen.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
     if (
-      !week.vestiging.seizoenStart ||
-      !week.vestiging.seizoenEinde
+      eindtijdWaarde &&
+      !isZelfdeDag(
+        begintijdWaarde,
+        eindtijdWaarde,
+      )
+    ) {
+      return NextResponse.json(
+        {
+          fout:
+            "Een dienst moet binnen dezelfde kalenderdag vallen.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (
+      minutenVanDag(
+        begintijdWaarde,
+      ) <
+      MINIMALE_STARTTIJD_MINUTEN
+    ) {
+      return NextResponse.json(
+        {
+          fout:
+            "Een dienst kan niet eerder dan 09:00 beginnen.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (
+      !isTijdOpKwartier(
+        begintijdWaarde,
+      )
+    ) {
+      return NextResponse.json(
+        {
+          fout:
+            "De begintijd moet op een kwartier vallen.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (
+      eindtijdWaarde &&
+      !isTijdOpKwartier(
+        eindtijdWaarde,
+      )
+    ) {
+      return NextResponse.json(
+        {
+          fout:
+            "De eindtijd moet op een kwartier vallen.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (
+      !week.vestiging
+        .seizoenStart ||
+      !week.vestiging
+        .seizoenEinde
     ) {
       return NextResponse.json(
         {
           fout:
             "Voor deze vestiging is geen volledig seizoen ingesteld.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
     if (
       !isDatumBinnenSeizoen(
         datumWaarde,
-        week.vestiging.seizoenStart,
-        week.vestiging.seizoenEinde,
+        week.vestiging
+          .seizoenStart,
+        week.vestiging
+          .seizoenEinde,
       )
     ) {
       return NextResponse.json(
@@ -469,15 +756,20 @@ export async function POST(
           fout:
             "Deze dienst valt buiten het ingestelde seizoen.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
     const isoWeek =
-      getISOWeek(datumWaarde);
+      getISOWeek(
+        datumWaarde,
+      );
 
     if (
-      isoWeek.jaar !== week.jaar ||
+      isoWeek.jaar !==
+        week.jaar ||
       isoWeek.weeknummer !==
         week.weeknummer
     ) {
@@ -486,7 +778,9 @@ export async function POST(
           fout:
             "De gekozen datum valt niet binnen de geselecteerde planningweek.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
@@ -500,17 +794,21 @@ export async function POST(
 
     const bestaandeTags =
       tagIds.length > 0
-        ? await prisma.tag.findMany({
-            where: {
-              id: {
-                in: tagIds,
+        ? await prisma.tag.findMany(
+            {
+              where: {
+                id: {
+                  in: tagIds,
+                },
+                actief: true,
               },
-              actief: true,
+
+              select: {
+                id: true,
+                naam: true,
+              },
             },
-            select: {
-              id: true,
-            },
-          })
+          )
         : [];
 
     const bestaandeTagIds =
@@ -528,38 +826,149 @@ export async function POST(
           ),
       );
 
+    if (
+      dienstTags.length === 0
+    ) {
+      return NextResponse.json(
+        {
+          fout:
+            "Selecteer minimaal één geldige planningstag.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    const overlaps =
+      await zoekTagOverlaps(
+        weekId,
+        datumWaarde,
+        begintijdWaarde,
+        eindtijdWaarde,
+        dienstTags.map(
+          (tag) =>
+            tag.tagId,
+        ),
+      );
+
+    const uniekeOverlaps =
+      Array.from(
+        new Map(
+          overlaps.map(
+            (overlap) => [
+              `${overlap.dienstId}-${overlap.tagNaam}`,
+              overlap,
+            ],
+          ),
+        ).values(),
+      );
+
     const dienst =
       await prisma.dienst.create({
         data: {
           weekId,
-          datum: datumWaarde,
+
+          datum:
+            datumWaarde,
+
           begintijd:
             begintijdWaarde,
-          eindtijd:
-            eindtijdWaarde,
+
+eindtijd:
+  eindtijdWaarde ??
+  new Date(
+    datumWaarde.getFullYear(),
+    datumWaarde.getMonth(),
+    datumWaarde.getDate(),
+    23,
+    59,
+    0,
+    0,
+  ),
+
           opmerkingen:
             typeof opmerkingen ===
               "string" &&
-            opmerkingen.trim().length >
-              0
+            opmerkingen.trim()
+              .length > 0
               ? opmerkingen.trim()
               : null,
+
           tags: {
             create: dienstTags,
           },
         },
+
         include: {
           tags: {
             include: {
               tag: true,
             },
+
+            orderBy: {
+              tag: {
+                volgorde: "asc",
+              },
+            },
           },
-          bezetting: true,
+
+          bezetting: {
+            include: {
+              medewerker: {
+                select: {
+                  id: true,
+                  personeelsnummer:
+                    true,
+                  aanhef: true,
+                  voornaam: true,
+                  tussenvoegsel:
+                    true,
+                  achternaam:
+                    true,
+                },
+              },
+            },
+
+            orderBy: {
+              aangemaaktOp: "asc",
+            },
+          },
         },
       });
 
     return NextResponse.json(
-      dienst,
+      {
+        ...dienst,
+
+        waarschuwingen:
+          uniekeOverlaps.map(
+            (overlap) => ({
+              type:
+                "TAG_OVERLAP",
+
+              melding: `Er is al een dienst voor ${overlap.tagNaam} van ${overlap.begintijd.toLocaleTimeString(
+                "nl-NL",
+                {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                },
+              )} tot ${overlap.eindtijd.toLocaleTimeString(
+                "nl-NL",
+                {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                },
+              )}.`,
+
+              dienstId:
+                overlap.dienstId,
+
+              tagNaam:
+                overlap.tagNaam,
+            }),
+          ),
+      },
       {
         status: 201,
       },
@@ -575,7 +984,9 @@ export async function POST(
         fout:
           "De dienst kon niet worden aangemaakt.",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     );
   }
 }

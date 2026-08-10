@@ -14,13 +14,21 @@ import Button from "@/components/ui/Button";
 import DataGrid from "@/components/ui/DataGrid";
 import Badge from "@/components/ui/Badge";
 
+import { permissions } from "@/lib/permissions";
+import { vereisPermission } from "@/lib/requirePermission";
+
 export default async function MedewerkersPage() {
+  await vereisPermission(
+    permissions.medewerkers.view,
+  );
+
   const medewerkers =
     await medewerkerService.getAll();
 
   const actieveMedewerkers =
     medewerkers.filter(
-      (medewerker) => medewerker.actief,
+      (medewerker) =>
+        medewerker.actief,
     ).length;
 
   const inactieveMedewerkers =
@@ -29,7 +37,7 @@ export default async function MedewerkersPage() {
 
   return (
     <PageLayout>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Medewerkers"
           value={medewerkers.length}
@@ -103,8 +111,9 @@ export default async function MedewerkersPage() {
             title: "Vestiging",
             render: (medewerker) => {
               if (
-                medewerker.vestigingen.length ===
-                0
+                medewerker
+                  .vestigingen
+                  .length === 0
               ) {
                 return (
                   <span className="text-sm text-slate-400">
@@ -116,7 +125,9 @@ export default async function MedewerkersPage() {
               return (
                 <div className="flex flex-wrap gap-2">
                   {medewerker.vestigingen.map(
-                    (medewerkerVestiging) => (
+                    (
+                      medewerkerVestiging,
+                    ) => (
                       <Badge
                         key={
                           medewerkerVestiging.id
@@ -129,7 +140,8 @@ export default async function MedewerkersPage() {
                       >
                         {
                           medewerkerVestiging
-                            .vestiging.naam
+                            .vestiging
+                            .naam
                         }
                       </Badge>
                     ),
@@ -164,8 +176,8 @@ export default async function MedewerkersPage() {
             title: "Rol",
             render: (medewerker) => {
               if (
-                medewerker.rollen.length ===
-                0
+                medewerker.rollen
+                  .length === 0
               ) {
                 return (
                   <span className="text-sm text-slate-400">
@@ -177,7 +189,9 @@ export default async function MedewerkersPage() {
               return (
                 <div className="flex flex-wrap gap-2">
                   {medewerker.rollen.map(
-                    (medewerkerRol) => (
+                    (
+                      medewerkerRol,
+                    ) => (
                       <Badge
                         key={
                           medewerkerRol.id
@@ -185,8 +199,8 @@ export default async function MedewerkersPage() {
                         variant="default"
                       >
                         {
-                          medewerkerRol.rol
-                            .naam
+                          medewerkerRol
+                            .rol.naam
                         }
                       </Badge>
                     ),
