@@ -2,10 +2,12 @@
 
 import {
   Bell,
+  Check,
   ChevronDown,
   LogOut,
   Search,
   User,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -26,9 +28,34 @@ type TopbarGebruiker = {
   rollen: string[];
 };
 
+type Taak = {
+  id: string;
+  type: string;
+  categorie: string;
+  titel: string;
+  omschrijving: string;
+  aangemaaktOp: string;
+  actie: string;
+  gegevens: Record<string, unknown>;
+};
+
 type TopbarProps = {
   gebruiker: TopbarGebruiker;
 };
+
+function formatteerDatum(datum: string) {
+  return new Intl.DateTimeFormat("nl-NL", {
+    day: "numeric",
+    month: "short",
+  }).format(new Date(datum));
+}
+
+function formatteerTijd(datum: string) {
+  return new Intl.DateTimeFormat("nl-NL", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(datum));
+}
 
 export default function Topbar({
   gebruiker,
@@ -39,12 +66,34 @@ export default function Topbar({
   const [menuOpen, setMenuOpen] =
     useState(false);
 
+  const [takenOpen, setTakenOpen] =
+    useState(false);
+
+  const [taken, setTaken] =
+    useState<Taak[]>([]);
+
+  const [
+    takenLaden,
+    setTakenLaden,
+  ] = useState(false);
+
+  const [
+    taakBezig,
+    setTaakBezig,
+  ] = useState<string | null>(null);
+
+  const [taakFout, setTaakFout] =
+    useState<string | null>(null);
+
   const [
     uitloggenBezig,
     setUitloggenBezig,
   ] = useState(false);
 
   const menuRef =
+    useRef<HTMLDivElement | null>(null);
+
+  const takenRef =
     useRef<HTMLDivElement | null>(null);
 
   const page =
@@ -80,21 +129,90 @@ export default function Topbar({
       )
       .join("") || "G";
 
+  async function laadTaken(
+    stil = false,
+  ) {
+    try {
+      if (!stil) {
+        setTakenLaden(true);
+      }
+
+      const response = await fetch(
+        "/api/taken",
+        {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        },
+      );
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data =
+        await response.json();
+
+      if (Array.isArray(data)) {
+        setTaken(data);
+      }
+    } catch (error) {
+      console.error(
+        "Fout bij ophalen taken:",
+        error,
+      );
+    } finally {
+      if (!stil) {
+        setTakenLaden(false);
+      }
+    }
+  }
+
+  useEffect(() => {
+    void laadTaken();
+
+    const interval =
+      window.setInterval(() => {
+        void laadTaken(true);
+      }, 30000);
+
+    return () => {
+      window.clearInterval(
+        interval,
+      );
+    };
+  }, []);
+
   useEffect(() => {
     function sluitMenu(
       event: MouseEvent,
     ) {
+      const target =
+        event.target as Node;
+
       if (
         menuRef.current &&
         !menuRef.current.contains(
-          event.target as Node,
+          target,
         )
       ) {
         setMenuOpen(false);
       }
+
+      if (
+        takenRef.current &&
+        !takenRef.current.contains(
+          target,
+        )
+      ) {
+        setTakenOpen(false);
+      }
     }
 
-    if (menuOpen) {
+    if (
+      menuOpen ||
+      takenOpen
+    ) {
       document.addEventListener(
         "mousedown",
         sluitMenu,
@@ -107,7 +225,10 @@ export default function Topbar({
         sluitMenu,
       );
     };
-  }, [menuOpen]);
+  }, [
+    menuOpen,
+    takenOpen,
+  ]);
 
   useEffect(() => {
     function escapeMenu(
@@ -115,10 +236,14 @@ export default function Topbar({
     ) {
       if (event.key === "Escape") {
         setMenuOpen(false);
+        setTakenOpen(false);
       }
     }
 
-    if (menuOpen) {
+    if (
+      menuOpen ||
+      takenOpen
+    ) {
       document.addEventListener(
         "keydown",
         escapeMenu,
@@ -131,7 +256,88 @@ export default function Topbar({
         escapeMenu,
       );
     };
-  }, [menuOpen]);
+  }, [
+    menuOpen,
+    takenOpen,
+  ]);
+
+  async function verwerkTaak(
+    taak: Taak,
+    actie:
+      | "ACCEPTEREN"
+      | "AFWIJZEN"
+      | "GOEDKEUREN",
+  ) {
+    try {
+      setTaakBezig(taak.id);
+      setTaakFout(null);
+
+      const ruilverzoekId =
+        taak.gegevens
+          .ruilverzoekId;
+
+      if (
+        typeof ruilverzoekId !==
+        "string"
+      ) {
+        throw new Error(
+          "Het ruilverzoek kon niet worden gevonden.",
+        );
+      }
+
+      const response = await fetch(
+        "/api/planning/ruilen",
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            ruilverzoekId,
+            actie,
+          }),
+        },
+      );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.fout ??
+            "De taak kon niet worden uitgevoerd.",
+        );
+      }
+
+      setTaken(
+        (huidigeTaken) =>
+          huidigeTaken.filter(
+            (huidigeTaak) =>
+              huidigeTaak.id !==
+              taak.id,
+          ),
+      );
+
+      router.refresh();
+
+      await laadTaken(true);
+    } catch (error) {
+      console.error(
+        "Fout bij uitvoeren taak:",
+        error,
+      );
+
+      setTaakFout(
+        error instanceof Error
+          ? error.message
+          : "De taak kon niet worden uitgevoerd.",
+      );
+    } finally {
+      setTaakBezig(null);
+    }
+  }
 
   async function handleLogout() {
     if (uitloggenBezig) {
@@ -142,10 +348,13 @@ export default function Topbar({
 
     try {
       const response =
-        await fetch("/api/logout", {
-          method: "POST",
-          credentials: "include",
-        });
+        await fetch(
+          "/api/logout",
+          {
+            method: "POST",
+            credentials: "include",
+          },
+        );
 
       if (!response.ok) {
         throw new Error(
@@ -167,6 +376,39 @@ export default function Topbar({
     }
   }
 
+  function bepaalActieLabel(
+    taak: Taak,
+  ) {
+    switch (taak.actie) {
+      case "RUIL_ACCEPTEREN":
+        return "Accepteren";
+
+      case "RUIL_GOEDKEUREN":
+        return "Goedkeuren";
+
+      default:
+        return "Uitvoeren";
+    }
+  }
+
+  function kanAccepteren(
+    taak: Taak,
+  ) {
+    return (
+      taak.actie ===
+      "RUIL_ACCEPTEREN"
+    );
+  }
+
+  function kanGoedkeuren(
+    taak: Taak,
+  ) {
+    return (
+      taak.actie ===
+      "RUIL_GOEDKEUREN"
+    );
+  }
+
   return (
     <header
       className="sticky top-0 z-40 flex h-[76px] shrink-0 items-center justify-between border-b bg-white px-4 lg:px-8"
@@ -176,8 +418,8 @@ export default function Topbar({
       }}
     >
       {/* Linkerkant */}
-      <div className="min-w-0">
-        <h1 className="truncate text-xl font-semibold text-slate-900">
+      <div>
+        <h1 className="text-lg font-semibold text-slate-900">
           {page.title}
         </h1>
 
@@ -217,16 +459,287 @@ export default function Topbar({
           </p>
         </div>
 
-        {/* Meldingen */}
-        <button
-          type="button"
-          aria-label="Meldingen"
-          className="relative rounded-xl p-3 transition hover:bg-slate-100"
+        {/* Taken */}
+        <div
+          ref={takenRef}
+          className="relative"
         >
-          <Bell size={20} />
+          <button
+            type="button"
+            aria-label="Taken"
+            aria-expanded={takenOpen}
+            onClick={() => {
+              setTakenOpen(
+                (waarde) => !waarde,
+              );
+              setMenuOpen(false);
+              setTaakFout(null);
 
-          <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-red-500" />
-        </button>
+              if (!takenOpen) {
+                void laadTaken();
+              }
+            }}
+            className={`relative rounded-xl p-3 transition ${
+              takenOpen
+                ? "bg-slate-100"
+                : "hover:bg-slate-100"
+            }`}
+          >
+            <Bell size={20} />
+
+            {taken.length > 0 && (
+              <span className="absolute right-1.5 top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                {taken.length > 9
+                  ? "9+"
+                  : taken.length}
+              </span>
+            )}
+          </button>
+
+          {takenOpen && (
+            <div className="absolute right-0 top-[calc(100%+8px)] z-[100] w-[390px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+              {/* Header */}
+              <div className="border-b border-slate-100 px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-slate-900">
+                      Taken
+                    </p>
+
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      Acties die nog uitgevoerd moeten worden
+                    </p>
+                  </div>
+
+                  {taken.length > 0 && (
+                    <span className="rounded-full bg-red-50 px-2 py-1 text-[10px] font-semibold text-red-600">
+                      {taken.length} open
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Takenlijst */}
+              <div className="max-h-[460px] overflow-y-auto">
+                {takenLaden ? (
+                  <div className="px-4 py-8 text-center text-xs text-slate-500">
+                    Taken laden...
+                  </div>
+                ) : taken.length ===
+                  0 ? (
+                  <div className="px-4 py-10 text-center">
+                    <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-green-50">
+                      <Check
+                        size={20}
+                        className="text-green-600"
+                      />
+                    </div>
+
+                    <p className="mt-3 text-sm font-semibold text-slate-700">
+                      Alles gedaan
+                    </p>
+
+                    <p className="mt-1 text-xs text-slate-400">
+                      Er staan geen openstaande taken.
+                    </p>
+                  </div>
+                ) : (
+                  taken.map((taak) => {
+                    const datum =
+                      typeof taak
+                        .gegevens
+                        .datum ===
+                      "string"
+                        ? taak
+                            .gegevens
+                            .datum
+                        : null;
+
+                    const begintijd =
+                      typeof taak
+                        .gegevens
+                        .begintijd ===
+                      "string"
+                        ? taak
+                            .gegevens
+                            .begintijd
+                        : null;
+
+                    const eindtijd =
+                      typeof taak
+                        .gegevens
+                        .eindtijd ===
+                      "string"
+                        ? taak
+                            .gegevens
+                            .eindtijd
+                        : null;
+
+                    const bezig =
+                      taakBezig ===
+                      taak.id;
+
+                    return (
+                      <div
+                        key={taak.id}
+                        className="border-b border-slate-100 px-4 py-4 last:border-b-0"
+                      >
+                        <div className="flex gap-3">
+                          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                            <Bell
+                              size={16}
+                            />
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <p className="text-sm font-semibold text-slate-900">
+                                  {taak.titel}
+                                </p>
+
+                                <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                                  {
+                                    taak.categorie
+                                  }
+                                </p>
+                              </div>
+
+                              <span className="shrink-0 text-[10px] text-slate-400">
+                                {formatteerDatum(
+                                  taak.aangemaaktOp,
+                                )}
+                              </span>
+                            </div>
+
+                            <p className="mt-2 text-xs leading-5 text-slate-600">
+                              {
+                                taak.omschrijving
+                              }
+                            </p>
+
+                            {datum &&
+                              begintijd &&
+                              eindtijd && (
+                                <div className="mt-2 rounded-lg bg-slate-50 px-3 py-2">
+                                  <p className="text-xs font-medium text-slate-800">
+                                    {formatteerDatum(
+                                      datum,
+                                    )}
+                                  </p>
+
+                                  <p className="mt-0.5 text-[11px] text-slate-500">
+                                    {formatteerTijd(
+                                      begintijd,
+                                    )}{" "}
+                                    -{" "}
+                                    {formatteerTijd(
+                                      eindtijd,
+                                    )}
+                                  </p>
+                                </div>
+                              )}
+
+                            {taakFout && (
+                              <p className="mt-2 rounded-md bg-red-50 px-2 py-1.5 text-[11px] text-red-600">
+                                {taakFout}
+                              </p>
+                            )}
+
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {kanAccepteren(
+                                taak,
+                              ) && (
+                                <button
+                                  type="button"
+                                  disabled={
+                                    bezig
+                                  }
+                                  onClick={() =>
+                                    void verwerkTaak(
+                                      taak,
+                                      "ACCEPTEREN",
+                                    )
+                                  }
+                                  className="flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  <Check
+                                    size={13}
+                                  />
+
+                                  {bezig
+                                    ? "..."
+                                    : bepaalActieLabel(
+                                        taak,
+                                      )}
+                                </button>
+                              )}
+
+                              {kanGoedkeuren(
+                                taak,
+                              ) && (
+                                <button
+                                  type="button"
+                                  disabled={
+                                    bezig
+                                  }
+                                  onClick={() =>
+                                    void verwerkTaak(
+                                      taak,
+                                      "GOEDKEUREN",
+                                    )
+                                  }
+                                  className="flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  <Check
+                                    size={13}
+                                  />
+
+                                  {bezig
+                                    ? "..."
+                                    : bepaalActieLabel(
+                                        taak,
+                                      )}
+                                </button>
+                              )}
+
+                              {(kanAccepteren(
+                                taak,
+                              ) ||
+                                kanGoedkeuren(
+                                  taak,
+                                )) && (
+                                <button
+                                  type="button"
+                                  disabled={
+                                    bezig
+                                  }
+                                  onClick={() =>
+                                    void verwerkTaak(
+                                      taak,
+                                      "AFWIJZEN",
+                                    )
+                                  }
+                                  className="flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-1.5 text-[11px] font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  <X
+                                    size={13}
+                                  />
+
+                                  Afwijzen
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Gebruikersmenu */}
         <div
@@ -237,11 +750,12 @@ export default function Topbar({
             type="button"
             aria-expanded={menuOpen}
             aria-haspopup="menu"
-            onClick={() =>
+            onClick={() => {
               setMenuOpen(
                 (waarde) => !waarde,
-              )
-            }
+              );
+              setTakenOpen(false);
+            }}
             className={`flex items-center gap-3 rounded-xl border px-3 py-2 transition ${
               menuOpen
                 ? "border-slate-300 bg-slate-50"
@@ -283,7 +797,6 @@ export default function Topbar({
               role="menu"
               className="absolute right-0 top-[calc(100%+8px)] z-[100] w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl"
             >
-              {/* Gebruiker */}
               <div className="border-b border-slate-100 px-3 py-3">
                 <p className="truncate font-semibold text-slate-900">
                   {gebruiker.naam}
@@ -294,7 +807,6 @@ export default function Topbar({
                 </p>
               </div>
 
-              {/* Acties */}
               <div className="py-1">
                 <Link
                   href="/profiel"

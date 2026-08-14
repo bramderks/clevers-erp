@@ -1,261 +1,340 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useState } from "react";
 
-import Card from "@/components/ui/Card";
+import Form from "@/components/ui/Form";
+import Input from "@/components/ui/Input";
+import Button from "@/components/ui/Button";
 
-import BeschikbaarheidForm from "./BeschikbaarheidForm";
-import BeschikbaarheidOverzicht from "./BeschikbaarheidOverzicht";
-import BeschikbaarheidWeekSelector from "./BeschikbaarheidWeekSelector";
+type BeschikbaarheidStatus =
+  | "BESCHIKBAAR"
+  | "NIET_BESCHIKBAAR"
+  | "VOORKEUR";
 
-type Vestiging = {
-  id: string;
-  naam: string;
-};
-
-type Beschikbaarheid = {
-  id: string;
-  datum: string;
-  begintijd: string;
-  eindtijd: string;
-  status: string;
-  opmerking: string | null;
-};
-
-type SelectorWeek = {
-  id: string;
-  jaar: number;
-  weeknummer: number;
-  status: string;
-  beschikbaarheidDeadline: string | null;
-};
-
-type Week = SelectorWeek & {
-  beschikbaarheden: Beschikbaarheid[];
-};
-
-type BeschikbaarheidPanelProps = {
+type BeschikbaarheidFormProps = {
   medewerkerId: string;
-  vestigingen: Vestiging[];
-  isEigenaar: boolean;
+  weekId: string;
 };
 
-export default function BeschikbaarheidPanel({
-  medewerkerId,
-  vestigingen,
-  isEigenaar,
-}: BeschikbaarheidPanelProps) {
-  const [week, setWeek] =
-    useState<Week | null>(null);
+const TIJDEN = Array.from(
+  { length: 29 },
+  (_, index) => {
+    const totaalMinuten =
+      9 * 60 + index * 30;
 
-  const [loading, setLoading] =
+    const uren = Math.floor(
+      totaalMinuten / 60,
+    );
+
+    const minuten =
+      totaalMinuten % 60;
+
+    return `${String(uren).padStart(
+      2,
+      "0",
+    )}:${String(minuten).padStart(
+      2,
+      "0",
+    )}`;
+  },
+);
+
+export default function BeschikbaarheidForm({
+  medewerkerId,
+  weekId,
+}: BeschikbaarheidFormProps) {
+  const [datum, setDatum] =
+    useState("");
+
+  const [begintijd, setBegintijd] =
+    useState("");
+
+  const [eindtijd, setEindtijd] =
+    useState("");
+
+  const [status, setStatus] =
+    useState<BeschikbaarheidStatus>(
+      "BESCHIKBAAR",
+    );
+
+  const [opmerking, setOpmerking] =
+    useState("");
+
+  const [saving, setSaving] =
     useState(false);
 
   const [error, setError] =
     useState("");
 
-  const laadBeschikbaarheden =
-    useCallback(
-      async (
-        geselecteerdeWeek: SelectorWeek,
-      ) => {
-        setLoading(true);
-        setError("");
+  const [success, setSuccess] =
+    useState("");
 
-        try {
-          const response = await fetch(
-            `/api/medewerkers/${medewerkerId}/beschikbaarheid?weekId=${geselecteerdeWeek.id}`,
-            {
-              cache: "no-store",
+  async function handleSubmit(
+    event: React.FormEvent,
+  ) {
+    event.preventDefault();
+
+    setSaving(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      if (!datum) {
+        throw new Error(
+          "Selecteer een datum.",
+        );
+      }
+
+      if (
+        !begintijd ||
+        !eindtijd
+      ) {
+        throw new Error(
+          "Selecteer een begin- en eindtijd.",
+        );
+      }
+
+      if (
+        begintijd < "09:00" ||
+        begintijd > "23:00" ||
+        eindtijd < "09:00" ||
+        eindtijd > "23:00"
+      ) {
+        throw new Error(
+          "Beschikbaarheid kan alleen tussen 09:00 en 23:00 worden opgegeven.",
+        );
+      }
+
+      if (begintijd >= eindtijd) {
+        throw new Error(
+          "De begintijd moet vóór de eindtijd liggen.",
+        );
+      }
+
+      const response =
+        await fetch(
+          `/api/medewerkers/${medewerkerId}/beschikbaarheid`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
             },
-          );
+            body: JSON.stringify({
+              weekId,
+              datum: `${datum}T00:00:00`,
+              begintijd: `${datum}T${begintijd}:00`,
+              eindtijd: `${datum}T${eindtijd}:00`,
+              status,
+              opmerking:
+                opmerking.trim() ||
+                null,
+            }),
+          },
+        );
 
-          const resultaat =
-            await response.json();
+      const resultaat =
+        await response.json();
 
-          if (!response.ok) {
-            throw new Error(
-              resultaat.error ??
-                "Beschikbaarheden ophalen is mislukt.",
-            );
-          }
+      if (!response.ok) {
+        throw new Error(
+          resultaat.error ??
+            "Beschikbaarheid opslaan is mislukt.",
+        );
+      }
 
-          const beschikbaarheden =
-            Array.isArray(
-              resultaat.beschikbaarheden,
-            )
-              ? resultaat.beschikbaarheden
-              : [];
+      setDatum("");
+      setBegintijd("");
+      setEindtijd("");
+      setStatus("BESCHIKBAAR");
+      setOpmerking("");
 
-          setWeek({
-            ...geselecteerdeWeek,
-            beschikbaarheden,
-          });
-        } catch (error) {
-          setWeek({
-            ...geselecteerdeWeek,
-            beschikbaarheden: [],
-          });
-
-          setError(
-            error instanceof Error
-              ? error.message
-              : "Beschikbaarheden ophalen is mislukt.",
-          );
-        } finally {
-          setLoading(false);
-        }
-      },
-      [medewerkerId],
-    );
-
-  const handleSelected = useCallback(
-    (
-      _vestigingId: string,
-      geselecteerdeWeek: SelectorWeek,
-    ) => {
-      void laadBeschikbaarheden(
-        geselecteerdeWeek,
+      setSuccess(
+        "Beschikbaarheid succesvol opgeslagen.",
       );
-    },
-    [laadBeschikbaarheden],
-  );
-
-  if (vestigingen.length === 0) {
-    return (
-      <Card
-        title="Beschikbaarheid"
-        description="Beschikbaarheid kan pas worden opgegeven wanneer de medewerker aan een vestiging is gekoppeld."
-      >
-        <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center">
-          <p className="text-sm font-medium text-slate-700">
-            Geen vestiging gekoppeld
-          </p>
-
-          <p className="mt-1 text-sm text-slate-500">
-            Koppel eerst een vestiging aan
-            deze medewerker.
-          </p>
-        </div>
-      </Card>
-    );
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Beschikbaarheid opslaan is mislukt.",
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
-  const deadline =
-    week?.beschikbaarheidDeadline
-      ? new Date(
-          week.beschikbaarheidDeadline,
-        )
-      : null;
-
-  const deadlineVerstreken =
-    deadline !== null &&
-    !Number.isNaN(
-      deadline.getTime(),
-    ) &&
-    new Date() > deadline;
-
-  const magWijzigen =
-    isEigenaar ||
-    !deadlineVerstreken;
-
-  const magVerwijderen =
-    isEigenaar ||
-    !deadlineVerstreken;
-
   return (
-    <Card
-      title="Beschikbaarheid"
-      description="Geef per vestiging en week aan wanneer de medewerker beschikbaar is."
-    >
-      <div className="space-y-8">
-        <BeschikbaarheidWeekSelector
-          vestigingen={vestigingen}
-          medewerkerId={medewerkerId}
-          isEigenaar={isEigenaar}
-          onSelected={handleSelected}
+    <Form onSubmit={handleSubmit}>
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          {success}
+        </div>
+      )}
+
+      <div className="grid gap-6 md:grid-cols-3">
+        <Input
+          label="Datum"
+          name="datum"
+          type="date"
+          value={datum}
+          onChange={(event) =>
+            setDatum(
+              event.target.value,
+            )
+          }
+          required
         />
 
-        {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
+        <div>
+          <label
+            htmlFor="begintijd"
+            className="mb-2 block text-sm font-medium text-slate-700"
+          >
+            Beschikbaar vanaf
+          </label>
 
-        {loading ? (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-6 py-8 text-center">
-            <p className="text-sm text-slate-500">
-              Beschikbaarheid laden...
-            </p>
-          </div>
-        ) : !week ? (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-6 py-8 text-center">
-            <p className="text-sm text-slate-500">
-              Selecteer een week om de
-              beschikbaarheid te bekijken.
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="border-t border-slate-200 pt-8">
-              <h3 className="text-base font-semibold text-slate-900">
-                Beschikbaarheid toevoegen
-              </h3>
+          <select
+            id="begintijd"
+            name="begintijd"
+            value={begintijd}
+            onChange={(event) =>
+              setBegintijd(
+                event.target.value,
+              )
+            }
+            required
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 transition focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+          >
+            <option value="">
+              Kies tijd
+            </option>
 
-              <p className="mb-6 mt-1 text-sm text-slate-500">
-                Voeg een beschikbaarheid toe
-                aan de geselecteerde week.
-              </p>
+            {TIJDEN.map((tijd) => (
+              <option
+                key={tijd}
+                value={tijd}
+              >
+                {tijd}
+              </option>
+            ))}
+          </select>
+        </div>
 
-              {magWijzigen ? (
-                <BeschikbaarheidForm
-                  medewerkerId={
-                    medewerkerId
-                  }
-                  weekId={week.id}
-                />
-              ) : (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                  <p className="font-semibold">
-                    Beschikbaarheid is gesloten
-                  </p>
+        <div>
+          <label
+            htmlFor="eindtijd"
+            className="mb-2 block text-sm font-medium text-slate-700"
+          >
+            Beschikbaar tot
+          </label>
 
-                  <p className="mt-1">
-                    De deadline voor deze week
-                    is verstreken. Alleen een
-                    eigenaar kan nog wijzigingen
-                    uitvoeren.
-                  </p>
-                </div>
-              )}
-            </div>
+          <select
+            id="eindtijd"
+            name="eindtijd"
+            value={eindtijd}
+            onChange={(event) =>
+              setEindtijd(
+                event.target.value,
+              )
+            }
+            required
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 transition focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+          >
+            <option value="">
+              Kies tijd
+            </option>
 
-            <div className="border-t border-slate-200 pt-8">
-              <h3 className="mb-4 text-base font-semibold text-slate-900">
-                Ingevoerde beschikbaarheden
-              </h3>
-
-              <BeschikbaarheidOverzicht
-                medewerkerId={
-                  medewerkerId
+            {TIJDEN.map((tijd) => (
+              <option
+                key={tijd}
+                value={tijd}
+                disabled={
+                  begintijd !== "" &&
+                  tijd <= begintijd
                 }
-                beschikbaarheden={
-                  week.beschikbaarheden
-                }
-                beschikbaarheidDeadline={
-                  week.beschikbaarheidDeadline
-                }
-                magWijzigen={
-                  magWijzigen
-                }
-                magVerwijderen={
-                  magVerwijderen
-                }
-              />
-            </div>
-          </>
-        )}
+              >
+                {tijd}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
-    </Card>
+
+      <div className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3">
+        <p className="text-sm font-semibold text-cyan-900">
+          Beschikbaarheidsvenster
+        </p>
+
+        <p className="mt-1 text-sm text-cyan-800">
+          Geef aan wanneer je beschikbaar
+          bent. Je kunt tijden kiezen vanaf
+          09:00 tot maximaal 23:00, steeds in
+          stappen van 30 minuten.
+        </p>
+      </div>
+
+      <div>
+        <label
+          htmlFor="status"
+          className="mb-2 block text-sm font-medium text-slate-700"
+        >
+          Beschikbaarheid
+        </label>
+
+        <select
+          id="status"
+          name="status"
+          value={status}
+          onChange={(event) =>
+            setStatus(
+              event.target
+                .value as BeschikbaarheidStatus,
+            )
+          }
+          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 transition focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+        >
+          <option value="BESCHIKBAAR">
+            Beschikbaar
+          </option>
+
+          <option value="VOORKEUR">
+            Voorkeur
+          </option>
+
+          <option value="NIET_BESCHIKBAAR">
+            Niet beschikbaar
+          </option>
+        </select>
+      </div>
+
+      <Input
+        label="Opmerking"
+        name="opmerking"
+        value={opmerking}
+        onChange={(event) =>
+          setOpmerking(
+            event.target.value,
+          )
+        }
+        hint="Optioneel, bijvoorbeeld een voorkeur of toelichting."
+      />
+
+      <div className="flex justify-end">
+        <Button
+          type="submit"
+          disabled={saving}
+        >
+          {saving
+            ? "Opslaan..."
+            : "Beschikbaarheid toevoegen"}
+        </Button>
+      </div>
+    </Form>
   );
 }

@@ -108,6 +108,16 @@ export type DienstTag = Prisma.DienstTagModel
  */
 export type DienstBezetting = Prisma.DienstBezettingModel
 /**
+ * Model Ruilverzoek
+ * 
+ */
+export type Ruilverzoek = Prisma.RuilverzoekModel
+/**
+ * Model UrenRegistratie
+ * 
+ */
+export type UrenRegistratie = Prisma.UrenRegistratieModel
+/**
  * Model ProductType
  * 
  */

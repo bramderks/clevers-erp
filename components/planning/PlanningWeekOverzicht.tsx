@@ -82,6 +82,27 @@ export default function PlanningWeekOverzicht({
   onWijzigDienst,
   onVerwijderDienst,
 }: PlanningWeekOverzichtProps) {
+  function openDienst(dienstId: string) {
+    onWijzigDienst?.(dienstId);
+  }
+
+  function handleDienstKeyDown(
+    event: React.KeyboardEvent<HTMLDivElement>,
+    dienstId: string,
+  ) {
+    if (!onWijzigDienst) {
+      return;
+    }
+
+    if (
+      event.key === "Enter" ||
+      event.key === " "
+    ) {
+      event.preventDefault();
+      openDienst(dienstId);
+    }
+  }
+
   return (
     <section className="space-y-6">
       <div className="rounded-xl border bg-white p-6">
@@ -149,12 +170,35 @@ export default function PlanningWeekOverzicht({
             {week.diensten.map((dienst) => (
               <div
                 key={dienst.id}
-                className="rounded-lg border border-gray-200 p-4"
+                role={
+                  onWijzigDienst
+                    ? "button"
+                    : undefined
+                }
+                tabIndex={
+                  onWijzigDienst ? 0 : undefined
+                }
+                onClick={() =>
+                  openDienst(dienst.id)
+                }
+                onKeyDown={(event) =>
+                  handleDienstKeyDown(
+                    event,
+                    dienst.id,
+                  )
+                }
+                className={`rounded-lg border border-gray-200 p-4 transition ${
+                  onWijzigDienst
+                    ? "cursor-pointer hover:border-gray-300 hover:bg-gray-50"
+                    : ""
+                }`}
               >
                 <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
                   <div>
                     <h4 className="font-medium capitalize text-gray-900">
-                      {formatteerDatum(dienst.datum)}
+                      {formatteerDatum(
+                        dienst.datum,
+                      )}
                     </h4>
 
                     <p className="mt-1 text-sm text-gray-600">
@@ -178,9 +222,12 @@ export default function PlanningWeekOverzicht({
                     {onWijzigDienst && (
                       <button
                         type="button"
-                        onClick={() =>
-                          onWijzigDienst(dienst.id)
-                        }
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onWijzigDienst(
+                            dienst.id,
+                          );
+                        }}
                         className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                       >
                         Wijzigen
@@ -190,9 +237,12 @@ export default function PlanningWeekOverzicht({
                     {onVerwijderDienst && (
                       <button
                         type="button"
-                        onClick={() =>
-                          onVerwijderDienst(dienst.id)
-                        }
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onVerwijderDienst(
+                            dienst.id,
+                          );
+                        }}
                         className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
                       >
                         Verwijderen
@@ -203,16 +253,18 @@ export default function PlanningWeekOverzicht({
 
                 {dienst.tags.length > 0 && (
                   <div className="mt-4 flex flex-wrap gap-2 border-t pt-3">
-                    {dienst.tags.map((dienstTag) => (
-                      <span
-                        key={dienstTag.id}
-                        className="rounded-full border bg-gray-50 px-3 py-1 text-xs text-gray-700"
-                      >
-                        {dienstTag.tag.naam}
-                        {dienstTag.aantal > 1 &&
-                          ` × ${dienstTag.aantal}`}
-                      </span>
-                    ))}
+                    {dienst.tags.map(
+                      (dienstTag) => (
+                        <span
+                          key={dienstTag.id}
+                          className="rounded-full border bg-gray-50 px-3 py-1 text-xs text-gray-700"
+                        >
+                          {dienstTag.tag.naam}
+                          {dienstTag.aantal > 1 &&
+                            ` × ${dienstTag.aantal}`}
+                        </span>
+                      ),
+                    )}
                   </div>
                 )}
 

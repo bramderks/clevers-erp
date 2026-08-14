@@ -891,12 +891,6 @@ export type $WeekPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     /**
      * -----------------------------------------------------
      * Beschikbaarheidsdeadline
-     * 
-     * Tot en met dit moment mag een medewerker zijn/haar
-     * eigen beschikbaarheid toevoegen, wijzigen en verwijderen.
-     * 
-     * Na deze deadline kan alleen een eigenaar wijzigingen
-     * uitvoeren.
      * -----------------------------------------------------
      */
     beschikbaarheidDeadline: Date | null

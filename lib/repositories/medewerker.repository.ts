@@ -3,7 +3,11 @@ import { prisma } from "@/lib/prisma";
 type MedewerkerUpdateData = {
   personeelsnummer?: string | null;
 
-  aanhef?: "DHR" | "MEVR" | "ANDERS" | "GEEN_OPGAVE";
+  aanhef?:
+    | "DHR"
+    | "MEVR"
+    | "ANDERS"
+    | "GEEN_OPGAVE";
 
   voornaam?: string;
   tussenvoegsel?: string | null;
@@ -15,19 +19,72 @@ type MedewerkerUpdateData = {
   email?: string;
   telefoon?: string;
 
-  contractType?: "OPROEP" | "VAST" | null;
+  contractType?:
+    | "OPROEP"
+    | "VAST"
+    | null;
 
   contractUren?: number | null;
-
   uurloon?: number | null;
 
   datumInDienst?: Date | null;
   datumUitDienst?: Date | null;
 };
 
+type FindAllOptions = {
+  organisatieIds?: string[];
+  vestigingIds?: string[];
+};
+
 export const medewerkerRepository = {
-  async findAll() {
+  async findAll(
+    options: FindAllOptions = {},
+  ) {
+    const {
+      organisatieIds,
+      vestigingIds,
+    } = options;
+
+    const heeftOrganisatieFilter =
+      organisatieIds !== undefined;
+
+    const heeftVestigingFilter =
+      vestigingIds !== undefined;
+
     return prisma.medewerker.findMany({
+      where: {
+        ...(heeftOrganisatieFilter ||
+        heeftVestigingFilter
+          ? {
+              vestigingen: {
+                some: {
+                  ...(heeftOrganisatieFilter
+                    ? {
+                        vestiging: {
+                          organisatieId: {
+                            in:
+                              organisatieIds ??
+                              [],
+                          },
+                        },
+                      }
+                    : {}),
+
+                  ...(heeftVestigingFilter
+                    ? {
+                        vestigingId: {
+                          in:
+                            vestigingIds ??
+                            [],
+                        },
+                      }
+                    : {}),
+                },
+              },
+            }
+          : {}),
+      },
+
       include: {
         status: true,
 
@@ -58,6 +115,28 @@ export const medewerkerRepository = {
               begintijd: "asc",
             },
           ],
+        },
+
+        diensten: {
+          include: {
+            dienst: {
+              include: {
+                week: true,
+
+                tags: {
+                  include: {
+                    tag: true,
+                  },
+                },
+              },
+            },
+          },
+
+          orderBy: {
+            dienst: {
+              datum: "asc",
+            },
+          },
         },
       },
 
@@ -160,8 +239,11 @@ export const medewerkerRepository = {
 
       data: {
         statusId,
+
         ...(actief !== undefined
-          ? { actief }
+          ? {
+              actief,
+            }
           : {}),
       },
     });
@@ -201,114 +283,144 @@ export const medewerkerRepository = {
       );
     }
 
-    return prisma.$transaction(async (tx) => {
-      await tx.medewerkerVestiging.deleteMany({
-        where: {
-          medewerkerId,
-        },
-      });
+    return prisma.$transaction(
+      async (tx) => {
+        await tx.medewerkerVestiging.deleteMany(
+          {
+            where: {
+              medewerkerId,
+            },
+          },
+        );
 
-      await tx.medewerkerVestiging.createMany({
-        data: vestigingIds.map(
-          (vestigingId) => ({
-            medewerkerId,
-            vestigingId,
-            hoofdvestiging:
-              vestigingId ===
-              hoofdvestigingId,
-          }),
-        ),
-      });
+        if (vestigingIds.length > 0) {
+          await tx.medewerkerVestiging.createMany(
+            {
+              data: vestigingIds.map(
+                (vestigingId) => ({
+                  medewerkerId,
+                  vestigingId,
+                  hoofdvestiging:
+                    vestigingId ===
+                    hoofdvestigingId,
+                }),
+              ),
+            },
+          );
+        }
 
-      return tx.medewerkerVestiging.findMany({
-        where: {
-          medewerkerId,
-        },
+        return tx.medewerkerVestiging.findMany(
+          {
+            where: {
+              medewerkerId,
+            },
 
-        include: {
-          vestiging: true,
-        },
+            include: {
+              vestiging: true,
+            },
 
-        orderBy: {
-          hoofdvestiging: "desc",
-        },
-      });
-    });
+            orderBy: {
+              hoofdvestiging: "desc",
+            },
+          },
+        );
+      },
+    );
   },
 
   async setRollen(
     medewerkerId: string,
     rolIds: string[],
   ) {
-    return prisma.$transaction(async (tx) => {
-      await tx.medewerkerRol.deleteMany({
-        where: {
-          medewerkerId,
-        },
-      });
-
-      if (rolIds.length > 0) {
-        await tx.medewerkerRol.createMany({
-          data: rolIds.map((rolId) => ({
-            medewerkerId,
-            rolId,
-          })),
-        });
-      }
-
-      return tx.medewerkerRol.findMany({
-        where: {
-          medewerkerId,
-        },
-
-        include: {
-          rol: true,
-        },
-
-        orderBy: {
-          rol: {
-            naam: "asc",
+    return prisma.$transaction(
+      async (tx) => {
+        await tx.medewerkerRol.deleteMany(
+          {
+            where: {
+              medewerkerId,
+            },
           },
-        },
-      });
-    });
+        );
+
+        if (rolIds.length > 0) {
+          await tx.medewerkerRol.createMany(
+            {
+              data: rolIds.map(
+                (rolId) => ({
+                  medewerkerId,
+                  rolId,
+                }),
+              ),
+            },
+          );
+        }
+
+        return tx.medewerkerRol.findMany(
+          {
+            where: {
+              medewerkerId,
+            },
+
+            include: {
+              rol: true,
+            },
+
+            orderBy: {
+              rol: {
+                naam: "asc",
+              },
+            },
+          },
+        );
+      },
+    );
   },
 
   async setTags(
     medewerkerId: string,
     tagIds: string[],
   ) {
-    return prisma.$transaction(async (tx) => {
-      await tx.medewerkerTag.deleteMany({
-        where: {
-          medewerkerId,
-        },
-      });
-
-      if (tagIds.length > 0) {
-        await tx.medewerkerTag.createMany({
-          data: tagIds.map((tagId) => ({
-            medewerkerId,
-            tagId,
-          })),
-        });
-      }
-
-      return tx.medewerkerTag.findMany({
-        where: {
-          medewerkerId,
-        },
-
-        include: {
-          tag: true,
-        },
-
-        orderBy: {
-          tag: {
-            volgorde: "asc",
+    return prisma.$transaction(
+      async (tx) => {
+        await tx.medewerkerTag.deleteMany(
+          {
+            where: {
+              medewerkerId,
+            },
           },
-        },
-      });
-    });
+        );
+
+        if (tagIds.length > 0) {
+          await tx.medewerkerTag.createMany(
+            {
+              data: tagIds.map(
+                (tagId) => ({
+                  medewerkerId,
+                  tagId,
+                }),
+              ),
+            },
+          );
+        }
+
+        return tx.medewerkerTag.findMany(
+          {
+            where: {
+              medewerkerId,
+            },
+
+            include: {
+              tag: true,
+            },
+
+            orderBy: {
+              tag: {
+                volgorde: "asc",
+              },
+            },
+          },
+        );
+      },
+    );
   },
 };

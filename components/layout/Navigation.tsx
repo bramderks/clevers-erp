@@ -80,7 +80,8 @@ export default function Navigation({
                   style={{
                     color:
                       theme.colors
-                        .sidebar.group,
+                        .sidebar
+                        .group,
                   }}
                 >
                   {group.group}

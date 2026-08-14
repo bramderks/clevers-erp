@@ -62,6 +62,10 @@ model Medewerker {
 
   beschikbaarheden Beschikbaarheid[]
   diensten DienstBezetting[]
+  urenregistraties UrenRegistratie[]
+
+  ruilverzoekenAangevraagd Ruilverzoek[] @relation("RuilverzoekenAangevraagd")
+  ruilverzoekenOntvangen Ruilverzoek[] @relation("RuilverzoekenOntvangen")
 
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt

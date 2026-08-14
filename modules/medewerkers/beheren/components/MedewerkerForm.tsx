@@ -81,69 +81,10 @@ function formatDate(
   return date.toISOString().slice(0, 10);
 }
 
-function formatAanhef(
-  value: Medewerker["aanhef"],
-) {
-  switch (value) {
-    case "DHR":
-      return "Dhr.";
-    case "MEVR":
-      return "Mevr.";
-    case "ANDERS":
-      return "Anders";
-    case "GEEN_OPGAVE":
-      return "Geen opgave";
-  }
-}
-
-function formatContractType(
-  value: Medewerker["contractType"],
-) {
-  switch (value) {
-    case "OPROEP":
-      return "Oproep";
-    case "TIJDELIJK":
-      return "Tijdelijk";
-    case "VAST":
-      return "Vast";
-    case "STAGIAIR":
-      return "Stagiair";
-    case "VAKANTIEKRACHT":
-      return "Vakantiekracht";
-    default:
-      return "Nog niet ingevuld";
-  }
-}
-
-function formatUurloon(
-  value: number | string | null,
-) {
-  if (
-    value === null ||
-    value === undefined ||
-    value === ""
-  ) {
-    return "Niet ingevuld";
-  }
-
-  const bedrag = Number(value);
-
-  if (Number.isNaN(bedrag)) {
-    return "Niet ingevuld";
-  }
-
-  return `€ ${bedrag
-    .toFixed(2)
-    .replace(".", ",")}`;
-}
-
 export default function MedewerkerForm({
   medewerker,
   vestigingId,
 }: MedewerkerFormProps) {
-  const [bewerken, setBewerken] =
-    useState(false);
-
   const [tags, setTags] = useState<
     PlanningTag[]
   >([]);
@@ -220,6 +161,7 @@ export default function MedewerkerForm({
     async function laadTags() {
       try {
         setLadenTags(true);
+        setError("");
 
         const response = await fetch(
           `/api/planning/tags?vestigingId=${encodeURIComponent(
@@ -236,6 +178,7 @@ export default function MedewerkerForm({
         if (!response.ok) {
           throw new Error(
             data?.fout ??
+              data?.error ??
               "De planningstags konden niet worden opgehaald.",
           );
         }
@@ -288,63 +231,6 @@ export default function MedewerkerForm({
     setSuccess("");
   }
 
-  function resetForm() {
-    setForm({
-      personeelsnummer:
-        medewerker.personeelsnummer ?? "",
-
-      aanhef: medewerker.aanhef,
-
-      voornaam: medewerker.voornaam,
-
-      tussenvoegsel:
-        medewerker.tussenvoegsel ?? "",
-
-      achternaam: medewerker.achternaam,
-
-      roepnaam:
-        medewerker.roepnaam ?? "",
-
-      geboortedatum: formatDate(
-        medewerker.geboortedatum,
-      ),
-
-      email: medewerker.email,
-
-      telefoon: medewerker.telefoon,
-
-      contractType:
-        medewerker.contractType ?? "",
-
-      contractUren:
-        medewerker.contractUren?.toString() ?? "",
-
-      uurloon:
-        medewerker.uurloon?.toString() ?? "",
-
-      datumInDienst: formatDate(
-        medewerker.datumInDienst,
-      ),
-
-      datumUitDienst: formatDate(
-        medewerker.datumUitDienst,
-      ),
-    });
-
-    setGeselecteerdeTags(
-      medewerker.tags.map(
-        (tag) => tag.id,
-      ),
-    );
-  }
-
-  function annuleren() {
-    resetForm();
-    setError("");
-    setSuccess("");
-    setBewerken(false);
-  }
-
   async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>,
   ) {
@@ -355,54 +241,99 @@ export default function MedewerkerForm({
     setSuccess("");
 
     try {
+      if (!form.voornaam.trim()) {
+        throw new Error(
+          "Voornaam is verplicht.",
+        );
+      }
+
+      if (!form.achternaam.trim()) {
+        throw new Error(
+          "Achternaam is verplicht.",
+        );
+      }
+
+      if (!form.geboortedatum) {
+        throw new Error(
+          "Geboortedatum is verplicht.",
+        );
+      }
+
+      if (!form.email.trim()) {
+        throw new Error(
+          "E-mailadres is verplicht.",
+        );
+      }
+
+      if (!form.telefoon.trim()) {
+        throw new Error(
+          "Telefoonnummer is verplicht.",
+        );
+      }
+
       const response = await fetch(
         `/api/medewerkers/${medewerker.id}`,
         {
           method: "PATCH",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
           body: JSON.stringify({
             personeelsnummer:
-              form.personeelsnummer || null,
+              form.personeelsnummer ||
+              null,
 
             aanhef: form.aanhef,
 
-            voornaam: form.voornaam,
+            voornaam:
+              form.voornaam.trim(),
 
             tussenvoegsel:
-              form.tussenvoegsel || null,
+              form.tussenvoegsel.trim() ||
+              null,
 
-            achternaam: form.achternaam,
+            achternaam:
+              form.achternaam.trim(),
 
             roepnaam:
-              form.roepnaam || null,
+              form.roepnaam.trim() ||
+              null,
 
             geboortedatum:
               form.geboortedatum,
 
-            email: form.email,
+            email:
+              form.email.trim(),
 
-            telefoon: form.telefoon,
+            telefoon:
+              form.telefoon.trim(),
 
             contractType:
-              form.contractType || null,
+              form.contractType ||
+              null,
 
             contractUren:
               form.contractUren
-                ? Number(form.contractUren)
+                ? Number(
+                    form.contractUren,
+                  )
                 : null,
 
             uurloon:
               form.uurloon
-                ? Number(form.uurloon)
+                ? Number(
+                    form.uurloon,
+                  )
                 : null,
 
             datumInDienst:
-              form.datumInDienst || null,
+              form.datumInDienst ||
+              null,
 
             datumUitDienst:
-              form.datumUitDienst || null,
+              form.datumUitDienst ||
+              null,
 
             tagIds:
               geselecteerdeTags,
@@ -423,8 +354,6 @@ export default function MedewerkerForm({
       setSuccess(
         "De gegevens zijn succesvol opgeslagen.",
       );
-
-      setBewerken(false);
     } catch (error) {
       setError(
         error instanceof Error
@@ -434,233 +363,6 @@ export default function MedewerkerForm({
     } finally {
       setSaving(false);
     }
-  }
-
-  if (!bewerken) {
-    return (
-      <div className="space-y-8">
-        {success && (
-          <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-            {success}
-          </div>
-        )}
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              Personeelsnummer
-            </p>
-
-            <p className="mt-1 text-sm font-medium text-slate-900">
-              {medewerker.personeelsnummer ||
-                "Niet ingevuld"}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              Aanhef
-            </p>
-
-            <p className="mt-1 text-sm font-medium text-slate-900">
-              {formatAanhef(
-                medewerker.aanhef,
-              )}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              Voornaam
-            </p>
-
-            <p className="mt-1 text-sm font-medium text-slate-900">
-              {medewerker.voornaam}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              Tussenvoegsel
-            </p>
-
-            <p className="mt-1 text-sm font-medium text-slate-900">
-              {medewerker.tussenvoegsel ||
-                "Niet ingevuld"}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              Achternaam
-            </p>
-
-            <p className="mt-1 text-sm font-medium text-slate-900">
-              {medewerker.achternaam}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              Roepnaam
-            </p>
-
-            <p className="mt-1 text-sm font-medium text-slate-900">
-              {medewerker.roepnaam ||
-                "Niet ingevuld"}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              Geboortedatum
-            </p>
-
-            <p className="mt-1 text-sm font-medium text-slate-900">
-              {formatDate(
-                medewerker.geboortedatum,
-              ) || "Niet ingevuld"}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              E-mailadres
-            </p>
-
-            <p className="mt-1 text-sm font-medium text-slate-900">
-              {medewerker.email}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              Telefoonnummer
-            </p>
-
-            <p className="mt-1 text-sm font-medium text-slate-900">
-              {medewerker.telefoon}
-            </p>
-          </div>
-        </div>
-
-        <div className="border-t border-slate-200 pt-6">
-          <h2 className="text-lg font-semibold text-slate-900">
-            Dienstverband
-          </h2>
-
-          <p className="mt-1 text-sm text-slate-500">
-            Deze gegevens worden intern beheerd.
-          </p>
-
-          <div className="mt-6 grid gap-6 lg:grid-cols-2">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                Contracttype
-              </p>
-
-              <p className="mt-1 text-sm font-medium text-slate-900">
-                {formatContractType(
-                  medewerker.contractType,
-                )}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                Contracturen per week
-              </p>
-
-              <p className="mt-1 text-sm font-medium text-slate-900">
-                {medewerker.contractUren ??
-                  "Niet ingevuld"}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                Uurloon
-              </p>
-
-              <p className="mt-1 text-sm font-medium text-slate-900">
-                {formatUurloon(
-                  medewerker.uurloon,
-                )}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                Datum in dienst
-              </p>
-
-              <p className="mt-1 text-sm font-medium text-slate-900">
-                {formatDate(
-                  medewerker.datumInDienst,
-                ) || "Niet ingevuld"}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                Datum uit dienst
-              </p>
-
-              <p className="mt-1 text-sm font-medium text-slate-900">
-                {formatDate(
-                  medewerker.datumUitDienst,
-                ) || "Niet ingevuld"}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t border-slate-200 pt-6">
-          <h2 className="text-lg font-semibold text-slate-900">
-            Planningstags
-          </h2>
-
-          <p className="mt-1 text-sm text-slate-500">
-            Taken die deze medewerker
-            kan uitvoeren.
-          </p>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            {medewerker.tags.length ===
-            0 ? (
-              <span className="text-sm text-slate-500">
-                Geen planningstags
-                gekoppeld.
-              </span>
-            ) : (
-              medewerker.tags.map(
-                (tag) => (
-                  <span
-                    key={tag.id}
-                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-700"
-                  >
-                    {tag.naam}
-                  </span>
-                ),
-              )
-            )}
-          </div>
-        </div>
-
-        <div className="flex justify-end border-t border-slate-200 pt-6">
-          <Button
-            type="button"
-            onClick={() => {
-              setError("");
-              setSuccess("");
-              setBewerken(true);
-            }}
-          >
-            Gegevens bewerken
-          </Button>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -681,7 +383,9 @@ export default function MedewerkerForm({
         <Input
           label="Personeelsnummer"
           name="personeelsnummer"
-          value={form.personeelsnummer}
+          value={
+            form.personeelsnummer
+          }
           onChange={(event) =>
             updateField(
               "personeelsnummer",
@@ -713,12 +417,15 @@ export default function MedewerkerForm({
             <option value="DHR">
               Dhr.
             </option>
+
             <option value="MEVR">
               Mevr.
             </option>
+
             <option value="ANDERS">
               Anders
             </option>
+
             <option value="GEEN_OPGAVE">
               Geen opgave
             </option>
@@ -741,7 +448,9 @@ export default function MedewerkerForm({
         <Input
           label="Tussenvoegsel"
           name="tussenvoegsel"
-          value={form.tussenvoegsel}
+          value={
+            form.tussenvoegsel
+          }
           onChange={(event) =>
             updateField(
               "tussenvoegsel",
@@ -779,7 +488,9 @@ export default function MedewerkerForm({
           label="Geboortedatum"
           name="geboortedatum"
           type="date"
-          value={form.geboortedatum}
+          value={
+            form.geboortedatum
+          }
           onChange={(event) =>
             updateField(
               "geboortedatum",
@@ -824,7 +535,8 @@ export default function MedewerkerForm({
         </h2>
 
         <p className="mt-1 text-sm text-slate-500">
-          Deze gegevens worden intern beheerd.
+          Deze gegevens worden
+          intern beheerd.
         </p>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
@@ -839,7 +551,9 @@ export default function MedewerkerForm({
             <select
               id="contractType"
               name="contractType"
-              value={form.contractType}
+              value={
+                form.contractType
+              }
               onChange={(event) =>
                 updateField(
                   "contractType",
@@ -880,7 +594,9 @@ export default function MedewerkerForm({
             type="number"
             min="0"
             step="0.25"
-            value={form.contractUren}
+            value={
+              form.contractUren
+            }
             onChange={(event) =>
               updateField(
                 "contractUren",
@@ -908,7 +624,9 @@ export default function MedewerkerForm({
             label="Datum in dienst"
             name="datumInDienst"
             type="date"
-            value={form.datumInDienst}
+            value={
+              form.datumInDienst
+            }
             onChange={(event) =>
               updateField(
                 "datumInDienst",
@@ -921,7 +639,9 @@ export default function MedewerkerForm({
             label="Datum uit dienst"
             name="datumUitDienst"
             type="date"
-            value={form.datumUitDienst}
+            value={
+              form.datumUitDienst
+            }
             onChange={(event) =>
               updateField(
                 "datumUitDienst",
@@ -962,15 +682,18 @@ export default function MedewerkerForm({
               return (
                 <label
                   key={tag.id}
-                  className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition ${
+                  className={[
+                    "flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition",
                     geselecteerd
                       ? "border-cyan-400 bg-cyan-50"
-                      : "border-slate-200 bg-white hover:bg-slate-50"
-                  }`}
+                      : "border-slate-200 bg-white hover:bg-slate-50",
+                  ].join(" ")}
                 >
                   <input
                     type="checkbox"
-                    checked={geselecteerd}
+                    checked={
+                      geselecteerd
+                    }
                     onChange={() =>
                       toggleTag(tag.id)
                     }
@@ -987,15 +710,7 @@ export default function MedewerkerForm({
         )}
       </div>
 
-      <div className="flex justify-end gap-3 border-t border-slate-200 pt-6">
-        <Button
-          type="button"
-          onClick={annuleren}
-          disabled={saving}
-        >
-          Annuleren
-        </Button>
-
+      <div className="flex justify-end border-t border-slate-200 pt-6">
         <Button
           type="submit"
           disabled={saving}

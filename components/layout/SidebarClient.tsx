@@ -1,6 +1,5 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import Logo from "./Logo";
@@ -15,6 +14,8 @@ type SidebarClientProps = {
   initialen: string;
   permissions: string[];
   isEigenaar: boolean;
+  isTeamleider?: boolean;
+  isMedewerker?: boolean;
 };
 
 export default function SidebarClient({
@@ -23,11 +24,20 @@ export default function SidebarClient({
   initialen,
   permissions,
   isEigenaar,
+  isTeamleider = false,
+  isMedewerker = false,
 }: SidebarClientProps) {
-  const pathname = usePathname();
-
   const [hovered, setHovered] =
     useState(false);
+
+  const gebruikerstype =
+    isEigenaar
+      ? "Eigenaar"
+      : isTeamleider
+        ? "Teamleider"
+        : isMedewerker
+          ? "Medewerker"
+          : rol;
 
   return (
     <aside
@@ -59,84 +69,22 @@ export default function SidebarClient({
               : "justify-center px-3"
           }`}
         >
-          <div
-            className={`overflow-hidden ${
-              hovered
-                ? "w-full"
-                : "w-[42px]"
-            }`}
-          >
-            <Logo />
-          </div>
-        </div>
-
-        {/* Actieve vestiging */}
-        <div
-          className={`shrink-0 transition-all duration-150 ${
-            hovered
-              ? "mx-4 opacity-100"
-              : "mx-3 h-0 overflow-hidden opacity-0"
-          }`}
-        >
-          <div
-            className="rounded-2xl p-5"
-            style={{
-              background:
-                "rgba(255,255,255,.08)",
-              backdropFilter:
-                "blur(12px)",
-            }}
-          >
-            <p
-              className="text-xs uppercase tracking-[0.18em]"
-              style={{
-                color:
-                  theme.colors.sidebar
-                    .muted,
-              }}
-            >
-              Actieve vestiging
-            </p>
-
-            <h3
-              className="mt-2 text-lg font-semibold"
-              style={{
-                color:
-                  theme.colors.sidebar
-                    .text,
-              }}
-            >
-              {app.defaultVestiging}
-            </h3>
-
-            <p
-              className="mt-1 text-sm"
-              style={{
-                color:
-                  theme.colors.sidebar
-                    .muted,
-              }}
-            >
-              Clevers IJsbar
-            </p>
-          </div>
+          <Logo
+            compact={!hovered}
+          />
         </div>
 
         {/* Navigatie */}
         <div
-          className={`mt-8 flex-1 overflow-y-auto ${
+          className={`min-h-0 flex-1 overflow-y-auto ${
             hovered
-              ? "px-5"
-              : "px-3"
+              ? "mt-6 px-5"
+              : "mt-6 px-3"
           }`}
         >
           <Navigation
-            permissions={
-              permissions
-            }
-            isEigenaar={
-              isEigenaar
-            }
+            permissions={permissions}
+            isEigenaar={isEigenaar}
             ingeklapt={!hovered}
           />
         </div>
@@ -172,6 +120,7 @@ export default function SidebarClient({
                   : "justify-center"
               }`}
             >
+              {/* Initialen */}
               <div
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-bold"
                 style={{
@@ -184,6 +133,7 @@ export default function SidebarClient({
                 {initialen}
               </div>
 
+              {/* Naam + rol */}
               {hovered && (
                 <div className="min-w-0 flex-1">
                   <p
@@ -207,12 +157,13 @@ export default function SidebarClient({
                           .muted,
                     }}
                   >
-                    {rol}
+                    {gebruikerstype}
                   </p>
                 </div>
               )}
             </div>
 
+            {/* Versie */}
             {hovered && (
               <div
                 className="mt-4 border-t pt-4 text-xs"
@@ -220,7 +171,8 @@ export default function SidebarClient({
                   borderColor:
                     "rgba(255,255,255,.08)",
                   color:
-                    theme.colors.sidebar
+                    theme.colors
+                      .sidebar
                       .muted,
                 }}
               >

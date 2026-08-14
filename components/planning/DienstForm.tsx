@@ -50,7 +50,7 @@ type PlanningMedewerker = {
       id: string;
       datum: string;
       begintijd: string;
-      eindtijd: string;
+      eindtijd: string | null;
       tags: {
         tag: {
           id: string;
@@ -142,7 +142,7 @@ function dienstOverlapt(
   dienst: Dienst,
   datum: string,
   begintijd: string,
-  eindtijd: string,
+  eindtijd: string | null,
 ) {
   if (
     datumVanDienst(dienst) !== datum
@@ -157,7 +157,7 @@ function dienstOverlapt(
 
   const bestaandeEinde =
     new Date(
-      dienst.eindtijd,
+      dienst.eindtijd ?? `${datum}T23:00:00`,
     ).getTime();
 
   const nieuweStart =
@@ -167,7 +167,7 @@ function dienstOverlapt(
 
   const nieuweEinde =
     new Date(
-      `${datum}T${eindtijd}`,
+      `${datum}T${eindtijd ?? "23:00"}`,
     ).getTime();
 
   if (
@@ -213,7 +213,7 @@ function beschikbaarheidsNiveau(
   medewerker: PlanningMedewerker,
   datum: string,
   begintijd: string,
-  eindtijd: string,
+  eindtijd: string | null,
 ) {
   const beschikbaarheden =
     medewerker.beschikbaarheden.filter(
@@ -239,7 +239,7 @@ function beschikbaarheidsNiveau(
 
   const dienstEinde =
     tijdNaarMinuten(
-      eindtijd,
+      eindtijd ?? "23:00",
     );
 
   if (
@@ -344,7 +344,7 @@ function medewerkerHeeftDienstOverlap(
   medewerker: PlanningMedewerker,
   datum: string,
   begintijd: string,
-  eindtijd: string,
+  eindtijd: string | null,
 ) {
   return medewerker.diensten.some(
     (bezetting) => {
@@ -362,7 +362,7 @@ function medewerkerHeeftDienstOverlap(
 
       const bestaandeEinde =
         new Date(
-          bezetting.dienst.eindtijd,
+          bezetting.dienst.eindtijd ?? `${datum}T23:00:00`,
         ).getTime();
 
       const nieuweStart =
@@ -372,7 +372,7 @@ function medewerkerHeeftDienstOverlap(
 
       const nieuweEinde =
         new Date(
-          `${datum}T${eindtijd}`,
+          `${datum}T${eindtijd ?? "23:00"}`,
         ).getTime();
 
       if (
@@ -417,8 +417,12 @@ function dienstHeeftTag(
 }
 
 function formatteerDienstTijd(
-  datum: string,
+  datum: string | null,
 ) {
+  if (!datum) {
+    return "geen eindtijd";
+  }
+
   return new Intl.DateTimeFormat(
     "nl-NL",
     {
@@ -697,7 +701,6 @@ export default function DienstForm({
   useEffect(() => {
     if (
       !begintijd ||
-      !eindtijd ||
       !datum ||
       Object.keys(
         geselecteerdeTags,
@@ -784,7 +787,6 @@ export default function DienstForm({
       if (
         !datum ||
         !begintijd ||
-        !eindtijd ||
         Object.keys(
           geselecteerdeTags,
         ).length === 0
@@ -999,11 +1001,10 @@ export default function DienstForm({
 
     if (
       !datum ||
-      !begintijd ||
-      !eindtijd
+      !begintijd
     ) {
       setFout(
-        "Datum, begintijd en eindtijd zijn verplicht.",
+        "Datum en begintijd zijn verplicht.",
       );
 
       return;
@@ -1015,24 +1016,29 @@ export default function DienstForm({
       );
 
     const eindeMinuten =
-      tijdNaarMinuten(
-        eindtijd,
+      eindtijd
+        ? tijdNaarMinuten(eindtijd)
+        : null;
+
+    if (startMinuten === null) {
+      setFout(
+        "Vul een geldige begintijd in.",
       );
 
-    if (
-      startMinuten === null ||
-      eindeMinuten === null
-    ) {
+      return;
+    }
+
+    if (eindtijd && eindeMinuten === null) {
       setFout(
-        "Vul geldige begin- en eindtijden in.",
+        "Vul een geldige eindtijd in.",
       );
 
       return;
     }
 
     if (
-      eindeMinuten <=
-      startMinuten
+      eindeMinuten !== null &&
+      eindeMinuten <= startMinuten
     ) {
       setFout(
         "Eindtijd moet na de begintijd liggen.",
@@ -1043,7 +1049,8 @@ export default function DienstForm({
 
     if (
       startMinuten % 15 !== 0 ||
-      eindeMinuten % 15 !== 0
+      (eindeMinuten !== null &&
+        eindeMinuten % 15 !== 0)
     ) {
       setFout(
         "Diensten kunnen alleen per 15 minuten worden gepland.",
@@ -1064,8 +1071,8 @@ export default function DienstForm({
     }
 
     if (
-      eindeMinuten >
-      EINDE_MINUTEN
+      eindeMinuten !== null &&
+      eindeMinuten > EINDE_MINUTEN
     ) {
       setFout(
         "Een dienst kan niet na 23:00 eindigen.",
@@ -1093,9 +1100,11 @@ export default function DienstForm({
         `${datum}T${begintijd}`,
       );
 
-      const einde = new Date(
-        `${datum}T${eindtijd}`,
-      );
+      const einde = eindtijd
+        ? new Date(
+            `${datum}T${eindtijd}`,
+          )
+        : null;
 
       const response =
         await fetch(
@@ -1114,7 +1123,9 @@ export default function DienstForm({
               begintijd:
                 start.toISOString(),
               eindtijd:
-                einde.toISOString(),
+                einde
+                  ? einde.toISOString()
+                  : null,
               opmerkingen:
                 opmerkingen.trim() ||
                 null,
@@ -1264,23 +1275,21 @@ export default function DienstForm({
             htmlFor="dienst-eindtijd"
             className="block text-sm font-medium text-gray-900"
           >
-            Eindtijd
+            Eindtijd (optioneel)
           </label>
 
           <select
             id="dienst-eindtijd"
             value={eindtijd}
             onChange={(event) => {
-              setEindtijd(
-                event.target.value,
-              );
-              setTotSluit(false);
+              const waarde = event.target.value;
+              setEindtijd(waarde);
+              setTotSluit(waarde === "23:00");
             }}
             className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-900"
-            required
           >
             <option value="">
-              Kies tijd
+              Geen eindtijd
             </option>
 
             {eindTijden.map(
@@ -1299,11 +1308,14 @@ export default function DienstForm({
             <input
               type="checkbox"
               checked={totSluit}
-              onChange={(event) =>
-                setTotSluit(
-                  event.target.checked,
-                )
-              }
+              onChange={(event) => {
+                const aangevinkt =
+                  event.target.checked;
+                setTotSluit(aangevinkt);
+                setEindtijd(
+                  aangevinkt ? "23:00" : "",
+                );
+              }}
             />
 
             <span>
@@ -1486,11 +1498,9 @@ export default function DienstForm({
             Medewerkers en
             beschikbaarheid laden...
           </p>
-        ) : !begintijd ||
-          !eindtijd ? (
+        ) : !begintijd ? (
           <p className="mt-4 text-sm text-gray-500">
-            Kies eerst een begin-
-            en eindtijd.
+            Kies eerst een begintijd.
           </p>
         ) : passendeMedewerkers.length ===
           0 ? (

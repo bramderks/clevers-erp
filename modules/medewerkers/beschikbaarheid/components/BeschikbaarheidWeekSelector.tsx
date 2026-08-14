@@ -23,7 +23,7 @@ type Week = {
 type BeschikbaarheidWeekSelectorProps = {
   vestigingen: Vestiging[];
   medewerkerId: string;
-  isEigenaar: boolean;
+  isBeheerder: boolean;
   onSelected: (
     vestigingId: string,
     week: Week,
@@ -77,6 +77,72 @@ function getISOWeek(
     jaar,
     weeknummer,
   };
+}
+
+function getAantalISOWeken(
+  jaar: number,
+): number {
+  return getISOWeek(
+    new Date(
+      jaar,
+      11,
+      28,
+    ),
+  ).weeknummer;
+}
+
+function getDatumVanISOWeek(
+  jaar: number,
+  weeknummer: number,
+): Date {
+  const vierdeJanuari = new Date(
+    Date.UTC(
+      jaar,
+      0,
+      4,
+    ),
+  );
+
+  const dag =
+    vierdeJanuari.getUTCDay() || 7;
+
+  const maandag = new Date(
+    vierdeJanuari,
+  );
+
+  maandag.setUTCDate(
+    vierdeJanuari.getUTCDate() -
+      dag +
+      1 +
+      (weeknummer - 1) * 7,
+  );
+
+  return maandag;
+}
+
+function formatWeekDatum(
+  datum: Date,
+): string {
+  return datum.toLocaleDateString(
+    "nl-NL",
+    {
+      day: "numeric",
+      month: "long",
+    },
+  );
+}
+
+function formatWeekDatumKort(
+  datum: Date,
+): string {
+  return datum.toLocaleDateString(
+    "nl-NL",
+    {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    },
+  );
 }
 
 function formatDeadline(
@@ -171,7 +237,7 @@ function naarInputDatumTijd(
 export default function BeschikbaarheidWeekSelector({
   vestigingen,
   medewerkerId,
-  isEigenaar,
+  isBeheerder,
   onSelected,
 }: BeschikbaarheidWeekSelectorProps) {
   const vandaag = new Date();
@@ -184,9 +250,10 @@ export default function BeschikbaarheidWeekSelector({
       vestigingen[0]?.id ?? "",
     );
 
-  const [jaar, setJaar] = useState(
-    huidigeWeek.jaar,
-  );
+  const [jaar, setJaar] =
+    useState(
+      huidigeWeek.jaar,
+    );
 
   const [weeknummer, setWeeknummer] =
     useState(
@@ -199,8 +266,10 @@ export default function BeschikbaarheidWeekSelector({
   const [loading, setLoading] =
     useState(false);
 
-  const [savingDeadline, setSavingDeadline] =
-    useState(false);
+  const [
+    savingDeadline,
+    setSavingDeadline,
+  ] = useState(false);
 
   const [error, setError] =
     useState("");
@@ -222,12 +291,13 @@ export default function BeschikbaarheidWeekSelector({
       setError("");
 
       try {
-        const response = await fetch(
-          `/api/vestigingen/${vestigingId}/weken?jaar=${jaar}&weeknummer=${weeknummer}`,
-          {
-            cache: "no-store",
-          },
-        );
+        const response =
+          await fetch(
+            `/api/vestigingen/${vestigingId}/weken?jaar=${jaar}&weeknummer=${weeknummer}`,
+            {
+              cache: "no-store",
+            },
+          );
 
         const resultaat =
           await response.json();
@@ -324,7 +394,10 @@ export default function BeschikbaarheidWeekSelector({
   ]);
 
   async function deadlineOpslaan() {
-    if (!week) {
+    if (
+      !week ||
+      !isBeheerder
+    ) {
       return;
     }
 
@@ -332,25 +405,26 @@ export default function BeschikbaarheidWeekSelector({
     setError("");
 
     try {
-      const response = await fetch(
-        `/api/vestigingen/${vestigingId}/weken`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type":
-              "application/json",
+      const response =
+        await fetch(
+          `/api/vestigingen/${vestigingId}/weken`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              weekId: week.id,
+              beschikbaarheidDeadline:
+                deadlineWaarde
+                  ? new Date(
+                      deadlineWaarde,
+                    ).toISOString()
+                  : null,
+            }),
           },
-          body: JSON.stringify({
-            weekId: week.id,
-            beschikbaarheidDeadline:
-              deadlineWaarde
-                ? new Date(
-                    deadlineWaarde,
-                  ).toISOString()
-                : null,
-          }),
-        },
-      );
+        );
 
       const resultaat =
         await response.json();
@@ -393,24 +467,39 @@ export default function BeschikbaarheidWeekSelector({
 
   function vorigeWeek() {
     if (weeknummer <= 1) {
-      setJaar(
-        (waarde) => waarde - 1,
-      );
+      const vorigJaar =
+        jaar - 1;
 
-      setWeeknummer(52);
+      setJaar(vorigJaar);
+
+      setWeeknummer(
+        getAantalISOWeken(
+          vorigJaar,
+        ),
+      );
 
       return;
     }
 
     setWeeknummer(
-      (waarde) => waarde - 1,
+      (waarde) =>
+        waarde - 1,
     );
   }
 
   function volgendeWeek() {
-    if (weeknummer >= 52) {
+    const aantalWeken =
+      getAantalISOWeken(
+        jaar,
+      );
+
+    if (
+      weeknummer >=
+      aantalWeken
+    ) {
       setJaar(
-        (waarde) => waarde + 1,
+        (waarde) =>
+          waarde + 1,
       );
 
       setWeeknummer(1);
@@ -419,9 +508,32 @@ export default function BeschikbaarheidWeekSelector({
     }
 
     setWeeknummer(
-      (waarde) => waarde + 1,
+      (waarde) =>
+        waarde + 1,
     );
   }
+
+  const weekStart =
+    getDatumVanISOWeek(
+      jaar,
+      weeknummer,
+    );
+
+  const weekEinde =
+    new Date(
+      weekStart,
+    );
+
+  weekEinde.setUTCDate(
+    weekEinde.getUTCDate() + 6,
+  );
+
+  const weekPeriode =
+    `${formatWeekDatum(
+      weekStart,
+    )} t/m ${formatWeekDatum(
+      weekEinde,
+    )}`;
 
   const deadline =
     week?.beschikbaarheidDeadline ??
@@ -433,242 +545,316 @@ export default function BeschikbaarheidWeekSelector({
     );
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-3">
-        <div>
-          <label
-            htmlFor="vestiging"
-            className="mb-2 block text-sm font-medium text-slate-700"
-          >
-            Vestiging
-          </label>
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-200 px-5 py-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Beschikbaarheidsplanner
+            </p>
 
-          <select
-            id="vestiging"
-            value={vestigingId}
-            onChange={(event) =>
-              setVestigingId(
-                event.target.value,
-              )
-            }
-            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
-          >
-            {vestigingen.map(
-              (vestiging) => (
-                <option
-                  key={vestiging.id}
-                  value={vestiging.id}
-                >
-                  {vestiging.naam}
-                </option>
-              ),
-            )}
-          </select>
-        </div>
+            <h3 className="mt-1 text-lg font-semibold text-slate-900">
+              Week {weeknummer}
+            </h3>
 
-        <div>
-          <label
-            htmlFor="jaar"
-            className="mb-2 block text-sm font-medium text-slate-700"
-          >
-            Jaar
-          </label>
+            <p className="mt-1 text-sm font-medium text-slate-600">
+              {weekPeriode}
+            </p>
 
-          <select
-            id="jaar"
-            value={jaar}
-            onChange={(event) =>
-              setJaar(
-                Number(
-                  event.target.value,
-                ),
-              )
-            }
-            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
-          >
-            {[
-              jaar - 1,
-              jaar,
-              jaar + 1,
-            ].map((waarde) => (
-              <option
-                key={waarde}
-                value={waarde}
-              >
-                {waarde}
-              </option>
-            ))}
-          </select>
-        </div>
+            <p className="mt-1 text-xs text-slate-400">
+              Beschikbaarheid kan worden
+              opgegeven tussen 09:00 en 23:00
+              in stappen van 30 minuten.
+            </p>
+          </div>
 
-        <div>
-          <label
-            htmlFor="weeknummer"
-            className="mb-2 block text-sm font-medium text-slate-700"
-          >
-            Week
-          </label>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={vorigeWeek}
+              disabled={loading}
+              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              ← Vorige
+            </button>
 
-          <select
-            id="weeknummer"
-            value={weeknummer}
-            onChange={(event) =>
-              setWeeknummer(
-                Number(
-                  event.target.value,
-                ),
-              )
-            }
-            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
-          >
-            {Array.from(
-              {
-                length: 53,
-              },
-              (_, index) =>
-                index + 1,
-            ).map((waarde) => (
-              <option
-                key={waarde}
-                value={waarde}
-              >
-                Week {waarde}
-              </option>
-            ))}
-          </select>
+            <button
+              type="button"
+              onClick={volgendeWeek}
+              disabled={loading}
+              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Volgende →
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={vorigeWeek}
-          disabled={loading}
-          className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          ← Vorige week
-        </button>
+      <div className="space-y-5 p-5">
+        <div className="grid gap-4 md:grid-cols-3">
+          <div>
+            <label
+              htmlFor="vestiging"
+              className="mb-2 block text-sm font-medium text-slate-700"
+            >
+              Vestiging
+            </label>
 
-        <div className="text-center">
-          {loading ? (
-            <p className="text-sm text-slate-500">
-              Week laden...
-            </p>
-          ) : (
-            <p className="text-sm font-medium text-slate-700">
-              Week {weeknummer} ·{" "}
-              {jaar}
-            </p>
-          )}
+            <select
+              id="vestiging"
+              value={vestigingId}
+              onChange={(event) =>
+                setVestigingId(
+                  event.target.value,
+                )
+              }
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+            >
+              {vestigingen.map(
+                (vestiging) => (
+                  <option
+                    key={
+                      vestiging.id
+                    }
+                    value={
+                      vestiging.id
+                    }
+                  >
+                    {
+                      vestiging.naam
+                    }
+                  </option>
+                ),
+              )}
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="jaar"
+              className="mb-2 block text-sm font-medium text-slate-700"
+            >
+              Jaar
+            </label>
+
+            <select
+              id="jaar"
+              value={jaar}
+              onChange={(event) =>
+                setJaar(
+                  Number(
+                    event.target.value,
+                  ),
+                )
+              }
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+            >
+              {[
+                jaar - 1,
+                jaar,
+                jaar + 1,
+              ].map(
+                (waarde) => (
+                  <option
+                    key={waarde}
+                    value={waarde}
+                  >
+                    {waarde}
+                  </option>
+                ),
+              )}
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="weeknummer"
+              className="mb-2 block text-sm font-medium text-slate-700"
+            >
+              Weeknummer
+            </label>
+
+            <select
+              id="weeknummer"
+              value={weeknummer}
+              onChange={(event) =>
+                setWeeknummer(
+                  Number(
+                    event.target.value,
+                  ),
+                )
+              }
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+            >
+              {Array.from(
+                {
+                  length:
+                    getAantalISOWeken(
+                      jaar,
+                    ),
+                },
+                (_, index) =>
+                  index + 1,
+              ).map(
+                (waarde) => (
+                  <option
+                    key={waarde}
+                    value={waarde}
+                  >
+                    Week {waarde}
+                  </option>
+                ),
+              )}
+            </select>
+          </div>
         </div>
 
-        <button
-          type="button"
-          onClick={volgendeWeek}
-          disabled={loading}
-          className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Volgende week →
-        </button>
-      </div>
-
-      {week && (
-        <div
-          className={[
-            "rounded-xl border p-4",
-            gesloten
-              ? "border-amber-200 bg-amber-50"
-              : "border-cyan-200 bg-cyan-50",
-          ].join(" ")}
-        >
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold text-slate-900">
-                Beschikbaarheidsdeadline
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Geselecteerde week
+              </p>
+
+              <p className="mt-1 text-base font-semibold text-slate-900">
+                Week {weeknummer} ·{" "}
+                {jaar}
               </p>
 
               <p className="mt-1 text-sm text-slate-600">
-                {deadline
-                  ? formatDeadline(
-                      deadline,
-                    )
-                  : "Er is nog geen deadline ingesteld."}
+                {formatWeekDatumKort(
+                  weekStart,
+                )}{" "}
+                –{" "}
+                {formatWeekDatumKort(
+                  weekEinde,
+                )}
+              </p>
+            </div>
+
+            <div className="text-left sm:text-right">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Beschikbaarheidsvenster
               </p>
 
-              {deadline && (
+              <p className="mt-1 text-sm font-semibold text-slate-900">
+                09:00 – 23:00
+              </p>
+
+              <p className="mt-1 text-xs text-slate-500">
+                Per 30 minuten
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {loading && (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-6 py-5 text-center">
+            <p className="text-sm text-slate-500">
+              Week laden...
+            </p>
+          </div>
+        )}
+
+        {week && !loading && (
+          <div
+            className={[
+              "rounded-xl border p-5",
+              gesloten
+                ? "border-red-200 bg-red-50"
+                : "border-green-200 bg-green-50",
+            ].join(" ")}
+          >
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Beschikbaarheidsdeadline
+                </p>
+
+                <p className="mt-1 text-base font-semibold text-slate-900">
+                  {deadline
+                    ? formatDeadline(
+                        deadline,
+                      )
+                    : "Geen deadline ingesteld"}
+                </p>
+
                 <p
                   className={[
-                    "mt-2 text-xs font-medium",
+                    "mt-2 text-sm font-medium",
                     gesloten
-                      ? "text-amber-700"
-                      : "text-cyan-700",
+                      ? "text-red-700"
+                      : "text-green-700",
                   ].join(" ")}
                 >
                   {gesloten
                     ? "Deadline verstreken"
                     : "Beschikbaarheid is geopend"}
                 </p>
+              </div>
+
+              {isBeheerder && (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                  <div>
+                    <label
+                      htmlFor="beschikbaarheidDeadline"
+                      className="mb-2 block text-sm font-medium text-slate-700"
+                    >
+                      Deadline instellen
+                    </label>
+
+                    <input
+                      id="beschikbaarheidDeadline"
+                      type="datetime-local"
+                      value={
+                        deadlineWaarde
+                      }
+                      onChange={(
+                        event,
+                      ) =>
+                        setDeadlineWaarde(
+                          event
+                            .target
+                            .value,
+                        )
+                      }
+                      className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={
+                      deadlineOpslaan
+                    }
+                    disabled={
+                      savingDeadline
+                    }
+                    className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {savingDeadline
+                      ? "Opslaan..."
+                      : "Deadline opslaan"}
+                  </button>
+                </div>
               )}
             </div>
 
-            {isEigenaar && (
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                <div>
-                  <label
-                    htmlFor="beschikbaarheidDeadline"
-                    className="mb-2 block text-sm font-medium text-slate-700"
-                  >
-                    Deadline instellen
-                  </label>
-
-                  <input
-                    id="beschikbaarheidDeadline"
-                    type="datetime-local"
-                    value={
-                      deadlineWaarde
-                    }
-                    onChange={(event) =>
-                      setDeadlineWaarde(
-                        event.target
-                          .value,
-                      )
-                    }
-                    className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={
-                    deadlineOpslaan
-                  }
-                  disabled={
-                    savingDeadline
-                  }
-                  className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {savingDeadline
-                    ? "Opslaan..."
-                    : "Deadline opslaan"}
-                </button>
-              </div>
+            {isBeheerder && (
+              <p className="mt-4 text-xs text-slate-500">
+                Laat het veld leeg en sla op
+                om de deadline te verwijderen.
+              </p>
             )}
           </div>
+        )}
 
-          {isEigenaar && (
-            <p className="mt-3 text-xs text-slate-500">
-              Laat het veld leeg en sla op om
-              de deadline te verwijderen.
-            </p>
-          )}
-        </div>
-      )}
-
-      {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+        {error && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

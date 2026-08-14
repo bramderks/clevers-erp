@@ -21,13 +21,33 @@ type RouteContext = {
   }>;
 };
 
+type BeschikbaarheidMetWeek = {
+  id: string;
+  medewerkerId: string;
+  weekId: string;
+  datum: Date;
+  begintijd: Date;
+  eindtijd: Date;
+  week: {
+    vestigingId: string;
+    beschikbaarheidDeadline: Date | null;
+  };
+};
+
+/*
+ * ============================================================
+ * BESCHIKBAARHEID
+ * ============================================================
+ */
+
 async function haalBeschikbaarheidOp(
   id: string,
-) {
+): Promise<BeschikbaarheidMetWeek | null> {
   return prisma.beschikbaarheid.findUnique({
     where: {
       id,
     },
+
     select: {
       id: true,
       medewerkerId: true,
@@ -35,6 +55,7 @@ async function haalBeschikbaarheidOp(
       datum: true,
       begintijd: true,
       eindtijd: true,
+
       week: {
         select: {
           vestigingId: true,
@@ -45,6 +66,51 @@ async function haalBeschikbaarheidOp(
   });
 }
 
+/*
+ * ============================================================
+ * DEADLINE
+ * ============================================================
+ */
+
+function deadlineVerstreken(
+  deadline: Date | null,
+): boolean {
+  if (!deadline) {
+    return false;
+  }
+
+  return new Date() > deadline;
+}
+
+function deadlineFout() {
+  return NextResponse.json(
+    {
+      fout:
+        "De beschikbaarheidsdeadline voor deze planningweek is verstreken. Je kunt deze beschikbaarheid niet meer wijzigen.",
+    },
+    {
+      status: 403,
+    },
+  );
+}
+
+/*
+ * ============================================================
+ * TOEGANG
+ * ============================================================
+ *
+ * Eigenaar:
+ * - mag altijd beschikbaarheden beheren
+ *
+ * Medewerker:
+ * - mag uitsluitend zijn eigen beschikbaarheid beheren
+ * - moet toegang hebben tot de betreffende vestiging
+ * - mag alleen vóór de deadline wijzigen/verwijderen
+ *
+ * Andere gebruikers:
+ * - geen toegang via deze route
+ */
+
 async function controleerToegang(
   medewerkerId: string,
   vestigingId: string,
@@ -54,14 +120,22 @@ async function controleerToegang(
     await getCurrentUser();
 
   if (!gebruiker) {
-    return false;
+    return {
+      toegestaan: false,
+      eigenaar: false,
+      reden: "niet_ingelogd",
+    };
   }
 
   const eigenaar =
     await isEigenaar();
 
   if (eigenaar) {
-    return true;
+    return {
+      toegestaan: true,
+      eigenaar: true,
+      reden: null,
+    };
   }
 
   if (
@@ -69,24 +143,52 @@ async function controleerToegang(
     gebruiker.medewerker.id !==
       medewerkerId
   ) {
-    return false;
+    return {
+      toegestaan: false,
+      eigenaar: false,
+      reden: "geen_eigen_beschikbaarheid",
+    };
+  }
+
+  const vestigingToegang =
+    gebruiker.vestigingToegang.some(
+      (toegang) =>
+        toegang.vestigingId ===
+          vestigingId &&
+        toegang.actief &&
+        toegang.vestiging.actief,
+    );
+
+  if (!vestigingToegang) {
+    return {
+      toegestaan: false,
+      eigenaar: false,
+      reden: "geen_vestigingstoegang",
+    };
   }
 
   if (
-    deadline &&
-    new Date() > deadline
+    deadlineVerstreken(deadline)
   ) {
-    return false;
+    return {
+      toegestaan: false,
+      eigenaar: false,
+      reden: "deadline_verstreken",
+    };
   }
 
-  return gebruiker.vestigingToegang.some(
-    (toegang) =>
-      toegang.vestigingId ===
-        vestigingId &&
-      toegang.actief &&
-      toegang.vestiging.actief,
-  );
+  return {
+    toegestaan: true,
+    eigenaar: false,
+    reden: null,
+  };
 }
+
+/*
+ * ============================================================
+ * PATCH
+ * ============================================================
+ */
 
 export async function PATCH(
   request: Request,
@@ -96,7 +198,8 @@ export async function PATCH(
     const { id } =
       await context.params;
 
-    const body = await request.json();
+    const body =
+      await request.json();
 
     const bestaande =
       await haalBeschikbaarheidOp(id);
@@ -107,12 +210,17 @@ export async function PATCH(
           fout:
             "Beschikbaarheid niet gevonden.",
         },
-        { status: 404 },
+        {
+          status: 404,
+        },
       );
     }
 
-    const eigenaar =
-      await isEigenaar();
+    /*
+     * --------------------------------------------------------
+     * TOEGANG
+     * --------------------------------------------------------
+     */
 
     const toegang =
       await controleerToegang(
@@ -122,15 +230,32 @@ export async function PATCH(
           .beschikbaarheidDeadline,
       );
 
-    if (!toegang) {
+    if (!toegang.toegestaan) {
+      if (
+        toegang.reden ===
+        "deadline_verstreken"
+      ) {
+        return deadlineFout();
+      }
+
       return NextResponse.json(
         {
           fout:
             "Je hebt geen rechten om deze beschikbaarheid te wijzigen.",
         },
-        { status: 403 },
+        {
+          status: 403,
+        },
       );
     }
+
+    /*
+     * --------------------------------------------------------
+     * MEDEWERKER WIJZIGEN
+     * --------------------------------------------------------
+     *
+     * Alleen eigenaar mag de medewerker wijzigen.
+     */
 
     if (
       body.medewerkerId !==
@@ -138,13 +263,15 @@ export async function PATCH(
       body.medewerkerId !==
         bestaande.medewerkerId
     ) {
-      if (!eigenaar) {
+      if (!toegang.eigenaar) {
         return NextResponse.json(
           {
             fout:
               "Alleen een eigenaar kan de medewerker van een beschikbaarheid wijzigen.",
           },
-          { status: 403 },
+          {
+            status: 403,
+          },
         );
       }
 
@@ -159,7 +286,9 @@ export async function PATCH(
             fout:
               "medewerkerId is ongeldig.",
           },
-          { status: 400 },
+          {
+            status: 400,
+          },
         );
       }
 
@@ -169,15 +298,18 @@ export async function PATCH(
             where: {
               id: body.medewerkerId,
             },
+
             select: {
               id: true,
               actief: true,
+
               vestigingen: {
                 where: {
                   vestigingId:
                     bestaande.week
                       .vestigingId,
                 },
+
                 select: {
                   id: true,
                 },
@@ -192,7 +324,9 @@ export async function PATCH(
             fout:
               "Medewerker niet gevonden.",
           },
-          { status: 404 },
+          {
+            status: 404,
+          },
         );
       }
 
@@ -202,23 +336,34 @@ export async function PATCH(
             fout:
               "Een inactieve medewerker kan geen beschikbaarheid krijgen.",
           },
-          { status: 400 },
+          {
+            status: 400,
+          },
         );
       }
 
       if (
         nieuweMedewerker
-          .vestigingen.length === 0
+          .vestigingen.length ===
+        0
       ) {
         return NextResponse.json(
           {
             fout:
               "Deze medewerker hoort niet bij deze vestiging.",
           },
-          { status: 400 },
+          {
+            status: 400,
+          },
         );
       }
     }
+
+    /*
+     * --------------------------------------------------------
+     * UPDATE DATA
+     * --------------------------------------------------------
+     */
 
     const data: {
       medewerkerId?: string;
@@ -228,6 +373,10 @@ export async function PATCH(
       status?: BeschikbaarheidStatus;
       opmerking?: string | null;
     } = {};
+
+    /*
+     * Medewerker-ID
+     */
 
     if (
       body.medewerkerId !==
@@ -244,7 +393,9 @@ export async function PATCH(
             fout:
               "medewerkerId is ongeldig.",
           },
-          { status: 400 },
+          {
+            status: 400,
+          },
         );
       }
 
@@ -252,7 +403,13 @@ export async function PATCH(
         body.medewerkerId;
     }
 
-    if (body.datum !== undefined) {
+    /*
+     * Datum
+     */
+
+    if (
+      body.datum !== undefined
+    ) {
       const datum =
         new Date(body.datum);
 
@@ -266,15 +423,22 @@ export async function PATCH(
             fout:
               "Datum moet geldig zijn.",
           },
-          { status: 400 },
+          {
+            status: 400,
+          },
         );
       }
 
       data.datum = datum;
     }
 
+    /*
+     * Begintijd
+     */
+
     if (
-      body.begintijd !== undefined
+      body.begintijd !==
+      undefined
     ) {
       const begintijd =
         new Date(
@@ -291,7 +455,9 @@ export async function PATCH(
             fout:
               "Begintijd moet geldig zijn.",
           },
-          { status: 400 },
+          {
+            status: 400,
+          },
         );
       }
 
@@ -299,8 +465,13 @@ export async function PATCH(
         begintijd;
     }
 
+    /*
+     * Eindtijd
+     */
+
     if (
-      body.eindtijd !== undefined
+      body.eindtijd !==
+      undefined
     ) {
       const eindtijd =
         new Date(
@@ -317,13 +488,21 @@ export async function PATCH(
             fout:
               "Eindtijd moet geldig zijn.",
           },
-          { status: 400 },
+          {
+            status: 400,
+          },
         );
       }
 
       data.eindtijd =
         eindtijd;
     }
+
+    /*
+     * --------------------------------------------------------
+     * TIJD CONTROLE
+     * --------------------------------------------------------
+     */
 
     const begintijd =
       data.begintijd ??
@@ -339,11 +518,22 @@ export async function PATCH(
           fout:
             "Eindtijd moet na de begintijd liggen.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
-    if (body.status !== undefined) {
+    /*
+     * --------------------------------------------------------
+     * STATUS
+     * --------------------------------------------------------
+     */
+
+    if (
+      body.status !==
+      undefined
+    ) {
       if (
         typeof body.status !==
           "string" ||
@@ -356,13 +546,21 @@ export async function PATCH(
             fout:
               "Ongeldige beschikbaarheidsstatus.",
           },
-          { status: 400 },
+          {
+            status: 400,
+          },
         );
       }
 
       data.status =
         body.status as BeschikbaarheidStatus;
     }
+
+    /*
+     * --------------------------------------------------------
+     * OPMERKING
+     * --------------------------------------------------------
+     */
 
     if (
       body.opmerking !==
@@ -377,13 +575,21 @@ export async function PATCH(
           : null;
     }
 
+    /*
+     * --------------------------------------------------------
+     * OPSLAAN
+     * --------------------------------------------------------
+     */
+
     const beschikbaarheid =
       await prisma.beschikbaarheid.update(
         {
           where: {
             id,
           },
+
           data,
+
           include: {
             medewerker: {
               select: {
@@ -413,10 +619,18 @@ export async function PATCH(
         fout:
           "De beschikbaarheid kon niet worden gewijzigd.",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     );
   }
 }
+
+/*
+ * ============================================================
+ * DELETE
+ * ============================================================
+ */
 
 export async function DELETE(
   _request: Request,
@@ -435,9 +649,17 @@ export async function DELETE(
           fout:
             "Beschikbaarheid niet gevonden.",
         },
-        { status: 404 },
+        {
+          status: 404,
+        },
       );
     }
+
+    /*
+     * --------------------------------------------------------
+     * TOEGANG
+     * --------------------------------------------------------
+     */
 
     const toegang =
       await controleerToegang(
@@ -447,15 +669,30 @@ export async function DELETE(
           .beschikbaarheidDeadline,
       );
 
-    if (!toegang) {
+    if (!toegang.toegestaan) {
+      if (
+        toegang.reden ===
+        "deadline_verstreken"
+      ) {
+        return deadlineFout();
+      }
+
       return NextResponse.json(
         {
           fout:
             "Je hebt geen rechten om deze beschikbaarheid te verwijderen.",
         },
-        { status: 403 },
+        {
+          status: 403,
+        },
       );
     }
+
+    /*
+     * --------------------------------------------------------
+     * VERWIJDEREN
+     * --------------------------------------------------------
+     */
 
     await prisma.beschikbaarheid.delete(
       {
@@ -479,7 +716,9 @@ export async function DELETE(
         fout:
           "De beschikbaarheid kon niet worden verwijderd.",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     );
   }
 }

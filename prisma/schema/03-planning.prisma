@@ -64,12 +64,6 @@ model Week {
 
   /// -----------------------------------------------------
   /// Beschikbaarheidsdeadline
-  ///
-  /// Tot en met dit moment mag een medewerker zijn/haar
-  /// eigen beschikbaarheid toevoegen, wijzigen en verwijderen.
-  ///
-  /// Na deze deadline kan alleen een eigenaar wijzigingen
-  /// uitvoeren.
   /// -----------------------------------------------------
 
   beschikbaarheidDeadline DateTime?
@@ -92,18 +86,6 @@ model Week {
 
 /// ======================================================
 /// BESCHIKBAARHEID
-///
-/// De medewerker geeft hiermee aan wanneer hij/zij
-/// beschikbaar is.
-///
-/// Beschikbaarheid is nadrukkelijk geen planning.
-/// De organisatie gebruikt deze gegevens bij het
-/// samenstellen van de definitieve planning.
-///
-/// Tot de deadline mag de medewerker de eigen
-/// beschikbaarheid toevoegen, wijzigen en verwijderen.
-/// Na de deadline is wijziging alleen toegestaan voor
-/// een eigenaar.
 /// ======================================================
 
 model Beschikbaarheid {
@@ -166,9 +148,6 @@ model Dienst {
 
 /// ======================================================
 /// DIENST - TAG
-///
-/// Geeft aan welke kwaliteiten/functies voor een dienst
-/// nodig zijn en hoeveel medewerkers daarvan nodig zijn.
 /// ======================================================
 
 model DienstTag {
@@ -195,6 +174,13 @@ model DienstTag {
 ///
 /// medewerkerId blijft optioneel zodat een open
 /// dienstplek kan bestaan voordat deze wordt ingevuld.
+///
+/// Status:
+/// OPEN
+/// GEPLAND
+/// BEVESTIGD
+/// AFGEZEGD
+/// GEWERKT
 /// ======================================================
 
 model DienstBezetting {
@@ -204,15 +190,14 @@ model DienstBezetting {
 
   medewerkerId String?
 
-  /// OPEN
-  /// GEPLAND
-  /// BEVESTIGD
-  /// AFGEZEGD
-  /// GEWERKT
   status String @default("OPEN")
 
   dienst Dienst @relation(fields: [dienstId], references: [id], onDelete: Cascade)
   medewerker Medewerker? @relation(fields: [medewerkerId], references: [id], onDelete: SetNull)
+
+  urenregistratie UrenRegistratie?
+
+  ruilverzoeken Ruilverzoek[]
 
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt
@@ -222,4 +207,157 @@ model DienstBezetting {
   @@index([status])
 
   @@unique([dienstId, medewerkerId])
+}
+
+/// ======================================================
+/// DIENST RUILVERZOEK
+///
+/// Een medewerker kan zijn/haar eigen dienst aanbieden
+/// aan een andere medewerker.
+///
+/// Flow:
+///
+/// AANGEVRAAGD
+///       ↓
+/// WACHT_OP_EIGENAAR
+///       ↓
+/// UITGEVOERD
+///
+/// De aangewezen medewerker moet eerst accepteren.
+/// Daarna krijgt de eigenaar een controleactie.
+///
+/// Pas na goedkeuring door de eigenaar wordt de
+/// DienstBezetting daadwerkelijk overgezet naar de
+/// andere medewerker.
+/// ======================================================
+
+model Ruilverzoek {
+  id String @id @default(cuid())
+
+  dienstBezettingId String
+
+  /// Medewerker die de ruil aanvraagt.
+  aanvragerId String
+
+  /// Medewerker die de dienst moet overnemen.
+  ruilMedewerkerId String
+
+  /// -----------------------------------------------------
+  /// Ruilstatus
+  ///
+  /// AANGEVRAAGD
+  /// AFGEWEZEN_DOOR_MEDEWERKER
+  /// WACHT_OP_EIGENAAR
+  /// AFGEWEZEN_DOOR_EIGENAAR
+  /// GOEDGEKEURD
+  /// UITGEVOERD
+  /// -----------------------------------------------------
+
+  status String @default("AANGEVRAAGD")
+
+  aangevraagdOp DateTime @default(now())
+
+  medewerkerGeaccepteerdOp DateTime?
+
+  /// ID van de systeemgebruiker/eigenaar die de ruil
+  /// heeft beoordeeld.
+  ///
+  /// Bewust alleen als ID opgeslagen. Hierdoor is voor
+  /// deze relatie geen wijziging in SysteemGebruiker nodig.
+  eigenaarBeoordeeldDoorId String?
+
+  eigenaarBeoordeeldOp DateTime?
+
+  uitgevoerdOp DateTime?
+
+  dienstBezetting DienstBezetting @relation(fields: [dienstBezettingId], references: [id], onDelete: Cascade)
+
+  aanvrager Medewerker @relation("RuilverzoekenAangevraagd", fields: [aanvragerId], references: [id], onDelete: Cascade)
+
+  ruilMedewerker Medewerker @relation("RuilverzoekenOntvangen", fields: [ruilMedewerkerId], references: [id], onDelete: Cascade)
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([dienstBezettingId])
+  @@index([aanvragerId])
+  @@index([ruilMedewerkerId])
+  @@index([status])
+  @@index([eigenaarBeoordeeldDoorId])
+}
+
+/// ======================================================
+/// URENREGISTRATIE
+///
+/// De urenregistratie bevat uitsluitend de daadwerkelijk
+/// gewerkte uren.
+///
+/// Planning is nooit de definitieve bron voor gewerkte
+/// uren.
+///
+/// Na afloop van een dienst controleert de eigenaar de
+/// werkelijke begin- en eindtijd en legt deze definitief
+/// vast.
+///
+/// Tijden worden technisch in stappen van 15 minuten
+/// verwerkt.
+///
+/// Status:
+/// TE_CONTROLEREN
+/// DEFINITIEF
+/// AFGEKEURD
+/// ======================================================
+
+model UrenRegistratie {
+  id String @id @default(cuid())
+
+  dienstBezettingId String
+  medewerkerId String
+
+  /// Vestiging wordt bewust als ID opgeslagen zodat de
+  /// definitieve registratie altijd aan de betreffende
+  /// vestiging gekoppeld blijft.
+  vestigingId String
+
+  datum DateTime
+
+  /// Taak/functie waarvoor de medewerker heeft gewerkt.
+  taak String?
+
+  /// Werkelijke gewerkte tijden.
+  werkelijkeBegintijd DateTime
+  werkelijkeEindtijd DateTime
+
+  /// Pauze in minuten.
+  pauzeMinuten Int @default(0)
+
+  /// Definitief berekende gewerkte uren.
+  gewerkteUren Decimal @db.Decimal(5,2)
+
+  /// TE_CONTROLEREN
+  /// DEFINITIEF
+  /// AFGEKEURD
+  status String @default("TE_CONTROLEREN")
+
+  /// Systeemgebruiker die de uren heeft gecontroleerd.
+  gecontroleerdDoorId String?
+
+  gecontroleerdOp DateTime?
+
+  opmerking String?
+
+  dienstBezetting DienstBezetting @relation(fields: [dienstBezettingId], references: [id], onDelete: Cascade)
+
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@unique([dienstBezettingId])
+
+  @@index([medewerkerId])
+  @@index([vestigingId])
+  @@index([datum])
+  @@index([status])
+  @@index([gecontroleerdDoorId])
 }

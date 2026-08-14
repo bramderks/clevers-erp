@@ -4,20 +4,15 @@ import { hasPermissionForVestiging } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
-const DATUM_FOUT =
-  "Datum moet een geldige datum zijn.";
+const DATUM_FOUT = "Datum moet een geldige datum zijn.";
 
-const TIJD_FOUT =
-  "De begintijd moet een geldige datum zijn.";
+const TIJD_FOUT = "De begintijd moet een geldige datum zijn.";
 
-const MINIMALE_STARTTIJD_MINUTEN =
-  9 * 60;
+const MINIMALE_STARTTIJD_MINUTEN = 9 * 60;
 
 const TIJDSTAP_MINUTEN = 15;
 
-async function haalWeekMetVestigingOp(
-  weekId: string,
-) {
+async function haalWeekMetVestigingOp(weekId: string) {
   return prisma.week.findUnique({
     where: {
       id: weekId,
@@ -32,24 +27,6 @@ async function haalWeekMetVestigingOp(
           id: true,
           seizoenStart: true,
           seizoenEinde: true,
-        },
-      },
-    },
-  });
-}
-
-async function haalDienstMetVestigingOp(
-  dienstId: string,
-) {
-  return prisma.dienst.findUnique({
-    where: {
-      id: dienstId,
-    },
-    select: {
-      id: true,
-      week: {
-        select: {
-          vestigingId: true,
         },
       },
     },
@@ -102,40 +79,23 @@ function verwerkTags(tags: unknown) {
             aantal: number;
           } => tag !== null,
         )
-        .map((tag) => [
-          tag.tagId,
-          tag,
-        ]),
+        .map((tag) => [tag.tagId, tag]),
     ).values(),
   );
 }
 
-function zetBeginVanDag(
-  datum: Date,
-) {
+function zetBeginVanDag(datum: Date) {
   const resultaat = new Date(datum);
 
-  resultaat.setHours(
-    0,
-    0,
-    0,
-    0,
-  );
+  resultaat.setHours(0, 0, 0, 0);
 
   return resultaat;
 }
 
-function zetEindeVanDag(
-  datum: Date,
-) {
+function zetEindeVanDag(datum: Date) {
   const resultaat = new Date(datum);
 
-  resultaat.setHours(
-    23,
-    59,
-    59,
-    999,
-  );
+  resultaat.setHours(23, 59, 59, 999);
 
   return resultaat;
 }
@@ -145,35 +105,20 @@ function isDatumBinnenSeizoen(
   seizoenStart: Date | null,
   seizoenEinde: Date | null,
 ) {
-  if (
-    !seizoenStart ||
-    !seizoenEinde
-  ) {
+  if (!seizoenStart || !seizoenEinde) {
     return false;
   }
 
-  const controleDatum =
-    zetBeginVanDag(datum);
+  const controleDatum = zetBeginVanDag(datum);
 
-  const start =
-    zetBeginVanDag(
-      seizoenStart,
-    );
+  const start = zetBeginVanDag(seizoenStart);
 
-  const einde =
-    zetEindeVanDag(
-      seizoenEinde,
-    );
+  const einde = zetEindeVanDag(seizoenEinde);
 
-  return (
-    controleDatum >= start &&
-    controleDatum <= einde
-  );
+  return controleDatum >= start && controleDatum <= einde;
 }
 
-function getISOWeek(
-  datum: Date,
-): {
+function getISOWeek(datum: Date): {
   jaar: number;
   weeknummer: number;
 } {
@@ -185,30 +130,20 @@ function getISOWeek(
     ),
   );
 
-  const dag =
-    donderdag.getUTCDay() || 7;
+  const dag = donderdag.getUTCDay() || 7;
 
   donderdag.setUTCDate(
-    donderdag.getUTCDate() +
-      4 -
-      dag,
+    donderdag.getUTCDate() + 4 - dag,
   );
 
-  const jaar =
-    donderdag.getUTCFullYear();
+  const jaar = donderdag.getUTCFullYear();
 
-  const eersteDonderdag =
-    new Date(
-      Date.UTC(
-        jaar,
-        0,
-        4,
-      ),
-    );
+  const eersteDonderdag = new Date(
+    Date.UTC(jaar, 0, 4),
+  );
 
   const eersteDag =
-    eersteDonderdag.getUTCDay() ||
-    7;
+    eersteDonderdag.getUTCDay() || 7;
 
   const weeknummer = Math.ceil(
     (
@@ -217,8 +152,7 @@ function getISOWeek(
         86400000 +
       eersteDag -
       1
-    ) /
-      7,
+    ) / 7,
   );
 
   return {
@@ -227,38 +161,23 @@ function getISOWeek(
   };
 }
 
-function minutenVanDag(
-  datum: Date,
-) {
-  return (
-    datum.getHours() * 60 +
-    datum.getMinutes()
-  );
+function minutenVanDag(datum: Date) {
+  return datum.getHours() * 60 + datum.getMinutes();
 }
 
-function isTijdOpKwartier(
-  datum: Date,
-) {
+function isTijdOpKwartier(datum: Date) {
   return (
     datum.getSeconds() === 0 &&
     datum.getMilliseconds() === 0 &&
-    datum.getMinutes() %
-      TIJDSTAP_MINUTEN ===
-      0
+    datum.getMinutes() % TIJDSTAP_MINUTEN === 0
   );
 }
 
-function isZelfdeDag(
-  a: Date,
-  b: Date,
-) {
+function isZelfdeDag(a: Date, b: Date) {
   return (
-    a.getFullYear() ===
-      b.getFullYear() &&
-    a.getMonth() ===
-      b.getMonth() &&
-    a.getDate() ===
-      b.getDate()
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
   );
 }
 
@@ -269,10 +188,7 @@ async function zoekTagOverlaps(
   eindtijd: Date | null,
   tagIds: string[],
 ) {
-  if (
-    tagIds.length === 0 ||
-    !eindtijd
-  ) {
+  if (tagIds.length === 0 || !eindtijd) {
     return [];
   }
 
@@ -281,12 +197,8 @@ async function zoekTagOverlaps(
       where: {
         weekId,
         datum: {
-          gte: zetBeginVanDag(
-            datum,
-          ),
-          lte: zetEindeVanDag(
-            datum,
-          ),
+          gte: zetBeginVanDag(datum),
+          lte: zetEindeVanDag(datum),
         },
         tags: {
           some: {
@@ -296,22 +208,18 @@ async function zoekTagOverlaps(
           },
         },
       },
-
       select: {
         id: true,
         begintijd: true,
         eindtijd: true,
-
         tags: {
           where: {
             tagId: {
               in: tagIds,
             },
           },
-
           select: {
             tagId: true,
-
             tag: {
               select: {
                 naam: true,
@@ -320,7 +228,6 @@ async function zoekTagOverlaps(
           },
         },
       },
-
       orderBy: {
         begintijd: "asc",
       },
@@ -333,49 +240,26 @@ async function zoekTagOverlaps(
     eindtijd: Date;
   }[] = [];
 
-  for (
-    const dienst of bestaandeDiensten
-  ) {
-    if (
-      !dienst.eindtijd
-    ) {
+  for (const dienst of bestaandeDiensten) {
+    if (!dienst.eindtijd) {
       continue;
     }
 
     if (
       dienst.id &&
       isZelfdeDag(
-        new Date(
-          dienst.begintijd,
-        ),
+        new Date(dienst.begintijd),
         datum,
       ) &&
-      new Date(
-        dienst.begintijd,
-      ) < eindtijd &&
-      new Date(
-        dienst.eindtijd,
-      ) > begintijd
+      new Date(dienst.begintijd) < eindtijd &&
+      new Date(dienst.eindtijd) > begintijd
     ) {
-      for (
-        const tag of dienst.tags
-      ) {
+      for (const tag of dienst.tags) {
         overlaps.push({
-          dienstId:
-            dienst.id,
-
-          tagNaam:
-            tag.tag.naam,
-
-          begintijd:
-            new Date(
-              dienst.begintijd,
-            ),
-
-          eindtijd:
-            new Date(
-              dienst.eindtijd,
-            ),
+          dienstId: dienst.id,
+          tagNaam: tag.tag.naam,
+          begintijd: new Date(dienst.begintijd),
+          eindtijd: new Date(dienst.eindtijd),
         });
       }
     }
@@ -384,23 +268,16 @@ async function zoekTagOverlaps(
   return overlaps;
 }
 
-export async function GET(
-  request: Request,
-) {
+export async function GET(request: Request) {
   try {
-    const { searchParams } =
-      new URL(request.url);
+    const { searchParams } = new URL(request.url);
 
-    const weekId =
-      searchParams.get(
-        "weekId",
-      );
+    const weekId = searchParams.get("weekId");
 
     if (!weekId) {
       return NextResponse.json(
         {
-          fout:
-            "weekId is verplicht.",
+          fout: "weekId is verplicht.",
         },
         {
           status: 400,
@@ -408,16 +285,14 @@ export async function GET(
       );
     }
 
-    const week =
-      await haalWeekMetVestigingOp(
-        weekId,
-      );
+    const week = await haalWeekMetVestigingOp(
+      weekId,
+    );
 
     if (!week) {
       return NextResponse.json(
         {
-          fout:
-            "Planningweek niet gevonden.",
+          fout: "Planningweek niet gevonden.",
         },
         {
           status: 404,
@@ -434,8 +309,7 @@ export async function GET(
     if (!toegang) {
       return NextResponse.json(
         {
-          fout:
-            "Geen toegang tot deze planning.",
+          fout: "Geen toegang tot deze planning.",
         },
         {
           status: 403,
@@ -448,7 +322,6 @@ export async function GET(
         where: {
           weekId,
         },
-
         orderBy: [
           {
             datum: "asc",
@@ -457,37 +330,30 @@ export async function GET(
             begintijd: "asc",
           },
         ],
-
         include: {
           tags: {
             include: {
               tag: true,
             },
-
             orderBy: {
               tag: {
                 volgorde: "asc",
               },
             },
           },
-
           bezetting: {
             include: {
               medewerker: {
                 select: {
                   id: true,
-                  personeelsnummer:
-                    true,
+                  personeelsnummer: true,
                   aanhef: true,
                   voornaam: true,
-                  tussenvoegsel:
-                    true,
-                  achternaam:
-                    true,
+                  tussenvoegsel: true,
+                  achternaam: true,
                 },
               },
             },
-
             orderBy: {
               aangemaaktOp: "asc",
             },
@@ -495,9 +361,7 @@ export async function GET(
         },
       });
 
-    return NextResponse.json(
-      diensten,
-    );
+    return NextResponse.json(diensten);
   } catch (error) {
     console.error(
       "Fout bij ophalen diensten:",
@@ -506,8 +370,7 @@ export async function GET(
 
     return NextResponse.json(
       {
-        fout:
-          "De diensten konden niet worden opgehaald.",
+        fout: "De diensten konden niet worden opgehaald.",
       },
       {
         status: 500,
@@ -516,12 +379,9 @@ export async function GET(
   }
 }
 
-export async function POST(
-  request: Request,
-) {
+export async function POST(request: Request) {
   try {
-    const body =
-      await request.json();
+    const body = await request.json();
 
     const {
       weekId,
@@ -532,11 +392,7 @@ export async function POST(
       tags,
     } = body;
 
-    if (
-      !weekId ||
-      !datum ||
-      !begintijd
-    ) {
+    if (!weekId || !datum || !begintijd) {
       return NextResponse.json(
         {
           fout:
@@ -548,16 +404,14 @@ export async function POST(
       );
     }
 
-    const week =
-      await haalWeekMetVestigingOp(
-        weekId,
-      );
+    const week = await haalWeekMetVestigingOp(
+      weekId,
+    );
 
     if (!week) {
       return NextResponse.json(
         {
-          fout:
-            "Planningweek niet gevonden.",
+          fout: "Planningweek niet gevonden.",
         },
         {
           status: 404,
@@ -583,22 +437,15 @@ export async function POST(
       );
     }
 
-    const datumWaarde =
-      new Date(datum);
+    const datumWaarde = new Date(datum);
 
-    const begintijdWaarde =
-      new Date(begintijd);
+    const begintijdWaarde = new Date(begintijd);
 
-    const eindtijdWaarde =
-      eindtijd
-        ? new Date(eindtijd)
-        : null;
+    const eindtijdWaarde = eindtijd
+      ? new Date(eindtijd)
+      : null;
 
-    if (
-      Number.isNaN(
-        datumWaarde.getTime(),
-      )
-    ) {
+    if (Number.isNaN(datumWaarde.getTime())) {
       return NextResponse.json(
         {
           fout: DATUM_FOUT,
@@ -626,9 +473,7 @@ export async function POST(
 
     if (
       eindtijdWaarde &&
-      Number.isNaN(
-        eindtijdWaarde.getTime(),
-      )
+      Number.isNaN(eindtijdWaarde.getTime())
     ) {
       return NextResponse.json(
         {
@@ -643,8 +488,7 @@ export async function POST(
 
     if (
       eindtijdWaarde &&
-      eindtijdWaarde <=
-        begintijdWaarde
+      eindtijdWaarde <= begintijdWaarde
     ) {
       return NextResponse.json(
         {
@@ -676,9 +520,7 @@ export async function POST(
     }
 
     if (
-      minutenVanDag(
-        begintijdWaarde,
-      ) <
+      minutenVanDag(begintijdWaarde) <
       MINIMALE_STARTTIJD_MINUTEN
     ) {
       return NextResponse.json(
@@ -692,11 +534,7 @@ export async function POST(
       );
     }
 
-    if (
-      !isTijdOpKwartier(
-        begintijdWaarde,
-      )
-    ) {
+    if (!isTijdOpKwartier(begintijdWaarde)) {
       return NextResponse.json(
         {
           fout:
@@ -710,9 +548,7 @@ export async function POST(
 
     if (
       eindtijdWaarde &&
-      !isTijdOpKwartier(
-        eindtijdWaarde,
-      )
+      !isTijdOpKwartier(eindtijdWaarde)
     ) {
       return NextResponse.json(
         {
@@ -726,10 +562,8 @@ export async function POST(
     }
 
     if (
-      !week.vestiging
-        .seizoenStart ||
-      !week.vestiging
-        .seizoenEinde
+      !week.vestiging.seizoenStart ||
+      !week.vestiging.seizoenEinde
     ) {
       return NextResponse.json(
         {
@@ -745,10 +579,8 @@ export async function POST(
     if (
       !isDatumBinnenSeizoen(
         datumWaarde,
-        week.vestiging
-          .seizoenStart,
-        week.vestiging
-          .seizoenEinde,
+        week.vestiging.seizoenStart,
+        week.vestiging.seizoenEinde,
       )
     ) {
       return NextResponse.json(
@@ -762,16 +594,11 @@ export async function POST(
       );
     }
 
-    const isoWeek =
-      getISOWeek(
-        datumWaarde,
-      );
+    const isoWeek = getISOWeek(datumWaarde);
 
     if (
-      isoWeek.jaar !==
-        week.jaar ||
-      isoWeek.weeknummer !==
-        week.weeknummer
+      isoWeek.jaar !== week.jaar ||
+      isoWeek.weeknummer !== week.weeknummer
     ) {
       return NextResponse.json(
         {
@@ -784,51 +611,38 @@ export async function POST(
       );
     }
 
-    const geldigeTags =
-      verwerkTags(tags);
+    const geldigeTags = verwerkTags(tags);
 
-    const tagIds =
-      geldigeTags.map(
-        (tag) => tag.tagId,
-      );
+    const tagIds = geldigeTags.map(
+      (tag) => tag.tagId,
+    );
 
     const bestaandeTags =
       tagIds.length > 0
-        ? await prisma.tag.findMany(
-            {
-              where: {
-                id: {
-                  in: tagIds,
-                },
-                actief: true,
+        ? await prisma.tag.findMany({
+            where: {
+              id: {
+                in: tagIds,
               },
-
-              select: {
-                id: true,
-                naam: true,
-              },
+              actief: true,
             },
-          )
+            select: {
+              id: true,
+              naam: true,
+            },
+          })
         : [];
 
-    const bestaandeTagIds =
-      new Set(
-        bestaandeTags.map(
-          (tag) => tag.id,
-        ),
-      );
+    const bestaandeTagIds = new Set(
+      bestaandeTags.map((tag) => tag.id),
+    );
 
-    const dienstTags =
-      geldigeTags.filter(
-        (tag) =>
-          bestaandeTagIds.has(
-            tag.tagId,
-          ),
-      );
+    const dienstTags = geldigeTags.filter(
+      (tag) =>
+        bestaandeTagIds.has(tag.tagId),
+    );
 
-    if (
-      dienstTags.length === 0
-    ) {
+    if (dienstTags.length === 0) {
       return NextResponse.json(
         {
           fout:
@@ -840,134 +654,112 @@ export async function POST(
       );
     }
 
-    const overlaps =
-      await zoekTagOverlaps(
+    const overlaps = await zoekTagOverlaps(
+      weekId,
+      datumWaarde,
+      begintijdWaarde,
+      eindtijdWaarde,
+      dienstTags.map((tag) => tag.tagId),
+    );
+
+    const uniekeOverlaps = Array.from(
+      new Map(
+        overlaps.map((overlap) => [
+          `${overlap.dienstId}-${overlap.tagNaam}`,
+          overlap,
+        ]),
+      ).values(),
+    );
+
+    const dienst = await prisma.dienst.create({
+      data: {
         weekId,
-        datumWaarde,
-        begintijdWaarde,
-        eindtijdWaarde,
-        dienstTags.map(
-          (tag) =>
-            tag.tagId,
-        ),
-      );
 
-    const uniekeOverlaps =
-      Array.from(
-        new Map(
-          overlaps.map(
-            (overlap) => [
-              `${overlap.dienstId}-${overlap.tagNaam}`,
-              overlap,
-            ],
+        datum: datumWaarde,
+
+        begintijd: begintijdWaarde,
+
+        eindtijd:
+          eindtijdWaarde ??
+          new Date(
+            datumWaarde.getFullYear(),
+            datumWaarde.getMonth(),
+            datumWaarde.getDate(),
+            23,
+            59,
+            0,
+            0,
           ),
-        ).values(),
-      );
 
-    const dienst =
-      await prisma.dienst.create({
-        data: {
-          weekId,
+        opmerkingen:
+          typeof opmerkingen === "string" &&
+          opmerkingen.trim().length > 0
+            ? opmerkingen.trim()
+            : null,
 
-          datum:
-            datumWaarde,
+        tags: {
+          create: dienstTags,
+        },
+      },
 
-          begintijd:
-            begintijdWaarde,
-
-eindtijd:
-  eindtijdWaarde ??
-  new Date(
-    datumWaarde.getFullYear(),
-    datumWaarde.getMonth(),
-    datumWaarde.getDate(),
-    23,
-    59,
-    0,
-    0,
-  ),
-
-          opmerkingen:
-            typeof opmerkingen ===
-              "string" &&
-            opmerkingen.trim()
-              .length > 0
-              ? opmerkingen.trim()
-              : null,
-
-          tags: {
-            create: dienstTags,
+      include: {
+        tags: {
+          include: {
+            tag: true,
+          },
+          orderBy: {
+            tag: {
+              volgorde: "asc",
+            },
           },
         },
 
-        include: {
-          tags: {
-            include: {
-              tag: true,
-            },
-
-            orderBy: {
-              tag: {
-                volgorde: "asc",
+        bezetting: {
+          include: {
+            medewerker: {
+              select: {
+                id: true,
+                personeelsnummer: true,
+                aanhef: true,
+                voornaam: true,
+                tussenvoegsel: true,
+                achternaam: true,
               },
             },
           },
-
-          bezetting: {
-            include: {
-              medewerker: {
-                select: {
-                  id: true,
-                  personeelsnummer:
-                    true,
-                  aanhef: true,
-                  voornaam: true,
-                  tussenvoegsel:
-                    true,
-                  achternaam:
-                    true,
-                },
-              },
-            },
-
-            orderBy: {
-              aangemaaktOp: "asc",
-            },
+          orderBy: {
+            aangemaaktOp: "asc",
           },
         },
-      });
+      },
+    });
 
     return NextResponse.json(
       {
         ...dienst,
 
         waarschuwingen:
-          uniekeOverlaps.map(
-            (overlap) => ({
-              type:
-                "TAG_OVERLAP",
+          uniekeOverlaps.map((overlap) => ({
+            type: "TAG_OVERLAP",
 
-              melding: `Er is al een dienst voor ${overlap.tagNaam} van ${overlap.begintijd.toLocaleTimeString(
-                "nl-NL",
-                {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                },
-              )} tot ${overlap.eindtijd.toLocaleTimeString(
-                "nl-NL",
-                {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                },
-              )}.`,
+            melding: `Er is al een dienst voor ${overlap.tagNaam} van ${overlap.begintijd.toLocaleTimeString(
+              "nl-NL",
+              {
+                hour: "2-digit",
+                minute: "2-digit",
+              },
+            )} tot ${overlap.eindtijd.toLocaleTimeString(
+              "nl-NL",
+              {
+                hour: "2-digit",
+                minute: "2-digit",
+              },
+            )}.`,
 
-              dienstId:
-                overlap.dienstId,
+            dienstId: overlap.dienstId,
 
-              tagNaam:
-                overlap.tagNaam,
-            }),
-          ),
+            tagNaam: overlap.tagNaam,
+          })),
       },
       {
         status: 201,
@@ -981,8 +773,7 @@ eindtijd:
 
     return NextResponse.json(
       {
-        fout:
-          "De dienst kon niet worden aangemaakt.",
+        fout: "De dienst kon niet worden aangemaakt.",
       },
       {
         status: 500,

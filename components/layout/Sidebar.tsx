@@ -8,24 +8,51 @@ export default async function Sidebar() {
 
   const naam = gebruiker?.naam ?? "Gast";
 
-  const relatie = gebruiker?.organisaties[0];
+  const actieveRelaties =
+    gebruiker?.organisaties.filter(
+      (relatie) =>
+        relatie.actief &&
+        relatie.organisatie.actief,
+    ) ?? [];
+
+  const relatie =
+    actieveRelaties[0] ?? null;
 
   const rolNaam =
     relatie?.rol.naam ?? "Gebruiker";
 
   const rolKey = (
-    Object.keys(roles) as Array<keyof typeof roles>
+    Object.keys(roles) as Array<
+      keyof typeof roles
+    >
   ).find(
     (key) =>
-      roles[key].naam === rolNaam,
+      roles[key].naam.toLowerCase() ===
+      rolNaam.toLowerCase(),
   );
 
   const gebruikersPermissions = rolKey
-    ? Array.from(roles[rolKey].permissions)
+    ? Array.from(
+        roles[rolKey].permissions,
+      )
     : [];
 
   const isEigenaar =
-    rolKey === "eigenaar";
+    actieveRelaties.some(
+      (relatie) =>
+        relatie.rol.naam.toLowerCase() ===
+        "eigenaar",
+    );
+
+  const isTeamleider =
+    actieveRelaties.some(
+      (relatie) =>
+        relatie.rol.naam.toLowerCase() ===
+        "teamleider",
+    );
+
+  const isMedewerker =
+    gebruiker?.medewerker != null;
 
   const initialen =
     naam
@@ -47,6 +74,8 @@ export default async function Sidebar() {
         gebruikersPermissions
       }
       isEigenaar={isEigenaar}
+      isTeamleider={isTeamleider}
+      isMedewerker={isMedewerker}
     />
   );
 }

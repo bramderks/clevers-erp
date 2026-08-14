@@ -14,6 +14,59 @@ type RouteContext = {
   }>;
 };
 
+function maakDatum(
+  waarde: unknown,
+  verplicht = false,
+) {
+  if (
+    waarde === null ||
+    waarde === undefined ||
+    waarde === ""
+  ) {
+    if (verplicht) {
+      throw new Error(
+        "Geboortedatum is verplicht.",
+      );
+    }
+
+    return null;
+  }
+
+  const datum = new Date(
+    String(waarde),
+  );
+
+  if (Number.isNaN(datum.getTime())) {
+    throw new Error(
+      "De opgegeven datum is ongeldig.",
+    );
+  }
+
+  return datum;
+}
+
+function maakNummer(
+  waarde: unknown,
+) {
+  if (
+    waarde === null ||
+    waarde === undefined ||
+    waarde === ""
+  ) {
+    return null;
+  }
+
+  const nummer = Number(waarde);
+
+  if (!Number.isFinite(nummer)) {
+    throw new Error(
+      "Een opgegeven numerieke waarde is ongeldig.",
+    );
+  }
+
+  return nummer;
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: RouteContext,
@@ -53,8 +106,10 @@ export async function PATCH(
         where: {
           id,
         },
+
         select: {
           id: true,
+
           vestigingen: {
             select: {
               vestiging: {
@@ -83,8 +138,7 @@ export async function PATCH(
       ...new Set(
         medewerker.vestigingen.map(
           (medewerkerVestiging) =>
-            medewerkerVestiging
-              .vestiging
+            medewerkerVestiging.vestiging
               .organisatieId,
         ),
       ),
@@ -107,13 +161,12 @@ export async function PATCH(
     let magBewerken = false;
 
     for (const organisatieId of organisatieIds) {
-      const heeftPermission =
+      if (
         await hasPermission(
           permissions.medewerkers.update,
           organisatieId,
-        );
-
-      if (heeftPermission) {
+        )
+      ) {
         magBewerken = true;
         break;
       }
@@ -131,8 +184,23 @@ export async function PATCH(
       );
     }
 
-    const body =
-      await request.json();
+    const body = await request.json();
+
+    if (
+      body === null ||
+      typeof body !== "object" ||
+      Array.isArray(body)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "De meegestuurde gegevens hebben een ongeldig formaat.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
 
     const resultaat =
       await medewerkerService.update(
@@ -160,9 +228,10 @@ export async function PATCH(
             null,
 
           geboortedatum:
-            new Date(
+            maakDatum(
               body.geboortedatum,
-            ),
+              true,
+            ) as Date,
 
           email:
             body.email,
@@ -175,42 +244,24 @@ export async function PATCH(
             null,
 
           contractUren:
-            body.contractUren !==
-              null &&
-            body.contractUren !==
-              undefined &&
-            body.contractUren !==
-              ""
-              ? Number(
-                  body.contractUren,
-                )
-              : null,
+            maakNummer(
+              body.contractUren,
+            ),
 
           uurloon:
-            body.uurloon !==
-              null &&
-            body.uurloon !==
-              undefined &&
-            body.uurloon !==
-              ""
-              ? Number(
-                  body.uurloon,
-                )
-              : null,
+            maakNummer(
+              body.uurloon,
+            ),
 
           datumInDienst:
-            body.datumInDienst
-              ? new Date(
-                  body.datumInDienst,
-                )
-              : null,
+            maakDatum(
+              body.datumInDienst,
+            ),
 
           datumUitDienst:
-            body.datumUitDienst
-              ? new Date(
-                  body.datumUitDienst,
-                )
-              : null,
+            maakDatum(
+              body.datumUitDienst,
+            ),
         },
       );
 
@@ -234,18 +285,28 @@ export async function PATCH(
         );
       }
 
-      const tagIds =
-        body.tagIds.filter(
-          (
-            tagId: unknown,
-          ): tagId is string =>
-            typeof tagId ===
+      const ongeldigeTagIds =
+        body.tagIds.some(
+          (tagId: unknown) =>
+            typeof tagId !==
             "string",
         );
 
+      if (ongeldigeTagIds) {
+        return NextResponse.json(
+          {
+            error:
+              "De planningstags bevatten een ongeldige waarde.",
+          },
+          {
+            status: 400,
+          },
+        );
+      }
+
       await medewerkerService.setTags(
         id,
-        tagIds,
+        body.tagIds,
       );
     }
 

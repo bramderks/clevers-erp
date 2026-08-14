@@ -69,6 +69,8 @@ export const ModelName = {
   Dienst: 'Dienst',
   DienstTag: 'DienstTag',
   DienstBezetting: 'DienstBezetting',
+  Ruilverzoek: 'Ruilverzoek',
+  UrenRegistratie: 'UrenRegistratie',
   ProductType: 'ProductType',
   Product: 'Product',
   VestigingProduct: 'VestigingProduct',
@@ -342,6 +344,46 @@ export const DienstBezettingScalarFieldEnum = {
 } as const
 
 export type DienstBezettingScalarFieldEnum = (typeof DienstBezettingScalarFieldEnum)[keyof typeof DienstBezettingScalarFieldEnum]
+
+
+export const RuilverzoekScalarFieldEnum = {
+  id: 'id',
+  dienstBezettingId: 'dienstBezettingId',
+  aanvragerId: 'aanvragerId',
+  ruilMedewerkerId: 'ruilMedewerkerId',
+  status: 'status',
+  aangevraagdOp: 'aangevraagdOp',
+  medewerkerGeaccepteerdOp: 'medewerkerGeaccepteerdOp',
+  eigenaarBeoordeeldDoorId: 'eigenaarBeoordeeldDoorId',
+  eigenaarBeoordeeldOp: 'eigenaarBeoordeeldOp',
+  uitgevoerdOp: 'uitgevoerdOp',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type RuilverzoekScalarFieldEnum = (typeof RuilverzoekScalarFieldEnum)[keyof typeof RuilverzoekScalarFieldEnum]
+
+
+export const UrenRegistratieScalarFieldEnum = {
+  id: 'id',
+  dienstBezettingId: 'dienstBezettingId',
+  medewerkerId: 'medewerkerId',
+  vestigingId: 'vestigingId',
+  datum: 'datum',
+  taak: 'taak',
+  werkelijkeBegintijd: 'werkelijkeBegintijd',
+  werkelijkeEindtijd: 'werkelijkeEindtijd',
+  pauzeMinuten: 'pauzeMinuten',
+  gewerkteUren: 'gewerkteUren',
+  status: 'status',
+  gecontroleerdDoorId: 'gecontroleerdDoorId',
+  gecontroleerdOp: 'gecontroleerdOp',
+  opmerking: 'opmerking',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type UrenRegistratieScalarFieldEnum = (typeof UrenRegistratieScalarFieldEnum)[keyof typeof UrenRegistratieScalarFieldEnum]
 
 
 export const ProductTypeScalarFieldEnum = {

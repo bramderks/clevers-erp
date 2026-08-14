@@ -415,6 +415,8 @@ export const ModelName = {
   Dienst: 'Dienst',
   DienstTag: 'DienstTag',
   DienstBezetting: 'DienstBezetting',
+  Ruilverzoek: 'Ruilverzoek',
+  UrenRegistratie: 'UrenRegistratie',
   ProductType: 'ProductType',
   Product: 'Product',
   VestigingProduct: 'VestigingProduct',
@@ -442,7 +444,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "organisatie" | "vestiging" | "openingstijdenPeriode" | "organisatieGebruiker" | "systeemGebruiker" | "systeemGebruikerVestiging" | "rol" | "auditLog" | "medewerker" | "medewerkerVestiging" | "medewerkerRol" | "tag" | "medewerkerTag" | "week" | "beschikbaarheid" | "dienst" | "dienstTag" | "dienstBezetting" | "productType" | "product" | "vestigingProduct" | "bestelling" | "bestelRegel" | "voorraadTelling" | "voorraadTellingRegel" | "voorraadMutatie" | "levering" | "leveringRegel" | "status" | "instelling"
+    modelProps: "organisatie" | "vestiging" | "openingstijdenPeriode" | "organisatieGebruiker" | "systeemGebruiker" | "systeemGebruikerVestiging" | "rol" | "auditLog" | "medewerker" | "medewerkerVestiging" | "medewerkerRol" | "tag" | "medewerkerTag" | "week" | "beschikbaarheid" | "dienst" | "dienstTag" | "dienstBezetting" | "ruilverzoek" | "urenRegistratie" | "productType" | "product" | "vestigingProduct" | "bestelling" | "bestelRegel" | "voorraadTelling" | "voorraadTellingRegel" | "voorraadMutatie" | "levering" | "leveringRegel" | "status" | "instelling"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1778,6 +1780,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    Ruilverzoek: {
+      payload: Prisma.$RuilverzoekPayload<ExtArgs>
+      fields: Prisma.RuilverzoekFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RuilverzoekFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuilverzoekPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RuilverzoekFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuilverzoekPayload>
+        }
+        findFirst: {
+          args: Prisma.RuilverzoekFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuilverzoekPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RuilverzoekFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuilverzoekPayload>
+        }
+        findMany: {
+          args: Prisma.RuilverzoekFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuilverzoekPayload>[]
+        }
+        create: {
+          args: Prisma.RuilverzoekCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuilverzoekPayload>
+        }
+        createMany: {
+          args: Prisma.RuilverzoekCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RuilverzoekCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuilverzoekPayload>[]
+        }
+        delete: {
+          args: Prisma.RuilverzoekDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuilverzoekPayload>
+        }
+        update: {
+          args: Prisma.RuilverzoekUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuilverzoekPayload>
+        }
+        deleteMany: {
+          args: Prisma.RuilverzoekDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RuilverzoekUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RuilverzoekUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuilverzoekPayload>[]
+        }
+        upsert: {
+          args: Prisma.RuilverzoekUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuilverzoekPayload>
+        }
+        aggregate: {
+          args: Prisma.RuilverzoekAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRuilverzoek>
+        }
+        groupBy: {
+          args: Prisma.RuilverzoekGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RuilverzoekGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RuilverzoekCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RuilverzoekCountAggregateOutputType> | number
+        }
+      }
+    }
+    UrenRegistratie: {
+      payload: Prisma.$UrenRegistratiePayload<ExtArgs>
+      fields: Prisma.UrenRegistratieFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.UrenRegistratieFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UrenRegistratiePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.UrenRegistratieFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UrenRegistratiePayload>
+        }
+        findFirst: {
+          args: Prisma.UrenRegistratieFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UrenRegistratiePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.UrenRegistratieFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UrenRegistratiePayload>
+        }
+        findMany: {
+          args: Prisma.UrenRegistratieFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UrenRegistratiePayload>[]
+        }
+        create: {
+          args: Prisma.UrenRegistratieCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UrenRegistratiePayload>
+        }
+        createMany: {
+          args: Prisma.UrenRegistratieCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.UrenRegistratieCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UrenRegistratiePayload>[]
+        }
+        delete: {
+          args: Prisma.UrenRegistratieDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UrenRegistratiePayload>
+        }
+        update: {
+          args: Prisma.UrenRegistratieUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UrenRegistratiePayload>
+        }
+        deleteMany: {
+          args: Prisma.UrenRegistratieDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.UrenRegistratieUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.UrenRegistratieUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UrenRegistratiePayload>[]
+        }
+        upsert: {
+          args: Prisma.UrenRegistratieUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UrenRegistratiePayload>
+        }
+        aggregate: {
+          args: Prisma.UrenRegistratieAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateUrenRegistratie>
+        }
+        groupBy: {
+          args: Prisma.UrenRegistratieGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UrenRegistratieGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.UrenRegistratieCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UrenRegistratieCountAggregateOutputType> | number
+        }
+      }
+    }
     ProductType: {
       payload: Prisma.$ProductTypePayload<ExtArgs>
       fields: Prisma.ProductTypeFieldRefs
@@ -2950,6 +3100,46 @@ export const DienstBezettingScalarFieldEnum = {
 export type DienstBezettingScalarFieldEnum = (typeof DienstBezettingScalarFieldEnum)[keyof typeof DienstBezettingScalarFieldEnum]
 
 
+export const RuilverzoekScalarFieldEnum = {
+  id: 'id',
+  dienstBezettingId: 'dienstBezettingId',
+  aanvragerId: 'aanvragerId',
+  ruilMedewerkerId: 'ruilMedewerkerId',
+  status: 'status',
+  aangevraagdOp: 'aangevraagdOp',
+  medewerkerGeaccepteerdOp: 'medewerkerGeaccepteerdOp',
+  eigenaarBeoordeeldDoorId: 'eigenaarBeoordeeldDoorId',
+  eigenaarBeoordeeldOp: 'eigenaarBeoordeeldOp',
+  uitgevoerdOp: 'uitgevoerdOp',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type RuilverzoekScalarFieldEnum = (typeof RuilverzoekScalarFieldEnum)[keyof typeof RuilverzoekScalarFieldEnum]
+
+
+export const UrenRegistratieScalarFieldEnum = {
+  id: 'id',
+  dienstBezettingId: 'dienstBezettingId',
+  medewerkerId: 'medewerkerId',
+  vestigingId: 'vestigingId',
+  datum: 'datum',
+  taak: 'taak',
+  werkelijkeBegintijd: 'werkelijkeBegintijd',
+  werkelijkeEindtijd: 'werkelijkeEindtijd',
+  pauzeMinuten: 'pauzeMinuten',
+  gewerkteUren: 'gewerkteUren',
+  status: 'status',
+  gecontroleerdDoorId: 'gecontroleerdDoorId',
+  gecontroleerdOp: 'gecontroleerdOp',
+  opmerking: 'opmerking',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type UrenRegistratieScalarFieldEnum = (typeof UrenRegistratieScalarFieldEnum)[keyof typeof UrenRegistratieScalarFieldEnum]
+
+
 export const ProductTypeScalarFieldEnum = {
   id: 'id',
   code: 'code',
@@ -3448,6 +3638,8 @@ export type GlobalOmitConfig = {
   dienst?: Prisma.DienstOmit
   dienstTag?: Prisma.DienstTagOmit
   dienstBezetting?: Prisma.DienstBezettingOmit
+  ruilverzoek?: Prisma.RuilverzoekOmit
+  urenRegistratie?: Prisma.UrenRegistratieOmit
   productType?: Prisma.ProductTypeOmit
   product?: Prisma.ProductOmit
   vestigingProduct?: Prisma.VestigingProductOmit

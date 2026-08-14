@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
 
 import DienstDetail from "@/components/planning/DienstDetail";
 import DienstForm from "@/components/planning/DienstForm";
@@ -17,6 +18,9 @@ import type {
 type PlanningOverzichtProps = {
   weken: PlanningWeek[];
   vestigingId: string;
+  isEigenaar?: boolean;
+  isTeamleider?: boolean;
+  isMedewerker?: boolean;
   kanVerwijderen?: boolean;
   onGewijzigd?: () => void;
 };
@@ -280,16 +284,10 @@ function vindWeekVanVandaag(
   );
 }
 
-function haalDienstTags(
-  dienst: Dienst,
-) {
-  return dienst.tags ?? [];
-}
-
 function haalTagNamen(
   dienst: Dienst,
 ) {
-  return haalDienstTags(dienst)
+  return (dienst.tags ?? [])
     .map(
       (dienstTag) =>
         dienstTag.tag?.naam,
@@ -329,9 +327,20 @@ function heeftBhv(
 export default function PlanningOverzicht({
   weken,
   vestigingId,
+  isEigenaar = false,
+  isTeamleider = false,
+  isMedewerker = false,
   kanVerwijderen = false,
   onGewijzigd,
 }: PlanningOverzichtProps) {
+  const router = useRouter();
+
+  const kanDienstToevoegen =
+    isEigenaar || isTeamleider;
+
+  const kanDienstBewerken =
+    isEigenaar || isTeamleider;
+
   const [
     geselecteerdeWeekId,
     setGeselecteerdeWeekId,
@@ -364,6 +373,13 @@ export default function PlanningOverzicht({
     geselecteerdeMaand,
     setGeselecteerdeMaand,
   ] = useState<Date | null>(
+    null,
+  );
+
+  const [
+    huidigeMedewerkerId,
+    setHuidigeMedewerkerId,
+  ] = useState<string | null>(
     null,
   );
 
@@ -469,16 +485,88 @@ export default function PlanningOverzicht({
         geselecteerdeWeek.weeknummer,
       );
 
-    const maand =
+    setGeselecteerdeMaand(
       maakMaandStart(
         start.getFullYear(),
         start.getMonth(),
-      );
-
-    setGeselecteerdeMaand(
-      maand,
+      ),
     );
   }, [geselecteerdeWeek]);
+
+  useEffect(() => {
+    if (!geselecteerdeWeek) {
+      setHuidigeMedewerkerId(null);
+      return;
+    }
+
+    const week = geselecteerdeWeek;
+    let actief = true;
+
+    async function laadHuidigeMedewerker() {
+      try {
+        const weekStart =
+          maakWeekStart(
+            week.jaar,
+            week.weeknummer,
+          );
+
+        const datum =
+          maakDatumString(
+            weekStart,
+          );
+
+        const response =
+          await fetch(
+            `/api/planning/medewerkers?vestigingId=${encodeURIComponent(
+              vestigingId,
+            )}&datum=${encodeURIComponent(
+              datum,
+            )}`,
+            {
+              method: "GET",
+              cache: "no-store",
+            },
+          );
+
+        const data =
+          await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data?.fout ??
+              "De huidige medewerker kon niet worden opgehaald.",
+          );
+        }
+
+        if (actief) {
+          setHuidigeMedewerkerId(
+            data?.huidigeMedewerkerId ??
+              null,
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Fout bij ophalen huidige medewerker:",
+          error,
+        );
+
+        if (actief) {
+          setHuidigeMedewerkerId(
+            null,
+          );
+        }
+      }
+    }
+
+    void laadHuidigeMedewerker();
+
+    return () => {
+      actief = false;
+    };
+  }, [
+    geselecteerdeWeek,
+    vestigingId,
+  ]);
 
   const geselecteerdeIndex =
     geselecteerdeWeek
@@ -599,17 +687,15 @@ export default function PlanningOverzicht({
       return;
     }
 
-    const timer = window.setTimeout(
-      () => {
+    const timer =
+      window.setTimeout(() => {
         dienstFormRef.current?.scrollIntoView(
           {
             behavior: "smooth",
             block: "start",
           },
         );
-      },
-      50,
-    );
+      }, 50);
 
     return () => {
       window.clearTimeout(timer);
@@ -652,7 +738,6 @@ export default function PlanningOverzicht({
       );
 
       setWeergave("week");
-
       return;
     }
 
@@ -703,12 +788,13 @@ export default function PlanningOverzicht({
 
   function openDienstForm(
     datum: string,
-    tagNaam: string,
   ) {
+    if (!kanDienstToevoegen) {
+      return;
+    }
+
     setToevoegDatum(datum);
-    setToevoegTag(
-      tagNaam || null,
-    );
+    setToevoegTag(null);
   }
 
   function sluitDienstForm() {
@@ -725,6 +811,14 @@ export default function PlanningOverzicht({
 
     setToevoegDatum(null);
     setToevoegTag(null);
+  }
+
+  function openDienst(
+    dienstId: string,
+  ) {
+    router.push(
+      `/planning/dienst/${dienstId}`,
+    );
   }
 
   if (weken.length === 0) {
@@ -767,8 +861,7 @@ export default function PlanningOverzicht({
               type="button"
               onClick={() => {
                 if (
-                  weergave ===
-                    "week" &&
+                  weergave === "week" &&
                   vorigeWeek
                 ) {
                   selecteerWeek(
@@ -777,8 +870,7 @@ export default function PlanningOverzicht({
                 }
 
                 if (
-                  weergave ===
-                    "maand" &&
+                  weergave === "maand" &&
                   vorigeMaand
                 ) {
                   wijzigMaand(
@@ -787,8 +879,7 @@ export default function PlanningOverzicht({
                 }
               }}
               disabled={
-                weergave ===
-                "week"
+                weergave === "week"
                   ? !vorigeWeek
                   : !vorigeMaand
               }
@@ -799,8 +890,7 @@ export default function PlanningOverzicht({
             </button>
 
             <div className="min-w-[230px] text-center">
-              {weergave ===
-              "week" ? (
+              {weergave === "week" ? (
                 <>
                   <h2 className="text-xl font-semibold text-gray-900">
                     Week{" "}
@@ -838,8 +928,7 @@ export default function PlanningOverzicht({
               type="button"
               onClick={() => {
                 if (
-                  weergave ===
-                    "week" &&
+                  weergave === "week" &&
                   volgendeWeek
                 ) {
                   selecteerWeek(
@@ -848,8 +937,7 @@ export default function PlanningOverzicht({
                 }
 
                 if (
-                  weergave ===
-                    "maand" &&
+                  weergave === "maand" &&
                   volgendeMaand
                 ) {
                   wijzigMaand(
@@ -858,8 +946,7 @@ export default function PlanningOverzicht({
                 }
               }}
               disabled={
-                weergave ===
-                "week"
+                weergave === "week"
                   ? !volgendeWeek
                   : !volgendeMaand
               }
@@ -873,9 +960,7 @@ export default function PlanningOverzicht({
           <div className="flex items-center justify-center gap-2 sm:justify-end">
             <button
               type="button"
-              onClick={
-                gaNaarVandaag
-              }
+              onClick={gaNaarVandaag}
               className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
             >
               Vandaag
@@ -885,13 +970,10 @@ export default function PlanningOverzicht({
               <button
                 type="button"
                 onClick={() =>
-                  setWeergave(
-                    "week",
-                  )
+                  setWeergave("week")
                 }
                 className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
-                  weergave ===
-                  "week"
+                  weergave === "week"
                     ? "bg-gray-900 text-white"
                     : "text-gray-600 hover:bg-gray-50"
                 }`}
@@ -902,13 +984,10 @@ export default function PlanningOverzicht({
               <button
                 type="button"
                 onClick={() =>
-                  setWeergave(
-                    "maand",
-                  )
+                  setWeergave("maand")
                 }
                 className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
-                  weergave ===
-                  "maand"
+                  weergave === "maand"
                     ? "bg-gray-900 text-white"
                     : "text-gray-600 hover:bg-gray-50"
                 }`}
@@ -919,27 +998,23 @@ export default function PlanningOverzicht({
           </div>
         </div>
 
-        {weergave ===
-        "week" ? (
+        {weergave === "week" ? (
           <>
             <div className="flex items-center justify-between border-b bg-gray-50 px-4 py-2">
               <p className="text-xs text-gray-500">
                 {
                   geselecteerdeWeek
-                    .diensten
-                    .length
+                    .diensten.length
                 }{" "}
                 {geselecteerdeWeek
-                  .diensten
-                  .length === 1
+                  .diensten.length ===
+                1
                   ? "dienst"
                   : "diensten"}
               </p>
 
               <p className="text-xs font-medium text-gray-500">
-                {
-                  geselecteerdeWeek.status
-                }
+                {geselecteerdeWeek.status}
               </p>
             </div>
 
@@ -970,17 +1045,35 @@ export default function PlanningOverzicht({
                               : "bg-gray-50"
                           }`}
                         >
-                          <p className="text-xs font-semibold uppercase text-gray-500">
-                            {dagNaam(
-                              dag.datum,
-                            )}
-                          </p>
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="text-xs font-semibold uppercase text-gray-500">
+                                {dagNaam(
+                                  dag.datum,
+                                )}
+                              </p>
 
-                          <p className="mt-1 font-semibold text-gray-900">
-                            {dagNummer(
-                              dag.datum,
+                              <p className="mt-1 font-semibold text-gray-900">
+                                {dagNummer(
+                                  dag.datum,
+                                )}
+                              </p>
+                            </div>
+
+                            {kanDienstToevoegen && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  openDienstForm(
+                                    dag.datumString,
+                                  )
+                                }
+                                className="shrink-0 rounded-lg bg-green-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-green-700 hover:shadow"
+                              >
+                                + Dienst
+                              </button>
                             )}
-                          </p>
+                          </div>
 
                           <div className="mt-2">
                             <span
@@ -1018,25 +1111,12 @@ export default function PlanningOverzicht({
                                   }
                                   className="p-3"
                                 >
-                                  <div className="mb-2 flex items-center justify-between gap-2">
+                                  <div className="mb-2">
                                     <h3 className="text-xs font-bold uppercase tracking-wide text-gray-700">
                                       {
                                         tagNaam
                                       }
                                     </h3>
-
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        openDienstForm(
-                                          dag.datumString,
-                                          tagNaam,
-                                        )
-                                      }
-                                      className="rounded border border-dashed border-gray-300 px-2 py-1 text-xs font-medium text-gray-500 transition hover:border-gray-900 hover:bg-gray-50 hover:text-gray-900"
-                                    >
-                                      + Dienst
-                                    </button>
                                   </div>
 
                                   {tagDiensten.length ===
@@ -1060,12 +1140,20 @@ export default function PlanningOverzicht({
                                             vestigingId={
                                               vestigingId
                                             }
-                                            bewerkbaar
+                                            bewerkbaar={
+                                              kanDienstBewerken
+                                            }
                                             kanVerwijderen={
                                               kanVerwijderen
                                             }
+                                            huidigeMedewerkerId={
+                                              huidigeMedewerkerId
+                                            }
                                             onGewijzigd={
                                               onGewijzigd
+                                            }
+                                            onKlik={
+                                              openDienst
                                             }
                                           />
                                         ),
@@ -1229,42 +1317,43 @@ export default function PlanningOverzicht({
         )}
       </div>
 
-      {toevoegDatum && (
-        <div
-          ref={dienstFormRef}
-          className="scroll-mt-6 rounded-xl border bg-white p-6"
-        >
-          <DienstForm
-            weekId={
-              geselecteerdeWeek.id
-            }
-            vestigingId={
-              vestigingId
-            }
-            initialDatum={
-              toevoegDatum
-            }
-            initialTagNaam={
-              toevoegTag
-            }
-            onAangemaakt={() => {
-              setToevoegDatum(null);
-              setToevoegTag(null);
-              onGewijzigd?.();
-            }}
-          />
-
-          <button
-            type="button"
-            onClick={
-              sluitDienstForm
-            }
-            className="mt-3 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+      {kanDienstToevoegen &&
+        toevoegDatum && (
+          <div
+            ref={dienstFormRef}
+            className="scroll-mt-6 rounded-xl border bg-white p-6"
           >
-            Annuleren
-          </button>
-        </div>
-      )}
+            <DienstForm
+              weekId={
+                geselecteerdeWeek.id
+              }
+              vestigingId={
+                vestigingId
+              }
+              initialDatum={
+                toevoegDatum
+              }
+              initialTagNaam={
+                toevoegTag
+              }
+              onAangemaakt={() => {
+                setToevoegDatum(null);
+                setToevoegTag(null);
+                onGewijzigd?.();
+              }}
+            />
+
+            <button
+              type="button"
+              onClick={
+                sluitDienstForm
+              }
+              className="mt-3 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            >
+              Annuleren
+            </button>
+          </div>
+        )}
     </section>
   );
 }

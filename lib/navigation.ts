@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   Users,
   CalendarDays,
+  ClipboardClock,
   Package,
   Boxes,
   ShoppingCart,
@@ -35,11 +36,20 @@ export const navigation = [
         icon: Users,
         permission: permissions.medewerkers.view,
       },
+
       {
         title: "Planning",
         href: "/planning",
         icon: CalendarDays,
         permission: permissions.planning.view,
+      },
+
+      {
+        title: "Mijn beschikbaarheid",
+        href: "/profiel/beschikbaarheid",
+        icon: ClipboardClock,
+        permission: permissions.planning.view,
+        medewerkerOnly: true,
       },
     ],
   },
@@ -53,18 +63,21 @@ export const navigation = [
         icon: Package,
         permission: permissions.producten.view,
       },
+
       {
         title: "Voorraad",
         href: "/voorraad",
         icon: Boxes,
         permission: permissions.voorraad.view,
       },
+
       {
         title: "Bestellingen",
         href: "/bestellingen",
         icon: ShoppingCart,
         permission: permissions.bestellingen.view,
       },
+
       {
         title: "Leveringen",
         href: "/leveringen",
@@ -95,6 +108,7 @@ export const navigation = [
         icon: Building2,
         ownerOnly: true,
       },
+
       {
         title: "Instellingen",
         href: "/instellingen",

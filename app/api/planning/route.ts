@@ -21,6 +21,12 @@ type ISOWeek = {
   weeknummer: number;
 };
 
+/*
+ * ============================================================
+ * DATUM / ISO-WEEK HELPERS
+ * ============================================================
+ */
+
 function isGeldigeDatum(
   waarde: Date | null | undefined,
 ): waarde is Date {
@@ -80,6 +86,61 @@ function eindeVanISOWeek(
   );
 
   return datum;
+}
+
+/**
+ * Berekent automatisch de uiterste datum
+ * waarop een medewerker beschikbaarheid
+ * voor deze planningweek mag doorgeven.
+ *
+ * Voorbeeld:
+ *
+ * Planningweek 36
+ * ↓
+ * vier weken eerder
+ * ↓
+ * deadline = einde week 31
+ *
+ * De deadline is dus altijd:
+ *
+ * maandag van de planningweek
+ * minus 1 dag
+ * minus 4 weken
+ *
+ * oftewel het einde van week - 5.
+ */
+function berekenBeschikbaarheidDeadline(
+  jaar: number,
+  weeknummer: number,
+): Date {
+  const weekStart =
+    beginVanISOWeek(
+      jaar,
+      weeknummer,
+    );
+
+  const deadline =
+    new Date(weekStart);
+
+  /*
+   * 29 dagen terug:
+   *
+   * maandag week 36
+   * - 29 dagen
+   * = zondag week 31
+   */
+  deadline.setUTCDate(
+    deadline.getUTCDate() - 29,
+  );
+
+  deadline.setUTCHours(
+    23,
+    59,
+    59,
+    999,
+  );
+
+  return deadline;
 }
 
 function isoWeekVanDatum(
@@ -149,6 +210,12 @@ function vergelijkWeken(
   return a.weeknummer - b.weeknummer;
 }
 
+/*
+ * ============================================================
+ * SEIZOEN
+ * ============================================================
+ */
+
 function genereerSeizoenWeken(
   seizoenStart: Date,
   seizoenEinde: Date,
@@ -213,6 +280,12 @@ function valtWeekBinnenSeizoen(
   );
 }
 
+/*
+ * ============================================================
+ * SEIZOEN SYNCHRONISEREN
+ * ============================================================
+ */
+
 async function synchroniseerSeizoen(
   vestigingId: string,
 ) {
@@ -235,8 +308,8 @@ async function synchroniseerSeizoen(
   }
 
   /*
-   * Zolang het seizoen nog niet is ingesteld,
-   * laten we bestaande planningweken ongemoeid.
+   * Zolang het seizoen niet is ingesteld,
+   * laten we bestaande planningweken bestaan.
    */
   if (
     !isGeldigeDatum(
@@ -281,6 +354,7 @@ async function synchroniseerSeizoen(
         jaar: true,
         weeknummer: true,
         status: true,
+        beschikbaarheidDeadline: true,
       },
     });
 
@@ -292,6 +366,10 @@ async function synchroniseerSeizoen(
       ),
     );
 
+  /*
+   * Nieuwe seizoenweken krijgen direct
+   * hun automatische beschikbaarheidsdeadline.
+   */
   const nieuweWeken =
     seizoenWeken.filter(
       (week) =>
@@ -309,6 +387,11 @@ async function synchroniseerSeizoen(
           weeknummer:
             week.weeknummer,
           status: "OPEN",
+          beschikbaarheidDeadline:
+            berekenBeschikbaarheidDeadline(
+              week.jaar,
+              week.weeknummer,
+            ),
         }),
       ),
       skipDuplicates: true,
@@ -316,10 +399,36 @@ async function synchroniseerSeizoen(
   }
 
   /*
-   * Alle bestaande weken buiten het seizoen
+   * Bestaande weken zonder deadline krijgen
+   * alsnog automatisch de juiste deadline.
+   */
+  const wekenZonderDeadline =
+    bestaandeWeken.filter(
+      (week) =>
+        week.beschikbaarheidDeadline ===
+        null,
+    );
+
+  for (const week of wekenZonderDeadline) {
+    await prisma.week.update({
+      where: {
+        id: week.id,
+      },
+      data: {
+        beschikbaarheidDeadline:
+          berekenBeschikbaarheidDeadline(
+            week.jaar,
+            week.weeknummer,
+          ),
+      },
+    });
+  }
+
+  /*
+   * Bestaande weken buiten het seizoen
    * worden afgesloten.
    *
-   * Bestaande weken binnen het seizoen behouden
+   * Weken binnen het seizoen behouden
    * hun huidige status.
    */
   const buitenSeizoen =
@@ -354,6 +463,12 @@ async function synchroniseerSeizoen(
   }
 }
 
+/*
+ * ============================================================
+ * PLANNING OPHALEN
+ * ============================================================
+ */
+
 async function haalPlanningOp(
   vestigingId: string,
   jaar?: number,
@@ -362,13 +477,20 @@ async function haalPlanningOp(
   return prisma.week.findMany({
     where: {
       vestigingId,
+
       ...(jaar !== undefined
-        ? { jaar }
+        ? {
+            jaar,
+          }
         : {}),
+
       ...(weeknummer !== undefined
-        ? { weeknummer }
+        ? {
+            weeknummer,
+          }
         : {}),
     },
+
     orderBy: [
       {
         jaar: "desc",
@@ -377,6 +499,7 @@ async function haalPlanningOp(
         weeknummer: "desc",
       },
     ],
+
     include: {
       diensten: {
         orderBy: [
@@ -387,17 +510,20 @@ async function haalPlanningOp(
             begintijd: "asc",
           },
         ],
+
         include: {
           tags: {
             include: {
               tag: true,
             },
+
             orderBy: {
               tag: {
                 volgorde: "asc",
               },
             },
           },
+
           bezetting: {
             include: {
               medewerker: {
@@ -411,12 +537,14 @@ async function haalPlanningOp(
                 },
               },
             },
+
             orderBy: {
               aangemaaktOp: "asc",
             },
           },
         },
       },
+
       beschikbaarheden: {
         orderBy: [
           {
@@ -430,6 +558,12 @@ async function haalPlanningOp(
     },
   });
 }
+
+/*
+ * ============================================================
+ * GET
+ * ============================================================
+ */
 
 export async function GET(
   request: Request,
@@ -457,7 +591,9 @@ export async function GET(
           fout:
             "vestigingId is verplicht.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
@@ -473,7 +609,9 @@ export async function GET(
           fout:
             "Geen toegang tot deze planning.",
         },
-        { status: 403 },
+        {
+          status: 403,
+        },
       );
     }
 
@@ -500,7 +638,9 @@ export async function GET(
           fout:
             "Jaar en weeknummer moeten geldige getallen zijn.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
@@ -514,14 +654,18 @@ export async function GET(
           fout:
             "Weeknummer moet tussen 1 en 53 liggen.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
     /*
-     * Elke keer dat Planning wordt geladen,
-     * controleren we of de weken overeenkomen
-     * met het ingestelde seizoen.
+     * Synchroniseer eerst:
+     *
+     * - ontbrekende weken
+     * - deadlines
+     * - seizoenstatussen
      */
     await synchroniseerSeizoen(
       vestigingId,
@@ -550,10 +694,18 @@ export async function GET(
             ? error.message
             : "De planning kon niet worden opgehaald.",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     );
   }
 }
+
+/*
+ * ============================================================
+ * POST
+ * ============================================================
+ */
 
 export async function POST(
   request: Request,
@@ -567,7 +719,6 @@ export async function POST(
       jaar,
       weeknummer,
       status,
-      beschikbaarheidDeadline,
     } = body;
 
     if (
@@ -584,7 +735,9 @@ export async function POST(
           fout:
             "vestigingId, jaar en weeknummer zijn verplicht.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
@@ -600,7 +753,9 @@ export async function POST(
           fout:
             "Je hebt geen rechten om een planningweek aan te maken.",
         },
-        { status: 403 },
+        {
+          status: 403,
+        },
       );
     }
 
@@ -613,7 +768,9 @@ export async function POST(
           fout:
             "Weeknummer moet tussen 1 en 53 liggen.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
@@ -628,7 +785,9 @@ export async function POST(
           fout:
             "Ongeldige planningstatus.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
@@ -650,7 +809,9 @@ export async function POST(
           fout:
             "Vestiging bestaat niet.",
         },
-        { status: 404 },
+        {
+          status: 404,
+        },
       );
     }
 
@@ -676,7 +837,9 @@ export async function POST(
             fout:
               "De seizoenstart moet vóór de seizoeneinde liggen.",
           },
-          { status: 400 },
+          {
+            status: 400,
+          },
         );
       }
 
@@ -696,45 +859,26 @@ export async function POST(
             fout:
               "Deze planningweek valt buiten het ingestelde seizoen.",
           },
-          { status: 400 },
+          {
+            status: 400,
+          },
         );
       }
     }
 
-    let deadline:
-      | Date
-      | null
-      | undefined;
-
-    if (
-      beschikbaarheidDeadline !==
-      undefined
-    ) {
-      if (
-        beschikbaarheidDeadline ===
-        null
-      ) {
-        deadline = null;
-      } else {
-        deadline = new Date(
-          beschikbaarheidDeadline,
-        );
-
-        if (
-          Number.isNaN(
-            deadline.getTime(),
-          )
-        ) {
-          return NextResponse.json(
-            {
-              fout:
-                "Ongeldige beschikbaarheidsdeadline.",
-            },
-            { status: 400 },
-          );
-        }
-      }
-    }
+    /*
+     * De deadline wordt ALTIJD automatisch
+     * berekend.
+     *
+     * Een eventueel meegestuurde
+     * beschikbaarheidDeadline wordt bewust
+     * genegeerd.
+     */
+    const beschikbaarheidDeadline =
+      berekenBeschikbaarheidDeadline(
+        jaar,
+        weeknummer,
+      );
 
     const bestaandeWeek =
       await prisma.week.findUnique({
@@ -745,6 +889,7 @@ export async function POST(
             weeknummer,
           },
         },
+
         select: {
           id: true,
         },
@@ -756,7 +901,9 @@ export async function POST(
           fout:
             "Deze planningweek bestaat al.",
         },
-        { status: 409 },
+        {
+          status: 409,
+        },
       );
     }
 
@@ -768,14 +915,15 @@ export async function POST(
           weeknummer,
           status:
             status ?? "OPEN",
-          beschikbaarheidDeadline:
-            deadline ?? null,
+          beschikbaarheidDeadline,
         },
       });
 
     return NextResponse.json(
       week,
-      { status: 201 },
+      {
+        status: 201,
+      },
     );
   } catch (error) {
     console.error(
@@ -788,7 +936,9 @@ export async function POST(
         fout:
           "De planningweek kon niet worden aangemaakt.",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     );
   }
 }

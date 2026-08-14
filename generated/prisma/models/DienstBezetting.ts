@@ -192,6 +192,8 @@ export type DienstBezettingWhereInput = {
   gewijzigdOp?: Prisma.DateTimeFilter<"DienstBezetting"> | Date | string
   dienst?: Prisma.XOR<Prisma.DienstScalarRelationFilter, Prisma.DienstWhereInput>
   medewerker?: Prisma.XOR<Prisma.MedewerkerNullableScalarRelationFilter, Prisma.MedewerkerWhereInput> | null
+  urenregistratie?: Prisma.XOR<Prisma.UrenRegistratieNullableScalarRelationFilter, Prisma.UrenRegistratieWhereInput> | null
+  ruilverzoeken?: Prisma.RuilverzoekListRelationFilter
 }
 
 export type DienstBezettingOrderByWithRelationInput = {
@@ -203,6 +205,8 @@ export type DienstBezettingOrderByWithRelationInput = {
   gewijzigdOp?: Prisma.SortOrder
   dienst?: Prisma.DienstOrderByWithRelationInput
   medewerker?: Prisma.MedewerkerOrderByWithRelationInput
+  urenregistratie?: Prisma.UrenRegistratieOrderByWithRelationInput
+  ruilverzoeken?: Prisma.RuilverzoekOrderByRelationAggregateInput
 }
 
 export type DienstBezettingWhereUniqueInput = Prisma.AtLeast<{
@@ -218,6 +222,8 @@ export type DienstBezettingWhereUniqueInput = Prisma.AtLeast<{
   gewijzigdOp?: Prisma.DateTimeFilter<"DienstBezetting"> | Date | string
   dienst?: Prisma.XOR<Prisma.DienstScalarRelationFilter, Prisma.DienstWhereInput>
   medewerker?: Prisma.XOR<Prisma.MedewerkerNullableScalarRelationFilter, Prisma.MedewerkerWhereInput> | null
+  urenregistratie?: Prisma.XOR<Prisma.UrenRegistratieNullableScalarRelationFilter, Prisma.UrenRegistratieWhereInput> | null
+  ruilverzoeken?: Prisma.RuilverzoekListRelationFilter
 }, "id" | "dienstId_medewerkerId">
 
 export type DienstBezettingOrderByWithAggregationInput = {
@@ -251,6 +257,8 @@ export type DienstBezettingCreateInput = {
   gewijzigdOp?: Date | string
   dienst: Prisma.DienstCreateNestedOneWithoutBezettingInput
   medewerker?: Prisma.MedewerkerCreateNestedOneWithoutDienstenInput
+  urenregistratie?: Prisma.UrenRegistratieCreateNestedOneWithoutDienstBezettingInput
+  ruilverzoeken?: Prisma.RuilverzoekCreateNestedManyWithoutDienstBezettingInput
 }
 
 export type DienstBezettingUncheckedCreateInput = {
@@ -260,6 +268,8 @@ export type DienstBezettingUncheckedCreateInput = {
   status?: string
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  urenregistratie?: Prisma.UrenRegistratieUncheckedCreateNestedOneWithoutDienstBezettingInput
+  ruilverzoeken?: Prisma.RuilverzoekUncheckedCreateNestedManyWithoutDienstBezettingInput
 }
 
 export type DienstBezettingUpdateInput = {
@@ -269,6 +279,8 @@ export type DienstBezettingUpdateInput = {
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dienst?: Prisma.DienstUpdateOneRequiredWithoutBezettingNestedInput
   medewerker?: Prisma.MedewerkerUpdateOneWithoutDienstenNestedInput
+  urenregistratie?: Prisma.UrenRegistratieUpdateOneWithoutDienstBezettingNestedInput
+  ruilverzoeken?: Prisma.RuilverzoekUpdateManyWithoutDienstBezettingNestedInput
 }
 
 export type DienstBezettingUncheckedUpdateInput = {
@@ -278,6 +290,8 @@ export type DienstBezettingUncheckedUpdateInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  urenregistratie?: Prisma.UrenRegistratieUncheckedUpdateOneWithoutDienstBezettingNestedInput
+  ruilverzoeken?: Prisma.RuilverzoekUncheckedUpdateManyWithoutDienstBezettingNestedInput
 }
 
 export type DienstBezettingCreateManyInput = {
@@ -345,6 +359,11 @@ export type DienstBezettingMinOrderByAggregateInput = {
   status?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
+}
+
+export type DienstBezettingScalarRelationFilter = {
+  is?: Prisma.DienstBezettingWhereInput
+  isNot?: Prisma.DienstBezettingWhereInput
 }
 
 export type DienstBezettingCreateNestedManyWithoutMedewerkerInput = {
@@ -431,12 +450,42 @@ export type DienstBezettingUncheckedUpdateManyWithoutDienstNestedInput = {
   deleteMany?: Prisma.DienstBezettingScalarWhereInput | Prisma.DienstBezettingScalarWhereInput[]
 }
 
+export type DienstBezettingCreateNestedOneWithoutRuilverzoekenInput = {
+  create?: Prisma.XOR<Prisma.DienstBezettingCreateWithoutRuilverzoekenInput, Prisma.DienstBezettingUncheckedCreateWithoutRuilverzoekenInput>
+  connectOrCreate?: Prisma.DienstBezettingCreateOrConnectWithoutRuilverzoekenInput
+  connect?: Prisma.DienstBezettingWhereUniqueInput
+}
+
+export type DienstBezettingUpdateOneRequiredWithoutRuilverzoekenNestedInput = {
+  create?: Prisma.XOR<Prisma.DienstBezettingCreateWithoutRuilverzoekenInput, Prisma.DienstBezettingUncheckedCreateWithoutRuilverzoekenInput>
+  connectOrCreate?: Prisma.DienstBezettingCreateOrConnectWithoutRuilverzoekenInput
+  upsert?: Prisma.DienstBezettingUpsertWithoutRuilverzoekenInput
+  connect?: Prisma.DienstBezettingWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DienstBezettingUpdateToOneWithWhereWithoutRuilverzoekenInput, Prisma.DienstBezettingUpdateWithoutRuilverzoekenInput>, Prisma.DienstBezettingUncheckedUpdateWithoutRuilverzoekenInput>
+}
+
+export type DienstBezettingCreateNestedOneWithoutUrenregistratieInput = {
+  create?: Prisma.XOR<Prisma.DienstBezettingCreateWithoutUrenregistratieInput, Prisma.DienstBezettingUncheckedCreateWithoutUrenregistratieInput>
+  connectOrCreate?: Prisma.DienstBezettingCreateOrConnectWithoutUrenregistratieInput
+  connect?: Prisma.DienstBezettingWhereUniqueInput
+}
+
+export type DienstBezettingUpdateOneRequiredWithoutUrenregistratieNestedInput = {
+  create?: Prisma.XOR<Prisma.DienstBezettingCreateWithoutUrenregistratieInput, Prisma.DienstBezettingUncheckedCreateWithoutUrenregistratieInput>
+  connectOrCreate?: Prisma.DienstBezettingCreateOrConnectWithoutUrenregistratieInput
+  upsert?: Prisma.DienstBezettingUpsertWithoutUrenregistratieInput
+  connect?: Prisma.DienstBezettingWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DienstBezettingUpdateToOneWithWhereWithoutUrenregistratieInput, Prisma.DienstBezettingUpdateWithoutUrenregistratieInput>, Prisma.DienstBezettingUncheckedUpdateWithoutUrenregistratieInput>
+}
+
 export type DienstBezettingCreateWithoutMedewerkerInput = {
   id?: string
   status?: string
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
   dienst: Prisma.DienstCreateNestedOneWithoutBezettingInput
+  urenregistratie?: Prisma.UrenRegistratieCreateNestedOneWithoutDienstBezettingInput
+  ruilverzoeken?: Prisma.RuilverzoekCreateNestedManyWithoutDienstBezettingInput
 }
 
 export type DienstBezettingUncheckedCreateWithoutMedewerkerInput = {
@@ -445,6 +494,8 @@ export type DienstBezettingUncheckedCreateWithoutMedewerkerInput = {
   status?: string
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  urenregistratie?: Prisma.UrenRegistratieUncheckedCreateNestedOneWithoutDienstBezettingInput
+  ruilverzoeken?: Prisma.RuilverzoekUncheckedCreateNestedManyWithoutDienstBezettingInput
 }
 
 export type DienstBezettingCreateOrConnectWithoutMedewerkerInput = {
@@ -491,6 +542,8 @@ export type DienstBezettingCreateWithoutDienstInput = {
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
   medewerker?: Prisma.MedewerkerCreateNestedOneWithoutDienstenInput
+  urenregistratie?: Prisma.UrenRegistratieCreateNestedOneWithoutDienstBezettingInput
+  ruilverzoeken?: Prisma.RuilverzoekCreateNestedManyWithoutDienstBezettingInput
 }
 
 export type DienstBezettingUncheckedCreateWithoutDienstInput = {
@@ -499,6 +552,8 @@ export type DienstBezettingUncheckedCreateWithoutDienstInput = {
   status?: string
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  urenregistratie?: Prisma.UrenRegistratieUncheckedCreateNestedOneWithoutDienstBezettingInput
+  ruilverzoeken?: Prisma.RuilverzoekUncheckedCreateNestedManyWithoutDienstBezettingInput
 }
 
 export type DienstBezettingCreateOrConnectWithoutDienstInput = {
@@ -527,6 +582,118 @@ export type DienstBezettingUpdateManyWithWhereWithoutDienstInput = {
   data: Prisma.XOR<Prisma.DienstBezettingUpdateManyMutationInput, Prisma.DienstBezettingUncheckedUpdateManyWithoutDienstInput>
 }
 
+export type DienstBezettingCreateWithoutRuilverzoekenInput = {
+  id?: string
+  status?: string
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  dienst: Prisma.DienstCreateNestedOneWithoutBezettingInput
+  medewerker?: Prisma.MedewerkerCreateNestedOneWithoutDienstenInput
+  urenregistratie?: Prisma.UrenRegistratieCreateNestedOneWithoutDienstBezettingInput
+}
+
+export type DienstBezettingUncheckedCreateWithoutRuilverzoekenInput = {
+  id?: string
+  dienstId: string
+  medewerkerId?: string | null
+  status?: string
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  urenregistratie?: Prisma.UrenRegistratieUncheckedCreateNestedOneWithoutDienstBezettingInput
+}
+
+export type DienstBezettingCreateOrConnectWithoutRuilverzoekenInput = {
+  where: Prisma.DienstBezettingWhereUniqueInput
+  create: Prisma.XOR<Prisma.DienstBezettingCreateWithoutRuilverzoekenInput, Prisma.DienstBezettingUncheckedCreateWithoutRuilverzoekenInput>
+}
+
+export type DienstBezettingUpsertWithoutRuilverzoekenInput = {
+  update: Prisma.XOR<Prisma.DienstBezettingUpdateWithoutRuilverzoekenInput, Prisma.DienstBezettingUncheckedUpdateWithoutRuilverzoekenInput>
+  create: Prisma.XOR<Prisma.DienstBezettingCreateWithoutRuilverzoekenInput, Prisma.DienstBezettingUncheckedCreateWithoutRuilverzoekenInput>
+  where?: Prisma.DienstBezettingWhereInput
+}
+
+export type DienstBezettingUpdateToOneWithWhereWithoutRuilverzoekenInput = {
+  where?: Prisma.DienstBezettingWhereInput
+  data: Prisma.XOR<Prisma.DienstBezettingUpdateWithoutRuilverzoekenInput, Prisma.DienstBezettingUncheckedUpdateWithoutRuilverzoekenInput>
+}
+
+export type DienstBezettingUpdateWithoutRuilverzoekenInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dienst?: Prisma.DienstUpdateOneRequiredWithoutBezettingNestedInput
+  medewerker?: Prisma.MedewerkerUpdateOneWithoutDienstenNestedInput
+  urenregistratie?: Prisma.UrenRegistratieUpdateOneWithoutDienstBezettingNestedInput
+}
+
+export type DienstBezettingUncheckedUpdateWithoutRuilverzoekenInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  dienstId?: Prisma.StringFieldUpdateOperationsInput | string
+  medewerkerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  urenregistratie?: Prisma.UrenRegistratieUncheckedUpdateOneWithoutDienstBezettingNestedInput
+}
+
+export type DienstBezettingCreateWithoutUrenregistratieInput = {
+  id?: string
+  status?: string
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  dienst: Prisma.DienstCreateNestedOneWithoutBezettingInput
+  medewerker?: Prisma.MedewerkerCreateNestedOneWithoutDienstenInput
+  ruilverzoeken?: Prisma.RuilverzoekCreateNestedManyWithoutDienstBezettingInput
+}
+
+export type DienstBezettingUncheckedCreateWithoutUrenregistratieInput = {
+  id?: string
+  dienstId: string
+  medewerkerId?: string | null
+  status?: string
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  ruilverzoeken?: Prisma.RuilverzoekUncheckedCreateNestedManyWithoutDienstBezettingInput
+}
+
+export type DienstBezettingCreateOrConnectWithoutUrenregistratieInput = {
+  where: Prisma.DienstBezettingWhereUniqueInput
+  create: Prisma.XOR<Prisma.DienstBezettingCreateWithoutUrenregistratieInput, Prisma.DienstBezettingUncheckedCreateWithoutUrenregistratieInput>
+}
+
+export type DienstBezettingUpsertWithoutUrenregistratieInput = {
+  update: Prisma.XOR<Prisma.DienstBezettingUpdateWithoutUrenregistratieInput, Prisma.DienstBezettingUncheckedUpdateWithoutUrenregistratieInput>
+  create: Prisma.XOR<Prisma.DienstBezettingCreateWithoutUrenregistratieInput, Prisma.DienstBezettingUncheckedCreateWithoutUrenregistratieInput>
+  where?: Prisma.DienstBezettingWhereInput
+}
+
+export type DienstBezettingUpdateToOneWithWhereWithoutUrenregistratieInput = {
+  where?: Prisma.DienstBezettingWhereInput
+  data: Prisma.XOR<Prisma.DienstBezettingUpdateWithoutUrenregistratieInput, Prisma.DienstBezettingUncheckedUpdateWithoutUrenregistratieInput>
+}
+
+export type DienstBezettingUpdateWithoutUrenregistratieInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dienst?: Prisma.DienstUpdateOneRequiredWithoutBezettingNestedInput
+  medewerker?: Prisma.MedewerkerUpdateOneWithoutDienstenNestedInput
+  ruilverzoeken?: Prisma.RuilverzoekUpdateManyWithoutDienstBezettingNestedInput
+}
+
+export type DienstBezettingUncheckedUpdateWithoutUrenregistratieInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  dienstId?: Prisma.StringFieldUpdateOperationsInput | string
+  medewerkerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ruilverzoeken?: Prisma.RuilverzoekUncheckedUpdateManyWithoutDienstBezettingNestedInput
+}
+
 export type DienstBezettingCreateManyMedewerkerInput = {
   id?: string
   dienstId: string
@@ -541,6 +708,8 @@ export type DienstBezettingUpdateWithoutMedewerkerInput = {
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dienst?: Prisma.DienstUpdateOneRequiredWithoutBezettingNestedInput
+  urenregistratie?: Prisma.UrenRegistratieUpdateOneWithoutDienstBezettingNestedInput
+  ruilverzoeken?: Prisma.RuilverzoekUpdateManyWithoutDienstBezettingNestedInput
 }
 
 export type DienstBezettingUncheckedUpdateWithoutMedewerkerInput = {
@@ -549,6 +718,8 @@ export type DienstBezettingUncheckedUpdateWithoutMedewerkerInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  urenregistratie?: Prisma.UrenRegistratieUncheckedUpdateOneWithoutDienstBezettingNestedInput
+  ruilverzoeken?: Prisma.RuilverzoekUncheckedUpdateManyWithoutDienstBezettingNestedInput
 }
 
 export type DienstBezettingUncheckedUpdateManyWithoutMedewerkerInput = {
@@ -573,6 +744,8 @@ export type DienstBezettingUpdateWithoutDienstInput = {
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   medewerker?: Prisma.MedewerkerUpdateOneWithoutDienstenNestedInput
+  urenregistratie?: Prisma.UrenRegistratieUpdateOneWithoutDienstBezettingNestedInput
+  ruilverzoeken?: Prisma.RuilverzoekUpdateManyWithoutDienstBezettingNestedInput
 }
 
 export type DienstBezettingUncheckedUpdateWithoutDienstInput = {
@@ -581,6 +754,8 @@ export type DienstBezettingUncheckedUpdateWithoutDienstInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  urenregistratie?: Prisma.UrenRegistratieUncheckedUpdateOneWithoutDienstBezettingNestedInput
+  ruilverzoeken?: Prisma.RuilverzoekUncheckedUpdateManyWithoutDienstBezettingNestedInput
 }
 
 export type DienstBezettingUncheckedUpdateManyWithoutDienstInput = {
@@ -592,6 +767,35 @@ export type DienstBezettingUncheckedUpdateManyWithoutDienstInput = {
 }
 
 
+/**
+ * Count Type DienstBezettingCountOutputType
+ */
+
+export type DienstBezettingCountOutputType = {
+  ruilverzoeken: number
+}
+
+export type DienstBezettingCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  ruilverzoeken?: boolean | DienstBezettingCountOutputTypeCountRuilverzoekenArgs
+}
+
+/**
+ * DienstBezettingCountOutputType without action
+ */
+export type DienstBezettingCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DienstBezettingCountOutputType
+   */
+  select?: Prisma.DienstBezettingCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * DienstBezettingCountOutputType without action
+ */
+export type DienstBezettingCountOutputTypeCountRuilverzoekenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RuilverzoekWhereInput
+}
+
 
 export type DienstBezettingSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -602,6 +806,9 @@ export type DienstBezettingSelect<ExtArgs extends runtime.Types.Extensions.Inter
   gewijzigdOp?: boolean
   dienst?: boolean | Prisma.DienstDefaultArgs<ExtArgs>
   medewerker?: boolean | Prisma.DienstBezetting$medewerkerArgs<ExtArgs>
+  urenregistratie?: boolean | Prisma.DienstBezetting$urenregistratieArgs<ExtArgs>
+  ruilverzoeken?: boolean | Prisma.DienstBezetting$ruilverzoekenArgs<ExtArgs>
+  _count?: boolean | Prisma.DienstBezettingCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["dienstBezetting"]>
 
 export type DienstBezettingSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -639,6 +846,9 @@ export type DienstBezettingOmit<ExtArgs extends runtime.Types.Extensions.Interna
 export type DienstBezettingInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   dienst?: boolean | Prisma.DienstDefaultArgs<ExtArgs>
   medewerker?: boolean | Prisma.DienstBezetting$medewerkerArgs<ExtArgs>
+  urenregistratie?: boolean | Prisma.DienstBezetting$urenregistratieArgs<ExtArgs>
+  ruilverzoeken?: boolean | Prisma.DienstBezetting$ruilverzoekenArgs<ExtArgs>
+  _count?: boolean | Prisma.DienstBezettingCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type DienstBezettingIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   dienst?: boolean | Prisma.DienstDefaultArgs<ExtArgs>
@@ -654,18 +864,13 @@ export type $DienstBezettingPayload<ExtArgs extends runtime.Types.Extensions.Int
   objects: {
     dienst: Prisma.$DienstPayload<ExtArgs>
     medewerker: Prisma.$MedewerkerPayload<ExtArgs> | null
+    urenregistratie: Prisma.$UrenRegistratiePayload<ExtArgs> | null
+    ruilverzoeken: Prisma.$RuilverzoekPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     dienstId: string
     medewerkerId: string | null
-    /**
-     * OPEN
-     * GEPLAND
-     * BEVESTIGD
-     * AFGEZEGD
-     * GEWERKT
-     */
     status: string
     aangemaaktOp: Date
     gewijzigdOp: Date
@@ -1065,6 +1270,8 @@ export interface Prisma__DienstBezettingClient<T, Null = never, ExtArgs extends 
   readonly [Symbol.toStringTag]: "PrismaPromise"
   dienst<T extends Prisma.DienstDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DienstDefaultArgs<ExtArgs>>): Prisma.Prisma__DienstClient<runtime.Types.Result.GetResult<Prisma.$DienstPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   medewerker<T extends Prisma.DienstBezetting$medewerkerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DienstBezetting$medewerkerArgs<ExtArgs>>): Prisma.Prisma__MedewerkerClient<runtime.Types.Result.GetResult<Prisma.$MedewerkerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  urenregistratie<T extends Prisma.DienstBezetting$urenregistratieArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DienstBezetting$urenregistratieArgs<ExtArgs>>): Prisma.Prisma__UrenRegistratieClient<runtime.Types.Result.GetResult<Prisma.$UrenRegistratiePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  ruilverzoeken<T extends Prisma.DienstBezetting$ruilverzoekenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DienstBezetting$ruilverzoekenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RuilverzoekPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1517,6 +1724,49 @@ export type DienstBezetting$medewerkerArgs<ExtArgs extends runtime.Types.Extensi
    */
   include?: Prisma.MedewerkerInclude<ExtArgs> | null
   where?: Prisma.MedewerkerWhereInput
+}
+
+/**
+ * DienstBezetting.urenregistratie
+ */
+export type DienstBezetting$urenregistratieArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UrenRegistratie
+   */
+  select?: Prisma.UrenRegistratieSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UrenRegistratie
+   */
+  omit?: Prisma.UrenRegistratieOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UrenRegistratieInclude<ExtArgs> | null
+  where?: Prisma.UrenRegistratieWhereInput
+}
+
+/**
+ * DienstBezetting.ruilverzoeken
+ */
+export type DienstBezetting$ruilverzoekenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Ruilverzoek
+   */
+  select?: Prisma.RuilverzoekSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Ruilverzoek
+   */
+  omit?: Prisma.RuilverzoekOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RuilverzoekInclude<ExtArgs> | null
+  where?: Prisma.RuilverzoekWhereInput
+  orderBy?: Prisma.RuilverzoekOrderByWithRelationInput | Prisma.RuilverzoekOrderByWithRelationInput[]
+  cursor?: Prisma.RuilverzoekWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RuilverzoekScalarFieldEnum | Prisma.RuilverzoekScalarFieldEnum[]
 }
 
 /**

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { hasPermissionForVestiging } from "@/lib/auth";
+import {
+  getCurrentUser,
+  hasPermissionForVestiging,
+} from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
@@ -32,8 +35,22 @@ function datumTekstNaarEindeVanDag(
   return waarde;
 }
 
-export async function GET(request: Request) {
+export async function GET(
+  request: Request,
+) {
   try {
+    const gebruiker =
+      await getCurrentUser();
+
+    if (!gebruiker) {
+      return NextResponse.json(
+        {
+          fout: "Je moet ingelogd zijn.",
+        },
+        { status: 401 },
+      );
+    }
+
     const { searchParams } =
       new URL(request.url);
 
@@ -98,10 +115,14 @@ export async function GET(request: Request) {
       );
     }
 
+    const huidigeMedewerkerId =
+      gebruiker.medewerker?.id ?? null;
+
     const medewerkers =
       await prisma.medewerker.findMany({
         where: {
           actief: true,
+
           vestigingen: {
             some: {
               vestigingId,
@@ -123,6 +144,7 @@ export async function GET(request: Request) {
                 actief: true,
               },
             },
+
             select: {
               tag: {
                 select: {
@@ -133,6 +155,7 @@ export async function GET(request: Request) {
                 },
               },
             },
+
             orderBy: {
               tag: {
                 volgorde: "asc",
@@ -147,6 +170,7 @@ export async function GET(request: Request) {
                 lte: eindeVanDag,
               },
             },
+
             select: {
               id: true,
               weekId: true,
@@ -157,6 +181,7 @@ export async function GET(request: Request) {
               status: true,
               opmerking: true,
             },
+
             orderBy: {
               begintijd: "asc",
             },
@@ -169,21 +194,25 @@ export async function GET(request: Request) {
                   gte: beginVanDag,
                   lte: eindeVanDag,
                 },
+
                 week: {
                   vestigingId,
                 },
               },
             },
+
             select: {
               id: true,
               dienstId: true,
               status: true,
+
               dienst: {
                 select: {
                   id: true,
                   datum: true,
                   begintijd: true,
                   eindtijd: true,
+
                   tags: {
                     select: {
                       tag: {
@@ -214,13 +243,19 @@ export async function GET(request: Request) {
       medewerkers.map(
         (medewerker) => ({
           id: medewerker.id,
+
           personeelsnummer:
             medewerker.personeelsnummer,
-          aanhef: medewerker.aanhef,
+
+          aanhef:
+            medewerker.aanhef,
+
           voornaam:
             medewerker.voornaam,
+
           tussenvoegsel:
             medewerker.tussenvoegsel,
+
           achternaam:
             medewerker.achternaam,
 
@@ -248,9 +283,10 @@ export async function GET(request: Request) {
         }),
       );
 
-    return NextResponse.json(
-      resultaat,
-    );
+    return NextResponse.json({
+      huidigeMedewerkerId,
+      medewerkers: resultaat,
+    });
   } catch (error) {
     console.error(
       "Fout bij ophalen medewerkers planning:",

@@ -125,22 +125,29 @@ export async function GET(
 
     if (!dienst) {
       return NextResponse.json(
-        { fout: "Dienst niet gevonden." },
-        { status: 404 },
+        {
+          fout: "Dienst niet gevonden.",
+        },
+        {
+          status: 404,
+        },
       );
     }
 
-    const toegang = await hasPermissionForVestiging(
-      permissions.planning.view,
-      dienst.week.vestigingId,
-    );
+    const toegang =
+      await hasPermissionForVestiging(
+        permissions.planning.view,
+        dienst.week.vestigingId,
+      );
 
     if (!toegang) {
       return NextResponse.json(
         {
           fout: "Geen toegang tot deze planning.",
         },
-        { status: 403 },
+        {
+          status: 403,
+        },
       );
     }
 
@@ -156,10 +163,11 @@ export async function GET(
 
     return NextResponse.json(
       {
-        fout:
-          "De dienst kon niet worden opgehaald.",
+        fout: "De dienst kon niet worden opgehaald.",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     );
   }
 }
@@ -170,21 +178,28 @@ export async function PATCH(
 ) {
   try {
     const { id } = await context.params;
+
     const body = await request.json();
 
-    const bestaandeDienst = await haalDienstOp(id);
+    const bestaandeDienst =
+      await haalDienstOp(id);
 
     if (!bestaandeDienst) {
       return NextResponse.json(
-        { fout: "Dienst niet gevonden." },
-        { status: 404 },
+        {
+          fout: "Dienst niet gevonden.",
+        },
+        {
+          status: 404,
+        },
       );
     }
 
-    const toegang = await hasPermissionForVestiging(
-      permissions.planning.update,
-      bestaandeDienst.week.vestigingId,
-    );
+    const toegang =
+      await hasPermissionForVestiging(
+        permissions.planning.update,
+        bestaandeDienst.week.vestigingId,
+      );
 
     if (!toegang) {
       return NextResponse.json(
@@ -192,7 +207,9 @@ export async function PATCH(
           fout:
             "Je hebt geen rechten om deze dienst te wijzigen.",
         },
-        { status: 403 },
+        {
+          status: 403,
+        },
       );
     }
 
@@ -210,8 +227,12 @@ export async function PATCH(
 
     if (!huidigeDienst) {
       return NextResponse.json(
-        { fout: "Dienst niet gevonden." },
-        { status: 404 },
+        {
+          fout: "Dienst niet gevonden.",
+        },
+        {
+          status: 404,
+        },
       );
     }
 
@@ -230,7 +251,9 @@ export async function PATCH(
           {
             fout: "Datum moet geldig zijn.",
           },
-          { status: 400 },
+          {
+            status: 400,
+          },
         );
       }
 
@@ -245,10 +268,11 @@ export async function PATCH(
       if (Number.isNaN(begintijd.getTime())) {
         return NextResponse.json(
           {
-            fout:
-              "Begintijd moet geldig zijn.",
+            fout: "Begintijd moet geldig zijn.",
           },
-          { status: 400 },
+          {
+            status: 400,
+          },
         );
       }
 
@@ -263,10 +287,11 @@ export async function PATCH(
       if (Number.isNaN(eindtijd.getTime())) {
         return NextResponse.json(
           {
-            fout:
-              "Eindtijd moet geldig zijn.",
+            fout: "Eindtijd moet geldig zijn.",
           },
-          { status: 400 },
+          {
+            status: 400,
+          },
         );
       }
 
@@ -287,7 +312,9 @@ export async function PATCH(
           fout:
             "Eindtijd moet na de begintijd liggen.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
@@ -308,6 +335,7 @@ export async function PATCH(
 
     if (body.tags !== undefined) {
       const tags = verwerkTags(body.tags);
+
       const tagIds = tags.map(
         (tag) => tag.tagId,
       );
@@ -378,7 +406,9 @@ export async function PATCH(
         fout:
           "De dienst kon niet worden gewijzigd.",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     );
   }
 }
@@ -394,15 +424,20 @@ export async function DELETE(
 
     if (!dienst) {
       return NextResponse.json(
-        { fout: "Dienst niet gevonden." },
-        { status: 404 },
+        {
+          fout: "Dienst niet gevonden.",
+        },
+        {
+          status: 404,
+        },
       );
     }
 
-    const toegang = await hasPermissionForVestiging(
-      permissions.planning.delete,
-      dienst.week.vestigingId,
-    );
+    const toegang =
+      await hasPermissionForVestiging(
+        permissions.planning.delete,
+        dienst.week.vestigingId,
+      );
 
     if (!toegang) {
       return NextResponse.json(
@@ -410,7 +445,9 @@ export async function DELETE(
           fout:
             "Je hebt geen rechten om deze dienst te verwijderen.",
         },
-        { status: 403 },
+        {
+          status: 403,
+        },
       );
     }
 
@@ -434,7 +471,9 @@ export async function DELETE(
         fout:
           "De dienst kon niet worden verwijderd.",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     );
   }
 }

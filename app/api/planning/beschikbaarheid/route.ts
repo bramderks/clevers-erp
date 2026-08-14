@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { hasPermissionForVestiging } from "@/lib/auth";
-import { permissions } from "@/lib/permissions";
+import {
+  getCurrentUser,
+  isEigenaar,
+} from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const TOEGESTANE_STATUSSEN = [
@@ -13,353 +15,744 @@ const TOEGESTANE_STATUSSEN = [
 type BeschikbaarheidStatus =
   (typeof TOEGESTANE_STATUSSEN)[number];
 
-async function haalWeekOp(
-  weekId: string,
+type RouteContext = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
+function isDeadlineVerstreken(
+  deadline: Date | null,
 ) {
-  return prisma.week.findUnique({
+  if (!deadline) {
+    return false;
+  }
+
+  return new Date() > deadline;
+}
+
+async function haalBeschikbaarheidOp(
+  id: string,
+) {
+  return prisma.beschikbaarheid.findUnique({
     where: {
-      id: weekId,
+      id,
     },
+
     select: {
       id: true,
-      vestigingId: true,
-      beschikbaarheidDeadline: true,
+      medewerkerId: true,
+      weekId: true,
+      datum: true,
+      begintijd: true,
+      eindtijd: true,
+
+      week: {
+        select: {
+          id: true,
+          vestigingId: true,
+          jaar: true,
+          weeknummer: true,
+          beschikbaarheidDeadline: true,
+        },
+      },
     },
   });
 }
 
-export async function GET(request: Request) {
-  try {
-    const { searchParams } =
-      new URL(request.url);
+async function controleerToegang(
+  medewerkerId: string,
+  vestigingId: string,
+  deadline: Date | null,
+) {
+  const gebruiker =
+    await getCurrentUser();
 
-    const weekId =
-      searchParams.get("weekId");
-
-    const medewerkerId =
-      searchParams.get(
-        "medewerkerId",
-      );
-
-    if (!weekId) {
-      return NextResponse.json(
-        {
-          fout:
-            "weekId is verplicht.",
-        },
-        { status: 400 },
-      );
-    }
-
-    const week =
-      await haalWeekOp(weekId);
-
-    if (!week) {
-      return NextResponse.json(
-        {
-          fout:
-            "Planningweek niet gevonden.",
-        },
-        { status: 404 },
-      );
-    }
-
-    const toegang =
-      await hasPermissionForVestiging(
-        permissions.planning.view,
-        week.vestigingId,
-      );
-
-    if (!toegang) {
-      return NextResponse.json(
-        {
-          fout:
-            "Geen toegang tot deze planning.",
-        },
-        { status: 403 },
-      );
-    }
-
-    const beschikbaarheden =
-      await prisma.beschikbaarheid.findMany(
-        {
-          where: {
-            weekId,
-            ...(medewerkerId
-              ? {
-                  medewerkerId,
-                }
-              : {}),
-          },
-          orderBy: [
-            {
-              datum: "asc",
-            },
-            {
-              begintijd: "asc",
-            },
-          ],
-          include: {
-            medewerker: {
-              select: {
-                id: true,
-                personeelsnummer: true,
-                aanhef: true,
-                voornaam: true,
-                tussenvoegsel: true,
-                achternaam: true,
-              },
-            },
-          },
-        },
-      );
-
-    return NextResponse.json(
-      beschikbaarheden,
-    );
-  } catch (error) {
-    console.error(
-      "Fout bij ophalen beschikbaarheden:",
-      error,
-    );
-
-    return NextResponse.json(
-      {
-        fout:
-          "De beschikbaarheden konden niet worden opgehaald.",
-      },
-      { status: 500 },
-    );
+  if (!gebruiker) {
+    return {
+      toegestaan: false,
+      eigenaar: false,
+      reden:
+        "Je moet ingelogd zijn.",
+    };
   }
+
+  const eigenaar =
+    await isEigenaar();
+
+  /*
+   * Eigenaar mag beschikbaarheid altijd
+   * corrigeren of verwijderen.
+   */
+  if (eigenaar) {
+    return {
+      toegestaan: true,
+      eigenaar: true,
+      reden: null,
+    };
+  }
+
+  /*
+   * Een medewerker mag uitsluitend zijn
+   * eigen beschikbaarheid beheren.
+   */
+  if (
+    !gebruiker.medewerker ||
+    gebruiker.medewerker.id !==
+      medewerkerId
+  ) {
+    return {
+      toegestaan: false,
+      eigenaar: false,
+      reden:
+        "Je kunt alleen je eigen beschikbaarheid wijzigen.",
+    };
+  }
+
+  /*
+   * Na de deadline staat de beschikbaarheid
+   * voor medewerkers definitief op slot.
+   */
+  if (
+    isDeadlineVerstreken(
+      deadline,
+    )
+  ) {
+    return {
+      toegestaan: false,
+      eigenaar: false,
+      reden:
+        "De deadline voor deze beschikbaarheid is verstreken.",
+    };
+  }
+
+  /*
+   * De medewerker moet aan de betreffende
+   * vestiging gekoppeld zijn.
+   *
+   * Hiervoor gebruiken we het medewerkerrecord
+   * zelf. Een medewerker hoeft dus geen aparte
+   * vestigingToegang te hebben.
+   */
+  const medewerker =
+    await prisma.medewerker.findUnique({
+      where: {
+        id: medewerkerId,
+      },
+
+      select: {
+        id: true,
+        actief: true,
+
+        vestigingen: {
+          where: {
+            vestigingId,
+            vestiging: {
+              actief: true,
+            },
+          },
+
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+  if (!medewerker) {
+    return {
+      toegestaan: false,
+      eigenaar: false,
+      reden:
+        "Medewerker niet gevonden.",
+    };
+  }
+
+  if (!medewerker.actief) {
+    return {
+      toegestaan: false,
+      eigenaar: false,
+      reden:
+        "Een inactieve medewerker kan geen beschikbaarheid wijzigen.",
+    };
+  }
+
+  if (
+    medewerker.vestigingen.length ===
+    0
+  ) {
+    return {
+      toegestaan: false,
+      eigenaar: false,
+      reden:
+        "Je hebt geen toegang tot deze vestiging.",
+    };
+  }
+
+  return {
+    toegestaan: true,
+    eigenaar: false,
+    reden: null,
+  };
 }
 
-export async function POST(request: Request) {
+/*
+ * ============================================================
+ * PATCH
+ * ============================================================
+ */
+
+export async function PATCH(
+  request: Request,
+  context: RouteContext,
+) {
   try {
-    const body = await request.json();
+    const { id } =
+      await context.params;
 
-    const {
-      weekId,
-      medewerkerId,
-      datum,
-      begintijd,
-      eindtijd,
-      status,
-      opmerking,
-    } = body;
+    const body =
+      await request.json();
 
-    if (
-      !weekId ||
-      !medewerkerId ||
-      !datum ||
-      !begintijd ||
-      !eindtijd
-    ) {
-      return NextResponse.json(
-        {
-          fout:
-            "weekId, medewerkerId, datum, begintijd en eindtijd zijn verplicht.",
-        },
-        { status: 400 },
+    const bestaande =
+      await haalBeschikbaarheidOp(
+        id,
       );
-    }
 
-    const week =
-      await haalWeekOp(weekId);
-
-    if (!week) {
+    if (!bestaande) {
       return NextResponse.json(
         {
           fout:
-            "Planningweek niet gevonden.",
+            "Beschikbaarheid niet gevonden.",
         },
-        { status: 404 },
+        {
+          status: 404,
+        },
       );
     }
 
     const toegang =
-      await hasPermissionForVestiging(
-        permissions.planning.update,
-        week.vestigingId,
+      await controleerToegang(
+        bestaande.medewerkerId,
+        bestaande.week.vestigingId,
+        bestaande.week
+          .beschikbaarheidDeadline,
       );
 
-    if (!toegang) {
+    if (!toegang.toegestaan) {
       return NextResponse.json(
         {
           fout:
-            "Je hebt geen rechten om beschikbaarheid te wijzigen.",
+            toegang.reden ??
+            "Je hebt geen rechten om deze beschikbaarheid te wijzigen.",
         },
-        { status: 403 },
+        {
+          status: 403,
+        },
       );
     }
 
-    const medewerker =
-      await prisma.medewerker.findUnique(
-        {
-          where: {
-            id: medewerkerId,
+    /*
+     * --------------------------------------------------------
+     * MEDEWERKER WIJZIGEN
+     * --------------------------------------------------------
+     *
+     * Alleen een eigenaar mag een bestaande
+     * beschikbaarheid aan een andere medewerker
+     * koppelen.
+     */
+
+    if (
+      body.medewerkerId !==
+        undefined &&
+      body.medewerkerId !==
+        bestaande.medewerkerId
+    ) {
+      if (!toegang.eigenaar) {
+        return NextResponse.json(
+          {
+            fout:
+              "Alleen een eigenaar kan de medewerker van een beschikbaarheid wijzigen.",
           },
+          {
+            status: 403,
+          },
+        );
+      }
+
+      if (
+        typeof body.medewerkerId !==
+          "string" ||
+        body.medewerkerId.trim()
+          .length === 0
+      ) {
+        return NextResponse.json(
+          {
+            fout:
+              "medewerkerId is ongeldig.",
+          },
+          {
+            status: 400,
+          },
+        );
+      }
+
+      const nieuweMedewerker =
+        await prisma.medewerker.findUnique({
+          where: {
+            id: body.medewerkerId,
+          },
+
           select: {
             id: true,
             actief: true,
+
             vestigingen: {
               where: {
                 vestigingId:
-                  week.vestigingId,
+                  bestaande.week
+                    .vestigingId,
+
+                vestiging: {
+                  actief: true,
+                },
               },
+
               select: {
                 id: true,
               },
             },
           },
-        },
-      );
+        });
 
-    if (!medewerker) {
-      return NextResponse.json(
-        {
-          fout:
-            "Medewerker niet gevonden.",
-        },
-        { status: 404 },
-      );
+      if (!nieuweMedewerker) {
+        return NextResponse.json(
+          {
+            fout:
+              "Medewerker niet gevonden.",
+          },
+          {
+            status: 404,
+          },
+        );
+      }
+
+      if (!nieuweMedewerker.actief) {
+        return NextResponse.json(
+          {
+            fout:
+              "Een inactieve medewerker kan geen beschikbaarheid krijgen.",
+          },
+          {
+            status: 400,
+          },
+        );
+      }
+
+      if (
+        nieuweMedewerker
+          .vestigingen.length === 0
+      ) {
+        return NextResponse.json(
+          {
+            fout:
+              "Deze medewerker hoort niet bij deze vestiging.",
+          },
+          {
+            status: 400,
+          },
+        );
+      }
     }
 
-    if (!medewerker.actief) {
-      return NextResponse.json(
-        {
-          fout:
-            "Een inactieve medewerker kan geen beschikbaarheid opgeven.",
-        },
-        { status: 400 },
-      );
-    }
+    /*
+     * --------------------------------------------------------
+     * UPDATE DATA
+     * --------------------------------------------------------
+     */
+
+    const data: {
+      medewerkerId?: string;
+      datum?: Date;
+      begintijd?: Date;
+      eindtijd?: Date;
+      status?: BeschikbaarheidStatus;
+      opmerking?: string | null;
+    } = {};
+
+    /*
+     * --------------------------------------------------------
+     * MEDEWERKER
+     * --------------------------------------------------------
+     */
 
     if (
-      medewerker.vestigingen.length ===
-      0
+      body.medewerkerId !==
+      undefined
     ) {
-      return NextResponse.json(
-        {
-          fout:
-            "Deze medewerker hoort niet bij deze vestiging.",
-        },
-        { status: 400 },
-      );
+      if (
+        typeof body.medewerkerId !==
+          "string" ||
+        body.medewerkerId.trim()
+          .length === 0
+      ) {
+        return NextResponse.json(
+          {
+            fout:
+              "medewerkerId is ongeldig.",
+          },
+          {
+            status: 400,
+          },
+        );
+      }
+
+      /*
+       * Een medewerker mag zijn eigen ID
+       * meesturen, maar niet wijzigen.
+       */
+      if (
+        !toegang.eigenaar &&
+        body.medewerkerId !==
+          bestaande.medewerkerId
+      ) {
+        return NextResponse.json(
+          {
+            fout:
+              "Je kunt alleen je eigen beschikbaarheid wijzigen.",
+          },
+          {
+            status: 403,
+          },
+        );
+      }
+
+      data.medewerkerId =
+        body.medewerkerId;
     }
 
-    const datumWaarde =
-      new Date(datum);
-
-    const begintijdWaarde =
-      new Date(begintijd);
-
-    const eindtijdWaarde =
-      new Date(eindtijd);
+    /*
+     * --------------------------------------------------------
+     * DATUM
+     * --------------------------------------------------------
+     */
 
     if (
-      Number.isNaN(
-        datumWaarde.getTime(),
-      ) ||
-      Number.isNaN(
-        begintijdWaarde.getTime(),
-      ) ||
-      Number.isNaN(
-        eindtijdWaarde.getTime(),
-      )
+      body.datum !== undefined
     ) {
-      return NextResponse.json(
-        {
-          fout:
-            "Datum en tijden moeten geldig zijn.",
-        },
-        { status: 400 },
-      );
+      const datum =
+        new Date(body.datum);
+
+      if (
+        Number.isNaN(
+          datum.getTime(),
+        )
+      ) {
+        return NextResponse.json(
+          {
+            fout:
+              "Datum moet geldig zijn.",
+          },
+          {
+            status: 400,
+          },
+        );
+      }
+
+      data.datum = datum;
     }
 
+    /*
+     * --------------------------------------------------------
+     * BEGINTIJD
+     * --------------------------------------------------------
+     */
+
     if (
-      eindtijdWaarde <=
-      begintijdWaarde
+      body.begintijd !==
+      undefined
+    ) {
+      const begintijd =
+        new Date(
+          body.begintijd,
+        );
+
+      if (
+        Number.isNaN(
+          begintijd.getTime(),
+        )
+      ) {
+        return NextResponse.json(
+          {
+            fout:
+              "Begintijd moet geldig zijn.",
+          },
+          {
+            status: 400,
+          },
+        );
+      }
+
+      data.begintijd =
+        begintijd;
+    }
+
+    /*
+     * --------------------------------------------------------
+     * EINDTIJD
+     * --------------------------------------------------------
+     */
+
+    if (
+      body.eindtijd !==
+      undefined
+    ) {
+      const eindtijd =
+        new Date(
+          body.eindtijd,
+        );
+
+      if (
+        Number.isNaN(
+          eindtijd.getTime(),
+        )
+      ) {
+        return NextResponse.json(
+          {
+            fout:
+              "Eindtijd moet geldig zijn.",
+          },
+          {
+            status: 400,
+          },
+        );
+      }
+
+      data.eindtijd =
+        eindtijd;
+    }
+
+    /*
+     * Controleer ook wanneer slechts één van
+     * beide tijden wordt gewijzigd.
+     */
+    const definitieveBegintijd =
+      data.begintijd ??
+      bestaande.begintijd;
+
+    const definitieveEindtijd =
+      data.eindtijd ??
+      bestaande.eindtijd;
+
+    if (
+      definitieveEindtijd <=
+      definitieveBegintijd
     ) {
       return NextResponse.json(
         {
           fout:
             "Eindtijd moet na de begintijd liggen.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
+    /*
+     * --------------------------------------------------------
+     * STATUS
+     * --------------------------------------------------------
+     */
+
     if (
-      status !== undefined &&
-      (
-        typeof status !== "string" ||
+      body.status !== undefined
+    ) {
+      if (
+        typeof body.status !==
+          "string" ||
         !TOEGESTANE_STATUSSEN.includes(
-          status as BeschikbaarheidStatus,
+          body.status as BeschikbaarheidStatus,
         )
-      )
+      ) {
+        return NextResponse.json(
+          {
+            fout:
+              "Ongeldige beschikbaarheidsstatus.",
+          },
+          {
+            status: 400,
+          },
+        );
+      }
+
+      data.status =
+        body.status as BeschikbaarheidStatus;
+    }
+
+    /*
+     * --------------------------------------------------------
+     * OPMERKING
+     * --------------------------------------------------------
+     */
+
+    if (
+      body.opmerking !==
+      undefined
+    ) {
+      data.opmerking =
+        typeof body.opmerking ===
+          "string" &&
+        body.opmerking.trim()
+          .length > 0
+          ? body.opmerking.trim()
+          : null;
+    }
+
+    /*
+     * --------------------------------------------------------
+     * GEEN WIJZIGINGEN
+     * --------------------------------------------------------
+     */
+
+    if (
+      Object.keys(data).length ===
+      0
     ) {
       return NextResponse.json(
         {
           fout:
-            "Ongeldige beschikbaarheidsstatus.",
+            "Er zijn geen wijzigingen opgegeven.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
+    /*
+     * --------------------------------------------------------
+     * OPSLAAN
+     * --------------------------------------------------------
+     */
+
     const beschikbaarheid =
-      await prisma.beschikbaarheid.create(
-        {
-          data: {
-            weekId,
-            medewerkerId,
-            datum: datumWaarde,
-            begintijd:
-              begintijdWaarde,
-            eindtijd:
-              eindtijdWaarde,
-            status:
-              (status as BeschikbaarheidStatus) ??
-              "BESCHIKBAAR",
-            opmerking:
-              typeof opmerking ===
-                "string" &&
-              opmerking.trim()
-                .length > 0
-                ? opmerking.trim()
-                : null,
-          },
-          include: {
-            medewerker: {
-              select: {
-                id: true,
-                personeelsnummer: true,
-                aanhef: true,
-                voornaam: true,
-                tussenvoegsel: true,
-                achternaam: true,
-              },
+      await prisma.beschikbaarheid.update({
+        where: {
+          id,
+        },
+
+        data,
+
+        include: {
+          medewerker: {
+            select: {
+              id: true,
+              personeelsnummer: true,
+              aanhef: true,
+              voornaam: true,
+              tussenvoegsel: true,
+              achternaam: true,
             },
           },
         },
-      );
+      });
 
     return NextResponse.json(
       beschikbaarheid,
-      { status: 201 },
     );
   } catch (error) {
     console.error(
-      "Fout bij aanmaken beschikbaarheid:",
+      "Fout bij wijzigen beschikbaarheid:",
       error,
     );
 
     return NextResponse.json(
       {
         fout:
-          "De beschikbaarheid kon niet worden aangemaakt.",
+          "De beschikbaarheid kon niet worden gewijzigd.",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
+    );
+  }
+}
+
+/*
+ * ============================================================
+ * DELETE
+ * ============================================================
+ */
+
+export async function DELETE(
+  _request: Request,
+  context: RouteContext,
+) {
+  try {
+    const { id } =
+      await context.params;
+
+    const bestaande =
+      await haalBeschikbaarheidOp(
+        id,
+      );
+
+    if (!bestaande) {
+      return NextResponse.json(
+        {
+          fout:
+            "Beschikbaarheid niet gevonden.",
+        },
+        {
+          status: 404,
+        },
+      );
+    }
+
+    const toegang =
+      await controleerToegang(
+        bestaande.medewerkerId,
+        bestaande.week.vestigingId,
+        bestaande.week
+          .beschikbaarheidDeadline,
+      );
+
+    if (!toegang.toegestaan) {
+      return NextResponse.json(
+        {
+          fout:
+            toegang.reden ??
+            "Je hebt geen rechten om deze beschikbaarheid te verwijderen.",
+        },
+        {
+          status: 403,
+        },
+      );
+    }
+
+    await prisma.beschikbaarheid.delete({
+      where: {
+        id,
+      },
+    });
+
+    return NextResponse.json({
+      succes: true,
+    });
+  } catch (error) {
+    console.error(
+      "Fout bij verwijderen beschikbaarheid:",
+      error,
+    );
+
+    return NextResponse.json(
+      {
+        fout:
+          "De beschikbaarheid kon niet worden verwijderd.",
+      },
+      {
+        status: 500,
+      },
     );
   }
 }
