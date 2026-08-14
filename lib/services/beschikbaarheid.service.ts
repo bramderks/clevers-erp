@@ -13,9 +13,7 @@ type BeschikbaarheidData = {
   opmerking?: string | null;
 };
 
-async function getBeschikbaarheid(
-  id: string,
-) {
+async function getBeschikbaarheid(id: string) {
   const beschikbaarheid =
     await prisma.beschikbaarheid.findUnique({
       where: {
@@ -42,9 +40,7 @@ async function getBeschikbaarheid(
   return beschikbaarheid;
 }
 
-async function getWeek(
-  weekId: string,
-) {
+async function getWeek(weekId: string) {
   const week =
     await prisma.week.findUnique({
       where: {
@@ -150,9 +146,7 @@ function controleerTijden(
   begintijd: Date,
   eindtijd: Date,
 ) {
-  if (
-    eindtijd <= begintijd
-  ) {
+  if (eindtijd <= begintijd) {
     throw new Error(
       "De eindtijd moet na de begintijd liggen.",
     );
@@ -166,11 +160,8 @@ function controleerTijden(
     eindtijd.getHours() * 60 +
     eindtijd.getMinutes();
 
-  const minimum =
-    9 * 60;
-
-  const maximum =
-    23 * 60;
+  const minimum = 9 * 60;
+  const maximum = 23 * 60;
 
   if (
     beginMinuten < minimum ||
@@ -199,9 +190,7 @@ function controleerStatus(
     ];
 
   if (
-    !geldigeStatussen.includes(
-      status,
-    )
+    !geldigeStatussen.includes(status)
   ) {
     throw new Error(
       "De opgegeven beschikbaarheidsstatus is ongeldig.",
@@ -230,6 +219,7 @@ async function controleerToegangTotMedewerker(
         vestigingen: {
           select: {
             vestigingId: true,
+
             vestiging: {
               select: {
                 organisatieId: true,
@@ -288,7 +278,12 @@ async function controleerToegangTotMedewerker(
         select: {
           id: true,
           actief: true,
-          medewerkerId: true,
+
+          medewerker: {
+            select: {
+              id: true,
+            },
+          },
         },
       },
     );
@@ -306,7 +301,7 @@ async function controleerToegangTotMedewerker(
   }
 
   const isEigenMedewerker =
-    gebruiker.medewerkerId ===
+    gebruiker.medewerker?.id ===
     medewerkerId;
 
   if (
@@ -326,322 +321,302 @@ async function controleerToegangTotMedewerker(
   };
 }
 
-export const beschikbaarheidService =
-  {
-    async getByWeek(
-      weekId: string,
-      medewerkerId?: string,
-    ) {
-      return prisma.beschikbaarheid.findMany(
+export const beschikbaarheidService = {
+  async getByWeek(
+    weekId: string,
+    medewerkerId?: string,
+  ) {
+    return prisma.beschikbaarheid.findMany({
+      where: {
+        weekId,
+
+        ...(medewerkerId
+          ? {
+              medewerkerId,
+            }
+          : {}),
+      },
+
+      orderBy: [
         {
-          where: {
-            weekId,
-
-            ...(medewerkerId
-              ? {
-                  medewerkerId,
-                }
-              : {}),
-          },
-
-          orderBy: [
-            {
-              datum: "asc",
-            },
-            {
-              begintijd: "asc",
-            },
-          ],
+          datum: "asc",
         },
-      );
-    },
-
-    async getByMedewerker(
-      medewerkerId: string,
-    ) {
-      return prisma.beschikbaarheid.findMany(
         {
-          where: {
-            medewerkerId,
-          },
+          begintijd: "asc",
+        },
+      ],
+    });
+  },
 
+  async getByMedewerker(
+    medewerkerId: string,
+  ) {
+    return prisma.beschikbaarheid.findMany({
+      where: {
+        medewerkerId,
+      },
+
+      include: {
+        week: {
           include: {
-            week: {
-              include: {
-                vestiging: true,
-              },
-            },
+            vestiging: true,
           },
-
-          orderBy: [
-            {
-              datum: "asc",
-            },
-            {
-              begintijd: "asc",
-            },
-          ],
         },
-      );
-    },
+      },
 
-    async getById(id: string) {
-      return getBeschikbaarheid(id);
-    },
-
-    async create(data: {
-      medewerkerId: string;
-      weekId: string;
-      datum: Date;
-      begintijd: Date;
-      eindtijd: Date;
-      status?: BeschikbaarheidStatus;
-      opmerking?: string | null;
-      gebruikerId?: string;
-    }) {
-      if (!data.gebruikerId) {
-        throw new Error(
-          "Een ingelogde gebruiker is vereist.",
-        );
-      }
-
-      return this.aanmaken(
-        data.medewerkerId,
-        data.weekId,
+      orderBy: [
         {
-          datum: data.datum,
-          begintijd:
-            data.begintijd,
-          eindtijd:
-            data.eindtijd,
-          status: data.status,
-          opmerking:
-            data.opmerking,
+          datum: "asc",
         },
-        data.gebruikerId,
-      );
-    },
-
-    async aanmaken(
-      medewerkerId: string,
-      weekId: string,
-      data: BeschikbaarheidData,
-      gebruikerId: string,
-    ) {
-      const toegang =
-        await controleerToegangTotMedewerker(
-          medewerkerId,
-          weekId,
-          gebruikerId,
-        );
-
-      controleerTijden(
-        data.begintijd,
-        data.eindtijd,
-      );
-
-      controleerStatus(
-        data.status,
-      );
-
-      if (
-        deadlineVerstreken(
-          toegang.week
-            .beschikbaarheidDeadline,
-        ) &&
-        !toegang.beheerder
-      ) {
-        throw new Error(
-          "De deadline voor het doorgeven van beschikbaarheid is verstreken.",
-        );
-      }
-
-      return prisma.beschikbaarheid.create(
         {
-          data: {
-            weekId,
-            medewerkerId,
-            datum: data.datum,
-            begintijd:
-              data.begintijd,
-            eindtijd:
-              data.eindtijd,
-            status:
-              data.status ??
-              "BESCHIKBAAR",
-            opmerking:
-              data.opmerking ??
-              null,
-          },
+          begintijd: "asc",
         },
+      ],
+    });
+  },
+
+  async getById(id: string) {
+    return getBeschikbaarheid(id);
+  },
+
+  async create(data: {
+    medewerkerId: string;
+    weekId: string;
+    datum: Date;
+    begintijd: Date;
+    eindtijd: Date;
+    status?: BeschikbaarheidStatus;
+    opmerking?: string | null;
+    gebruikerId?: string;
+  }) {
+    if (!data.gebruikerId) {
+      throw new Error(
+        "Een ingelogde gebruiker is vereist.",
       );
-    },
+    }
 
-    async update(
-      id: string,
-      data: BeschikbaarheidData,
-      medewerkerId?: string,
-      gebruikerId?: string,
-    ) {
-      if (!gebruikerId) {
-        throw new Error(
-          "Een ingelogde gebruiker is vereist.",
-        );
-      }
+    return this.aanmaken(
+      data.medewerkerId,
+      data.weekId,
+      {
+        datum: data.datum,
+        begintijd: data.begintijd,
+        eindtijd: data.eindtijd,
+        status: data.status,
+        opmerking: data.opmerking,
+      },
+      data.gebruikerId,
+    );
+  },
 
-      const bestaande =
-        await getBeschikbaarheid(id);
-
-      if (
-        medewerkerId &&
-        bestaande.medewerkerId !==
-          medewerkerId
-      ) {
-        throw new Error(
-          "Je mag alleen je eigen beschikbaarheid wijzigen.",
-        );
-      }
-
-      const toegang =
-        await controleerToegangTotMedewerker(
-          bestaande.medewerkerId,
-          bestaande.weekId,
-          gebruikerId,
-        );
-
-      controleerTijden(
-        data.begintijd,
-        data.eindtijd,
-      );
-
-      controleerStatus(
-        data.status,
-      );
-
-      if (
-        deadlineVerstreken(
-          bestaande.week
-            .beschikbaarheidDeadline,
-        ) &&
-        !toegang.beheerder
-      ) {
-        throw new Error(
-          "De deadline voor het wijzigen van beschikbaarheid is verstreken. Alleen een eigenaar of teamleider kan nog wijzigingen uitvoeren.",
-        );
-      }
-
-      return prisma.beschikbaarheid.update(
-        {
-          where: {
-            id,
-          },
-
-          data: {
-            datum: data.datum,
-            begintijd:
-              data.begintijd,
-            eindtijd:
-              data.eindtijd,
-            status:
-              data.status ??
-              bestaande.status,
-            opmerking:
-              data.opmerking ??
-              null,
-          },
-        },
-      );
-    },
-
-    async wijzigen(
-      id: string,
-      medewerkerId: string,
-      data: BeschikbaarheidData,
-      gebruikerId: string,
-    ) {
-      return this.update(
-        id,
-        data,
+  async aanmaken(
+    medewerkerId: string,
+    weekId: string,
+    data: BeschikbaarheidData,
+    gebruikerId: string,
+  ) {
+    const toegang =
+      await controleerToegangTotMedewerker(
         medewerkerId,
+        weekId,
         gebruikerId,
       );
-    },
 
-    async delete(
-      id: string,
-      medewerkerId?: string,
-      gebruikerId?: string,
+    controleerTijden(
+      data.begintijd,
+      data.eindtijd,
+    );
+
+    controleerStatus(
+      data.status,
+    );
+
+    if (
+      deadlineVerstreken(
+        toegang.week
+          .beschikbaarheidDeadline,
+      ) &&
+      !toegang.beheerder
     ) {
-      if (!gebruikerId) {
-        throw new Error(
-          "Een ingelogde gebruiker is vereist.",
-        );
-      }
-
-      const bestaande =
-        await getBeschikbaarheid(id);
-
-      if (
-        medewerkerId &&
-        bestaande.medewerkerId !==
-          medewerkerId
-      ) {
-        throw new Error(
-          "Je mag alleen je eigen beschikbaarheid verwijderen.",
-        );
-      }
-
-      const toegang =
-        await controleerToegangTotMedewerker(
-          bestaande.medewerkerId,
-          bestaande.weekId,
-          gebruikerId,
-        );
-
-      if (
-        deadlineVerstreken(
-          bestaande.week
-            .beschikbaarheidDeadline,
-        ) &&
-        !toegang.beheerder
-      ) {
-        throw new Error(
-          "De deadline voor het verwijderen van beschikbaarheid is verstreken. Alleen een eigenaar of teamleider kan nog wijzigingen uitvoeren.",
-        );
-      }
-
-      return prisma.beschikbaarheid.delete(
-        {
-          where: {
-            id,
-          },
-        },
+      throw new Error(
+        "De deadline voor het doorgeven van beschikbaarheid is verstreken.",
       );
-    },
+    }
 
-    async verwijderen(
-      id: string,
-      medewerkerId: string,
-      gebruikerId: string,
-    ) {
-      return this.delete(
-        id,
+    return prisma.beschikbaarheid.create({
+      data: {
+        weekId,
         medewerkerId,
-        gebruikerId,
-      );
-    },
+        datum: data.datum,
+        begintijd: data.begintijd,
+        eindtijd: data.eindtijd,
+        status:
+          data.status ??
+          "BESCHIKBAAR",
+        opmerking:
+          data.opmerking ?? null,
+      },
+    });
+  },
 
-    async isBeheerder(
-      gebruikerId: string,
-      organisatieId?: string,
+  async update(
+    id: string,
+    data: BeschikbaarheidData,
+    medewerkerId?: string,
+    gebruikerId?: string,
+  ) {
+    if (!gebruikerId) {
+      throw new Error(
+        "Een ingelogde gebruiker is vereist.",
+      );
+    }
+
+    const bestaande =
+      await getBeschikbaarheid(id);
+
+    if (
+      medewerkerId &&
+      bestaande.medewerkerId !==
+        medewerkerId
     ) {
-      if (!organisatieId) {
-        return false;
-      }
-
-      return isBeheerder(
-        gebruikerId,
-        organisatieId,
+      throw new Error(
+        "Je mag alleen je eigen beschikbaarheid wijzigen.",
       );
-    },
-  };
+    }
+
+    const toegang =
+      await controleerToegangTotMedewerker(
+        bestaande.medewerkerId,
+        bestaande.weekId,
+        gebruikerId,
+      );
+
+    controleerTijden(
+      data.begintijd,
+      data.eindtijd,
+    );
+
+    controleerStatus(
+      data.status,
+    );
+
+    if (
+      deadlineVerstreken(
+        bestaande.week
+          .beschikbaarheidDeadline,
+      ) &&
+      !toegang.beheerder
+    ) {
+      throw new Error(
+        "De deadline voor het wijzigen van beschikbaarheid is verstreken. Alleen een eigenaar of teamleider kan nog wijzigingen uitvoeren.",
+      );
+    }
+
+    return prisma.beschikbaarheid.update({
+      where: {
+        id,
+      },
+
+      data: {
+        datum: data.datum,
+        begintijd: data.begintijd,
+        eindtijd: data.eindtijd,
+        status:
+          data.status ??
+          bestaande.status,
+        opmerking:
+          data.opmerking ?? null,
+      },
+    });
+  },
+
+  async wijzigen(
+    id: string,
+    medewerkerId: string,
+    data: BeschikbaarheidData,
+    gebruikerId: string,
+  ) {
+    return this.update(
+      id,
+      data,
+      medewerkerId,
+      gebruikerId,
+    );
+  },
+
+  async delete(
+    id: string,
+    medewerkerId?: string,
+    gebruikerId?: string,
+  ) {
+    if (!gebruikerId) {
+      throw new Error(
+        "Een ingelogde gebruiker is vereist.",
+      );
+    }
+
+    const bestaande =
+      await getBeschikbaarheid(id);
+
+    if (
+      medewerkerId &&
+      bestaande.medewerkerId !==
+        medewerkerId
+    ) {
+      throw new Error(
+        "Je mag alleen je eigen beschikbaarheid verwijderen.",
+      );
+    }
+
+    const toegang =
+      await controleerToegangTotMedewerker(
+        bestaande.medewerkerId,
+        bestaande.weekId,
+        gebruikerId,
+      );
+
+    if (
+      deadlineVerstreken(
+        bestaande.week
+          .beschikbaarheidDeadline,
+      ) &&
+      !toegang.beheerder
+    ) {
+      throw new Error(
+        "De deadline voor het verwijderen van beschikbaarheid is verstreken. Alleen een eigenaar of teamleider kan nog wijzigingen uitvoeren.",
+      );
+    }
+
+    return prisma.beschikbaarheid.delete({
+      where: {
+        id,
+      },
+    });
+  },
+
+  async verwijderen(
+    id: string,
+    medewerkerId: string,
+    gebruikerId: string,
+  ) {
+    return this.delete(
+      id,
+      medewerkerId,
+      gebruikerId,
+    );
+  },
+
+  async isBeheerder(
+    gebruikerId: string,
+    organisatieId?: string,
+  ) {
+    if (!organisatieId) {
+      return false;
+    }
+
+    return isBeheerder(
+      gebruikerId,
+      organisatieId,
+    );
+  },
+};

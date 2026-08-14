@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import {
+  useCallback,
+  useState,
+} from "react";
 
 import Card from "@/components/ui/Card";
-
 import BeschikbaarheidForm from "@/components/planning/BeschikbaarheidForm";
 import BeschikbaarheidOverzicht from "@/components/planning/BeschikbaarheidOverzicht";
 import BeschikbaarheidWeekSelector from "@/components/planning/BeschikbaarheidWeekSelector";
@@ -15,10 +17,12 @@ type Vestiging = {
 
 type Beschikbaarheid = {
   id: string;
+  weekId: string;
+  medewerkerId: string;
   datum: string;
   begintijd: string;
   eindtijd: string;
-  status: string;
+  status: "BESCHIKBAAR" | "NIET_BESCHIKBAAR" | "VOORKEUR";
   opmerking: string | null;
 };
 
@@ -53,14 +57,17 @@ function formatDeadline(
     return "Deadline onbekend";
   }
 
-  return datum.toLocaleString("nl-NL", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return new Intl.DateTimeFormat(
+    "nl-NL",
+    {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+  ).format(datum);
 }
 
 function deadlineIsVerstreken(
@@ -91,7 +98,7 @@ export default function BeschikbaarheidPanel({
     useState(false);
 
   const [error, setError] =
-    useState("");
+    useState<string | null>(null);
 
   const laadBeschikbaarheden =
     useCallback(
@@ -99,40 +106,80 @@ export default function BeschikbaarheidPanel({
         geselecteerdeWeek: SelectorWeek,
       ) => {
         setLoading(true);
-        setError("");
+        setError(null);
 
         try {
-          const response = await fetch(
-            `/api/medewerkers/${medewerkerId}/beschikbaarheid?weekId=${encodeURIComponent(
-              geselecteerdeWeek.id,
-            )}`,
-            {
-              cache: "no-store",
-            },
-          );
+          const response =
+            await fetch(
+              `/api/medewerkers/${encodeURIComponent(
+                medewerkerId,
+              )}/beschikbaarheid?weekId=${encodeURIComponent(
+                geselecteerdeWeek.id,
+              )}`,
+              {
+                method: "GET",
+                cache: "no-store",
+              },
+            );
 
           const resultaat =
             await response.json();
 
           if (!response.ok) {
             throw new Error(
-              resultaat.error ??
-                "Beschikbaarheden ophalen is mislukt.",
+              resultaat?.error ??
+                "De beschikbaarheden konden niet worden opgehaald.",
             );
           }
 
           const beschikbaarheden =
             Array.isArray(
-              resultaat.beschikbaarheden,
+              resultaat?.beschikbaarheden,
             )
               ? resultaat.beschikbaarheden
               : [];
 
+          const weekUitResponse =
+            resultaat?.week;
+
           setWeek({
-            ...geselecteerdeWeek,
-            beschikbaarheden,
+            id:
+              weekUitResponse?.id ??
+              geselecteerdeWeek.id,
+            jaar:
+              weekUitResponse?.jaar ??
+              geselecteerdeWeek.jaar,
+            weeknummer:
+              weekUitResponse?.weeknummer ??
+              geselecteerdeWeek.weeknummer,
+            status:
+              weekUitResponse?.status ??
+              geselecteerdeWeek.status,
+            beschikbaarheidDeadline:
+              weekUitResponse
+                ?.beschikbaarheidDeadline ??
+              geselecteerdeWeek.beschikbaarheidDeadline,
+            beschikbaarheden:
+              beschikbaarheden.map(
+                (
+                  beschikbaarheid: Beschikbaarheid,
+                ) => ({
+                  ...beschikbaarheid,
+                  weekId:
+                    beschikbaarheid.weekId ??
+                    geselecteerdeWeek.id,
+                  medewerkerId:
+                    beschikbaarheid.medewerkerId ??
+                    medewerkerId,
+                }),
+              ),
           });
         } catch (error) {
+          console.error(
+            "Fout bij laden beschikbaarheden:",
+            error,
+          );
+
           setWeek({
             ...geselecteerdeWeek,
             beschikbaarheden: [],
@@ -141,7 +188,7 @@ export default function BeschikbaarheidPanel({
           setError(
             error instanceof Error
               ? error.message
-              : "Beschikbaarheden ophalen is mislukt.",
+              : "De beschikbaarheden konden niet worden opgehaald.",
           );
         } finally {
           setLoading(false);
@@ -163,6 +210,20 @@ export default function BeschikbaarheidPanel({
       [laadBeschikbaarheden],
     );
 
+  const vernieuwBeschikbaarheid =
+    useCallback(() => {
+      if (!week) {
+        return;
+      }
+
+      void laadBeschikbaarheden(
+        week,
+      );
+    }, [
+      week,
+      laadBeschikbaarheden,
+    ]);
+
   if (vestigingen.length === 0) {
     return (
       <Card
@@ -175,8 +236,8 @@ export default function BeschikbaarheidPanel({
           </p>
 
           <p className="mt-1 text-sm text-amber-800">
-            Koppel eerst een vestiging aan deze
-            medewerker.
+            Koppel eerst een vestiging
+            aan deze medewerker.
           </p>
         </div>
       </Card>
@@ -184,10 +245,13 @@ export default function BeschikbaarheidPanel({
   }
 
   const deadline =
-    week?.beschikbaarheidDeadline ?? null;
+    week?.beschikbaarheidDeadline ??
+    null;
 
   const deadlineVerstreken =
-    deadlineIsVerstreken(deadline);
+    deadlineIsVerstreken(
+      deadline,
+    );
 
   const magWijzigen =
     isBeheerder ||
@@ -213,7 +277,9 @@ export default function BeschikbaarheidPanel({
           vestigingen={vestigingen}
           medewerkerId={medewerkerId}
           isBeheerder={isBeheerder}
-          onSelected={handleSelected}
+          onSelected={
+            handleSelected
+          }
         />
 
         {loading ? (
@@ -225,8 +291,9 @@ export default function BeschikbaarheidPanel({
         ) : !week ? (
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-6 py-8 text-center">
             <p className="text-sm text-slate-500">
-              Selecteer een week om de
-              beschikbaarheid te bekijken.
+              Selecteer een week om
+              de beschikbaarheid te
+              bekijken.
             </p>
           </div>
         ) : (
@@ -239,8 +306,9 @@ export default function BeschikbaarheidPanel({
                   </p>
 
                   <h3 className="mt-1 text-lg font-semibold text-slate-900">
-                    Week {week.weeknummer} ·{" "}
-                    {week.jaar}
+                    Week{" "}
+                    {week.weeknummer}{" "}
+                    · {week.jaar}
                   </h3>
                 </div>
 
@@ -281,8 +349,9 @@ export default function BeschikbaarheidPanel({
               {deadlineVerstreken ? (
                 <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
                   <p className="text-sm font-semibold text-red-800">
-                    De deadline voor deze week
-                    is verstreken.
+                    De deadline voor
+                    deze week is
+                    verstreken.
                   </p>
 
                   <p className="mt-1 text-sm text-red-700">
@@ -294,13 +363,16 @@ export default function BeschikbaarheidPanel({
               ) : (
                 <div className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
                   <p className="text-sm font-semibold text-green-800">
-                    Beschikbaarheid kan nog
-                    worden gewijzigd.
+                    Beschikbaarheid kan
+                    nog worden
+                    gewijzigd.
                   </p>
 
                   <p className="mt-1 text-sm text-green-700">
-                    Wijzigingen zijn mogelijk tot
-                    de bovenstaande deadline.
+                    Wijzigingen zijn
+                    mogelijk tot de
+                    bovenstaande
+                    deadline.
                   </p>
                 </div>
               )}
@@ -308,29 +380,39 @@ export default function BeschikbaarheidPanel({
 
             <div className="border-t border-slate-200 pt-6">
               <h3 className="text-base font-semibold text-slate-900">
-                Beschikbaarheid toevoegen
+                Beschikbaarheid
+                toevoegen
               </h3>
 
               <p className="mb-6 mt-1 text-sm text-slate-500">
-                Geef per dag de beschikbare tijden
-                op tussen 09:00 en 23:00.
+                Geef per dag de
+                beschikbare tijden op
+                tussen 09:00 en 23:00.
               </p>
 
               {magWijzigen ? (
                 <BeschikbaarheidForm
-                  medewerkerId={medewerkerId}
+                  medewerkerId={
+                    medewerkerId
+                  }
                   weekId={week.id}
+                  onAangemaakt={
+                    vernieuwBeschikbaarheid
+                  }
                 />
               ) : (
                 <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-4">
                   <p className="font-semibold text-red-900">
-                    Beschikbaarheid is gesloten
+                    Beschikbaarheid is
+                    gesloten
                   </p>
 
                   <p className="mt-1 text-sm text-red-800">
-                    De deadline voor deze week is
-                    verstreken. Je kunt geen
-                    wijzigingen meer uitvoeren.
+                    De deadline voor deze
+                    week is verstreken.
+                    Je kunt geen
+                    wijzigingen meer
+                    uitvoeren.
                   </p>
                 </div>
               )}
@@ -338,18 +420,23 @@ export default function BeschikbaarheidPanel({
 
             <div className="border-t border-slate-200 pt-6">
               <h3 className="mb-4 text-base font-semibold text-slate-900">
-                Ingevoerde beschikbaarheden
+                Ingevoerde
+                beschikbaarheden
               </h3>
 
               <BeschikbaarheidOverzicht
-                medewerkerId={medewerkerId}
+                medewerkerId={
+                  medewerkerId
+                }
                 beschikbaarheden={
                   week.beschikbaarheden
                 }
                 beschikbaarheidDeadline={
                   week.beschikbaarheidDeadline
                 }
-                magWijzigen={magWijzigen}
+                magWijzigen={
+                  magWijzigen
+                }
                 magVerwijderen={
                   magVerwijderen
                 }

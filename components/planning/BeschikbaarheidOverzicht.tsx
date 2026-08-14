@@ -3,10 +3,16 @@
 import type { Beschikbaarheid } from "@/types/planning";
 
 type BeschikbaarheidOverzichtProps = {
+  medewerkerId: string;
   beschikbaarheden: Beschikbaarheid[];
+  beschikbaarheidDeadline: string | null;
+  magWijzigen: boolean;
+  magVerwijderen: boolean;
 };
 
-function formatteerDatum(datum: string) {
+function formatteerDatum(
+  datum: string,
+) {
   return new Intl.DateTimeFormat(
     "nl-NL",
     {
@@ -17,7 +23,9 @@ function formatteerDatum(datum: string) {
   ).format(new Date(datum));
 }
 
-function formatteerTijd(datum: string) {
+function formatteerTijd(
+  datum: string,
+) {
   return new Intl.DateTimeFormat(
     "nl-NL",
     {
@@ -45,7 +53,7 @@ function statusLabel(
   }
 }
 
-function statusClass(
+function statusKlassen(
   status: Beschikbaarheid["status"],
 ) {
   switch (status) {
@@ -59,19 +67,34 @@ function statusClass(
       return "border-amber-200 bg-amber-50 text-amber-700";
 
     default:
-      return "border-gray-200 bg-gray-50 text-gray-700";
+      return "border-slate-200 bg-slate-50 text-slate-700";
   }
 }
 
 export default function BeschikbaarheidOverzicht({
+  medewerkerId,
   beschikbaarheden,
+  beschikbaarheidDeadline,
+  magWijzigen,
+  magVerwijderen,
 }: BeschikbaarheidOverzichtProps) {
+  void medewerkerId;
+  void beschikbaarheidDeadline;
+  void magWijzigen;
+  void magVerwijderen;
+
   if (beschikbaarheden.length === 0) {
     return (
-      <div className="rounded-xl border bg-white p-6">
-        <p className="text-sm text-gray-600">
-          Er zijn nog geen beschikbaarheden
+      <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
+        <p className="text-sm font-semibold text-slate-700">
+          Nog geen beschikbaarheid
           opgegeven.
+        </p>
+
+        <p className="mt-1 text-sm text-slate-500">
+          Voor deze planningweek zijn
+          nog geen beschikbaarheidsblokken
+          ingevoerd.
         </p>
       </div>
     );
@@ -82,18 +105,20 @@ export default function BeschikbaarheidOverzicht({
       {beschikbaarheden.map(
         (beschikbaarheid) => (
           <div
-            key={beschikbaarheid.id}
-            className="rounded-xl border bg-white p-4"
+            key={
+              beschikbaarheid.id
+            }
+            className="rounded-xl border border-slate-200 bg-white p-4"
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="font-medium capitalize text-gray-900">
+                <p className="font-semibold capitalize text-slate-900">
                   {formatteerDatum(
                     beschikbaarheid.datum,
                   )}
                 </p>
 
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1 text-sm text-slate-600">
                   {formatteerTijd(
                     beschikbaarheid.begintijd,
                   )}{" "}
@@ -105,7 +130,7 @@ export default function BeschikbaarheidOverzicht({
               </div>
 
               <span
-                className={`rounded-full border px-3 py-1 text-xs font-medium ${statusClass(
+                className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold ${statusKlassen(
                   beschikbaarheid.status,
                 )}`}
               >
@@ -116,9 +141,13 @@ export default function BeschikbaarheidOverzicht({
             </div>
 
             {beschikbaarheid.opmerking && (
-              <p className="mt-3 border-t pt-3 text-sm text-gray-500">
-                {beschikbaarheid.opmerking}
-              </p>
+              <div className="mt-3 border-t border-slate-200 pt-3">
+                <p className="text-sm text-slate-600">
+                  {
+                    beschikbaarheid.opmerking
+                  }
+                </p>
+              </div>
             )}
           </div>
         ),
