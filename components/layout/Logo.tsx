@@ -12,12 +12,14 @@ export default function Logo({
       <Link
         href="/dashboard"
         aria-label="Clevers ERP"
-        className="flex h-12 w-12 items-center justify-center transition-opacity hover:opacity-90"
+        className="flex h-16 w-16 items-center justify-center transition-opacity hover:opacity-90"
       >
         <img
           src="/ijs-logo-transparent.png"
-          alt="Clevers ERP"
-          className="h-12 w-12 object-contain"
+          alt="Clevers"
+          width={96}
+          height={96}
+          className="h-16 w-16 object-contain"
         />
       </Link>
     );
@@ -33,7 +35,9 @@ export default function Logo({
         <img
           src="/logo.png"
           alt="Clevers ERP"
-          className="h-12 w-auto object-contain"
+          width={180}
+          height={48}
+          className="h-12 w-auto max-w-[180px] object-contain"
         />
       </div>
     </Link>

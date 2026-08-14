@@ -41,6 +41,21 @@ export default function Navigation({
   function heeftToegang(
     item: NavigationItem,
   ) {
+    /*
+     * Beschikbaarheid is alleen bedoeld voor
+     * teamleiders en medewerkers.
+     *
+     * Een eigenaar beheert de planning en
+     * hoeft zelf geen beschikbaarheid op te geven.
+     */
+    if (
+      item.href ===
+        "/profiel/beschikbaarheid" &&
+      isEigenaar
+    ) {
+      return false;
+    }
+
     if (item.ownerOnly) {
       return isEigenaar;
     }

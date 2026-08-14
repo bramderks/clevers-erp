@@ -4,12 +4,14 @@ import { getCurrentUser } from "@/lib/auth";
 import { roles } from "@/lib/roles";
 
 export default async function Sidebar() {
-  const gebruiker = await getCurrentUser();
+  const gebruiker =
+    await getCurrentUser();
 
-  const naam = gebruiker?.naam ?? "Gast";
+  const naam =
+    gebruiker?.naam ?? "Gast";
 
   const actieveRelaties =
-    gebruiker?.organisaties.filter(
+    gebruiker?.organisaties?.filter(
       (relatie) =>
         relatie.actief &&
         relatie.organisatie.actief,
@@ -19,7 +21,8 @@ export default async function Sidebar() {
     actieveRelaties[0] ?? null;
 
   const rolNaam =
-    relatie?.rol.naam ?? "Gebruiker";
+    relatie?.rol?.naam ??
+    "Gebruiker";
 
   const rolKey = (
     Object.keys(roles) as Array<
@@ -31,23 +34,26 @@ export default async function Sidebar() {
       rolNaam.toLowerCase(),
   );
 
-  const gebruikersPermissions = rolKey
-    ? Array.from(
-        roles[rolKey].permissions,
-      )
-    : [];
+  const gebruikersPermissions =
+    rolKey
+      ? Array.from(
+          roles[rolKey].permissions,
+        )
+      : [];
 
   const isEigenaar =
     actieveRelaties.some(
       (relatie) =>
-        relatie.rol.naam.toLowerCase() ===
+        relatie.rol?.naam
+          ?.toLowerCase() ===
         "eigenaar",
     );
 
   const isTeamleider =
     actieveRelaties.some(
       (relatie) =>
-        relatie.rol.naam.toLowerCase() ===
+        relatie.rol?.naam
+          ?.toLowerCase() ===
         "teamleider",
     );
 
@@ -60,8 +66,9 @@ export default async function Sidebar() {
       .split(/\s+/)
       .filter(Boolean)
       .slice(0, 2)
-      .map((deel) =>
-        deel.charAt(0).toUpperCase(),
+      .map(
+        (deel) =>
+          deel.charAt(0).toUpperCase(),
       )
       .join("") || "G";
 

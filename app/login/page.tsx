@@ -8,6 +8,8 @@ export default function LoginPage() {
           <img
             src="/logo.png"
             alt="Clevers"
+            width={300}
+            height={128}
             className="h-auto max-h-32 w-auto max-w-[300px] object-contain"
           />
         </div>
