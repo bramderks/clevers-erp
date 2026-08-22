@@ -26,8 +26,8 @@ type BeschikbaarheidMetWeek = {
   medewerkerId: string;
   weekId: string;
   datum: Date;
-  begintijd: Date;
-  eindtijd: Date;
+  begintijd: Date | null;
+  eindtijd: Date | null;
   week: {
     vestigingId: string;
     beschikbaarheidDeadline: Date | null;
@@ -505,24 +505,28 @@ export async function PATCH(
      */
 
     const begintijd =
-      data.begintijd ??
-      bestaande.begintijd;
+  data.begintijd ??
+  bestaande.begintijd;
 
-    const eindtijd =
-      data.eindtijd ??
-      bestaande.eindtijd;
+const eindtijd =
+  data.eindtijd ??
+  bestaande.eindtijd;
 
-    if (eindtijd <= begintijd) {
-      return NextResponse.json(
-        {
-          fout:
-            "Eindtijd moet na de begintijd liggen.",
-        },
-        {
-          status: 400,
-        },
-      );
-    }
+if (
+  begintijd !== null &&
+  eindtijd !== null &&
+  eindtijd <= begintijd
+) {
+  return NextResponse.json(
+    {
+      fout:
+        "Eindtijd moet na de begintijd liggen.",
+    },
+    {
+      status: 400,
+    },
+  );
+}
 
     /*
      * --------------------------------------------------------

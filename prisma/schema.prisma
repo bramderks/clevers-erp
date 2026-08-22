@@ -435,8 +435,8 @@ model Beschikbaarheid {
 
   datum DateTime
 
-  begintijd DateTime
-  eindtijd DateTime
+begintijd DateTime?
+eindtijd DateTime?
 
   /// -----------------------------------------------------
   /// Beschikbaarheidsstatus

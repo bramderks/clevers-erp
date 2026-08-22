@@ -543,20 +543,22 @@ export async function PATCH(
       data.eindtijd ??
       bestaande.eindtijd;
 
-    if (
-      definitieveEindtijd <=
-      definitieveBegintijd
-    ) {
-      return NextResponse.json(
-        {
-          fout:
-            "Eindtijd moet na de begintijd liggen.",
-        },
-        {
-          status: 400,
-        },
-      );
-    }
+if (
+  definitieveBegintijd !== null &&
+  definitieveEindtijd !== null &&
+  definitieveEindtijd <=
+    definitieveBegintijd
+) {
+  return NextResponse.json(
+    {
+      fout:
+        "Eindtijd moet na de begintijd liggen.",
+    },
+    {
+      status: 400,
+    },
+  );
+}
 
     /*
      * --------------------------------------------------------

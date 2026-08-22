@@ -89,11 +89,53 @@ function isGeldigeStatus(
   );
 }
 
+function haalNederlandseTijd(
+  datum: Date,
+) {
+  const formatter =
+    new Intl.DateTimeFormat(
+      "nl-NL",
+      {
+        timeZone:
+          "Europe/Amsterdam",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      },
+    );
+
+  const delen =
+    formatter.formatToParts(datum);
+
+  const uur = Number(
+    delen.find(
+      (deel) =>
+        deel.type === "hour",
+    )?.value ?? "0",
+  );
+
+  const minuut = Number(
+    delen.find(
+      (deel) =>
+        deel.type === "minute",
+    )?.value ?? "0",
+  );
+
+  return {
+    uur,
+    minuut,
+    totaal:
+      uur * 60 + minuut,
+  };
+}
+
 function controleerTijden(
   begintijd: Date,
   eindtijd: Date,
 ) {
-  if (eindtijd <= begintijd) {
+  if (
+    eindtijd <= begintijd
+  ) {
     throw new RouteFout(
       "De eindtijd moet na de begintijd liggen.",
       400,
@@ -101,25 +143,34 @@ function controleerTijden(
   }
 
   /*
-   * Beschikbaarheid mag alleen binnen
-   * 09:00 t/m 23:00 worden opgegeven.
+   * Beschikbaarheid wordt altijd
+   * beoordeeld volgens de Nederlandse
+   * lokale tijd.
    */
-  const beginTotaal =
-    begintijd.getHours() * 60 +
-    begintijd.getMinutes();
+  const begin =
+    haalNederlandseTijd(
+      begintijd,
+    );
 
-  const eindTotaal =
-    eindtijd.getHours() * 60 +
-    eindtijd.getMinutes();
+  const einde =
+    haalNederlandseTijd(
+      eindtijd,
+    );
 
-  if (beginTotaal < 9 * 60) {
+  if (
+    begin.totaal <
+    9 * 60
+  ) {
     throw new RouteFout(
       "Beschikbaarheid kan niet eerder dan 09:00 beginnen.",
       400,
     );
   }
 
-  if (eindTotaal > 23 * 60) {
+  if (
+    einde.totaal >
+    23 * 60
+  ) {
     throw new RouteFout(
       "Beschikbaarheid kan niet later dan 23:00 eindigen.",
       400,
@@ -137,13 +188,14 @@ function beginVanISOWeek(
   jaar: number,
   weeknummer: number,
 ): Date {
-  const datum = new Date(
-    Date.UTC(
-      jaar,
-      0,
-      4,
-    ),
-  );
+  const datum =
+    new Date(
+      Date.UTC(
+        jaar,
+        0,
+        4,
+      ),
+    );
 
   const dag =
     datum.getUTCDay() || 7;
@@ -205,6 +257,15 @@ function berekenDeadline(
   const deadline =
     new Date(weekStart);
 
+  /*
+   * Standaarddeadline:
+   * vier weken vóór de betreffende
+   * planningweek, tot 23:59:59.
+   *
+   * Als er op de week zelf een
+   * beschikbaarheidDeadline staat,
+   * wordt die gebruikt.
+   */
   deadline.setUTCDate(
     deadline.getUTCDate() - 28,
   );
@@ -432,9 +493,18 @@ async function bepaalToegang(
         "teamleider",
     );
 
+  /*
+   * BELANGRIJK:
+   *
+   * Teamleider is GEEN beheerder voor
+   * wijzigingen.
+   *
+   * Alleen Eigenaar krijgt
+   * beheerdersrechten voor
+   * beschikbaarheid.
+   */
   const isBeheerder =
-    isEigenaar ||
-    isTeamleider;
+    isEigenaar;
 
   const isEigenMedewerker =
     gebruiker.medewerker?.id ===
@@ -442,6 +512,7 @@ async function bepaalToegang(
 
   if (
     !isBeheerder &&
+    !isTeamleider &&
     !isEigenMedewerker
   ) {
     throw new RouteFout(
@@ -457,15 +528,37 @@ async function bepaalToegang(
       week.weeknummer,
     );
 
+  const gesloten =
+    deadlineVerstreken(
+      deadline,
+    );
+
+  /*
+   * Alleen:
+   *
+   * - Eigenaar altijd
+   * - Eigen medewerker vóór deadline
+   *
+   * mogen wijzigen.
+   */
+  const magWijzigen =
+    isEigenaar ||
+    (
+      isEigenMedewerker &&
+      !gesloten
+    );
+
   return {
     gebruiker,
     medewerker,
     week,
     deadline,
+    gesloten,
     isEigenaar,
     isTeamleider,
     isBeheerder,
     isEigenMedewerker,
+    magWijzigen,
   };
 }
 
@@ -618,11 +711,6 @@ export async function GET(
         },
       );
 
-    const gesloten =
-      deadlineVerstreken(
-        toegang.deadline,
-      );
-
     return NextResponse.json({
       beschikbaarheden:
         beschikbaarheden.map(
@@ -641,6 +729,18 @@ export async function GET(
         status:
           toegang.week.status,
 
+        startdatum:
+          beginVanISOWeek(
+            toegang.week.jaar,
+            toegang.week.weeknummer,
+          ).toISOString(),
+
+        einddatum:
+          eindeVanISOWeek(
+            toegang.week.jaar,
+            toegang.week.weeknummer,
+          ).toISOString(),
+
         beschikbaarheidDeadline:
           toegang.deadline.toISOString(),
       },
@@ -658,19 +758,13 @@ export async function GET(
         isEigenMedewerker:
           toegang.isEigenMedewerker,
 
+        magBekijken: true,
+
         magWijzigen:
-          toegang.isBeheerder ||
-          (
-            toegang.isEigenMedewerker &&
-            !gesloten
-          ),
+          toegang.magWijzigen,
 
         magVerwijderen:
-          toegang.isBeheerder ||
-          (
-            toegang.isEigenMedewerker &&
-            !gesloten
-          ),
+          toegang.magWijzigen,
       },
     });
   } catch (error) {
@@ -699,6 +793,16 @@ export async function GET(
  * ============================================================
  * POST
  * ============================================================
+ *
+ * POST wordt gebruikt voor:
+ *
+ * - nieuwe beschikbaarheid
+ * - bestaande beschikbaarheid
+ *   van dezelfde medewerker/week/dag
+ *   opnieuw opslaan
+ *
+ * Daardoor ontstaan geen dubbele
+ * dagrecords bij opnieuw opslaan.
  */
 
 export async function POST(
@@ -744,19 +848,16 @@ export async function POST(
       );
 
     /*
-     * Eigenaar/teamleider mag ook na de
-     * deadline wijzigingen invoeren.
+     * Alleen Eigenaar of de medewerker
+     * zelf vóór de deadline mag wijzigen.
      *
-     * Een normale medewerker niet.
+     * Teamleider valt hier dus buiten.
      */
-    if (
-      deadlineVerstreken(
-        toegang.deadline,
-      ) &&
-      !toegang.isBeheerder
-    ) {
+    if (!toegang.magWijzigen) {
       return fout(
-        "De deadline voor het doorgeven van beschikbaarheid is verstreken.",
+        toegang.isTeamleider
+          ? "Een teamleider kan beschikbaarheid alleen bekijken. Alleen de eigenaar kan beschikbaarheid wijzigen."
+          : "Je hebt geen toestemming om deze beschikbaarheid te wijzigen.",
         403,
       );
     }
@@ -792,22 +893,61 @@ export async function POST(
       );
     }
 
+    const opmerking =
+      typeof body.opmerking ===
+      "string"
+        ? body.opmerking.trim() ||
+          null
+        : null;
+
+    /*
+     * Zoek eerst of deze medewerker
+     * voor deze week en deze dag al
+     * een record heeft.
+     *
+     * Hierdoor kunnen we bestaande
+     * beschikbaarheid aanpassen zonder
+     * dubbele records te creëren.
+     */
+    const bestaande =
+      await prisma.beschikbaarheid.findFirst(
+        {
+          where: {
+            medewerkerId,
+            weekId,
+            datum: {
+              gte: new Date(
+                Date.UTC(
+                  datum.getUTCFullYear(),
+                  datum.getUTCMonth(),
+                  datum.getUTCDate(),
+                  0,
+                  0,
+                  0,
+                  0,
+                ),
+              ),
+
+              lt: new Date(
+                Date.UTC(
+                  datum.getUTCFullYear(),
+                  datum.getUTCMonth(),
+                  datum.getUTCDate() + 1,
+                  0,
+                  0,
+                  0,
+                  0,
+                ),
+              ),
+            },
+          },
+        },
+      );
+
     /*
      * ========================================================
      * NIET BESCHIKBAAR
      * ========================================================
-     *
-     * Geen begin- of eindtijd.
-     *
-     * We gebruiken hier bewust een kleine typebrug
-     * omdat de lokaal gegenereerde Prisma Client
-     * kennelijk nog een ouder type bevat waarin
-     * begintijd/eindtijd verplicht zijn.
-     *
-     * De databasevelden zijn in schema.prisma:
-     *
-     * begintijd DateTime?
-     * eindtijd DateTime?
      */
 
     if (
@@ -821,20 +961,30 @@ export async function POST(
         begintijd: null,
         eindtijd: null,
         status,
-        opmerking:
-          typeof body.opmerking ===
-          "string"
-            ? body.opmerking.trim() ||
-              null
-            : null,
+        opmerking,
       };
 
       const beschikbaarheid =
-        await prisma.beschikbaarheid.create(
-          {
-            data: data as any,
-          },
-        );
+        bestaande
+          ? await prisma.beschikbaarheid.update(
+              {
+                where: {
+                  id: bestaande.id,
+                },
+                data: {
+                  datum,
+                  begintijd: null,
+                  eindtijd: null,
+                  status,
+                  opmerking,
+                },
+              },
+            )
+          : await prisma.beschikbaarheid.create(
+              {
+                data: data as any,
+              },
+            );
 
       return NextResponse.json(
         {
@@ -846,7 +996,9 @@ export async function POST(
             ),
         },
         {
-          status: 201,
+          status: bestaande
+            ? 200
+            : 201,
         },
       );
     }
@@ -887,24 +1039,35 @@ export async function POST(
     );
 
     const beschikbaarheid =
-      await prisma.beschikbaarheid.create(
-        {
-          data: {
-            medewerkerId,
-            weekId,
-            datum,
-            begintijd,
-            eindtijd,
-            status,
-            opmerking:
-              typeof body.opmerking ===
-              "string"
-                ? body.opmerking.trim() ||
-                  null
-                : null,
-          },
-        },
-      );
+      bestaande
+        ? await prisma.beschikbaarheid.update(
+            {
+              where: {
+                id: bestaande.id,
+              },
+
+              data: {
+                datum,
+                begintijd,
+                eindtijd,
+                status,
+                opmerking,
+              },
+            },
+          )
+        : await prisma.beschikbaarheid.create(
+            {
+              data: {
+                medewerkerId,
+                weekId,
+                datum,
+                begintijd,
+                eindtijd,
+                status,
+                opmerking,
+              },
+            },
+          );
 
     return NextResponse.json(
       {
@@ -916,7 +1079,9 @@ export async function POST(
           ),
       },
       {
-        status: 201,
+        status: bestaande
+          ? 200
+          : 201,
       },
     );
   } catch (error) {

@@ -17,63 +17,116 @@ type BewerkForm = {
   datum: string;
   begintijd: string;
   eindtijd: string;
-  status: "BESCHIKBAAR" | "NIET_BESCHIKBAAR";
+  status:
+    | "BESCHIKBAAR"
+    | "NIET_BESCHIKBAAR";
   opmerking: string;
 };
 
-function formatteerDatum(datum: string) {
+function parseDatum(
+  datum:
+    | string
+    | null
+    | undefined,
+) {
+  if (!datum) {
+    return null;
+  }
+
   const waarde = new Date(datum);
 
-  if (Number.isNaN(waarde.getTime())) {
+  if (
+    Number.isNaN(
+      waarde.getTime(),
+    )
+  ) {
+    return null;
+  }
+
+  return waarde;
+}
+
+function formatteerDatum(
+  datum: string,
+) {
+  const waarde =
+    parseDatum(datum);
+
+  if (!waarde) {
     return "Ongeldige datum";
   }
 
-  return new Intl.DateTimeFormat("nl-NL", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(waarde);
+  return new Intl.DateTimeFormat(
+    "nl-NL",
+    {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    },
+  ).format(waarde);
 }
 
-function formatteerTijd(datum: string | null | undefined) {
+function formatteerTijd(
+  datum:
+    | string
+    | null
+    | undefined,
+) {
   if (!datum) {
     return "--:--";
   }
 
-  const waarde = new Date(datum);
+  const waarde =
+    parseDatum(datum);
 
-  if (Number.isNaN(waarde.getTime())) {
+  if (!waarde) {
     return "--:--";
   }
 
-  return new Intl.DateTimeFormat("nl-NL", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(waarde);
+  return new Intl.DateTimeFormat(
+    "nl-NL",
+    {
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+  ).format(waarde);
 }
 
-function datumVoorInput(datum: string) {
-  const waarde = new Date(datum);
+function datumVoorInput(
+  datum: string,
+) {
+  const waarde =
+    parseDatum(datum);
 
-  if (Number.isNaN(waarde.getTime())) {
+  if (!waarde) {
     return "";
   }
 
-  return waarde.toISOString().slice(0, 10);
+  return waarde
+    .toISOString()
+    .slice(0, 10);
 }
 
-function tijdVoorInput(datum: string | null | undefined) {
+function tijdVoorInput(
+  datum:
+    | string
+    | null
+    | undefined,
+) {
   if (!datum) {
     return "";
   }
 
-  const waarde = new Date(datum);
+  const waarde =
+    parseDatum(datum);
 
-  if (Number.isNaN(waarde.getTime())) {
+  if (!waarde) {
     return "";
   }
 
-  return waarde.toISOString().slice(11, 16);
+  return waarde
+    .toISOString()
+    .slice(11, 16);
 }
 
 function statusLabel(
@@ -119,9 +172,10 @@ function deadlineVerstreken(
     return false;
   }
 
-  const datum = new Date(deadline);
+  const datum =
+    parseDatum(deadline);
 
-  if (Number.isNaN(datum.getTime())) {
+  if (!datum) {
     return false;
   }
 
@@ -135,6 +189,27 @@ function isBeschikbaar(
     status === "BESCHIKBAAR" ||
     status === "VOORKEUR"
   );
+}
+
+function tijdenGeldig(
+  begintijd: string,
+  eindtijd: string,
+) {
+  if (
+    !begintijd ||
+    !eindtijd
+  ) {
+    return false;
+  }
+
+  if (
+    begintijd < "09:00" ||
+    eindtijd > "23:00"
+  ) {
+    return false;
+  }
+
+  return begintijd < eindtijd;
 }
 
 export default function BeschikbaarheidOverzicht({
@@ -154,8 +229,12 @@ export default function BeschikbaarheidOverzicht({
   const [opslaan, setOpslaan] =
     useState(false);
 
-  const [verwijderenId, setVerwijderenId] =
-    useState<string | null>(null);
+  const [
+    verwijderenId,
+    setVerwijderenId,
+  ] = useState<string | null>(
+    null,
+  );
 
   const [fout, setFout] =
     useState<string | null>(null);
@@ -253,38 +332,48 @@ export default function BeschikbaarheidOverzicht({
       return;
     }
 
+    /*
+     * --------------------------------------------------------
+     * DEADLINE
+     * --------------------------------------------------------
+     *
+     * magWijzigen wordt door de parent bepaald.
+     * De backend moet dit eveneens afdwingen.
+     *
+     * We blokkeren hier dus niets extra voor een eigenaar
+     * die na de deadline mag wijzigen.
+     * --------------------------------------------------------
+     */
+
     if (!formulier.datum) {
-      setFout("Datum is verplicht.");
+      setFout(
+        "Datum is verplicht.",
+      );
       return;
     }
 
-    /*
-     * Bij niet beschikbaar zijn tijden niet nodig.
-     */
     if (
       formulier.status ===
       "BESCHIKBAAR"
     ) {
-      if (!formulier.begintijd) {
+      if (
+        !formulier.begintijd ||
+        !formulier.eindtijd
+      ) {
         setFout(
-          "Begintijd is verplicht wanneer de medewerker beschikbaar is.",
-        );
-        return;
-      }
-
-      if (!formulier.eindtijd) {
-        setFout(
-          "Eindtijd is verplicht wanneer de medewerker beschikbaar is.",
+          "Begintijd en eindtijd zijn verplicht wanneer de medewerker beschikbaar is.",
         );
         return;
       }
 
       if (
-        formulier.begintijd >=
-        formulier.eindtijd
+        !tijdenGeldig(
+          formulier.begintijd,
+          formulier.eindtijd,
+        )
       ) {
         setFout(
-          "Eindtijd moet na de begintijd liggen.",
+          "Beschikbaarheid kan alleen tussen 09:00 en 23:00 worden opgegeven en de eindtijd moet na de begintijd liggen.",
         );
         return;
       }
@@ -304,10 +393,12 @@ export default function BeschikbaarheidOverzicht({
           )}`,
           {
             method: "PATCH",
+
             headers: {
               "Content-Type":
                 "application/json",
             },
+
             body: JSON.stringify({
               datum: `${formulier.datum}T00:00:00`,
 
@@ -339,6 +430,7 @@ export default function BeschikbaarheidOverzicht({
       if (!response.ok) {
         throw new Error(
           resultaat?.error ??
+            resultaat?.fout ??
             "De beschikbaarheid kon niet worden gewijzigd.",
         );
       }
@@ -409,6 +501,7 @@ export default function BeschikbaarheidOverzicht({
       if (!response.ok) {
         throw new Error(
           resultaat?.error ??
+            resultaat?.fout ??
             "De beschikbaarheid kon niet worden verwijderd.",
         );
       }
@@ -442,7 +535,9 @@ export default function BeschikbaarheidOverzicht({
     }
   }
 
-  if (beschikbaarheden.length === 0) {
+  if (
+    beschikbaarheden.length === 0
+  ) {
     return (
       <div className="space-y-4">
         {fout && (
@@ -464,8 +559,8 @@ export default function BeschikbaarheidOverzicht({
           </p>
 
           <p className="mt-1 text-sm text-slate-500">
-            Voor deze planningweek zijn
-            nog geen
+            Voor deze planningweek
+            zijn nog geen
             beschikbaarheidsgegevens
             ingevoerd.
           </p>
@@ -491,15 +586,15 @@ export default function BeschikbaarheidOverzicht({
       {gesloten &&
         (magWijzigen ||
           magVerwijderen) && (
-          <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+          <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800">
             <p className="font-semibold">
               Deadline verstreken
             </p>
 
             <p className="mt-1 text-xs text-blue-700">
-              Als eigenaar/beheerder kun je
-              de beschikbaarheid nog wijzigen
-              of verwijderen.
+              Als eigenaar/beheerder kun
+              je de beschikbaarheid nog
+              wijzigen of verwijderen.
             </p>
           </div>
         )}
@@ -571,11 +666,13 @@ export default function BeschikbaarheidOverzicht({
                       <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
                         <p className="text-xs text-amber-800">
                           Deze beschikbaarheid
-                          bevat nog de oude status
-                          "Voorkeur". Nieuwe
-                          beschikbaarheid gebruikt
-                          alleen Beschikbaar of
-                          Niet beschikbaar.
+                          bevat nog de oude
+                          status "Voorkeur".
+                          Nieuwe
+                          beschikbaarheid
+                          gebruikt alleen
+                          Beschikbaar of Niet
+                          beschikbaar.
                         </p>
                       </div>
                     )}
@@ -635,12 +732,14 @@ export default function BeschikbaarheidOverzicht({
                   <div className="space-y-5">
                     <div>
                       <h3 className="text-sm font-semibold text-slate-900">
-                        Beschikbaarheid wijzigen
+                        Beschikbaarheid
+                        wijzigen
                       </h3>
 
                       <p className="mt-1 text-xs text-slate-500">
-                        Geef aan of de medewerker
-                        op deze dag beschikbaar is.
+                        Geef aan of de
+                        medewerker op deze
+                        dag beschikbaar is.
                       </p>
                     </div>
 
@@ -739,6 +838,8 @@ export default function BeschikbaarheidOverzicht({
 
                               <input
                                 type="time"
+                                min="09:00"
+                                max="23:00"
                                 value={
                                   formulier.begintijd
                                 }
@@ -762,6 +863,8 @@ export default function BeschikbaarheidOverzicht({
 
                               <input
                                 type="time"
+                                min="09:00"
+                                max="23:00"
                                 value={
                                   formulier.eindtijd
                                 }

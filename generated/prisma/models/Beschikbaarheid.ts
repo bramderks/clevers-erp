@@ -182,8 +182,8 @@ export type BeschikbaarheidGroupByOutputType = {
   weekId: string
   medewerkerId: string
   datum: Date
-  begintijd: Date
-  eindtijd: Date
+  begintijd: Date | null
+  eindtijd: Date | null
   status: string
   opmerking: string | null
   aangemaaktOp: Date
@@ -216,8 +216,8 @@ export type BeschikbaarheidWhereInput = {
   weekId?: Prisma.StringFilter<"Beschikbaarheid"> | string
   medewerkerId?: Prisma.StringFilter<"Beschikbaarheid"> | string
   datum?: Prisma.DateTimeFilter<"Beschikbaarheid"> | Date | string
-  begintijd?: Prisma.DateTimeFilter<"Beschikbaarheid"> | Date | string
-  eindtijd?: Prisma.DateTimeFilter<"Beschikbaarheid"> | Date | string
+  begintijd?: Prisma.DateTimeNullableFilter<"Beschikbaarheid"> | Date | string | null
+  eindtijd?: Prisma.DateTimeNullableFilter<"Beschikbaarheid"> | Date | string | null
   status?: Prisma.StringFilter<"Beschikbaarheid"> | string
   opmerking?: Prisma.StringNullableFilter<"Beschikbaarheid"> | string | null
   aangemaaktOp?: Prisma.DateTimeFilter<"Beschikbaarheid"> | Date | string
@@ -231,8 +231,8 @@ export type BeschikbaarheidOrderByWithRelationInput = {
   weekId?: Prisma.SortOrder
   medewerkerId?: Prisma.SortOrder
   datum?: Prisma.SortOrder
-  begintijd?: Prisma.SortOrder
-  eindtijd?: Prisma.SortOrder
+  begintijd?: Prisma.SortOrderInput | Prisma.SortOrder
+  eindtijd?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   opmerking?: Prisma.SortOrderInput | Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
@@ -250,8 +250,8 @@ export type BeschikbaarheidWhereUniqueInput = Prisma.AtLeast<{
   weekId?: Prisma.StringFilter<"Beschikbaarheid"> | string
   medewerkerId?: Prisma.StringFilter<"Beschikbaarheid"> | string
   datum?: Prisma.DateTimeFilter<"Beschikbaarheid"> | Date | string
-  begintijd?: Prisma.DateTimeFilter<"Beschikbaarheid"> | Date | string
-  eindtijd?: Prisma.DateTimeFilter<"Beschikbaarheid"> | Date | string
+  begintijd?: Prisma.DateTimeNullableFilter<"Beschikbaarheid"> | Date | string | null
+  eindtijd?: Prisma.DateTimeNullableFilter<"Beschikbaarheid"> | Date | string | null
   status?: Prisma.StringFilter<"Beschikbaarheid"> | string
   opmerking?: Prisma.StringNullableFilter<"Beschikbaarheid"> | string | null
   aangemaaktOp?: Prisma.DateTimeFilter<"Beschikbaarheid"> | Date | string
@@ -265,8 +265,8 @@ export type BeschikbaarheidOrderByWithAggregationInput = {
   weekId?: Prisma.SortOrder
   medewerkerId?: Prisma.SortOrder
   datum?: Prisma.SortOrder
-  begintijd?: Prisma.SortOrder
-  eindtijd?: Prisma.SortOrder
+  begintijd?: Prisma.SortOrderInput | Prisma.SortOrder
+  eindtijd?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   opmerking?: Prisma.SortOrderInput | Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
@@ -284,8 +284,8 @@ export type BeschikbaarheidScalarWhereWithAggregatesInput = {
   weekId?: Prisma.StringWithAggregatesFilter<"Beschikbaarheid"> | string
   medewerkerId?: Prisma.StringWithAggregatesFilter<"Beschikbaarheid"> | string
   datum?: Prisma.DateTimeWithAggregatesFilter<"Beschikbaarheid"> | Date | string
-  begintijd?: Prisma.DateTimeWithAggregatesFilter<"Beschikbaarheid"> | Date | string
-  eindtijd?: Prisma.DateTimeWithAggregatesFilter<"Beschikbaarheid"> | Date | string
+  begintijd?: Prisma.DateTimeNullableWithAggregatesFilter<"Beschikbaarheid"> | Date | string | null
+  eindtijd?: Prisma.DateTimeNullableWithAggregatesFilter<"Beschikbaarheid"> | Date | string | null
   status?: Prisma.StringWithAggregatesFilter<"Beschikbaarheid"> | string
   opmerking?: Prisma.StringNullableWithAggregatesFilter<"Beschikbaarheid"> | string | null
   aangemaaktOp?: Prisma.DateTimeWithAggregatesFilter<"Beschikbaarheid"> | Date | string
@@ -295,8 +295,8 @@ export type BeschikbaarheidScalarWhereWithAggregatesInput = {
 export type BeschikbaarheidCreateInput = {
   id?: string
   datum: Date | string
-  begintijd: Date | string
-  eindtijd: Date | string
+  begintijd?: Date | string | null
+  eindtijd?: Date | string | null
   status?: string
   opmerking?: string | null
   aangemaaktOp?: Date | string
@@ -310,8 +310,8 @@ export type BeschikbaarheidUncheckedCreateInput = {
   weekId: string
   medewerkerId: string
   datum: Date | string
-  begintijd: Date | string
-  eindtijd: Date | string
+  begintijd?: Date | string | null
+  eindtijd?: Date | string | null
   status?: string
   opmerking?: string | null
   aangemaaktOp?: Date | string
@@ -321,8 +321,8 @@ export type BeschikbaarheidUncheckedCreateInput = {
 export type BeschikbaarheidUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   datum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  begintijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  eindtijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  begintijd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  eindtijd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   opmerking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -336,8 +336,8 @@ export type BeschikbaarheidUncheckedUpdateInput = {
   weekId?: Prisma.StringFieldUpdateOperationsInput | string
   medewerkerId?: Prisma.StringFieldUpdateOperationsInput | string
   datum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  begintijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  eindtijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  begintijd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  eindtijd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   opmerking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -349,8 +349,8 @@ export type BeschikbaarheidCreateManyInput = {
   weekId: string
   medewerkerId: string
   datum: Date | string
-  begintijd: Date | string
-  eindtijd: Date | string
+  begintijd?: Date | string | null
+  eindtijd?: Date | string | null
   status?: string
   opmerking?: string | null
   aangemaaktOp?: Date | string
@@ -360,8 +360,8 @@ export type BeschikbaarheidCreateManyInput = {
 export type BeschikbaarheidUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   datum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  begintijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  eindtijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  begintijd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  eindtijd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   opmerking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -373,8 +373,8 @@ export type BeschikbaarheidUncheckedUpdateManyInput = {
   weekId?: Prisma.StringFieldUpdateOperationsInput | string
   medewerkerId?: Prisma.StringFieldUpdateOperationsInput | string
   datum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  begintijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  eindtijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  begintijd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  eindtijd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   opmerking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -523,8 +523,8 @@ export type BeschikbaarheidUncheckedUpdateManyWithoutWeekNestedInput = {
 export type BeschikbaarheidCreateWithoutMedewerkerInput = {
   id?: string
   datum: Date | string
-  begintijd: Date | string
-  eindtijd: Date | string
+  begintijd?: Date | string | null
+  eindtijd?: Date | string | null
   status?: string
   opmerking?: string | null
   aangemaaktOp?: Date | string
@@ -536,8 +536,8 @@ export type BeschikbaarheidUncheckedCreateWithoutMedewerkerInput = {
   id?: string
   weekId: string
   datum: Date | string
-  begintijd: Date | string
-  eindtijd: Date | string
+  begintijd?: Date | string | null
+  eindtijd?: Date | string | null
   status?: string
   opmerking?: string | null
   aangemaaktOp?: Date | string
@@ -578,8 +578,8 @@ export type BeschikbaarheidScalarWhereInput = {
   weekId?: Prisma.StringFilter<"Beschikbaarheid"> | string
   medewerkerId?: Prisma.StringFilter<"Beschikbaarheid"> | string
   datum?: Prisma.DateTimeFilter<"Beschikbaarheid"> | Date | string
-  begintijd?: Prisma.DateTimeFilter<"Beschikbaarheid"> | Date | string
-  eindtijd?: Prisma.DateTimeFilter<"Beschikbaarheid"> | Date | string
+  begintijd?: Prisma.DateTimeNullableFilter<"Beschikbaarheid"> | Date | string | null
+  eindtijd?: Prisma.DateTimeNullableFilter<"Beschikbaarheid"> | Date | string | null
   status?: Prisma.StringFilter<"Beschikbaarheid"> | string
   opmerking?: Prisma.StringNullableFilter<"Beschikbaarheid"> | string | null
   aangemaaktOp?: Prisma.DateTimeFilter<"Beschikbaarheid"> | Date | string
@@ -589,8 +589,8 @@ export type BeschikbaarheidScalarWhereInput = {
 export type BeschikbaarheidCreateWithoutWeekInput = {
   id?: string
   datum: Date | string
-  begintijd: Date | string
-  eindtijd: Date | string
+  begintijd?: Date | string | null
+  eindtijd?: Date | string | null
   status?: string
   opmerking?: string | null
   aangemaaktOp?: Date | string
@@ -602,8 +602,8 @@ export type BeschikbaarheidUncheckedCreateWithoutWeekInput = {
   id?: string
   medewerkerId: string
   datum: Date | string
-  begintijd: Date | string
-  eindtijd: Date | string
+  begintijd?: Date | string | null
+  eindtijd?: Date | string | null
   status?: string
   opmerking?: string | null
   aangemaaktOp?: Date | string
@@ -640,8 +640,8 @@ export type BeschikbaarheidCreateManyMedewerkerInput = {
   id?: string
   weekId: string
   datum: Date | string
-  begintijd: Date | string
-  eindtijd: Date | string
+  begintijd?: Date | string | null
+  eindtijd?: Date | string | null
   status?: string
   opmerking?: string | null
   aangemaaktOp?: Date | string
@@ -651,8 +651,8 @@ export type BeschikbaarheidCreateManyMedewerkerInput = {
 export type BeschikbaarheidUpdateWithoutMedewerkerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   datum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  begintijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  eindtijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  begintijd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  eindtijd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   opmerking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -664,8 +664,8 @@ export type BeschikbaarheidUncheckedUpdateWithoutMedewerkerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   weekId?: Prisma.StringFieldUpdateOperationsInput | string
   datum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  begintijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  eindtijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  begintijd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  eindtijd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   opmerking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -676,8 +676,8 @@ export type BeschikbaarheidUncheckedUpdateManyWithoutMedewerkerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   weekId?: Prisma.StringFieldUpdateOperationsInput | string
   datum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  begintijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  eindtijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  begintijd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  eindtijd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   opmerking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -688,8 +688,8 @@ export type BeschikbaarheidCreateManyWeekInput = {
   id?: string
   medewerkerId: string
   datum: Date | string
-  begintijd: Date | string
-  eindtijd: Date | string
+  begintijd?: Date | string | null
+  eindtijd?: Date | string | null
   status?: string
   opmerking?: string | null
   aangemaaktOp?: Date | string
@@ -699,8 +699,8 @@ export type BeschikbaarheidCreateManyWeekInput = {
 export type BeschikbaarheidUpdateWithoutWeekInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   datum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  begintijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  eindtijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  begintijd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  eindtijd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   opmerking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -712,8 +712,8 @@ export type BeschikbaarheidUncheckedUpdateWithoutWeekInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   medewerkerId?: Prisma.StringFieldUpdateOperationsInput | string
   datum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  begintijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  eindtijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  begintijd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  eindtijd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   opmerking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -724,8 +724,8 @@ export type BeschikbaarheidUncheckedUpdateManyWithoutWeekInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   medewerkerId?: Prisma.StringFieldUpdateOperationsInput | string
   datum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  begintijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  eindtijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  begintijd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  eindtijd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   opmerking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -817,8 +817,8 @@ export type $BeschikbaarheidPayload<ExtArgs extends runtime.Types.Extensions.Int
     weekId: string
     medewerkerId: string
     datum: Date
-    begintijd: Date
-    eindtijd: Date
+    begintijd: Date | null
+    eindtijd: Date | null
     /**
      * -----------------------------------------------------
      * Beschikbaarheidsstatus
