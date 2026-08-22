@@ -35,8 +35,8 @@ export type Beschikbaarheid = {
   weekId: string;
   medewerkerId: string;
   datum: string;
-  begintijd: string;
-  eindtijd: string;
+begintijd: string | null;
+eindtijd: string | null;
   status: BeschikbaarheidStatus;
   opmerking: string | null;
 };

@@ -40,156 +40,165 @@ export default function SidebarClient({
           : rol;
 
   return (
-    <aside
-      className="relative z-50 hidden h-screen w-[82px] shrink-0 lg:block"
-      onMouseEnter={() =>
-        setHovered(true)
-      }
-      onMouseLeave={() =>
-        setHovered(false)
-      }
-    >
+    <>
+      {/* Vaste ruimte voor de sidebar op desktop */}
       <div
-        className="absolute left-0 top-0 flex h-screen flex-col overflow-hidden border-r border-white/5 shadow-xl"
-        style={{
-          width: hovered
-            ? theme.layout.sidebarWidth
-            : 82,
-          background:
-            "linear-gradient(180deg, #17202B 0%, #111827 100%)",
-          transition:
-            "width 180ms ease",
-        }}
+        className="hidden w-[82px] shrink-0 lg:block"
+        aria-hidden="true"
+      />
+
+      {/* Werkelijke vaste sidebar */}
+      <aside
+        className="fixed inset-y-0 left-0 z-50 hidden lg:block"
+        onMouseEnter={() =>
+          setHovered(true)
+        }
+        onMouseLeave={() =>
+          setHovered(false)
+        }
       >
-        {/* Logo */}
         <div
-          className={`flex h-[76px] shrink-0 items-center ${
-            hovered
-              ? "px-5"
-              : "justify-center px-3"
-          }`}
+          className="flex h-screen flex-col overflow-hidden border-r border-white/5 shadow-xl"
+          style={{
+            width: hovered
+              ? theme.layout.sidebarWidth
+              : 82,
+            background:
+              "linear-gradient(180deg, #17202B 0%, #111827 100%)",
+            transition:
+              "width 180ms ease",
+          }}
         >
-          <Logo
-            compact={!hovered}
-          />
-        </div>
-
-        {/* Navigatie */}
-        <div
-          className={`min-h-0 flex-1 overflow-y-auto ${
-            hovered
-              ? "mt-6 px-5"
-              : "mt-6 px-3"
-          }`}
-        >
-          <Navigation
-            permissions={permissions}
-            isEigenaar={isEigenaar}
-            ingeklapt={!hovered}
-          />
-        </div>
-
-        {/* Gebruiker */}
-        <div
-          className={`shrink-0 pb-6 ${
-            hovered
-              ? "px-5"
-              : "px-3"
-          }`}
-        >
+          {/* Logo */}
           <div
-            className={`rounded-2xl transition-all ${
+            className={`flex h-[76px] shrink-0 items-center ${
               hovered
-                ? "p-4"
-                : "flex justify-center p-3"
+                ? "px-5"
+                : "justify-center px-3"
             }`}
-            style={{
-              background:
-                "rgba(255,255,255,.06)",
-            }}
-            title={
+          >
+            <Logo
+              compact={!hovered}
+            />
+          </div>
+
+          {/* Navigatie */}
+          <div
+            className={`min-h-0 flex-1 overflow-y-auto ${
               hovered
-                ? undefined
-                : naam
-            }
+                ? "mt-6 px-5"
+                : "mt-6 px-3"
+            }`}
+          >
+            <Navigation
+              permissions={permissions}
+              isEigenaar={isEigenaar}
+              ingeklapt={!hovered}
+            />
+          </div>
+
+          {/* Gebruiker */}
+          <div
+            className={`shrink-0 pb-6 ${
+              hovered
+                ? "px-5"
+                : "px-3"
+            }`}
           >
             <div
-              className={`flex items-center ${
+              className={`rounded-2xl transition-all ${
                 hovered
-                  ? "gap-3"
-                  : "justify-center"
+                  ? "p-4"
+                  : "flex justify-center p-3"
               }`}
+              style={{
+                background:
+                  "rgba(255,255,255,.06)",
+              }}
+              title={
+                hovered
+                  ? undefined
+                  : naam
+              }
             >
-              {/* Initialen */}
               <div
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-bold"
-                style={{
-                  background:
-                    theme.colors
-                      .primary,
-                  color: "#1F2937",
-                }}
+                className={`flex items-center ${
+                  hovered
+                    ? "gap-3"
+                    : "justify-center"
+                }`}
               >
-                {initialen}
+                {/* Initialen */}
+                <div
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-bold"
+                  style={{
+                    background:
+                      theme.colors
+                        .primary,
+                    color: "#1F2937",
+                  }}
+                >
+                  {initialen}
+                </div>
+
+                {/* Naam + rol */}
+                {hovered && (
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="truncate font-semibold"
+                      style={{
+                        color:
+                          theme.colors
+                            .sidebar
+                            .text,
+                      }}
+                    >
+                      {naam}
+                    </p>
+
+                    <p
+                      className="truncate text-sm"
+                      style={{
+                        color:
+                          theme.colors
+                            .sidebar
+                            .muted,
+                      }}
+                    >
+                      {gebruikerstype}
+                    </p>
+                  </div>
+                )}
               </div>
 
-              {/* Naam + rol */}
+              {/* Versie */}
               {hovered && (
-                <div className="min-w-0 flex-1">
-                  <p
-                    className="truncate font-semibold"
-                    style={{
-                      color:
-                        theme.colors
-                          .sidebar
-                          .text,
-                    }}
-                  >
-                    {naam}
-                  </p>
+                <div
+                  className="mt-4 border-t pt-4 text-xs"
+                  style={{
+                    borderColor:
+                      "rgba(255,255,255,.08)",
+                    color:
+                      theme.colors
+                        .sidebar
+                        .muted,
+                  }}
+                >
+                  <div className="flex justify-between">
+                    <span>
+                      Versie
+                    </span>
 
-                  <p
-                    className="truncate text-sm"
-                    style={{
-                      color:
-                        theme.colors
-                          .sidebar
-                          .muted,
-                    }}
-                  >
-                    {gebruikerstype}
-                  </p>
+                    <strong>
+                      {app.version}
+                    </strong>
+                  </div>
                 </div>
               )}
             </div>
-
-            {/* Versie */}
-            {hovered && (
-              <div
-                className="mt-4 border-t pt-4 text-xs"
-                style={{
-                  borderColor:
-                    "rgba(255,255,255,.08)",
-                  color:
-                    theme.colors
-                      .sidebar
-                      .muted,
-                }}
-              >
-                <div className="flex justify-between">
-                  <span>
-                    Versie
-                  </span>
-
-                  <strong>
-                    {app.version}
-                  </strong>
-                </div>
-              </div>
-            )}
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }

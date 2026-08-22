@@ -26,6 +26,7 @@ type MedewerkerUpdateData = {
     | null;
 
   contractUren?: number | null;
+
   uurloon?: number | null;
 
   datumInDienst?: Date | null;
@@ -43,6 +44,7 @@ type EigenGegevensUpdateData = {
   tussenvoegsel?: string | null;
   achternaam?: string;
   roepnaam?: string | null;
+
   email?: string;
   telefoon?: string;
 };
@@ -50,6 +52,12 @@ type EigenGegevensUpdateData = {
 type MedewerkerFilter = {
   vestigingIds?: string[];
 };
+
+/*
+ * ============================================================
+ * STATUS
+ * ============================================================
+ */
 
 async function getStatusId(
   code: string,
@@ -72,6 +80,12 @@ async function getStatusId(
 
   return status.id;
 }
+
+/*
+ * ============================================================
+ * EIGEN GEGEVENS
+ * ============================================================
+ */
 
 function controleerEigenGegevens(
   data: EigenGegevensUpdateData,
@@ -127,10 +141,18 @@ function controleerEigenGegevens(
   }
 }
 
+/*
+ * ============================================================
+ * ORGANISATIES
+ * ============================================================
+ */
+
 async function haalActieveOrganisatieIds(
   organisatieIds: string[],
 ) {
-  if (organisatieIds.length === 0) {
+  if (
+    organisatieIds.length === 0
+  ) {
     return [];
   }
 
@@ -140,8 +162,10 @@ async function haalActieveOrganisatieIds(
         id: {
           in: organisatieIds,
         },
+
         actief: true,
       },
+
       select: {
         id: true,
       },
@@ -152,6 +176,12 @@ async function haalActieveOrganisatieIds(
       organisatie.id,
   );
 }
+
+/*
+ * ============================================================
+ * VESTIGINGEN
+ * ============================================================
+ */
 
 async function haalActieveVestigingIds(
   vestigingIds: string[],
@@ -170,11 +200,14 @@ async function haalActieveVestigingIds(
         id: {
           in: vestigingIds,
         },
+
         organisatieId: {
           in: organisatieIds,
         },
+
         actief: true,
       },
+
       select: {
         id: true,
       },
@@ -186,20 +219,19 @@ async function haalActieveVestigingIds(
   );
 }
 
+/*
+ * ============================================================
+ * SERVICE
+ * ============================================================
+ */
+
 export const medewerkerService = {
-  /**
-   * Haalt medewerkers op binnen de
-   * organisaties waartoe de gebruiker
-   * toegang heeft.
-   *
-   * organisatieIds:
-   *   organisaties waartoe de gebruiker
-   *   toegang heeft.
-   *
-   * vestigingIds:
-   *   optionele beperking tot één of
-   *   meerdere vestigingen.
+  /*
+   * ==========================================================
+   * ALLE MEDEWERKERS
+   * ==========================================================
    */
+
   async getAll(
     organisatieIds: string[] = [],
     filter: MedewerkerFilter = {},
@@ -210,7 +242,8 @@ export const medewerkerService = {
       );
 
     if (
-      actieveOrganisatieIds.length === 0
+      actieveOrganisatieIds.length ===
+      0
     ) {
       return [];
     }
@@ -249,6 +282,12 @@ export const medewerkerService = {
     });
   },
 
+  /*
+   * ==========================================================
+   * MEDEWERKER OP ID
+   * ==========================================================
+   */
+
   async getById(id: string) {
     const medewerker =
       await medewerkerRepository.findById(
@@ -264,6 +303,17 @@ export const medewerkerService = {
     return medewerker;
   },
 
+  /*
+   * ==========================================================
+   * MEDEWERKER BIJWERKEN
+   * ==========================================================
+   *
+   * Voor algemene, contract- en verloningsgegevens.
+   *
+   * Vestigingen worden bewust via setVestigingen()
+   * verwerkt.
+   */
+
   async update(
     id: string,
     data: MedewerkerUpdateData,
@@ -276,22 +326,17 @@ export const medewerkerService = {
     );
   },
 
-  /**
-   * Wijzigt uitsluitend persoonlijke
-   * gegevens die een medewerker zelf
-   * mag beheren.
+  /*
+   * ==========================================================
+   * EIGEN GEGEVENS BIJWERKEN
+   * ==========================================================
    *
-   * Niet toegestaan via deze methode:
-   * - actief / inactief
-   * - status
-   * - personeelsnummer
-   * - contractgegevens
-   * - uurloon
-   * - datum in/uit dienst
-   * - vestigingen
-   * - rollen
-   * - tags
+   * Deze methode is bedoeld voor de medewerker zelf.
+   * Beheergegevens zoals personeelsnummer,
+   * contract, uurloon en vestigingen vallen hier
+   * bewust niet onder.
    */
+
   async updateEigenGegevens(
     id: string,
     data: EigenGegevensUpdateData,
@@ -318,8 +363,8 @@ export const medewerkerService = {
         ...(data.tussenvoegsel !==
           undefined && {
           tussenvoegsel:
-            data.tussenvoegsel?.trim() ||
-            null,
+            data.tussenvoegsel
+              ?.trim() || null,
         }),
 
         ...(data.achternaam !==
@@ -355,20 +400,11 @@ export const medewerkerService = {
     );
   },
 
-  async inBehandeling(id: string) {
-    await this.getById(id);
-
-    const statusId =
-      await getStatusId(
-        "IN_BEHANDELING",
-      );
-
-    return medewerkerRepository.updateStatus(
-      id,
-      statusId,
-      false,
-    );
-  },
+  /*
+   * ==========================================================
+   * VESTIGINGEN INSTELLEN
+   * ==========================================================
+   */
 
   async setVestigingen(
     id: string,
@@ -407,10 +443,13 @@ export const medewerkerService = {
           id: {
             in: uniekeVestigingIds,
           },
+
           actief: true,
         },
+
         select: {
           id: true,
+          organisatieId: true,
         },
       });
 
@@ -430,6 +469,12 @@ export const medewerkerService = {
     );
   },
 
+  /*
+   * ==========================================================
+   * ROLLEN
+   * ==========================================================
+   */
+
   async setRollen(
     id: string,
     rolIds: string[],
@@ -447,6 +492,12 @@ export const medewerkerService = {
     );
   },
 
+  /*
+   * ==========================================================
+   * TAGS
+   * ==========================================================
+   */
+
   async setTags(
     id: string,
     tagIds: string[],
@@ -463,6 +514,35 @@ export const medewerkerService = {
       uniekeTagIds,
     );
   },
+
+  /*
+   * ==========================================================
+   * IN BEHANDELING
+   * ==========================================================
+   */
+
+  async inBehandeling(
+    id: string,
+  ) {
+    await this.getById(id);
+
+    const statusId =
+      await getStatusId(
+        "IN_BEHANDELING",
+      );
+
+    return medewerkerRepository.updateStatus(
+      id,
+      statusId,
+      false,
+    );
+  },
+
+  /*
+   * ==========================================================
+   * ACTIVEREN
+   * ==========================================================
+   */
 
   async activeer(
     id: string,
@@ -484,7 +564,9 @@ export const medewerkerService = {
     }
 
     const statusId =
-      await getStatusId("ACTIEF");
+      await getStatusId(
+        "ACTIEF",
+      );
 
     return medewerkerRepository.setActivatie(
       id,
@@ -493,7 +575,15 @@ export const medewerkerService = {
     );
   },
 
-  async deactiveer(id: string) {
+  /*
+   * ==========================================================
+   * DEACTIVEREN
+   * ==========================================================
+   */
+
+  async deactiveer(
+    id: string,
+  ) {
     const medewerker =
       await this.getById(id);
 
@@ -515,7 +605,15 @@ export const medewerkerService = {
     );
   },
 
-  async uitDienst(id: string) {
+  /*
+   * ==========================================================
+   * UIT DIENST
+   * ==========================================================
+   */
+
+  async uitDienst(
+    id: string,
+  ) {
     await this.getById(id);
 
     const statusId =

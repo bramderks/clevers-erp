@@ -28,6 +28,8 @@ model Vestiging {
   organisatieId String
   organisatie Organisatie @relation(fields: [organisatieId], references: [id], onDelete: Cascade)
 
+  vakantieAanvragen VakantieAanvraag[]
+
   code String
   naam String
 
@@ -59,6 +61,9 @@ model Vestiging {
   voorraadTellingen VoorraadTelling[]
   voorraadMutaties VoorraadMutatie[]
   vestigingProducten VestigingProduct[]
+
+urenregistraties UrenRegistratie[]
+  verloningsRegels VerloningsRegel[]
 
   openingstijden OpeningstijdenPeriode[]
   vestigingToegang SysteemGebruikerVestiging[]

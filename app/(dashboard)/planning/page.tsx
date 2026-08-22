@@ -5,12 +5,23 @@ import { prisma } from "@/lib/prisma";
 
 import PlanningPagina from "@/components/planning/PlanningPagina";
 
+type Vestiging = {
+  id: string;
+  naam: string;
+};
+
 export default async function PlanningPage() {
   const gebruiker = await getCurrentUser();
 
   if (!gebruiker) {
     redirect("/login");
   }
+
+  /*
+   * ============================================================
+   * ACTIEVE ORGANISATIES
+   * ============================================================
+   */
 
   const organisaties =
     gebruiker.organisaties.filter(
@@ -28,7 +39,8 @@ export default async function PlanningPage() {
           </h1>
 
           <p className="mt-1 text-sm text-slate-600">
-            Beheer de personeelsplanning per vestiging.
+            Beheer de personeelsplanning per
+            vestiging.
           </p>
         </div>
 
@@ -46,24 +58,44 @@ export default async function PlanningPage() {
    * ============================================================
    * ROLLEN
    * ============================================================
+   *
+   * Eigenaar is organisatiebreed.
+   *
+   * Een gebruiker kan naast een systeemrol ook aan
+   * een medewerker gekoppeld zijn. Daarom bepalen we
+   * eerst de beheerdersrollen en pas daarna of het om
+   * een medewerker gaat.
    */
 
-  const isEigenaar =
-    organisaties.some(
-      (relatie) =>
-        relatie.rol.naam.toLowerCase() ===
-        "eigenaar",
-    );
+  const isEigenaar = organisaties.some(
+    (relatie) =>
+      relatie.rol.naam.toLowerCase() ===
+      "eigenaar",
+  );
 
-  const isTeamleider =
-    organisaties.some(
-      (relatie) =>
-        relatie.rol.naam.toLowerCase() ===
-        "teamleider",
-    );
+  const isTeamleider = organisaties.some(
+    (relatie) =>
+      relatie.rol.naam.toLowerCase() ===
+      "teamleider",
+  );
 
   const isMedewerker =
     gebruiker.medewerker?.id != null;
+
+  /*
+   * ============================================================
+   * ORGANISATIE-ID'S
+   * ============================================================
+   */
+
+  const organisatieIds = Array.from(
+    new Set(
+      organisaties.map(
+        (relatie) =>
+          relatie.organisatieId,
+      ),
+    ),
+  );
 
   /*
    * ============================================================
@@ -71,31 +103,25 @@ export default async function PlanningPage() {
    * ============================================================
    *
    * Eigenaar:
-   * - alle actieve vestigingen binnen de organisatie
+   *   alle actieve vestigingen binnen de
+   *   toegankelijke organisaties.
    *
-   * Teamleider / andere systeemgebruiker:
-   * - alleen vestigingen via vestigingToegang
+   * Teamleider:
+   *   alleen actieve vestigingen via
+   *   vestigingToegang.
    *
    * Medewerker:
-   * - vestigingen waaraan het medewerkerrecord gekoppeld is
+   *   alleen actieve vestigingen waaraan
+   *   het medewerkerrecord gekoppeld is.
    *
-   * Een medewerker hoeft dus niet óók een aparte
-   * vestigingToegang-relatie te hebben.
+   * Overige gebruikers:
+   *   alleen expliciete vestigingToegang.
    */
 
-  let vestigingen: Array<{
-    id: string;
-    naam: string;
-  }> = [];
+  let vestigingen: Vestiging[] = [];
 
   if (isEigenaar) {
-    const organisatieIds =
-      organisaties.map(
-        (relatie) =>
-          relatie.organisatieId,
-      );
-
-    const gevondenVestigingen =
+    vestigingen =
       await prisma.vestiging.findMany({
         where: {
           organisatieId: {
@@ -103,31 +129,50 @@ export default async function PlanningPage() {
           },
           actief: true,
         },
+
         select: {
           id: true,
           naam: true,
         },
+
         orderBy: {
           naam: "asc",
         },
       });
-
-    vestigingen = gevondenVestigingen;
+  } else if (isTeamleider) {
+    vestigingen =
+      gebruiker.vestigingToegang
+        .filter(
+          (toegang) =>
+            toegang.actief &&
+            toegang.vestiging.actief &&
+            organisatieIds.includes(
+              toegang.vestiging
+                .organisatieId,
+            ),
+        )
+        .map((toegang) => ({
+          id: toegang.vestiging.id,
+          naam: toegang.vestiging.naam,
+        }));
   } else if (isMedewerker) {
     const medewerker =
       await prisma.medewerker.findUnique({
         where: {
           id: gebruiker.medewerker!.id,
         },
+
         select: {
           id: true,
           actief: true,
+
           vestigingen: {
             where: {
               vestiging: {
                 actief: true,
               },
             },
+
             select: {
               vestiging: {
                 select: {
@@ -146,10 +191,9 @@ export default async function PlanningPage() {
       vestigingen =
         medewerker.vestigingen
           .filter((relatie) =>
-            organisaties.some(
-              (organisatie) =>
-                organisatie.organisatieId ===
-                relatie.vestiging.organisatieId,
+            organisatieIds.includes(
+              relatie.vestiging
+                .organisatieId,
             ),
           )
           .map((relatie) => ({
@@ -157,40 +201,16 @@ export default async function PlanningPage() {
             naam: relatie.vestiging.naam,
           }));
     }
-  } else if (isTeamleider) {
-    vestigingen =
-      gebruiker.vestigingToegang
-        .filter(
-          (toegang) =>
-            toegang.actief &&
-            toegang.vestiging.actief &&
-            organisaties.some(
-              (relatie) =>
-                relatie.organisatieId ===
-                toegang.vestiging.organisatieId,
-            ),
-        )
-        .map((toegang) => ({
-          id: toegang.vestiging.id,
-          naam: toegang.vestiging.naam,
-        }));
   } else {
-    /*
-     * Overige gebruikers met bijvoorbeeld alleen
-     * planning.view krijgen uitsluitend hun expliciete
-     * vestigingToegang.
-     */
-
     vestigingen =
       gebruiker.vestigingToegang
         .filter(
           (toegang) =>
             toegang.actief &&
             toegang.vestiging.actief &&
-            organisaties.some(
-              (relatie) =>
-                relatie.organisatieId ===
-                toegang.vestiging.organisatieId,
+            organisatieIds.includes(
+              toegang.vestiging
+                .organisatieId,
             ),
         )
         .map((toegang) => ({
@@ -242,7 +262,7 @@ export default async function PlanningPage() {
           </p>
         </div>
 
-        <div className="rounded-xl border bg-white p-6">
+        <div className="rounded-xl border bg-white p-6 shadow-sm">
           <p className="text-sm text-slate-600">
             Je hebt momenteel geen toegang tot
             een actieve vestiging.
@@ -256,14 +276,21 @@ export default async function PlanningPage() {
    * ============================================================
    * PLANNING
    * ============================================================
+   *
+   * PlanningPagina bepaalt op basis van de
+   * meegegeven rol of de gebruiker:
+   *
+   * - de volledige planning beheert;
+   * - planning per vestiging beheert;
+   * - of alleen de eigen planning ziet.
    */
 
   return (
     <PlanningPagina
-  vestigingen={uniekeVestigingen}
-  isEigenaar={isEigenaar}
-  isTeamleider={isTeamleider}
-  isMedewerker={isMedewerker}
-/>
+      vestigingen={uniekeVestigingen}
+      isEigenaar={isEigenaar}
+      isTeamleider={isTeamleider}
+      isMedewerker={isMedewerker}
+    />
   );
 }

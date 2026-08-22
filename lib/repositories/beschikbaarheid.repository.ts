@@ -1,5 +1,28 @@
 import { prisma } from "@/lib/prisma";
 
+type BeschikbaarheidStatus =
+  | "BESCHIKBAAR"
+  | "NIET_BESCHIKBAAR"
+  | "VOORKEUR";
+
+type BeschikbaarheidCreateData = {
+  weekId: string;
+  medewerkerId: string;
+  datum: Date;
+  begintijd: Date;
+  eindtijd: Date;
+  status?: BeschikbaarheidStatus;
+  opmerking?: string | null;
+};
+
+type BeschikbaarheidUpdateData = {
+  datum?: Date;
+  begintijd?: Date;
+  eindtijd?: Date;
+  status?: BeschikbaarheidStatus;
+  opmerking?: string | null;
+};
+
 export const beschikbaarheidRepository = {
   async findByMedewerker(
     medewerkerId: string,
@@ -8,6 +31,7 @@ export const beschikbaarheidRepository = {
       where: {
         medewerkerId,
       },
+
       include: {
         week: {
           include: {
@@ -15,6 +39,7 @@ export const beschikbaarheidRepository = {
           },
         },
       },
+
       orderBy: [
         {
           datum: "asc",
@@ -35,6 +60,7 @@ export const beschikbaarheidRepository = {
         medewerkerId,
         weekId,
       },
+
       orderBy: [
         {
           datum: "asc",
@@ -51,26 +77,22 @@ export const beschikbaarheidRepository = {
       where: {
         id,
       },
+
       include: {
         week: {
           include: {
             vestiging: true,
           },
         },
+
         medewerker: true,
       },
     });
   },
 
-  async create(data: {
-    weekId: string;
-    medewerkerId: string;
-    datum: Date;
-    begintijd: Date;
-    eindtijd: Date;
-    status?: string;
-    opmerking?: string | null;
-  }) {
+  async create(
+    data: BeschikbaarheidCreateData,
+  ) {
     return prisma.beschikbaarheid.create({
       data: {
         weekId: data.weekId,
@@ -78,26 +100,24 @@ export const beschikbaarheidRepository = {
         datum: data.datum,
         begintijd: data.begintijd,
         eindtijd: data.eindtijd,
-        status: data.status ?? "BESCHIKBAAR",
-        opmerking: data.opmerking ?? null,
+        status:
+          data.status ??
+          "BESCHIKBAAR",
+        opmerking:
+          data.opmerking ?? null,
       },
     });
   },
 
   async update(
     id: string,
-    data: {
-      datum?: Date;
-      begintijd?: Date;
-      eindtijd?: Date;
-      status?: string;
-      opmerking?: string | null;
-    },
+    data: BeschikbaarheidUpdateData,
   ) {
     return prisma.beschikbaarheid.update({
       where: {
         id,
       },
+
       data,
     });
   },

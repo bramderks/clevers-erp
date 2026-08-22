@@ -66,6 +66,7 @@ export const ModelName = {
   MedewerkerTag: 'MedewerkerTag',
   Week: 'Week',
   Beschikbaarheid: 'Beschikbaarheid',
+  VakantieAanvraag: 'VakantieAanvraag',
   Dienst: 'Dienst',
   DienstTag: 'DienstTag',
   DienstBezetting: 'DienstBezetting',
@@ -82,7 +83,9 @@ export const ModelName = {
   Levering: 'Levering',
   LeveringRegel: 'LeveringRegel',
   Status: 'Status',
-  Instelling: 'Instelling'
+  Instelling: 'Instelling',
+  VerloningsPeriode: 'VerloningsPeriode',
+  VerloningsRegel: 'VerloningsRegel'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -308,6 +311,26 @@ export const BeschikbaarheidScalarFieldEnum = {
 } as const
 
 export type BeschikbaarheidScalarFieldEnum = (typeof BeschikbaarheidScalarFieldEnum)[keyof typeof BeschikbaarheidScalarFieldEnum]
+
+
+export const VakantieAanvraagScalarFieldEnum = {
+  id: 'id',
+  medewerkerId: 'medewerkerId',
+  vestigingId: 'vestigingId',
+  startDatum: 'startDatum',
+  eindDatum: 'eindDatum',
+  type: 'type',
+  opmerking: 'opmerking',
+  status: 'status',
+  beoordeeldDoorId: 'beoordeeldDoorId',
+  beoordeeldOp: 'beoordeeldOp',
+  redenAfwijzing: 'redenAfwijzing',
+  aangevraagdOp: 'aangevraagdOp',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type VakantieAanvraagScalarFieldEnum = (typeof VakantieAanvraagScalarFieldEnum)[keyof typeof VakantieAanvraagScalarFieldEnum]
 
 
 export const DienstScalarFieldEnum = {
@@ -548,6 +571,38 @@ export const InstellingScalarFieldEnum = {
 } as const
 
 export type InstellingScalarFieldEnum = (typeof InstellingScalarFieldEnum)[keyof typeof InstellingScalarFieldEnum]
+
+
+export const VerloningsPeriodeScalarFieldEnum = {
+  id: 'id',
+  periodeStart: 'periodeStart',
+  periodeEinde: 'periodeEinde',
+  jaar: 'jaar',
+  maand: 'maand',
+  status: 'status',
+  gegenereerdOp: 'gegenereerdOp',
+  gecontroleerdDoorId: 'gecontroleerdDoorId',
+  gecontroleerdOp: 'gecontroleerdOp',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type VerloningsPeriodeScalarFieldEnum = (typeof VerloningsPeriodeScalarFieldEnum)[keyof typeof VerloningsPeriodeScalarFieldEnum]
+
+
+export const VerloningsRegelScalarFieldEnum = {
+  id: 'id',
+  verloningsPeriodeId: 'verloningsPeriodeId',
+  medewerkerId: 'medewerkerId',
+  vestigingId: 'vestigingId',
+  medewerkerNaam: 'medewerkerNaam',
+  gewerkteDagen: 'gewerkteDagen',
+  gewerkteUren: 'gewerkteUren',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type VerloningsRegelScalarFieldEnum = (typeof VerloningsRegelScalarFieldEnum)[keyof typeof VerloningsRegelScalarFieldEnum]
 
 
 export const SortOrder = {

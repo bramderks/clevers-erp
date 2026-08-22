@@ -231,12 +231,15 @@ export type VestigingWhereInput = {
   aangemaaktDoor?: Prisma.StringNullableFilter<"Vestiging"> | string | null
   gewijzigdDoor?: Prisma.StringNullableFilter<"Vestiging"> | string | null
   organisatie?: Prisma.XOR<Prisma.OrganisatieScalarRelationFilter, Prisma.OrganisatieWhereInput>
+  vakantieAanvragen?: Prisma.VakantieAanvraagListRelationFilter
   medewerkers?: Prisma.MedewerkerVestigingListRelationFilter
   weken?: Prisma.WeekListRelationFilter
   bestellingen?: Prisma.BestellingListRelationFilter
   voorraadTellingen?: Prisma.VoorraadTellingListRelationFilter
   voorraadMutaties?: Prisma.VoorraadMutatieListRelationFilter
   vestigingProducten?: Prisma.VestigingProductListRelationFilter
+  urenregistraties?: Prisma.UrenRegistratieListRelationFilter
+  verloningsRegels?: Prisma.VerloningsRegelListRelationFilter
   openingstijden?: Prisma.OpeningstijdenPeriodeListRelationFilter
   vestigingToegang?: Prisma.SysteemGebruikerVestigingListRelationFilter
 }
@@ -254,12 +257,15 @@ export type VestigingOrderByWithRelationInput = {
   aangemaaktDoor?: Prisma.SortOrderInput | Prisma.SortOrder
   gewijzigdDoor?: Prisma.SortOrderInput | Prisma.SortOrder
   organisatie?: Prisma.OrganisatieOrderByWithRelationInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagOrderByRelationAggregateInput
   medewerkers?: Prisma.MedewerkerVestigingOrderByRelationAggregateInput
   weken?: Prisma.WeekOrderByRelationAggregateInput
   bestellingen?: Prisma.BestellingOrderByRelationAggregateInput
   voorraadTellingen?: Prisma.VoorraadTellingOrderByRelationAggregateInput
   voorraadMutaties?: Prisma.VoorraadMutatieOrderByRelationAggregateInput
   vestigingProducten?: Prisma.VestigingProductOrderByRelationAggregateInput
+  urenregistraties?: Prisma.UrenRegistratieOrderByRelationAggregateInput
+  verloningsRegels?: Prisma.VerloningsRegelOrderByRelationAggregateInput
   openingstijden?: Prisma.OpeningstijdenPeriodeOrderByRelationAggregateInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingOrderByRelationAggregateInput
 }
@@ -282,12 +288,15 @@ export type VestigingWhereUniqueInput = Prisma.AtLeast<{
   aangemaaktDoor?: Prisma.StringNullableFilter<"Vestiging"> | string | null
   gewijzigdDoor?: Prisma.StringNullableFilter<"Vestiging"> | string | null
   organisatie?: Prisma.XOR<Prisma.OrganisatieScalarRelationFilter, Prisma.OrganisatieWhereInput>
+  vakantieAanvragen?: Prisma.VakantieAanvraagListRelationFilter
   medewerkers?: Prisma.MedewerkerVestigingListRelationFilter
   weken?: Prisma.WeekListRelationFilter
   bestellingen?: Prisma.BestellingListRelationFilter
   voorraadTellingen?: Prisma.VoorraadTellingListRelationFilter
   voorraadMutaties?: Prisma.VoorraadMutatieListRelationFilter
   vestigingProducten?: Prisma.VestigingProductListRelationFilter
+  urenregistraties?: Prisma.UrenRegistratieListRelationFilter
+  verloningsRegels?: Prisma.VerloningsRegelListRelationFilter
   openingstijden?: Prisma.OpeningstijdenPeriodeListRelationFilter
   vestigingToegang?: Prisma.SysteemGebruikerVestigingListRelationFilter
 }, "id" | "organisatieId_code" | "organisatieId_naam">
@@ -338,12 +347,15 @@ export type VestigingCreateInput = {
   aangemaaktDoor?: string | null
   gewijzigdDoor?: string | null
   organisatie: Prisma.OrganisatieCreateNestedOneWithoutVestigingenInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagCreateNestedManyWithoutVestigingInput
   medewerkers?: Prisma.MedewerkerVestigingCreateNestedManyWithoutVestigingInput
   weken?: Prisma.WeekCreateNestedManyWithoutVestigingInput
   bestellingen?: Prisma.BestellingCreateNestedManyWithoutVestigingInput
   voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutVestigingInput
   voorraadMutaties?: Prisma.VoorraadMutatieCreateNestedManyWithoutVestigingInput
   vestigingProducten?: Prisma.VestigingProductCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelCreateNestedManyWithoutVestigingInput
   openingstijden?: Prisma.OpeningstijdenPeriodeCreateNestedManyWithoutVestigingInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingCreateNestedManyWithoutVestigingInput
 }
@@ -360,12 +372,15 @@ export type VestigingUncheckedCreateInput = {
   gewijzigdOp?: Date | string
   aangemaaktDoor?: string | null
   gewijzigdDoor?: string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedCreateNestedManyWithoutVestigingInput
   medewerkers?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutVestigingInput
   weken?: Prisma.WeekUncheckedCreateNestedManyWithoutVestigingInput
   bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutVestigingInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutVestigingInput
   voorraadMutaties?: Prisma.VoorraadMutatieUncheckedCreateNestedManyWithoutVestigingInput
   vestigingProducten?: Prisma.VestigingProductUncheckedCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedCreateNestedManyWithoutVestigingInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedCreateNestedManyWithoutVestigingInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedCreateNestedManyWithoutVestigingInput
 }
@@ -382,12 +397,15 @@ export type VestigingUpdateInput = {
   aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organisatie?: Prisma.OrganisatieUpdateOneRequiredWithoutVestigingenNestedInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagUpdateManyWithoutVestigingNestedInput
   medewerkers?: Prisma.MedewerkerVestigingUpdateManyWithoutVestigingNestedInput
   weken?: Prisma.WeekUpdateManyWithoutVestigingNestedInput
   bestellingen?: Prisma.BestellingUpdateManyWithoutVestigingNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutVestigingNestedInput
   voorraadMutaties?: Prisma.VoorraadMutatieUpdateManyWithoutVestigingNestedInput
   vestigingProducten?: Prisma.VestigingProductUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUpdateManyWithoutVestigingNestedInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUpdateManyWithoutVestigingNestedInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUpdateManyWithoutVestigingNestedInput
 }
@@ -404,12 +422,15 @@ export type VestigingUncheckedUpdateInput = {
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedUpdateManyWithoutVestigingNestedInput
   medewerkers?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
   weken?: Prisma.WeekUncheckedUpdateManyWithoutVestigingNestedInput
   bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutVestigingNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutVestigingNestedInput
   voorraadMutaties?: Prisma.VoorraadMutatieUncheckedUpdateManyWithoutVestigingNestedInput
   vestigingProducten?: Prisma.VestigingProductUncheckedUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedUpdateManyWithoutVestigingNestedInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedUpdateManyWithoutVestigingNestedInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
 }
@@ -624,6 +645,34 @@ export type VestigingUpdateOneRequiredWithoutWekenNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.VestigingUpdateToOneWithWhereWithoutWekenInput, Prisma.VestigingUpdateWithoutWekenInput>, Prisma.VestigingUncheckedUpdateWithoutWekenInput>
 }
 
+export type VestigingCreateNestedOneWithoutVakantieAanvragenInput = {
+  create?: Prisma.XOR<Prisma.VestigingCreateWithoutVakantieAanvragenInput, Prisma.VestigingUncheckedCreateWithoutVakantieAanvragenInput>
+  connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutVakantieAanvragenInput
+  connect?: Prisma.VestigingWhereUniqueInput
+}
+
+export type VestigingUpdateOneRequiredWithoutVakantieAanvragenNestedInput = {
+  create?: Prisma.XOR<Prisma.VestigingCreateWithoutVakantieAanvragenInput, Prisma.VestigingUncheckedCreateWithoutVakantieAanvragenInput>
+  connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutVakantieAanvragenInput
+  upsert?: Prisma.VestigingUpsertWithoutVakantieAanvragenInput
+  connect?: Prisma.VestigingWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.VestigingUpdateToOneWithWhereWithoutVakantieAanvragenInput, Prisma.VestigingUpdateWithoutVakantieAanvragenInput>, Prisma.VestigingUncheckedUpdateWithoutVakantieAanvragenInput>
+}
+
+export type VestigingCreateNestedOneWithoutUrenregistratiesInput = {
+  create?: Prisma.XOR<Prisma.VestigingCreateWithoutUrenregistratiesInput, Prisma.VestigingUncheckedCreateWithoutUrenregistratiesInput>
+  connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutUrenregistratiesInput
+  connect?: Prisma.VestigingWhereUniqueInput
+}
+
+export type VestigingUpdateOneRequiredWithoutUrenregistratiesNestedInput = {
+  create?: Prisma.XOR<Prisma.VestigingCreateWithoutUrenregistratiesInput, Prisma.VestigingUncheckedCreateWithoutUrenregistratiesInput>
+  connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutUrenregistratiesInput
+  upsert?: Prisma.VestigingUpsertWithoutUrenregistratiesInput
+  connect?: Prisma.VestigingWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.VestigingUpdateToOneWithWhereWithoutUrenregistratiesInput, Prisma.VestigingUpdateWithoutUrenregistratiesInput>, Prisma.VestigingUncheckedUpdateWithoutUrenregistratiesInput>
+}
+
 export type VestigingCreateNestedOneWithoutVestigingProductenInput = {
   create?: Prisma.XOR<Prisma.VestigingCreateWithoutVestigingProductenInput, Prisma.VestigingUncheckedCreateWithoutVestigingProductenInput>
   connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutVestigingProductenInput
@@ -680,6 +729,20 @@ export type VestigingUpdateOneRequiredWithoutVoorraadMutatiesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.VestigingUpdateToOneWithWhereWithoutVoorraadMutatiesInput, Prisma.VestigingUpdateWithoutVoorraadMutatiesInput>, Prisma.VestigingUncheckedUpdateWithoutVoorraadMutatiesInput>
 }
 
+export type VestigingCreateNestedOneWithoutVerloningsRegelsInput = {
+  create?: Prisma.XOR<Prisma.VestigingCreateWithoutVerloningsRegelsInput, Prisma.VestigingUncheckedCreateWithoutVerloningsRegelsInput>
+  connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutVerloningsRegelsInput
+  connect?: Prisma.VestigingWhereUniqueInput
+}
+
+export type VestigingUpdateOneRequiredWithoutVerloningsRegelsNestedInput = {
+  create?: Prisma.XOR<Prisma.VestigingCreateWithoutVerloningsRegelsInput, Prisma.VestigingUncheckedCreateWithoutVerloningsRegelsInput>
+  connectOrCreate?: Prisma.VestigingCreateOrConnectWithoutVerloningsRegelsInput
+  upsert?: Prisma.VestigingUpsertWithoutVerloningsRegelsInput
+  connect?: Prisma.VestigingWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.VestigingUpdateToOneWithWhereWithoutVerloningsRegelsInput, Prisma.VestigingUpdateWithoutVerloningsRegelsInput>, Prisma.VestigingUncheckedUpdateWithoutVerloningsRegelsInput>
+}
+
 export type VestigingCreateWithoutOrganisatieInput = {
   id?: string
   code: string
@@ -691,12 +754,15 @@ export type VestigingCreateWithoutOrganisatieInput = {
   gewijzigdOp?: Date | string
   aangemaaktDoor?: string | null
   gewijzigdDoor?: string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagCreateNestedManyWithoutVestigingInput
   medewerkers?: Prisma.MedewerkerVestigingCreateNestedManyWithoutVestigingInput
   weken?: Prisma.WeekCreateNestedManyWithoutVestigingInput
   bestellingen?: Prisma.BestellingCreateNestedManyWithoutVestigingInput
   voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutVestigingInput
   voorraadMutaties?: Prisma.VoorraadMutatieCreateNestedManyWithoutVestigingInput
   vestigingProducten?: Prisma.VestigingProductCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelCreateNestedManyWithoutVestigingInput
   openingstijden?: Prisma.OpeningstijdenPeriodeCreateNestedManyWithoutVestigingInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingCreateNestedManyWithoutVestigingInput
 }
@@ -712,12 +778,15 @@ export type VestigingUncheckedCreateWithoutOrganisatieInput = {
   gewijzigdOp?: Date | string
   aangemaaktDoor?: string | null
   gewijzigdDoor?: string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedCreateNestedManyWithoutVestigingInput
   medewerkers?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutVestigingInput
   weken?: Prisma.WeekUncheckedCreateNestedManyWithoutVestigingInput
   bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutVestigingInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutVestigingInput
   voorraadMutaties?: Prisma.VoorraadMutatieUncheckedCreateNestedManyWithoutVestigingInput
   vestigingProducten?: Prisma.VestigingProductUncheckedCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedCreateNestedManyWithoutVestigingInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedCreateNestedManyWithoutVestigingInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedCreateNestedManyWithoutVestigingInput
 }
@@ -777,12 +846,15 @@ export type VestigingCreateWithoutOpeningstijdenInput = {
   aangemaaktDoor?: string | null
   gewijzigdDoor?: string | null
   organisatie: Prisma.OrganisatieCreateNestedOneWithoutVestigingenInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagCreateNestedManyWithoutVestigingInput
   medewerkers?: Prisma.MedewerkerVestigingCreateNestedManyWithoutVestigingInput
   weken?: Prisma.WeekCreateNestedManyWithoutVestigingInput
   bestellingen?: Prisma.BestellingCreateNestedManyWithoutVestigingInput
   voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutVestigingInput
   voorraadMutaties?: Prisma.VoorraadMutatieCreateNestedManyWithoutVestigingInput
   vestigingProducten?: Prisma.VestigingProductCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelCreateNestedManyWithoutVestigingInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingCreateNestedManyWithoutVestigingInput
 }
 
@@ -798,12 +870,15 @@ export type VestigingUncheckedCreateWithoutOpeningstijdenInput = {
   gewijzigdOp?: Date | string
   aangemaaktDoor?: string | null
   gewijzigdDoor?: string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedCreateNestedManyWithoutVestigingInput
   medewerkers?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutVestigingInput
   weken?: Prisma.WeekUncheckedCreateNestedManyWithoutVestigingInput
   bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutVestigingInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutVestigingInput
   voorraadMutaties?: Prisma.VoorraadMutatieUncheckedCreateNestedManyWithoutVestigingInput
   vestigingProducten?: Prisma.VestigingProductUncheckedCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedCreateNestedManyWithoutVestigingInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedCreateNestedManyWithoutVestigingInput
 }
 
@@ -835,12 +910,15 @@ export type VestigingUpdateWithoutOpeningstijdenInput = {
   aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organisatie?: Prisma.OrganisatieUpdateOneRequiredWithoutVestigingenNestedInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagUpdateManyWithoutVestigingNestedInput
   medewerkers?: Prisma.MedewerkerVestigingUpdateManyWithoutVestigingNestedInput
   weken?: Prisma.WeekUpdateManyWithoutVestigingNestedInput
   bestellingen?: Prisma.BestellingUpdateManyWithoutVestigingNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutVestigingNestedInput
   voorraadMutaties?: Prisma.VoorraadMutatieUpdateManyWithoutVestigingNestedInput
   vestigingProducten?: Prisma.VestigingProductUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUpdateManyWithoutVestigingNestedInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUpdateManyWithoutVestigingNestedInput
 }
 
@@ -856,12 +934,15 @@ export type VestigingUncheckedUpdateWithoutOpeningstijdenInput = {
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedUpdateManyWithoutVestigingNestedInput
   medewerkers?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
   weken?: Prisma.WeekUncheckedUpdateManyWithoutVestigingNestedInput
   bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutVestigingNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutVestigingNestedInput
   voorraadMutaties?: Prisma.VoorraadMutatieUncheckedUpdateManyWithoutVestigingNestedInput
   vestigingProducten?: Prisma.VestigingProductUncheckedUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedUpdateManyWithoutVestigingNestedInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
 }
 
@@ -877,12 +958,15 @@ export type VestigingCreateWithoutVestigingToegangInput = {
   aangemaaktDoor?: string | null
   gewijzigdDoor?: string | null
   organisatie: Prisma.OrganisatieCreateNestedOneWithoutVestigingenInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagCreateNestedManyWithoutVestigingInput
   medewerkers?: Prisma.MedewerkerVestigingCreateNestedManyWithoutVestigingInput
   weken?: Prisma.WeekCreateNestedManyWithoutVestigingInput
   bestellingen?: Prisma.BestellingCreateNestedManyWithoutVestigingInput
   voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutVestigingInput
   voorraadMutaties?: Prisma.VoorraadMutatieCreateNestedManyWithoutVestigingInput
   vestigingProducten?: Prisma.VestigingProductCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelCreateNestedManyWithoutVestigingInput
   openingstijden?: Prisma.OpeningstijdenPeriodeCreateNestedManyWithoutVestigingInput
 }
 
@@ -898,12 +982,15 @@ export type VestigingUncheckedCreateWithoutVestigingToegangInput = {
   gewijzigdOp?: Date | string
   aangemaaktDoor?: string | null
   gewijzigdDoor?: string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedCreateNestedManyWithoutVestigingInput
   medewerkers?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutVestigingInput
   weken?: Prisma.WeekUncheckedCreateNestedManyWithoutVestigingInput
   bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutVestigingInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutVestigingInput
   voorraadMutaties?: Prisma.VoorraadMutatieUncheckedCreateNestedManyWithoutVestigingInput
   vestigingProducten?: Prisma.VestigingProductUncheckedCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedCreateNestedManyWithoutVestigingInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedCreateNestedManyWithoutVestigingInput
 }
 
@@ -935,12 +1022,15 @@ export type VestigingUpdateWithoutVestigingToegangInput = {
   aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organisatie?: Prisma.OrganisatieUpdateOneRequiredWithoutVestigingenNestedInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagUpdateManyWithoutVestigingNestedInput
   medewerkers?: Prisma.MedewerkerVestigingUpdateManyWithoutVestigingNestedInput
   weken?: Prisma.WeekUpdateManyWithoutVestigingNestedInput
   bestellingen?: Prisma.BestellingUpdateManyWithoutVestigingNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutVestigingNestedInput
   voorraadMutaties?: Prisma.VoorraadMutatieUpdateManyWithoutVestigingNestedInput
   vestigingProducten?: Prisma.VestigingProductUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUpdateManyWithoutVestigingNestedInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUpdateManyWithoutVestigingNestedInput
 }
 
@@ -956,12 +1046,15 @@ export type VestigingUncheckedUpdateWithoutVestigingToegangInput = {
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedUpdateManyWithoutVestigingNestedInput
   medewerkers?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
   weken?: Prisma.WeekUncheckedUpdateManyWithoutVestigingNestedInput
   bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutVestigingNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutVestigingNestedInput
   voorraadMutaties?: Prisma.VoorraadMutatieUncheckedUpdateManyWithoutVestigingNestedInput
   vestigingProducten?: Prisma.VestigingProductUncheckedUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedUpdateManyWithoutVestigingNestedInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedUpdateManyWithoutVestigingNestedInput
 }
 
@@ -977,11 +1070,14 @@ export type VestigingCreateWithoutMedewerkersInput = {
   aangemaaktDoor?: string | null
   gewijzigdDoor?: string | null
   organisatie: Prisma.OrganisatieCreateNestedOneWithoutVestigingenInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagCreateNestedManyWithoutVestigingInput
   weken?: Prisma.WeekCreateNestedManyWithoutVestigingInput
   bestellingen?: Prisma.BestellingCreateNestedManyWithoutVestigingInput
   voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutVestigingInput
   voorraadMutaties?: Prisma.VoorraadMutatieCreateNestedManyWithoutVestigingInput
   vestigingProducten?: Prisma.VestigingProductCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelCreateNestedManyWithoutVestigingInput
   openingstijden?: Prisma.OpeningstijdenPeriodeCreateNestedManyWithoutVestigingInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingCreateNestedManyWithoutVestigingInput
 }
@@ -998,11 +1094,14 @@ export type VestigingUncheckedCreateWithoutMedewerkersInput = {
   gewijzigdOp?: Date | string
   aangemaaktDoor?: string | null
   gewijzigdDoor?: string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedCreateNestedManyWithoutVestigingInput
   weken?: Prisma.WeekUncheckedCreateNestedManyWithoutVestigingInput
   bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutVestigingInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutVestigingInput
   voorraadMutaties?: Prisma.VoorraadMutatieUncheckedCreateNestedManyWithoutVestigingInput
   vestigingProducten?: Prisma.VestigingProductUncheckedCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedCreateNestedManyWithoutVestigingInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedCreateNestedManyWithoutVestigingInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedCreateNestedManyWithoutVestigingInput
 }
@@ -1035,11 +1134,14 @@ export type VestigingUpdateWithoutMedewerkersInput = {
   aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organisatie?: Prisma.OrganisatieUpdateOneRequiredWithoutVestigingenNestedInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagUpdateManyWithoutVestigingNestedInput
   weken?: Prisma.WeekUpdateManyWithoutVestigingNestedInput
   bestellingen?: Prisma.BestellingUpdateManyWithoutVestigingNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutVestigingNestedInput
   voorraadMutaties?: Prisma.VoorraadMutatieUpdateManyWithoutVestigingNestedInput
   vestigingProducten?: Prisma.VestigingProductUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUpdateManyWithoutVestigingNestedInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUpdateManyWithoutVestigingNestedInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUpdateManyWithoutVestigingNestedInput
 }
@@ -1056,11 +1158,14 @@ export type VestigingUncheckedUpdateWithoutMedewerkersInput = {
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedUpdateManyWithoutVestigingNestedInput
   weken?: Prisma.WeekUncheckedUpdateManyWithoutVestigingNestedInput
   bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutVestigingNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutVestigingNestedInput
   voorraadMutaties?: Prisma.VoorraadMutatieUncheckedUpdateManyWithoutVestigingNestedInput
   vestigingProducten?: Prisma.VestigingProductUncheckedUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedUpdateManyWithoutVestigingNestedInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedUpdateManyWithoutVestigingNestedInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
 }
@@ -1077,11 +1182,14 @@ export type VestigingCreateWithoutWekenInput = {
   aangemaaktDoor?: string | null
   gewijzigdDoor?: string | null
   organisatie: Prisma.OrganisatieCreateNestedOneWithoutVestigingenInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagCreateNestedManyWithoutVestigingInput
   medewerkers?: Prisma.MedewerkerVestigingCreateNestedManyWithoutVestigingInput
   bestellingen?: Prisma.BestellingCreateNestedManyWithoutVestigingInput
   voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutVestigingInput
   voorraadMutaties?: Prisma.VoorraadMutatieCreateNestedManyWithoutVestigingInput
   vestigingProducten?: Prisma.VestigingProductCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelCreateNestedManyWithoutVestigingInput
   openingstijden?: Prisma.OpeningstijdenPeriodeCreateNestedManyWithoutVestigingInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingCreateNestedManyWithoutVestigingInput
 }
@@ -1098,11 +1206,14 @@ export type VestigingUncheckedCreateWithoutWekenInput = {
   gewijzigdOp?: Date | string
   aangemaaktDoor?: string | null
   gewijzigdDoor?: string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedCreateNestedManyWithoutVestigingInput
   medewerkers?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutVestigingInput
   bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutVestigingInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutVestigingInput
   voorraadMutaties?: Prisma.VoorraadMutatieUncheckedCreateNestedManyWithoutVestigingInput
   vestigingProducten?: Prisma.VestigingProductUncheckedCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedCreateNestedManyWithoutVestigingInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedCreateNestedManyWithoutVestigingInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedCreateNestedManyWithoutVestigingInput
 }
@@ -1135,11 +1246,14 @@ export type VestigingUpdateWithoutWekenInput = {
   aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organisatie?: Prisma.OrganisatieUpdateOneRequiredWithoutVestigingenNestedInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagUpdateManyWithoutVestigingNestedInput
   medewerkers?: Prisma.MedewerkerVestigingUpdateManyWithoutVestigingNestedInput
   bestellingen?: Prisma.BestellingUpdateManyWithoutVestigingNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutVestigingNestedInput
   voorraadMutaties?: Prisma.VoorraadMutatieUpdateManyWithoutVestigingNestedInput
   vestigingProducten?: Prisma.VestigingProductUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUpdateManyWithoutVestigingNestedInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUpdateManyWithoutVestigingNestedInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUpdateManyWithoutVestigingNestedInput
 }
@@ -1156,16 +1270,19 @@ export type VestigingUncheckedUpdateWithoutWekenInput = {
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedUpdateManyWithoutVestigingNestedInput
   medewerkers?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
   bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutVestigingNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutVestigingNestedInput
   voorraadMutaties?: Prisma.VoorraadMutatieUncheckedUpdateManyWithoutVestigingNestedInput
   vestigingProducten?: Prisma.VestigingProductUncheckedUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedUpdateManyWithoutVestigingNestedInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedUpdateManyWithoutVestigingNestedInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
 }
 
-export type VestigingCreateWithoutVestigingProductenInput = {
+export type VestigingCreateWithoutVakantieAanvragenInput = {
   id?: string
   code: string
   naam: string
@@ -1182,11 +1299,14 @@ export type VestigingCreateWithoutVestigingProductenInput = {
   bestellingen?: Prisma.BestellingCreateNestedManyWithoutVestigingInput
   voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutVestigingInput
   voorraadMutaties?: Prisma.VoorraadMutatieCreateNestedManyWithoutVestigingInput
+  vestigingProducten?: Prisma.VestigingProductCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelCreateNestedManyWithoutVestigingInput
   openingstijden?: Prisma.OpeningstijdenPeriodeCreateNestedManyWithoutVestigingInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingCreateNestedManyWithoutVestigingInput
 }
 
-export type VestigingUncheckedCreateWithoutVestigingProductenInput = {
+export type VestigingUncheckedCreateWithoutVakantieAanvragenInput = {
   id?: string
   organisatieId: string
   code: string
@@ -1203,6 +1323,233 @@ export type VestigingUncheckedCreateWithoutVestigingProductenInput = {
   bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutVestigingInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutVestigingInput
   voorraadMutaties?: Prisma.VoorraadMutatieUncheckedCreateNestedManyWithoutVestigingInput
+  vestigingProducten?: Prisma.VestigingProductUncheckedCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedCreateNestedManyWithoutVestigingInput
+  openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedCreateNestedManyWithoutVestigingInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedCreateNestedManyWithoutVestigingInput
+}
+
+export type VestigingCreateOrConnectWithoutVakantieAanvragenInput = {
+  where: Prisma.VestigingWhereUniqueInput
+  create: Prisma.XOR<Prisma.VestigingCreateWithoutVakantieAanvragenInput, Prisma.VestigingUncheckedCreateWithoutVakantieAanvragenInput>
+}
+
+export type VestigingUpsertWithoutVakantieAanvragenInput = {
+  update: Prisma.XOR<Prisma.VestigingUpdateWithoutVakantieAanvragenInput, Prisma.VestigingUncheckedUpdateWithoutVakantieAanvragenInput>
+  create: Prisma.XOR<Prisma.VestigingCreateWithoutVakantieAanvragenInput, Prisma.VestigingUncheckedCreateWithoutVakantieAanvragenInput>
+  where?: Prisma.VestigingWhereInput
+}
+
+export type VestigingUpdateToOneWithWhereWithoutVakantieAanvragenInput = {
+  where?: Prisma.VestigingWhereInput
+  data: Prisma.XOR<Prisma.VestigingUpdateWithoutVakantieAanvragenInput, Prisma.VestigingUncheckedUpdateWithoutVakantieAanvragenInput>
+}
+
+export type VestigingUpdateWithoutVakantieAanvragenInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  seizoenStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  seizoenEinde?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  organisatie?: Prisma.OrganisatieUpdateOneRequiredWithoutVestigingenNestedInput
+  medewerkers?: Prisma.MedewerkerVestigingUpdateManyWithoutVestigingNestedInput
+  weken?: Prisma.WeekUpdateManyWithoutVestigingNestedInput
+  bestellingen?: Prisma.BestellingUpdateManyWithoutVestigingNestedInput
+  voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutVestigingNestedInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUpdateManyWithoutVestigingNestedInput
+  vestigingProducten?: Prisma.VestigingProductUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUpdateManyWithoutVestigingNestedInput
+  openingstijden?: Prisma.OpeningstijdenPeriodeUpdateManyWithoutVestigingNestedInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUpdateManyWithoutVestigingNestedInput
+}
+
+export type VestigingUncheckedUpdateWithoutVakantieAanvragenInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  organisatieId?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  seizoenStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  seizoenEinde?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  medewerkers?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
+  weken?: Prisma.WeekUncheckedUpdateManyWithoutVestigingNestedInput
+  bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutVestigingNestedInput
+  voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutVestigingNestedInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUncheckedUpdateManyWithoutVestigingNestedInput
+  vestigingProducten?: Prisma.VestigingProductUncheckedUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedUpdateManyWithoutVestigingNestedInput
+  openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedUpdateManyWithoutVestigingNestedInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
+}
+
+export type VestigingCreateWithoutUrenregistratiesInput = {
+  id?: string
+  code: string
+  naam: string
+  actief?: boolean
+  seizoenStart?: Date | string | null
+  seizoenEinde?: Date | string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
+  organisatie: Prisma.OrganisatieCreateNestedOneWithoutVestigingenInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagCreateNestedManyWithoutVestigingInput
+  medewerkers?: Prisma.MedewerkerVestigingCreateNestedManyWithoutVestigingInput
+  weken?: Prisma.WeekCreateNestedManyWithoutVestigingInput
+  bestellingen?: Prisma.BestellingCreateNestedManyWithoutVestigingInput
+  voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutVestigingInput
+  voorraadMutaties?: Prisma.VoorraadMutatieCreateNestedManyWithoutVestigingInput
+  vestigingProducten?: Prisma.VestigingProductCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelCreateNestedManyWithoutVestigingInput
+  openingstijden?: Prisma.OpeningstijdenPeriodeCreateNestedManyWithoutVestigingInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingCreateNestedManyWithoutVestigingInput
+}
+
+export type VestigingUncheckedCreateWithoutUrenregistratiesInput = {
+  id?: string
+  organisatieId: string
+  code: string
+  naam: string
+  actief?: boolean
+  seizoenStart?: Date | string | null
+  seizoenEinde?: Date | string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedCreateNestedManyWithoutVestigingInput
+  medewerkers?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutVestigingInput
+  weken?: Prisma.WeekUncheckedCreateNestedManyWithoutVestigingInput
+  bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutVestigingInput
+  voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutVestigingInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUncheckedCreateNestedManyWithoutVestigingInput
+  vestigingProducten?: Prisma.VestigingProductUncheckedCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedCreateNestedManyWithoutVestigingInput
+  openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedCreateNestedManyWithoutVestigingInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedCreateNestedManyWithoutVestigingInput
+}
+
+export type VestigingCreateOrConnectWithoutUrenregistratiesInput = {
+  where: Prisma.VestigingWhereUniqueInput
+  create: Prisma.XOR<Prisma.VestigingCreateWithoutUrenregistratiesInput, Prisma.VestigingUncheckedCreateWithoutUrenregistratiesInput>
+}
+
+export type VestigingUpsertWithoutUrenregistratiesInput = {
+  update: Prisma.XOR<Prisma.VestigingUpdateWithoutUrenregistratiesInput, Prisma.VestigingUncheckedUpdateWithoutUrenregistratiesInput>
+  create: Prisma.XOR<Prisma.VestigingCreateWithoutUrenregistratiesInput, Prisma.VestigingUncheckedCreateWithoutUrenregistratiesInput>
+  where?: Prisma.VestigingWhereInput
+}
+
+export type VestigingUpdateToOneWithWhereWithoutUrenregistratiesInput = {
+  where?: Prisma.VestigingWhereInput
+  data: Prisma.XOR<Prisma.VestigingUpdateWithoutUrenregistratiesInput, Prisma.VestigingUncheckedUpdateWithoutUrenregistratiesInput>
+}
+
+export type VestigingUpdateWithoutUrenregistratiesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  seizoenStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  seizoenEinde?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  organisatie?: Prisma.OrganisatieUpdateOneRequiredWithoutVestigingenNestedInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagUpdateManyWithoutVestigingNestedInput
+  medewerkers?: Prisma.MedewerkerVestigingUpdateManyWithoutVestigingNestedInput
+  weken?: Prisma.WeekUpdateManyWithoutVestigingNestedInput
+  bestellingen?: Prisma.BestellingUpdateManyWithoutVestigingNestedInput
+  voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutVestigingNestedInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUpdateManyWithoutVestigingNestedInput
+  vestigingProducten?: Prisma.VestigingProductUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUpdateManyWithoutVestigingNestedInput
+  openingstijden?: Prisma.OpeningstijdenPeriodeUpdateManyWithoutVestigingNestedInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUpdateManyWithoutVestigingNestedInput
+}
+
+export type VestigingUncheckedUpdateWithoutUrenregistratiesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  organisatieId?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  seizoenStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  seizoenEinde?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedUpdateManyWithoutVestigingNestedInput
+  medewerkers?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
+  weken?: Prisma.WeekUncheckedUpdateManyWithoutVestigingNestedInput
+  bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutVestigingNestedInput
+  voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutVestigingNestedInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUncheckedUpdateManyWithoutVestigingNestedInput
+  vestigingProducten?: Prisma.VestigingProductUncheckedUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedUpdateManyWithoutVestigingNestedInput
+  openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedUpdateManyWithoutVestigingNestedInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
+}
+
+export type VestigingCreateWithoutVestigingProductenInput = {
+  id?: string
+  code: string
+  naam: string
+  actief?: boolean
+  seizoenStart?: Date | string | null
+  seizoenEinde?: Date | string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
+  organisatie: Prisma.OrganisatieCreateNestedOneWithoutVestigingenInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagCreateNestedManyWithoutVestigingInput
+  medewerkers?: Prisma.MedewerkerVestigingCreateNestedManyWithoutVestigingInput
+  weken?: Prisma.WeekCreateNestedManyWithoutVestigingInput
+  bestellingen?: Prisma.BestellingCreateNestedManyWithoutVestigingInput
+  voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutVestigingInput
+  voorraadMutaties?: Prisma.VoorraadMutatieCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelCreateNestedManyWithoutVestigingInput
+  openingstijden?: Prisma.OpeningstijdenPeriodeCreateNestedManyWithoutVestigingInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingCreateNestedManyWithoutVestigingInput
+}
+
+export type VestigingUncheckedCreateWithoutVestigingProductenInput = {
+  id?: string
+  organisatieId: string
+  code: string
+  naam: string
+  actief?: boolean
+  seizoenStart?: Date | string | null
+  seizoenEinde?: Date | string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedCreateNestedManyWithoutVestigingInput
+  medewerkers?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutVestigingInput
+  weken?: Prisma.WeekUncheckedCreateNestedManyWithoutVestigingInput
+  bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutVestigingInput
+  voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutVestigingInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUncheckedCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedCreateNestedManyWithoutVestigingInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedCreateNestedManyWithoutVestigingInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedCreateNestedManyWithoutVestigingInput
 }
@@ -1235,11 +1582,14 @@ export type VestigingUpdateWithoutVestigingProductenInput = {
   aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organisatie?: Prisma.OrganisatieUpdateOneRequiredWithoutVestigingenNestedInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagUpdateManyWithoutVestigingNestedInput
   medewerkers?: Prisma.MedewerkerVestigingUpdateManyWithoutVestigingNestedInput
   weken?: Prisma.WeekUpdateManyWithoutVestigingNestedInput
   bestellingen?: Prisma.BestellingUpdateManyWithoutVestigingNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutVestigingNestedInput
   voorraadMutaties?: Prisma.VoorraadMutatieUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUpdateManyWithoutVestigingNestedInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUpdateManyWithoutVestigingNestedInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUpdateManyWithoutVestigingNestedInput
 }
@@ -1256,11 +1606,14 @@ export type VestigingUncheckedUpdateWithoutVestigingProductenInput = {
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedUpdateManyWithoutVestigingNestedInput
   medewerkers?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
   weken?: Prisma.WeekUncheckedUpdateManyWithoutVestigingNestedInput
   bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutVestigingNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutVestigingNestedInput
   voorraadMutaties?: Prisma.VoorraadMutatieUncheckedUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedUpdateManyWithoutVestigingNestedInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedUpdateManyWithoutVestigingNestedInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
 }
@@ -1277,11 +1630,14 @@ export type VestigingCreateWithoutBestellingenInput = {
   aangemaaktDoor?: string | null
   gewijzigdDoor?: string | null
   organisatie: Prisma.OrganisatieCreateNestedOneWithoutVestigingenInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagCreateNestedManyWithoutVestigingInput
   medewerkers?: Prisma.MedewerkerVestigingCreateNestedManyWithoutVestigingInput
   weken?: Prisma.WeekCreateNestedManyWithoutVestigingInput
   voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutVestigingInput
   voorraadMutaties?: Prisma.VoorraadMutatieCreateNestedManyWithoutVestigingInput
   vestigingProducten?: Prisma.VestigingProductCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelCreateNestedManyWithoutVestigingInput
   openingstijden?: Prisma.OpeningstijdenPeriodeCreateNestedManyWithoutVestigingInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingCreateNestedManyWithoutVestigingInput
 }
@@ -1298,11 +1654,14 @@ export type VestigingUncheckedCreateWithoutBestellingenInput = {
   gewijzigdOp?: Date | string
   aangemaaktDoor?: string | null
   gewijzigdDoor?: string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedCreateNestedManyWithoutVestigingInput
   medewerkers?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutVestigingInput
   weken?: Prisma.WeekUncheckedCreateNestedManyWithoutVestigingInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutVestigingInput
   voorraadMutaties?: Prisma.VoorraadMutatieUncheckedCreateNestedManyWithoutVestigingInput
   vestigingProducten?: Prisma.VestigingProductUncheckedCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedCreateNestedManyWithoutVestigingInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedCreateNestedManyWithoutVestigingInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedCreateNestedManyWithoutVestigingInput
 }
@@ -1335,11 +1694,14 @@ export type VestigingUpdateWithoutBestellingenInput = {
   aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organisatie?: Prisma.OrganisatieUpdateOneRequiredWithoutVestigingenNestedInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagUpdateManyWithoutVestigingNestedInput
   medewerkers?: Prisma.MedewerkerVestigingUpdateManyWithoutVestigingNestedInput
   weken?: Prisma.WeekUpdateManyWithoutVestigingNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutVestigingNestedInput
   voorraadMutaties?: Prisma.VoorraadMutatieUpdateManyWithoutVestigingNestedInput
   vestigingProducten?: Prisma.VestigingProductUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUpdateManyWithoutVestigingNestedInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUpdateManyWithoutVestigingNestedInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUpdateManyWithoutVestigingNestedInput
 }
@@ -1356,11 +1718,14 @@ export type VestigingUncheckedUpdateWithoutBestellingenInput = {
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedUpdateManyWithoutVestigingNestedInput
   medewerkers?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
   weken?: Prisma.WeekUncheckedUpdateManyWithoutVestigingNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutVestigingNestedInput
   voorraadMutaties?: Prisma.VoorraadMutatieUncheckedUpdateManyWithoutVestigingNestedInput
   vestigingProducten?: Prisma.VestigingProductUncheckedUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedUpdateManyWithoutVestigingNestedInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedUpdateManyWithoutVestigingNestedInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
 }
@@ -1377,11 +1742,14 @@ export type VestigingCreateWithoutVoorraadTellingenInput = {
   aangemaaktDoor?: string | null
   gewijzigdDoor?: string | null
   organisatie: Prisma.OrganisatieCreateNestedOneWithoutVestigingenInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagCreateNestedManyWithoutVestigingInput
   medewerkers?: Prisma.MedewerkerVestigingCreateNestedManyWithoutVestigingInput
   weken?: Prisma.WeekCreateNestedManyWithoutVestigingInput
   bestellingen?: Prisma.BestellingCreateNestedManyWithoutVestigingInput
   voorraadMutaties?: Prisma.VoorraadMutatieCreateNestedManyWithoutVestigingInput
   vestigingProducten?: Prisma.VestigingProductCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelCreateNestedManyWithoutVestigingInput
   openingstijden?: Prisma.OpeningstijdenPeriodeCreateNestedManyWithoutVestigingInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingCreateNestedManyWithoutVestigingInput
 }
@@ -1398,11 +1766,14 @@ export type VestigingUncheckedCreateWithoutVoorraadTellingenInput = {
   gewijzigdOp?: Date | string
   aangemaaktDoor?: string | null
   gewijzigdDoor?: string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedCreateNestedManyWithoutVestigingInput
   medewerkers?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutVestigingInput
   weken?: Prisma.WeekUncheckedCreateNestedManyWithoutVestigingInput
   bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutVestigingInput
   voorraadMutaties?: Prisma.VoorraadMutatieUncheckedCreateNestedManyWithoutVestigingInput
   vestigingProducten?: Prisma.VestigingProductUncheckedCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedCreateNestedManyWithoutVestigingInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedCreateNestedManyWithoutVestigingInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedCreateNestedManyWithoutVestigingInput
 }
@@ -1435,11 +1806,14 @@ export type VestigingUpdateWithoutVoorraadTellingenInput = {
   aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organisatie?: Prisma.OrganisatieUpdateOneRequiredWithoutVestigingenNestedInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagUpdateManyWithoutVestigingNestedInput
   medewerkers?: Prisma.MedewerkerVestigingUpdateManyWithoutVestigingNestedInput
   weken?: Prisma.WeekUpdateManyWithoutVestigingNestedInput
   bestellingen?: Prisma.BestellingUpdateManyWithoutVestigingNestedInput
   voorraadMutaties?: Prisma.VoorraadMutatieUpdateManyWithoutVestigingNestedInput
   vestigingProducten?: Prisma.VestigingProductUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUpdateManyWithoutVestigingNestedInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUpdateManyWithoutVestigingNestedInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUpdateManyWithoutVestigingNestedInput
 }
@@ -1456,11 +1830,14 @@ export type VestigingUncheckedUpdateWithoutVoorraadTellingenInput = {
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedUpdateManyWithoutVestigingNestedInput
   medewerkers?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
   weken?: Prisma.WeekUncheckedUpdateManyWithoutVestigingNestedInput
   bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutVestigingNestedInput
   voorraadMutaties?: Prisma.VoorraadMutatieUncheckedUpdateManyWithoutVestigingNestedInput
   vestigingProducten?: Prisma.VestigingProductUncheckedUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedUpdateManyWithoutVestigingNestedInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedUpdateManyWithoutVestigingNestedInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
 }
@@ -1477,11 +1854,14 @@ export type VestigingCreateWithoutVoorraadMutatiesInput = {
   aangemaaktDoor?: string | null
   gewijzigdDoor?: string | null
   organisatie: Prisma.OrganisatieCreateNestedOneWithoutVestigingenInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagCreateNestedManyWithoutVestigingInput
   medewerkers?: Prisma.MedewerkerVestigingCreateNestedManyWithoutVestigingInput
   weken?: Prisma.WeekCreateNestedManyWithoutVestigingInput
   bestellingen?: Prisma.BestellingCreateNestedManyWithoutVestigingInput
   voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutVestigingInput
   vestigingProducten?: Prisma.VestigingProductCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelCreateNestedManyWithoutVestigingInput
   openingstijden?: Prisma.OpeningstijdenPeriodeCreateNestedManyWithoutVestigingInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingCreateNestedManyWithoutVestigingInput
 }
@@ -1498,11 +1878,14 @@ export type VestigingUncheckedCreateWithoutVoorraadMutatiesInput = {
   gewijzigdOp?: Date | string
   aangemaaktDoor?: string | null
   gewijzigdDoor?: string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedCreateNestedManyWithoutVestigingInput
   medewerkers?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutVestigingInput
   weken?: Prisma.WeekUncheckedCreateNestedManyWithoutVestigingInput
   bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutVestigingInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutVestigingInput
   vestigingProducten?: Prisma.VestigingProductUncheckedCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedCreateNestedManyWithoutVestigingInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedCreateNestedManyWithoutVestigingInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedCreateNestedManyWithoutVestigingInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedCreateNestedManyWithoutVestigingInput
 }
@@ -1535,11 +1918,14 @@ export type VestigingUpdateWithoutVoorraadMutatiesInput = {
   aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organisatie?: Prisma.OrganisatieUpdateOneRequiredWithoutVestigingenNestedInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagUpdateManyWithoutVestigingNestedInput
   medewerkers?: Prisma.MedewerkerVestigingUpdateManyWithoutVestigingNestedInput
   weken?: Prisma.WeekUpdateManyWithoutVestigingNestedInput
   bestellingen?: Prisma.BestellingUpdateManyWithoutVestigingNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutVestigingNestedInput
   vestigingProducten?: Prisma.VestigingProductUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUpdateManyWithoutVestigingNestedInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUpdateManyWithoutVestigingNestedInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUpdateManyWithoutVestigingNestedInput
 }
@@ -1556,11 +1942,126 @@ export type VestigingUncheckedUpdateWithoutVoorraadMutatiesInput = {
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedUpdateManyWithoutVestigingNestedInput
   medewerkers?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
   weken?: Prisma.WeekUncheckedUpdateManyWithoutVestigingNestedInput
   bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutVestigingNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutVestigingNestedInput
   vestigingProducten?: Prisma.VestigingProductUncheckedUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedUpdateManyWithoutVestigingNestedInput
+  openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedUpdateManyWithoutVestigingNestedInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
+}
+
+export type VestigingCreateWithoutVerloningsRegelsInput = {
+  id?: string
+  code: string
+  naam: string
+  actief?: boolean
+  seizoenStart?: Date | string | null
+  seizoenEinde?: Date | string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
+  organisatie: Prisma.OrganisatieCreateNestedOneWithoutVestigingenInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagCreateNestedManyWithoutVestigingInput
+  medewerkers?: Prisma.MedewerkerVestigingCreateNestedManyWithoutVestigingInput
+  weken?: Prisma.WeekCreateNestedManyWithoutVestigingInput
+  bestellingen?: Prisma.BestellingCreateNestedManyWithoutVestigingInput
+  voorraadTellingen?: Prisma.VoorraadTellingCreateNestedManyWithoutVestigingInput
+  voorraadMutaties?: Prisma.VoorraadMutatieCreateNestedManyWithoutVestigingInput
+  vestigingProducten?: Prisma.VestigingProductCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieCreateNestedManyWithoutVestigingInput
+  openingstijden?: Prisma.OpeningstijdenPeriodeCreateNestedManyWithoutVestigingInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingCreateNestedManyWithoutVestigingInput
+}
+
+export type VestigingUncheckedCreateWithoutVerloningsRegelsInput = {
+  id?: string
+  organisatieId: string
+  code: string
+  naam: string
+  actief?: boolean
+  seizoenStart?: Date | string | null
+  seizoenEinde?: Date | string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  aangemaaktDoor?: string | null
+  gewijzigdDoor?: string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedCreateNestedManyWithoutVestigingInput
+  medewerkers?: Prisma.MedewerkerVestigingUncheckedCreateNestedManyWithoutVestigingInput
+  weken?: Prisma.WeekUncheckedCreateNestedManyWithoutVestigingInput
+  bestellingen?: Prisma.BestellingUncheckedCreateNestedManyWithoutVestigingInput
+  voorraadTellingen?: Prisma.VoorraadTellingUncheckedCreateNestedManyWithoutVestigingInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUncheckedCreateNestedManyWithoutVestigingInput
+  vestigingProducten?: Prisma.VestigingProductUncheckedCreateNestedManyWithoutVestigingInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedCreateNestedManyWithoutVestigingInput
+  openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedCreateNestedManyWithoutVestigingInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedCreateNestedManyWithoutVestigingInput
+}
+
+export type VestigingCreateOrConnectWithoutVerloningsRegelsInput = {
+  where: Prisma.VestigingWhereUniqueInput
+  create: Prisma.XOR<Prisma.VestigingCreateWithoutVerloningsRegelsInput, Prisma.VestigingUncheckedCreateWithoutVerloningsRegelsInput>
+}
+
+export type VestigingUpsertWithoutVerloningsRegelsInput = {
+  update: Prisma.XOR<Prisma.VestigingUpdateWithoutVerloningsRegelsInput, Prisma.VestigingUncheckedUpdateWithoutVerloningsRegelsInput>
+  create: Prisma.XOR<Prisma.VestigingCreateWithoutVerloningsRegelsInput, Prisma.VestigingUncheckedCreateWithoutVerloningsRegelsInput>
+  where?: Prisma.VestigingWhereInput
+}
+
+export type VestigingUpdateToOneWithWhereWithoutVerloningsRegelsInput = {
+  where?: Prisma.VestigingWhereInput
+  data: Prisma.XOR<Prisma.VestigingUpdateWithoutVerloningsRegelsInput, Prisma.VestigingUncheckedUpdateWithoutVerloningsRegelsInput>
+}
+
+export type VestigingUpdateWithoutVerloningsRegelsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  seizoenStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  seizoenEinde?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  organisatie?: Prisma.OrganisatieUpdateOneRequiredWithoutVestigingenNestedInput
+  vakantieAanvragen?: Prisma.VakantieAanvraagUpdateManyWithoutVestigingNestedInput
+  medewerkers?: Prisma.MedewerkerVestigingUpdateManyWithoutVestigingNestedInput
+  weken?: Prisma.WeekUpdateManyWithoutVestigingNestedInput
+  bestellingen?: Prisma.BestellingUpdateManyWithoutVestigingNestedInput
+  voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutVestigingNestedInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUpdateManyWithoutVestigingNestedInput
+  vestigingProducten?: Prisma.VestigingProductUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUpdateManyWithoutVestigingNestedInput
+  openingstijden?: Prisma.OpeningstijdenPeriodeUpdateManyWithoutVestigingNestedInput
+  vestigingToegang?: Prisma.SysteemGebruikerVestigingUpdateManyWithoutVestigingNestedInput
+}
+
+export type VestigingUncheckedUpdateWithoutVerloningsRegelsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  organisatieId?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  naam?: Prisma.StringFieldUpdateOperationsInput | string
+  actief?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  seizoenStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  seizoenEinde?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedUpdateManyWithoutVestigingNestedInput
+  medewerkers?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
+  weken?: Prisma.WeekUncheckedUpdateManyWithoutVestigingNestedInput
+  bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutVestigingNestedInput
+  voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutVestigingNestedInput
+  voorraadMutaties?: Prisma.VoorraadMutatieUncheckedUpdateManyWithoutVestigingNestedInput
+  vestigingProducten?: Prisma.VestigingProductUncheckedUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedUpdateManyWithoutVestigingNestedInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedUpdateManyWithoutVestigingNestedInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
 }
@@ -1589,12 +2090,15 @@ export type VestigingUpdateWithoutOrganisatieInput = {
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUpdateManyWithoutVestigingNestedInput
   medewerkers?: Prisma.MedewerkerVestigingUpdateManyWithoutVestigingNestedInput
   weken?: Prisma.WeekUpdateManyWithoutVestigingNestedInput
   bestellingen?: Prisma.BestellingUpdateManyWithoutVestigingNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUpdateManyWithoutVestigingNestedInput
   voorraadMutaties?: Prisma.VoorraadMutatieUpdateManyWithoutVestigingNestedInput
   vestigingProducten?: Prisma.VestigingProductUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUpdateManyWithoutVestigingNestedInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUpdateManyWithoutVestigingNestedInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUpdateManyWithoutVestigingNestedInput
 }
@@ -1610,12 +2114,15 @@ export type VestigingUncheckedUpdateWithoutOrganisatieInput = {
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   aangemaaktDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gewijzigdDoor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vakantieAanvragen?: Prisma.VakantieAanvraagUncheckedUpdateManyWithoutVestigingNestedInput
   medewerkers?: Prisma.MedewerkerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
   weken?: Prisma.WeekUncheckedUpdateManyWithoutVestigingNestedInput
   bestellingen?: Prisma.BestellingUncheckedUpdateManyWithoutVestigingNestedInput
   voorraadTellingen?: Prisma.VoorraadTellingUncheckedUpdateManyWithoutVestigingNestedInput
   voorraadMutaties?: Prisma.VoorraadMutatieUncheckedUpdateManyWithoutVestigingNestedInput
   vestigingProducten?: Prisma.VestigingProductUncheckedUpdateManyWithoutVestigingNestedInput
+  urenregistraties?: Prisma.UrenRegistratieUncheckedUpdateManyWithoutVestigingNestedInput
+  verloningsRegels?: Prisma.VerloningsRegelUncheckedUpdateManyWithoutVestigingNestedInput
   openingstijden?: Prisma.OpeningstijdenPeriodeUncheckedUpdateManyWithoutVestigingNestedInput
   vestigingToegang?: Prisma.SysteemGebruikerVestigingUncheckedUpdateManyWithoutVestigingNestedInput
 }
@@ -1639,23 +2146,29 @@ export type VestigingUncheckedUpdateManyWithoutOrganisatieInput = {
  */
 
 export type VestigingCountOutputType = {
+  vakantieAanvragen: number
   medewerkers: number
   weken: number
   bestellingen: number
   voorraadTellingen: number
   voorraadMutaties: number
   vestigingProducten: number
+  urenregistraties: number
+  verloningsRegels: number
   openingstijden: number
   vestigingToegang: number
 }
 
 export type VestigingCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  vakantieAanvragen?: boolean | VestigingCountOutputTypeCountVakantieAanvragenArgs
   medewerkers?: boolean | VestigingCountOutputTypeCountMedewerkersArgs
   weken?: boolean | VestigingCountOutputTypeCountWekenArgs
   bestellingen?: boolean | VestigingCountOutputTypeCountBestellingenArgs
   voorraadTellingen?: boolean | VestigingCountOutputTypeCountVoorraadTellingenArgs
   voorraadMutaties?: boolean | VestigingCountOutputTypeCountVoorraadMutatiesArgs
   vestigingProducten?: boolean | VestigingCountOutputTypeCountVestigingProductenArgs
+  urenregistraties?: boolean | VestigingCountOutputTypeCountUrenregistratiesArgs
+  verloningsRegels?: boolean | VestigingCountOutputTypeCountVerloningsRegelsArgs
   openingstijden?: boolean | VestigingCountOutputTypeCountOpeningstijdenArgs
   vestigingToegang?: boolean | VestigingCountOutputTypeCountVestigingToegangArgs
 }
@@ -1668,6 +2181,13 @@ export type VestigingCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Ex
    * Select specific fields to fetch from the VestigingCountOutputType
    */
   select?: Prisma.VestigingCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * VestigingCountOutputType without action
+ */
+export type VestigingCountOutputTypeCountVakantieAanvragenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.VakantieAanvraagWhereInput
 }
 
 /**
@@ -1715,6 +2235,20 @@ export type VestigingCountOutputTypeCountVestigingProductenArgs<ExtArgs extends 
 /**
  * VestigingCountOutputType without action
  */
+export type VestigingCountOutputTypeCountUrenregistratiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UrenRegistratieWhereInput
+}
+
+/**
+ * VestigingCountOutputType without action
+ */
+export type VestigingCountOutputTypeCountVerloningsRegelsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.VerloningsRegelWhereInput
+}
+
+/**
+ * VestigingCountOutputType without action
+ */
 export type VestigingCountOutputTypeCountOpeningstijdenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.OpeningstijdenPeriodeWhereInput
 }
@@ -1740,12 +2274,15 @@ export type VestigingSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   aangemaaktDoor?: boolean
   gewijzigdDoor?: boolean
   organisatie?: boolean | Prisma.OrganisatieDefaultArgs<ExtArgs>
+  vakantieAanvragen?: boolean | Prisma.Vestiging$vakantieAanvragenArgs<ExtArgs>
   medewerkers?: boolean | Prisma.Vestiging$medewerkersArgs<ExtArgs>
   weken?: boolean | Prisma.Vestiging$wekenArgs<ExtArgs>
   bestellingen?: boolean | Prisma.Vestiging$bestellingenArgs<ExtArgs>
   voorraadTellingen?: boolean | Prisma.Vestiging$voorraadTellingenArgs<ExtArgs>
   voorraadMutaties?: boolean | Prisma.Vestiging$voorraadMutatiesArgs<ExtArgs>
   vestigingProducten?: boolean | Prisma.Vestiging$vestigingProductenArgs<ExtArgs>
+  urenregistraties?: boolean | Prisma.Vestiging$urenregistratiesArgs<ExtArgs>
+  verloningsRegels?: boolean | Prisma.Vestiging$verloningsRegelsArgs<ExtArgs>
   openingstijden?: boolean | Prisma.Vestiging$openingstijdenArgs<ExtArgs>
   vestigingToegang?: boolean | Prisma.Vestiging$vestigingToegangArgs<ExtArgs>
   _count?: boolean | Prisma.VestigingCountOutputTypeDefaultArgs<ExtArgs>
@@ -1798,12 +2335,15 @@ export type VestigingSelectScalar = {
 export type VestigingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "organisatieId" | "code" | "naam" | "actief" | "seizoenStart" | "seizoenEinde" | "aangemaaktOp" | "gewijzigdOp" | "aangemaaktDoor" | "gewijzigdDoor", ExtArgs["result"]["vestiging"]>
 export type VestigingInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   organisatie?: boolean | Prisma.OrganisatieDefaultArgs<ExtArgs>
+  vakantieAanvragen?: boolean | Prisma.Vestiging$vakantieAanvragenArgs<ExtArgs>
   medewerkers?: boolean | Prisma.Vestiging$medewerkersArgs<ExtArgs>
   weken?: boolean | Prisma.Vestiging$wekenArgs<ExtArgs>
   bestellingen?: boolean | Prisma.Vestiging$bestellingenArgs<ExtArgs>
   voorraadTellingen?: boolean | Prisma.Vestiging$voorraadTellingenArgs<ExtArgs>
   voorraadMutaties?: boolean | Prisma.Vestiging$voorraadMutatiesArgs<ExtArgs>
   vestigingProducten?: boolean | Prisma.Vestiging$vestigingProductenArgs<ExtArgs>
+  urenregistraties?: boolean | Prisma.Vestiging$urenregistratiesArgs<ExtArgs>
+  verloningsRegels?: boolean | Prisma.Vestiging$verloningsRegelsArgs<ExtArgs>
   openingstijden?: boolean | Prisma.Vestiging$openingstijdenArgs<ExtArgs>
   vestigingToegang?: boolean | Prisma.Vestiging$vestigingToegangArgs<ExtArgs>
   _count?: boolean | Prisma.VestigingCountOutputTypeDefaultArgs<ExtArgs>
@@ -1819,12 +2359,15 @@ export type $VestigingPayload<ExtArgs extends runtime.Types.Extensions.InternalA
   name: "Vestiging"
   objects: {
     organisatie: Prisma.$OrganisatiePayload<ExtArgs>
+    vakantieAanvragen: Prisma.$VakantieAanvraagPayload<ExtArgs>[]
     medewerkers: Prisma.$MedewerkerVestigingPayload<ExtArgs>[]
     weken: Prisma.$WeekPayload<ExtArgs>[]
     bestellingen: Prisma.$BestellingPayload<ExtArgs>[]
     voorraadTellingen: Prisma.$VoorraadTellingPayload<ExtArgs>[]
     voorraadMutaties: Prisma.$VoorraadMutatiePayload<ExtArgs>[]
     vestigingProducten: Prisma.$VestigingProductPayload<ExtArgs>[]
+    urenregistraties: Prisma.$UrenRegistratiePayload<ExtArgs>[]
+    verloningsRegels: Prisma.$VerloningsRegelPayload<ExtArgs>[]
     openingstijden: Prisma.$OpeningstijdenPeriodePayload<ExtArgs>[]
     vestigingToegang: Prisma.$SysteemGebruikerVestigingPayload<ExtArgs>[]
   }
@@ -2249,12 +2792,15 @@ readonly fields: VestigingFieldRefs;
 export interface Prisma__VestigingClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   organisatie<T extends Prisma.OrganisatieDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.OrganisatieDefaultArgs<ExtArgs>>): Prisma.Prisma__OrganisatieClient<runtime.Types.Result.GetResult<Prisma.$OrganisatiePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  vakantieAanvragen<T extends Prisma.Vestiging$vakantieAanvragenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Vestiging$vakantieAanvragenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VakantieAanvraagPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   medewerkers<T extends Prisma.Vestiging$medewerkersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Vestiging$medewerkersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MedewerkerVestigingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   weken<T extends Prisma.Vestiging$wekenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Vestiging$wekenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WeekPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   bestellingen<T extends Prisma.Vestiging$bestellingenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Vestiging$bestellingenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BestellingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   voorraadTellingen<T extends Prisma.Vestiging$voorraadTellingenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Vestiging$voorraadTellingenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VoorraadTellingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   voorraadMutaties<T extends Prisma.Vestiging$voorraadMutatiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Vestiging$voorraadMutatiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VoorraadMutatiePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   vestigingProducten<T extends Prisma.Vestiging$vestigingProductenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Vestiging$vestigingProductenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VestigingProductPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  urenregistraties<T extends Prisma.Vestiging$urenregistratiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Vestiging$urenregistratiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UrenRegistratiePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  verloningsRegels<T extends Prisma.Vestiging$verloningsRegelsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Vestiging$verloningsRegelsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VerloningsRegelPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   openingstijden<T extends Prisma.Vestiging$openingstijdenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Vestiging$openingstijdenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OpeningstijdenPeriodePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   vestigingToegang<T extends Prisma.Vestiging$vestigingToegangArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Vestiging$vestigingToegangArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SysteemGebruikerVestigingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -2698,6 +3244,30 @@ export type VestigingDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Int
 }
 
 /**
+ * Vestiging.vakantieAanvragen
+ */
+export type Vestiging$vakantieAanvragenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the VakantieAanvraag
+   */
+  select?: Prisma.VakantieAanvraagSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the VakantieAanvraag
+   */
+  omit?: Prisma.VakantieAanvraagOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VakantieAanvraagInclude<ExtArgs> | null
+  where?: Prisma.VakantieAanvraagWhereInput
+  orderBy?: Prisma.VakantieAanvraagOrderByWithRelationInput | Prisma.VakantieAanvraagOrderByWithRelationInput[]
+  cursor?: Prisma.VakantieAanvraagWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.VakantieAanvraagScalarFieldEnum | Prisma.VakantieAanvraagScalarFieldEnum[]
+}
+
+/**
  * Vestiging.medewerkers
  */
 export type Vestiging$medewerkersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2839,6 +3409,54 @@ export type Vestiging$vestigingProductenArgs<ExtArgs extends runtime.Types.Exten
   take?: number
   skip?: number
   distinct?: Prisma.VestigingProductScalarFieldEnum | Prisma.VestigingProductScalarFieldEnum[]
+}
+
+/**
+ * Vestiging.urenregistraties
+ */
+export type Vestiging$urenregistratiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UrenRegistratie
+   */
+  select?: Prisma.UrenRegistratieSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UrenRegistratie
+   */
+  omit?: Prisma.UrenRegistratieOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UrenRegistratieInclude<ExtArgs> | null
+  where?: Prisma.UrenRegistratieWhereInput
+  orderBy?: Prisma.UrenRegistratieOrderByWithRelationInput | Prisma.UrenRegistratieOrderByWithRelationInput[]
+  cursor?: Prisma.UrenRegistratieWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UrenRegistratieScalarFieldEnum | Prisma.UrenRegistratieScalarFieldEnum[]
+}
+
+/**
+ * Vestiging.verloningsRegels
+ */
+export type Vestiging$verloningsRegelsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the VerloningsRegel
+   */
+  select?: Prisma.VerloningsRegelSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the VerloningsRegel
+   */
+  omit?: Prisma.VerloningsRegelOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VerloningsRegelInclude<ExtArgs> | null
+  where?: Prisma.VerloningsRegelWhereInput
+  orderBy?: Prisma.VerloningsRegelOrderByWithRelationInput | Prisma.VerloningsRegelOrderByWithRelationInput[]
+  cursor?: Prisma.VerloningsRegelWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.VerloningsRegelScalarFieldEnum | Prisma.VerloningsRegelScalarFieldEnum[]
 }
 
 /**

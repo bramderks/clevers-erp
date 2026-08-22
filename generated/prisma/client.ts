@@ -117,6 +117,11 @@ export type Week = Prisma.WeekModel
  */
 export type Beschikbaarheid = Prisma.BeschikbaarheidModel
 /**
+ * Model VakantieAanvraag
+ * 
+ */
+export type VakantieAanvraag = Prisma.VakantieAanvraagModel
+/**
  * Model Dienst
  * 
  */
@@ -201,3 +206,13 @@ export type Status = Prisma.StatusModel
  * 
  */
 export type Instelling = Prisma.InstellingModel
+/**
+ * Model VerloningsPeriode
+ * 
+ */
+export type VerloningsPeriode = Prisma.VerloningsPeriodeModel
+/**
+ * Model VerloningsRegel
+ * 
+ */
+export type VerloningsRegel = Prisma.VerloningsRegelModel

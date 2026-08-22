@@ -20,9 +20,19 @@ type Beschikbaarheid = {
   weekId: string;
   medewerkerId: string;
   datum: string;
-  begintijd: string;
-  eindtijd: string;
-  status: "BESCHIKBAAR" | "NIET_BESCHIKBAAR" | "VOORKEUR";
+
+  /*
+   * Bij BESCHIKBAAR zijn begin- en eindtijd gevuld.
+   * Bij NIET_BESCHIKBAAR zijn beide null.
+   */
+  begintijd: string | null;
+  eindtijd: string | null;
+
+  status:
+    | "BESCHIKBAAR"
+    | "NIET_BESCHIKBAAR"
+    | "VOORKEUR";
+
   opmerking: string | null;
 };
 
@@ -31,7 +41,9 @@ type SelectorWeek = {
   jaar: number;
   weeknummer: number;
   status: string;
-  beschikbaarheidDeadline: string | null;
+  beschikbaarheidDeadline:
+    | string
+    | null;
 };
 
 type Week = SelectorWeek & {
@@ -42,6 +54,7 @@ type BeschikbaarheidPanelProps = {
   medewerkerId: string;
   vestigingen: Vestiging[];
   isBeheerder: boolean;
+  bewerkmodus?: boolean;
 };
 
 function formatDeadline(
@@ -86,10 +99,21 @@ function deadlineIsVerstreken(
   return new Date() > datum;
 }
 
+function formatAantalDagen(
+  aantal: number,
+) {
+  if (aantal === 1) {
+    return "1 dag ingevuld";
+  }
+
+  return `${aantal} dagen ingevuld`;
+}
+
 export default function BeschikbaarheidPanel({
   medewerkerId,
   vestigingen,
   isBeheerder,
+  bewerkmodus = false,
 }: BeschikbaarheidPanelProps) {
   const [week, setWeek] =
     useState<Week | null>(null);
@@ -122,61 +146,104 @@ export default function BeschikbaarheidPanel({
               },
             );
 
-          const resultaat =
-            await response.json();
+          const tekst =
+            await response.text();
+
+          let resultaat: {
+            error?: string;
+            fout?: string;
+            week?: Partial<Week>;
+            beschikbaarheden?: Beschikbaarheid[];
+          } = {};
+
+          try {
+            resultaat = tekst
+              ? JSON.parse(tekst)
+              : {};
+          } catch {
+            throw new Error(
+              response.ok
+                ? "De server gaf een ongeldig antwoord terug."
+                : `De beschikbaarheid kon niet worden opgehaald. Serverstatus: ${response.status}.`,
+            );
+          }
 
           if (!response.ok) {
             throw new Error(
-              resultaat?.error ??
-                "De beschikbaarheden konden niet worden opgehaald.",
+              resultaat.error ??
+                resultaat.fout ??
+                "De beschikbaarheid kon niet worden opgehaald.",
             );
           }
 
           const beschikbaarheden =
             Array.isArray(
-              resultaat?.beschikbaarheden,
+              resultaat.beschikbaarheden,
             )
               ? resultaat.beschikbaarheden
               : [];
 
           const weekUitResponse =
-            resultaat?.week;
+            resultaat.week;
 
           setWeek({
             id:
               weekUitResponse?.id ??
               geselecteerdeWeek.id,
+
             jaar:
               weekUitResponse?.jaar ??
               geselecteerdeWeek.jaar,
+
             weeknummer:
               weekUitResponse?.weeknummer ??
               geselecteerdeWeek.weeknummer,
+
             status:
               weekUitResponse?.status ??
               geselecteerdeWeek.status,
+
             beschikbaarheidDeadline:
-              weekUitResponse
-                ?.beschikbaarheidDeadline ??
+              weekUitResponse?.beschikbaarheidDeadline ??
               geselecteerdeWeek.beschikbaarheidDeadline,
+
             beschikbaarheden:
               beschikbaarheden.map(
-                (
-                  beschikbaarheid: Beschikbaarheid,
-                ) => ({
-                  ...beschikbaarheid,
+                (beschikbaarheid) => ({
+                  id:
+                    beschikbaarheid.id,
+
                   weekId:
                     beschikbaarheid.weekId ??
                     geselecteerdeWeek.id,
+
                   medewerkerId:
                     beschikbaarheid.medewerkerId ??
                     medewerkerId,
+
+                  datum:
+                    beschikbaarheid.datum,
+
+                  begintijd:
+                    beschikbaarheid.begintijd ??
+                    null,
+
+                  eindtijd:
+                    beschikbaarheid.eindtijd ??
+                    null,
+
+                  status:
+                    beschikbaarheid.status as Beschikbaarheid["status"],
+
+                  opmerking:
+                    beschikbaarheid.opmerking ??
+                    null,
                 }),
               ),
           });
         } catch (error) {
           console.error(
-            "Fout bij laden beschikbaarheden:",
+            "Fout bij laden beschikbaarheid:",
             error,
           );
 
@@ -188,7 +255,7 @@ export default function BeschikbaarheidPanel({
           setError(
             error instanceof Error
               ? error.message
-              : "De beschikbaarheden konden niet worden opgehaald.",
+              : "De beschikbaarheid kon niet worden opgehaald.",
           );
         } finally {
           setLoading(false);
@@ -228,7 +295,7 @@ export default function BeschikbaarheidPanel({
     return (
       <Card
         title="Beschikbaarheid"
-        description="Geef per week aan wanneer de medewerker beschikbaar is."
+        description="Bekijk en beheer de beschikbaarheid van deze medewerker."
       >
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4">
           <p className="font-semibold text-amber-900">
@@ -253,20 +320,37 @@ export default function BeschikbaarheidPanel({
       deadline,
     );
 
+  /*
+   * Alleen in bewerkmodus mag er
+   * daadwerkelijk gewijzigd worden.
+   *
+   * Eigenaar/beheerder mag ook na
+   * de deadline wijzigen.
+   */
   const magWijzigen =
-    isBeheerder ||
-    !deadlineVerstreken;
+    bewerkmodus &&
+    (isBeheerder ||
+      !deadlineVerstreken);
 
   const magVerwijderen =
-    isBeheerder ||
-    !deadlineVerstreken;
+    bewerkmodus &&
+    (isBeheerder ||
+      !deadlineVerstreken);
+
+  const aantalDagen =
+    week?.beschikbaarheden.length ??
+    0;
+
+  const isDoorgegeven =
+    aantalDagen > 0;
 
   return (
     <Card
       title="Beschikbaarheid"
-      description="Geef per week aan op welke dagen en tijden de medewerker beschikbaar is."
+      description="Bekijk wanneer deze medewerker beschikbaar is en beheer de opgegeven beschikbaarheid."
     >
       <div className="space-y-6">
+
         {error && (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
@@ -291,41 +375,53 @@ export default function BeschikbaarheidPanel({
         ) : !week ? (
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-6 py-8 text-center">
             <p className="text-sm text-slate-500">
-              Selecteer een week om
-              de beschikbaarheid te
-              bekijken.
+              Selecteer een week om de
+              beschikbaarheid te bekijken.
             </p>
           </div>
         ) : (
           <>
             <div className="rounded-xl border border-slate-200 bg-white p-5">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                     Geselecteerde week
                   </p>
 
                   <h3 className="mt-1 text-lg font-semibold text-slate-900">
-                    Week{" "}
-                    {week.weeknummer}{" "}
-                    · {week.jaar}
+                    Week {week.weeknummer} ·{" "}
+                    {week.jaar}
                   </h3>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    {isDoorgegeven
+                      ? formatAantalDagen(
+                          aantalDagen,
+                        )
+                      : "Nog geen dagen ingevuld"}
+                  </p>
                 </div>
 
                 <div
                   className={[
-                    "rounded-lg px-4 py-3",
+                    "rounded-lg border px-4 py-3",
                     deadlineVerstreken
-                      ? "border border-red-200 bg-red-50"
-                      : "border border-amber-200 bg-amber-50",
+                      ? isBeheerder
+                        ? "border-blue-200 bg-blue-50"
+                        : "border-red-200 bg-red-50"
+                      : "border-green-200 bg-green-50",
                   ].join(" ")}
                 >
                   <p
                     className={[
                       "text-xs font-semibold uppercase tracking-wide",
                       deadlineVerstreken
-                        ? "text-red-700"
-                        : "text-amber-700",
+                        ? isBeheerder
+                          ? "text-blue-700"
+                          : "text-red-700"
+                        : "text-green-700",
                     ].join(" ")}
                   >
                     Deadline beschikbaarheid
@@ -335,113 +431,323 @@ export default function BeschikbaarheidPanel({
                     className={[
                       "mt-1 text-sm font-semibold",
                       deadlineVerstreken
-                        ? "text-red-900"
-                        : "text-amber-900",
+                        ? isBeheerder
+                          ? "text-blue-900"
+                          : "text-red-900"
+                        : "text-green-900",
                     ].join(" ")}
                   >
                     {formatDeadline(
-                      week.beschikbaarheidDeadline,
+                      deadline,
                     )}
                   </p>
                 </div>
+
+              </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
+
+                <div
+                  className={[
+                    "rounded-lg border px-4 py-3",
+                    isDoorgegeven
+                      ? "border-green-200 bg-green-50"
+                      : "border-red-200 bg-red-50",
+                  ].join(" ")}
+                >
+                  <p
+                    className={[
+                      "text-xs font-semibold uppercase tracking-wide",
+                      isDoorgegeven
+                        ? "text-green-700"
+                        : "text-red-700",
+                    ].join(" ")}
+                  >
+                    Status
+                  </p>
+
+                  <p
+                    className={[
+                      "mt-1 text-sm font-semibold",
+                      isDoorgegeven
+                        ? "text-green-900"
+                        : "text-red-900",
+                    ].join(" ")}
+                  >
+                    {isDoorgegeven
+                      ? "Doorgegeven"
+                      : "Nog niet doorgegeven"}
+                  </p>
+                </div>
+
+                <div
+                  className={[
+                    "rounded-lg border px-4 py-3",
+                    magWijzigen
+                      ? "border-blue-200 bg-blue-50"
+                      : "border-slate-200 bg-slate-50",
+                  ].join(" ")}
+                >
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Wijzigen
+                  </p>
+
+                  <p
+                    className={[
+                      "mt-1 text-sm font-semibold",
+                      magWijzigen
+                        ? "text-blue-900"
+                        : "text-slate-700",
+                    ].join(" ")}
+                  >
+                    {magWijzigen
+                      ? "Wijzigen toegestaan"
+                      : "Alleen bekijken"}
+                  </p>
+                </div>
+
+                <div
+                  className={[
+                    "rounded-lg border px-4 py-3",
+                    deadlineVerstreken
+                      ? isBeheerder
+                        ? "border-blue-200 bg-blue-50"
+                        : "border-red-200 bg-red-50"
+                      : "border-green-200 bg-green-50",
+                  ].join(" ")}
+                >
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Deadline
+                  </p>
+
+                  <p
+                    className={[
+                      "mt-1 text-sm font-semibold",
+                      deadlineVerstreken
+                        ? isBeheerder
+                          ? "text-blue-900"
+                          : "text-red-900"
+                        : "text-green-900",
+                    ].join(" ")}
+                  >
+                    {deadlineVerstreken
+                      ? isBeheerder
+                        ? "Eigenaar kan nog wijzigen"
+                        : "Deadline verstreken"
+                      : "Deadline nog niet verstreken"}
+                  </p>
+                </div>
+
               </div>
 
               {deadlineVerstreken ? (
-                <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
-                  <p className="text-sm font-semibold text-red-800">
-                    De deadline voor
-                    deze week is
-                    verstreken.
+                <div
+                  className={[
+                    "mt-4 rounded-lg border px-4 py-3",
+                    isBeheerder
+                      ? "border-blue-200 bg-blue-50"
+                      : "border-red-200 bg-red-50",
+                  ].join(" ")}
+                >
+                  <p
+                    className={[
+                      "text-sm font-semibold",
+                      isBeheerder
+                        ? "text-blue-800"
+                        : "text-red-800",
+                    ].join(" ")}
+                  >
+                    De deadline voor deze
+                    week is verstreken.
                   </p>
 
-                  <p className="mt-1 text-sm text-red-700">
+                  <p
+                    className={[
+                      "mt-1 text-sm",
+                      isBeheerder
+                        ? "text-blue-700"
+                        : "text-red-700",
+                    ].join(" ")}
+                  >
                     {isBeheerder
-                      ? "Als beheerder kun je de beschikbaarheid nog aanpassen."
-                      : "Deze beschikbaarheid kan niet meer door de medewerker worden gewijzigd."}
+                      ? bewerkmodus
+                        ? "Je bent ingelogd als eigenaar/beheerder. Je kunt de beschikbaarheid van deze medewerker nog wijzigen."
+                        : "Klik op Wijzigen om de beschikbaarheid van deze medewerker aan te passen."
+                      : "De medewerker kan deze beschikbaarheid niet meer zelf wijzigen."}
                   </p>
                 </div>
               ) : (
                 <div className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
                   <p className="text-sm font-semibold text-green-800">
-                    Beschikbaarheid kan
-                    nog worden
-                    gewijzigd.
+                    De deadline is nog niet
+                    verstreken.
                   </p>
 
                   <p className="mt-1 text-sm text-green-700">
-                    Wijzigingen zijn
-                    mogelijk tot de
-                    bovenstaande
-                    deadline.
+                    {bewerkmodus
+                      ? "Je kunt de beschikbaarheid van deze medewerker nu toevoegen en wijzigen."
+                      : "Klik op Wijzigen om de beschikbaarheid van deze medewerker aan te passen."}
                   </p>
                 </div>
               )}
             </div>
 
-            <div className="border-t border-slate-200 pt-6">
-              <h3 className="text-base font-semibold text-slate-900">
-                Beschikbaarheid
-                toevoegen
-              </h3>
+            {magWijzigen ? (
+              <>
+                <div className="border-t border-slate-200 pt-6">
 
-              <p className="mb-6 mt-1 text-sm text-slate-500">
-                Geef per dag de
-                beschikbare tijden op
-                tussen 09:00 en 23:00.
-              </p>
+                  <h3 className="text-base font-semibold text-slate-900">
+                    Beschikbaarheid invullen
+                  </h3>
 
-              {magWijzigen ? (
-                <BeschikbaarheidForm
-                  medewerkerId={
-                    medewerkerId
-                  }
-                  weekId={week.id}
-                  onAangemaakt={
-                    vernieuwBeschikbaarheid
-                  }
-                />
-              ) : (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-4">
-                  <p className="font-semibold text-red-900">
-                    Beschikbaarheid is
-                    gesloten
+                  <p className="mb-6 mt-1 text-sm text-slate-500">
+                    Selecteer per dag of de
+                    medewerker beschikbaar of
+                    niet beschikbaar is. Bij
+                    beschikbaarheid kan een
+                    begin- en eindtijd worden
+                    opgegeven.
                   </p>
 
-                  <p className="mt-1 text-sm text-red-800">
-                    De deadline voor deze
-                    week is verstreken.
-                    Je kunt geen
-                    wijzigingen meer
-                    uitvoeren.
-                  </p>
+                  <BeschikbaarheidForm
+                    medewerkerId={
+                      medewerkerId
+                    }
+                    weekId={week.id}
+                    beschikbaarheidDeadline={
+                      week.beschikbaarheidDeadline
+                    }
+                    isBeheerder={
+                      isBeheerder
+                    }
+                    onAangemaakt={
+                      vernieuwBeschikbaarheid
+                    }
+                  />
                 </div>
-              )}
-            </div>
 
-            <div className="border-t border-slate-200 pt-6">
-              <h3 className="mb-4 text-base font-semibold text-slate-900">
-                Ingevoerde
-                beschikbaarheden
-              </h3>
+                <div className="border-t border-slate-200 pt-6">
 
-              <BeschikbaarheidOverzicht
-                medewerkerId={
-                  medewerkerId
-                }
-                beschikbaarheden={
-                  week.beschikbaarheden
-                }
-                beschikbaarheidDeadline={
-                  week.beschikbaarheidDeadline
-                }
-                magWijzigen={
-                  magWijzigen
-                }
-                magVerwijderen={
-                  magVerwijderen
-                }
-              />
-            </div>
+                  <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+
+                    <div>
+                      <h3 className="text-base font-semibold text-slate-900">
+                        Ingevoerde dagen
+                      </h3>
+
+                      <p className="text-sm text-slate-500">
+                        {isDoorgegeven
+                          ? `${aantalDagen} ${
+                              aantalDagen ===
+                              1
+                                ? "dag"
+                                : "dagen"
+                            } ingevuld.`
+                          : "Er zijn nog geen dagen ingevuld."}
+                      </p>
+                    </div>
+
+                    {isDoorgegeven && (
+                      <span className="inline-flex w-fit rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">
+                        Doorgegeven
+                      </span>
+                    )}
+
+                  </div>
+
+                  {isDoorgegeven ? (
+                    <BeschikbaarheidOverzicht
+                      medewerkerId={
+                        medewerkerId
+                      }
+                      beschikbaarheden={
+                        week.beschikbaarheden
+                      }
+                      beschikbaarheidDeadline={
+                        week.beschikbaarheidDeadline
+                      }
+                      magWijzigen={
+                        magWijzigen
+                      }
+                      magVerwijderen={
+                        magVerwijderen
+                      }
+                    />
+                  ) : (
+                    <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-5">
+                      <p className="text-sm font-semibold text-red-800">
+                        Nog geen
+                        beschikbaarheid
+                        doorgegeven
+                      </p>
+
+                      <p className="mt-1 text-sm text-red-700">
+                        Voor deze week zijn
+                        nog geen dagen
+                        ingevuld.
+                      </p>
+                    </div>
+                  )}
+
+                </div>
+              </>
+            ) : (
+              <div className="border-t border-slate-200 pt-6">
+
+                <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+
+                  <div>
+                    <h3 className="text-base font-semibold text-slate-900">
+                      Ingevoerde dagen
+                    </h3>
+
+                    <p className="text-sm text-slate-500">
+                      Overzicht van de voor
+                      deze week doorgegeven
+                      beschikbaarheid.
+                    </p>
+                  </div>
+
+                  {isDoorgegeven && (
+                    <span className="inline-flex w-fit rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">
+                      Doorgegeven
+                    </span>
+                  )}
+
+                </div>
+
+                {isDoorgegeven ? (
+                  <BeschikbaarheidOverzicht
+                    medewerkerId={
+                      medewerkerId
+                    }
+                    beschikbaarheden={
+                      week.beschikbaarheden
+                    }
+                    beschikbaarheidDeadline={
+                      week.beschikbaarheidDeadline
+                    }
+                    magWijzigen={false}
+                    magVerwijderen={false}
+                  />
+                ) : (
+                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-5">
+                    <p className="text-sm font-semibold text-red-800">
+                      Nog geen
+                      beschikbaarheid
+                      doorgegeven
+                    </p>
+
+                    <p className="mt-1 text-sm text-red-700">
+                      Voor deze week is nog
+                      geen beschikbaarheid
+                      geregistreerd.
+                    </p>
+                  </div>
+                )}
+
+              </div>
+            )}
           </>
         )}
       </div>

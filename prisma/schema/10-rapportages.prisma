@@ -1,0 +1,74 @@
+/// ======================================================
+/// RAPPORTAGES
+/// ======================================================
+
+/// ======================================================
+/// VERLONINGSPERIODE
+/// ======================================================
+
+model VerloningsPeriode {
+  id String @id @default(cuid())
+
+  periodeStart DateTime
+  periodeEinde DateTime
+
+  jaar Int
+  maand Int
+
+  /// AANGEMAAKT
+  /// KLAAR
+  /// VERWERKT
+  status String @default("AANGEMAAKT")
+
+  gegenereerdOp DateTime?
+
+  gecontroleerdDoorId String?
+  gecontroleerdOp DateTime?
+
+  regels VerloningsRegel[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@unique([jaar, maand])
+  @@index([jaar, maand])
+  @@index([status])
+  @@index([periodeStart])
+  @@index([periodeEinde])
+}
+
+/// ======================================================
+/// VERLONINGSREGEL
+/// ======================================================
+
+model VerloningsRegel {
+  id String @id @default(cuid())
+
+  verloningsPeriodeId String
+
+  medewerkerId String
+  vestigingId String
+
+  /// Snapshot van de naam op het moment waarop
+  /// de maandrapportage wordt gegenereerd.
+  medewerkerNaam String
+
+  gewerkteDagen Int @default(0)
+
+  gewerkteUren Decimal @db.Decimal(7, 2)
+
+  verloningsPeriode VerloningsPeriode @relation(fields: [verloningsPeriodeId], references: [id], onDelete: Cascade)
+
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Restrict)
+
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Restrict)
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@unique([verloningsPeriodeId, medewerkerId, vestigingId])
+  @@index([verloningsPeriodeId])
+  @@index([medewerkerId])
+  @@index([vestigingId])
+  @@index([vestigingId, medewerkerNaam])
+}

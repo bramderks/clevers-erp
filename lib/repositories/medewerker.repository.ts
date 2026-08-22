@@ -63,8 +63,7 @@ export const medewerkerRepository = {
                         vestiging: {
                           organisatieId: {
                             in:
-                              organisatieIds ??
-                              [],
+                              organisatieIds ?? [],
                           },
                         },
                       }
@@ -74,8 +73,7 @@ export const medewerkerRepository = {
                     ? {
                         vestigingId: {
                           in:
-                            vestigingIds ??
-                            [],
+                            vestigingIds ?? [],
                         },
                       }
                     : {}),
@@ -223,7 +221,84 @@ export const medewerkerRepository = {
         id,
       },
 
-      data,
+      data: {
+        ...(data.personeelsnummer !==
+          undefined && {
+          personeelsnummer:
+            data.personeelsnummer,
+        }),
+
+        ...(data.aanhef !==
+          undefined && {
+          aanhef: data.aanhef,
+        }),
+
+        ...(data.voornaam !==
+          undefined && {
+          voornaam: data.voornaam,
+        }),
+
+        ...(data.tussenvoegsel !==
+          undefined && {
+          tussenvoegsel:
+            data.tussenvoegsel,
+        }),
+
+        ...(data.achternaam !==
+          undefined && {
+          achternaam: data.achternaam,
+        }),
+
+        ...(data.roepnaam !==
+          undefined && {
+          roepnaam: data.roepnaam,
+        }),
+
+        ...(data.geboortedatum !==
+          undefined && {
+          geboortedatum:
+            data.geboortedatum,
+        }),
+
+        ...(data.email !==
+          undefined && {
+          email: data.email,
+        }),
+
+        ...(data.telefoon !==
+          undefined && {
+          telefoon: data.telefoon,
+        }),
+
+        ...(data.contractType !==
+          undefined && {
+          contractType:
+            data.contractType,
+        }),
+
+        ...(data.contractUren !==
+          undefined && {
+          contractUren:
+            data.contractUren,
+        }),
+
+        ...(data.uurloon !==
+          undefined && {
+          uurloon: data.uurloon,
+        }),
+
+        ...(data.datumInDienst !==
+          undefined && {
+          datumInDienst:
+            data.datumInDienst,
+        }),
+
+        ...(data.datumUitDienst !==
+          undefined && {
+          datumUitDienst:
+            data.datumUitDienst,
+        }),
+      },
     });
   },
 
@@ -240,11 +315,9 @@ export const medewerkerRepository = {
       data: {
         statusId,
 
-        ...(actief !== undefined
-          ? {
-              actief,
-            }
-          : {}),
+        ...(actief !== undefined && {
+          actief,
+        }),
       },
     });
   },

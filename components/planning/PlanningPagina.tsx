@@ -105,15 +105,17 @@ export default function PlanningPagina({
   }, [laadPlanning]);
 
   useEffect(() => {
-    const vestigingBestaat =
-      vestigingId !== "" &&
+    const toegestaneVestiging =
       vestigingen.some(
         (vestiging) =>
           vestiging.id ===
           vestigingId,
       );
 
-    if (vestigingBestaat) {
+    if (
+      vestigingId &&
+      toegestaneVestiging
+    ) {
       return;
     }
 
@@ -128,13 +130,13 @@ export default function PlanningPagina({
   return (
     <main className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">
+        <h1 className="text-2xl font-semibold text-slate-900">
           Planning
         </h1>
 
-        <p className="mt-1 text-sm text-gray-600">
-          Beheer de personeelsplanning per
-          vestiging.
+        <p className="mt-1 text-sm text-slate-600">
+          Bekijk en beheer de personeelsplanning
+          per vestiging.
         </p>
       </div>
 
@@ -149,7 +151,7 @@ export default function PlanningPagina({
       )}
 
       {fout && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
           <p className="text-sm text-red-700">
             {fout}
           </p>
@@ -157,15 +159,15 @@ export default function PlanningPagina({
       )}
 
       {!vestigingId ? (
-        <div className="rounded-xl border bg-white p-6">
-          <p className="text-sm text-gray-600">
-            Er is geen toegankelijke
-            vestiging beschikbaar.
+        <div className="rounded-xl border border-slate-200 bg-white p-6">
+          <p className="text-sm text-slate-600">
+            Er is geen toegankelijke vestiging
+            beschikbaar.
           </p>
         </div>
       ) : laden ? (
-        <div className="rounded-xl border bg-white p-6">
-          <p className="text-sm text-gray-600">
+        <div className="rounded-xl border border-slate-200 bg-white p-6">
+          <p className="text-sm text-slate-600">
             Planning wordt geladen...
           </p>
         </div>
@@ -176,9 +178,7 @@ export default function PlanningPagina({
           isEigenaar={isEigenaar}
           isTeamleider={isTeamleider}
           isMedewerker={isMedewerker}
-          kanVerwijderen={
-            isEigenaar
-          }
+          kanVerwijderen={isEigenaar}
           onGewijzigd={() => {
             void laadPlanning();
           }}

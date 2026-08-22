@@ -14,15 +14,18 @@ type SelectorWeek = {
   jaar: number;
   weeknummer: number;
   status: string;
-  beschikbaarheidDeadline:
-    | string
-    | null;
+  startdatum: string;
+  einddatum: string;
+  beschikbaarheidDeadline: string | null;
 };
 
-function jsonError(
-  error: string,
-  status: number,
-) {
+/*
+ * ============================================================
+ * RESPONSE HELPERS
+ * ============================================================
+ */
+
+function jsonError(error: string, status: number) {
   return NextResponse.json(
     { error },
     { status },
@@ -33,34 +36,72 @@ function jsonError(
  * ============================================================
  * ISO-WEEK FUNCTIES
  * ============================================================
+ *
+ * ISO 8601:
+ *
+ * - maandag = eerste dag van de week
+ * - zondag = laatste dag van de week
+ * - week 1 is de week met de eerste donderdag van het jaar
+ *
+ * Alle berekeningen gebeuren bewust in UTC.
+ * Daardoor kan een maandag niet door lokale tijdzoneconversie
+ * naar zondag verschuiven.
+ * ============================================================
  */
 
 function beginVanISOWeek(
   jaar: number,
   weeknummer: number,
-) {
-  const datum = new Date(
+): Date {
+  const vierJanuari = new Date(
     Date.UTC(jaar, 0, 4),
   );
 
-  const dag =
-    datum.getUTCDay() || 7;
+  const dagVanDeWeek =
+    vierJanuari.getUTCDay() || 7;
 
-  datum.setUTCDate(
-    datum.getUTCDate() -
-      dag +
+  const maandag = new Date(vierJanuari);
+
+  maandag.setUTCDate(
+    vierJanuari.getUTCDate() -
+      dagVanDeWeek +
       1 +
       (weeknummer - 1) * 7,
   );
 
-  datum.setUTCHours(
+  maandag.setUTCHours(
     0,
     0,
     0,
     0,
   );
 
-  return datum;
+  return maandag;
+}
+
+function eindeVanISOWeek(
+  jaar: number,
+  weeknummer: number,
+): Date {
+  const maandag = beginVanISOWeek(
+    jaar,
+    weeknummer,
+  );
+
+  const zondag = new Date(maandag);
+
+  zondag.setUTCDate(
+    zondag.getUTCDate() + 6,
+  );
+
+  zondag.setUTCHours(
+    23,
+    59,
+    59,
+    999,
+  );
+
+  return zondag;
 }
 
 /*
@@ -68,34 +109,32 @@ function beginVanISOWeek(
  * BESCHIKBAARHEIDSDEADLINE
  * ============================================================
  *
- * De beschikbaarheid voor een planningweek sluit:
- *
- * - 4 volledige weken vóór de planningweek
- * - plus 1 extra afgesloten week
+ * De deadline ligt 28 dagen vóór de maandag van de
+ * betreffende planningweek.
  *
  * Voorbeeld:
  *
- * Week 36
- * → week 32 is vier weken eerder
- * → week 31 is de extra afgesloten week
- * → deadline = einde week 31
+ * planningweek 39
+ * maandag week 39
+ * minus 28 dagen
+ * = maandag van week 35
  *
- * De deadline ligt dus 28 dagen vóór de maandag
- * waarop de betreffende planningweek begint.
+ * De beschikbaarheid kan worden doorgegeven tot
+ * het einde van die maandag.
+ * ============================================================
  */
 
 function berekenBeschikbaarheidDeadline(
   jaar: number,
   weeknummer: number,
-) {
+): Date {
   const beginWeek =
     beginVanISOWeek(
       jaar,
       weeknummer,
     );
 
-  const deadline =
-    new Date(beginWeek);
+  const deadline = new Date(beginWeek);
 
   deadline.setUTCDate(
     deadline.getUTCDate() - 28,
@@ -113,7 +152,7 @@ function berekenBeschikbaarheidDeadline(
 
 /*
  * ============================================================
- * MEDEWERKER + TOEGANG
+ * GET
  * ============================================================
  */
 
@@ -122,6 +161,12 @@ export async function GET(
   { params }: RouteContext,
 ) {
   try {
+    /*
+     * --------------------------------------------------------
+     * INGelogde gebruiker
+     * --------------------------------------------------------
+     */
+
     const gebruiker =
       await getCurrentUser();
 
@@ -134,6 +179,12 @@ export async function GET(
 
     const { id: medewerkerId } =
       await params;
+
+    /*
+     * --------------------------------------------------------
+     * Query parameters
+     * --------------------------------------------------------
+     */
 
     const { searchParams } =
       new URL(request.url);
@@ -151,9 +202,9 @@ export async function GET(
     }
 
     /*
-     * ========================================================
+     * --------------------------------------------------------
      * MEDEWERKER CONTROLEREN
-     * ========================================================
+     * --------------------------------------------------------
      */
 
     const medewerker =
@@ -161,15 +212,19 @@ export async function GET(
         where: {
           id: medewerkerId,
         },
+
         select: {
           id: true,
           actief: true,
+
           vestigingen: {
             where: {
               vestigingId,
             },
+
             select: {
               vestigingId: true,
+
               vestiging: {
                 select: {
                   id: true,
@@ -215,9 +270,9 @@ export async function GET(
         .organisatieId;
 
     /*
-     * ========================================================
+     * --------------------------------------------------------
      * ORGANISATIETOEGANG
-     * ========================================================
+     * --------------------------------------------------------
      */
 
     const organisatieRelaties =
@@ -230,8 +285,7 @@ export async function GET(
       );
 
     if (
-      organisatieRelaties.length ===
-      0
+      organisatieRelaties.length === 0
     ) {
       return jsonError(
         "Je hebt geen toegang tot deze organisatie.",
@@ -269,18 +323,9 @@ export async function GET(
     }
 
     /*
-     * ========================================================
+     * --------------------------------------------------------
      * PLANNINGWEKEN OPHALEN
-     * ========================================================
-     *
-     * We halen de planningweken op.
-     *
-     * Een bestaande deadline uit de database blijft leidend.
-     *
-     * Als de deadline nog niet is opgeslagen, gebruiken we
-     * automatisch de nieuwe standaardregel:
-     *
-     * week 36 → einde week 31
+     * --------------------------------------------------------
      */
 
     const weken =
@@ -298,8 +343,7 @@ export async function GET(
           jaar: true,
           weeknummer: true,
           status: true,
-          beschikbaarheidDeadline:
-            true,
+          beschikbaarheidDeadline: true,
         },
 
         orderBy: [
@@ -315,65 +359,112 @@ export async function GET(
     const nu = new Date();
 
     /*
-     * ========================================================
-     * OPENSTAANDE WEKEN
-     * ========================================================
+     * --------------------------------------------------------
+     * WEKEN OPBOUWEN
+     * --------------------------------------------------------
      */
 
-    const openstaandeWeken: SelectorWeek[] =
-      weken
-        .map((week) => {
-          const deadline =
-            week.beschikbaarheidDeadline ??
-            berekenBeschikbaarheidDeadline(
-              week.jaar,
-              week.weeknummer,
-            );
-
-          return {
-            id: week.id,
-            jaar: week.jaar,
-            weeknummer:
-              week.weeknummer,
-            status: week.status,
-            beschikbaarheidDeadline:
-              deadline.toISOString(),
-          };
-        })
-        .filter((week) => {
-          /*
-           * Beheerders mogen ook na de deadline
-           * weken blijven bekijken/beheren.
-           *
-           * Gewone medewerkers krijgen alleen
-           * weken waarvan de deadline nog niet
-           * verstreken is.
-           */
-
-          if (
-            isEigenaar ||
-            isTeamleider
-          ) {
-            return true;
-          }
-
-          return (
-            week.beschikbaarheidDeadline !==
-              null &&
-            new Date(
-              week.beschikbaarheidDeadline,
-            ) > nu
+    const alleWeken: SelectorWeek[] =
+      weken.map((week) => {
+        const startdatum =
+          beginVanISOWeek(
+            week.jaar,
+            week.weeknummer,
           );
-        });
+
+        const einddatum =
+          eindeVanISOWeek(
+            week.jaar,
+            week.weeknummer,
+          );
+
+        const deadline =
+          week.beschikbaarheidDeadline ??
+          berekenBeschikbaarheidDeadline(
+            week.jaar,
+            week.weeknummer,
+          );
+
+        return {
+          id: week.id,
+          jaar: week.jaar,
+          weeknummer:
+            week.weeknummer,
+          status: week.status,
+
+          startdatum:
+            startdatum.toISOString(),
+
+          einddatum:
+            einddatum.toISOString(),
+
+          beschikbaarheidDeadline:
+            deadline.toISOString(),
+        };
+      });
 
     /*
-     * ========================================================
+     * --------------------------------------------------------
+     * BESCHIKBARE WEKEN VOOR MEDEWERKER
+     * --------------------------------------------------------
+     *
+     * Eigenaar/teamleider:
+     *   mogen alle weken zien.
+     *
+     * Medewerker:
+     *   ziet uitsluitend weken waarvan de deadline
+     *   nog niet verstreken is.
+     * --------------------------------------------------------
+     */
+
+    const openstaandeWeken =
+      alleWeken.filter((week) => {
+        if (
+          isEigenaar ||
+          isTeamleider
+        ) {
+          return true;
+        }
+
+        if (
+          !week.beschikbaarheidDeadline
+        ) {
+          return false;
+        }
+
+        return (
+          new Date(
+            week.beschikbaarheidDeadline,
+          ) > nu
+        );
+      });
+
+    /*
+     * --------------------------------------------------------
+     * EERSTE OPENSTAANDE WEEK
+     * --------------------------------------------------------
+     *
+     * Dit is de week die de medewerker als eerste
+     * aangeboden moet krijgen in de beschikbaarheidsplanner.
+     * --------------------------------------------------------
+     */
+
+    const eersteOpenstaandeWeek =
+      !isEigenaar && !isTeamleider
+        ? openstaandeWeken[0] ?? null
+        : null;
+
+    /*
+     * --------------------------------------------------------
      * RESPONSE
-     * ========================================================
+     * --------------------------------------------------------
      */
 
     return NextResponse.json({
       weken: openstaandeWeken,
+
+      eersteOpenstaandeWeek:
+        eersteOpenstaandeWeek,
     });
   } catch (error) {
     console.error(

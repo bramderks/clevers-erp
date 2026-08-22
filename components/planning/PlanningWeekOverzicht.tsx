@@ -24,6 +24,16 @@ function formatteerTijd(datum: string) {
   }).format(new Date(datum));
 }
 
+function formatteerBeschikbaarheidTijd(
+  datum: string | null,
+) {
+  if (!datum) {
+    return null;
+  }
+
+  return formatteerTijd(datum);
+}
+
 function statusLabel(status: PlanningWeek["status"]) {
   switch (status) {
     case "OPEN":
@@ -51,6 +61,19 @@ function statusBezettingLabel(status: string) {
       return "Afgezegd";
     case "GEWERKT":
       return "Gewerkt";
+    default:
+      return status;
+  }
+}
+
+function statusBeschikbaarheidLabel(status: string) {
+  switch (status) {
+    case "BESCHIKBAAR":
+      return "Beschikbaar";
+    case "NIET_BESCHIKBAAR":
+      return "Niet beschikbaar";
+    case "VOORKEUR":
+      return "Voorkeur";
     default:
       return status;
   }
@@ -105,6 +128,10 @@ export default function PlanningWeekOverzicht({
 
   return (
     <section className="space-y-6">
+      {/* =========================================================
+          WEEK
+          ========================================================= */}
+
       <div className="rounded-xl border bg-white p-6">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
           <div>
@@ -141,6 +168,10 @@ export default function PlanningWeekOverzicht({
           )}
         </div>
       </div>
+
+      {/* =========================================================
+          DIENSTEN
+          ========================================================= */}
 
       <div className="rounded-xl border bg-white p-6">
         <div className="flex items-center justify-between gap-4">
@@ -224,6 +255,7 @@ export default function PlanningWeekOverzicht({
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
+
                           onWijzigDienst(
                             dienst.id,
                           );
@@ -239,6 +271,7 @@ export default function PlanningWeekOverzicht({
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
+
                           onVerwijderDienst(
                             dienst.id,
                           );
@@ -260,6 +293,7 @@ export default function PlanningWeekOverzicht({
                           className="rounded-full border bg-gray-50 px-3 py-1 text-xs text-gray-700"
                         >
                           {dienstTag.tag.naam}
+
                           {dienstTag.aantal > 1 &&
                             ` × ${dienstTag.aantal}`}
                         </span>
@@ -318,6 +352,10 @@ export default function PlanningWeekOverzicht({
         )}
       </div>
 
+      {/* =========================================================
+          BESCHIKBAARHEDEN
+          ========================================================= */}
+
       <div className="rounded-xl border bg-white p-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">
@@ -342,46 +380,67 @@ export default function PlanningWeekOverzicht({
         ) : (
           <div className="mt-5 space-y-2">
             {week.beschikbaarheden.map(
-              (beschikbaarheid) => (
-                <div
-                  key={beschikbaarheid.id}
-                  className="rounded-lg border border-gray-200 p-3"
-                >
-                  <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {formatteerDatum(
-                          beschikbaarheid.datum,
-                        )}
-                      </p>
+              (beschikbaarheid) => {
+                const begintijd =
+                  formatteerBeschikbaarheidTijd(
+                    beschikbaarheid.begintijd,
+                  );
 
-                      <p className="mt-1 text-xs text-gray-500">
-                        {formatteerTijd(
-                          beschikbaarheid.begintijd,
-                        )}{" "}
-                        -{" "}
-                        {formatteerTijd(
-                          beschikbaarheid.eindtijd,
+                const eindtijd =
+                  formatteerBeschikbaarheidTijd(
+                    beschikbaarheid.eindtijd,
+                  );
+
+                return (
+                  <div
+                    key={beschikbaarheid.id}
+                    className="rounded-lg border border-gray-200 p-3"
+                  >
+                    <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {formatteerDatum(
+                            beschikbaarheid.datum,
+                          )}
+                        </p>
+
+                        {begintijd &&
+                          eindtijd && (
+                            <p className="mt-1 text-xs text-gray-500">
+                              {begintijd} -{" "}
+                              {eindtijd}
+                            </p>
+                          )}
+
+                        {!begintijd &&
+                          !eindtijd && (
+                            <p className="mt-1 text-xs text-gray-500">
+                              Geen beschikbaarheid
+                              opgegeven voor deze
+                              dag
+                            </p>
+                          )}
+                      </div>
+
+                      <span className="rounded-full border px-3 py-1 text-xs text-gray-700">
+                        {statusBeschikbaarheidLabel(
+                          beschikbaarheid.status,
                         )}
-                      </p>
+                      </span>
                     </div>
 
-                    <span className="rounded-full border px-3 py-1 text-xs text-gray-700">
-                      {beschikbaarheid.status}
-                    </span>
+                    {beschikbaarheid.opmerking && (
+                      <p className="mt-2 text-xs text-gray-500">
+                        {beschikbaarheid.opmerking}
+                      </p>
+                    )}
                   </div>
-
-                  {beschikbaarheid.opmerking && (
-                    <p className="mt-2 text-xs text-gray-500">
-                      {beschikbaarheid.opmerking}
-                    </p>
-                  )}
-                </div>
-              ),
+                );
+              },
             )}
           </div>
         )}
       </div>
     </section>
   );
-}
+} 

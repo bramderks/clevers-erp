@@ -882,15 +882,26 @@ export type $WeekPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     jaar: number
     weeknummer: number
     /**
+     * -----------------------------------------------------
+     * Status
+     * 
      * OPEN
      * IN_PLANNING
      * GEPUBLICEERD
      * AFGESLOTEN
+     * -----------------------------------------------------
      */
     status: string
     /**
      * -----------------------------------------------------
      * Beschikbaarheidsdeadline
+     * 
+     * Uiterste moment waarop medewerkers hun
+     * beschikbaarheid voor deze week kunnen doorgeven.
+     * 
+     * De daadwerkelijke deadline wordt per week
+     * opgeslagen zodat historische weken hun oorspronkelijke
+     * deadline behouden.
      * -----------------------------------------------------
      */
     beschikbaarheidDeadline: Date | null

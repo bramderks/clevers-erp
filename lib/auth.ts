@@ -173,6 +173,7 @@ async function haalVestiging(
     where: {
       id: vestigingId,
     },
+
     select: {
       id: true,
       organisatieId: true,
@@ -216,7 +217,9 @@ function isEigenaarVanOrganisatie(
         organisatieId &&
       relatie.actief &&
       relatie.organisatie.actief &&
-      relatie.rol.naam.toLowerCase() ===
+      relatie.rol.naam
+        .trim()
+        .toLowerCase() ===
         "eigenaar",
   );
 }
@@ -439,6 +442,13 @@ export async function heeftVestigingToegangBinnenOrganisatie(
  * ============================================================
  * ALGEMENE PERMISSION
  * ============================================================
+ *
+ * Eigenaar:
+ *   organisatiebreed.
+ *
+ * Overige rollen:
+ *   permission wordt gecontroleerd
+ *   via de centrale rol-definitie.
  */
 
 export async function hasPermission(
@@ -464,13 +474,37 @@ export async function hasPermission(
 
   return relaties.some(
     (relatie) => {
+      const rolNaam =
+        relatie.rol.naam
+          .trim()
+          .toLowerCase();
+
+      /*
+       * Eigenaar is altijd organisatiebreed
+       * en gebruikt de eigenaar-definitie uit
+       * roles.ts.
+       */
+      if (rolNaam === "eigenaar") {
+        return roles.eigenaar.permissions.some(
+          (toegestanePermission) =>
+            toegestanePermission ===
+            permission,
+        );
+      }
+
+      /*
+       * Alle overige rollen worden gekoppeld
+       * aan de centrale rol-definitie.
+       */
       const rolDefinitie =
         Object.values(
           roles,
         ).find(
           (rol) =>
-            rol.naam.toLowerCase() ===
-            relatie.rol.naam.toLowerCase(),
+            rol.naam
+              .trim()
+              .toLowerCase() ===
+            rolNaam,
         );
 
       if (!rolDefinitie) {
@@ -490,21 +524,6 @@ export async function hasPermission(
  * ============================================================
  * PERMISSION + VESTIGING
  * ============================================================
- *
- * Centrale controle voor bijvoorbeeld:
- *
- * GET    /api/planning
- * POST   /api/planning
- * PATCH  /api/planning/...
- * DELETE /api/planning/...
- *
- * Controle:
- *
- * 1. gebruiker ingelogd
- * 2. vestiging bestaat en is actief
- * 3. organisatiekoppeling is actief
- * 4. rol heeft de permission
- * 5. gebruiker heeft toegang tot de vestiging
  */
 
 export async function hasPermissionForVestiging(
@@ -542,21 +561,37 @@ export async function hasPermissionForVestiging(
     return false;
   }
 
-  /*
-   * De gebruiker moet via ten minste één
-   * actieve rol de permission hebben.
-   */
-
   const heeftPermission =
     organisatieRelaties.some(
       (relatie) => {
+        const rolNaam =
+          relatie.rol.naam
+            .trim()
+            .toLowerCase();
+
+        /*
+         * Eigenaar gebruikt altijd de
+         * centrale eigenaar-definitie.
+         */
+        if (
+          rolNaam === "eigenaar"
+        ) {
+          return roles.eigenaar.permissions.some(
+            (toegestanePermission) =>
+              toegestanePermission ===
+              permission,
+          );
+        }
+
         const rolDefinitie =
           Object.values(
             roles,
           ).find(
             (rol) =>
-              rol.naam.toLowerCase() ===
-              relatie.rol.naam.toLowerCase(),
+              rol.naam
+                .trim()
+                .toLowerCase() ===
+              rolNaam,
           );
 
         if (!rolDefinitie) {
@@ -582,7 +617,9 @@ export async function hasPermissionForVestiging(
   if (
     organisatieRelaties.some(
       (relatie) =>
-        relatie.rol.naam.toLowerCase() ===
+        relatie.rol.naam
+          .trim()
+          .toLowerCase() ===
         "eigenaar",
     )
   ) {
@@ -591,10 +628,7 @@ export async function hasPermissionForVestiging(
 
   /*
    * Medewerker / teamleider met een
-   * medewerkerrecord:
-   *
-   * toegang via de daadwerkelijke
-   * vestigingskoppeling.
+   * medewerkerrecord.
    */
 
   if (
@@ -609,9 +643,7 @@ export async function hasPermissionForVestiging(
 
   /*
    * Expliciete vestigingToegang blijft
-   * beschikbaar als fallback voor
-   * gebruikers die niet via een
-   * medewerkerrecord gekoppeld zijn.
+   * beschikbaar als fallback.
    */
 
   return heeftExplicieteVestigingToegang(

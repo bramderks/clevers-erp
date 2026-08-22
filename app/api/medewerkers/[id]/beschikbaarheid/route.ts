@@ -9,47 +9,140 @@ type RouteContext = {
   }>;
 };
 
-type ToegangFoutStatus =
-  | 401
-  | 400
-  | 403
-  | 404;
+type BeschikbaarheidStatus =
+  | "BESCHIKBAAR"
+  | "NIET_BESCHIKBAAR";
 
-class ToegangFout extends Error {
-  status: ToegangFoutStatus;
+type RequestBody = {
+  weekId?: string;
+  datum?: string;
+  begintijd?: string | null;
+  eindtijd?: string | null;
+  status?: BeschikbaarheidStatus;
+  opmerking?: string | null;
+};
+
+class RouteFout extends Error {
+  status: number;
 
   constructor(
     message: string,
-    status: ToegangFoutStatus,
+    status: number,
   ) {
     super(message);
-    this.name = "ToegangFout";
+    this.name = "RouteFout";
     this.status = status;
   }
 }
 
-function jsonError(
-  error: string,
+function fout(
+  message: string,
   status: number,
 ) {
   return NextResponse.json(
-    { error },
-    { status },
+    {
+      error: message,
+    },
+    {
+      status,
+    },
   );
 }
 
 /*
  * ============================================================
- * ISO-WEEK
+ * DATUM / TIJD
+ * ============================================================
+ */
+
+function parseDatum(
+  waarde: unknown,
+): Date | null {
+  if (
+    typeof waarde !== "string" ||
+    !waarde.trim()
+  ) {
+    return null;
+  }
+
+  const datum = new Date(
+    waarde,
+  );
+
+  if (
+    Number.isNaN(
+      datum.getTime(),
+    )
+  ) {
+    return null;
+  }
+
+  return datum;
+}
+
+function isGeldigeStatus(
+  waarde: unknown,
+): waarde is BeschikbaarheidStatus {
+  return (
+    waarde === "BESCHIKBAAR" ||
+    waarde === "NIET_BESCHIKBAAR"
+  );
+}
+
+function controleerTijden(
+  begintijd: Date,
+  eindtijd: Date,
+) {
+  if (eindtijd <= begintijd) {
+    throw new RouteFout(
+      "De eindtijd moet na de begintijd liggen.",
+      400,
+    );
+  }
+
+  /*
+   * Beschikbaarheid mag alleen binnen
+   * 09:00 t/m 23:00 worden opgegeven.
+   */
+  const beginTotaal =
+    begintijd.getHours() * 60 +
+    begintijd.getMinutes();
+
+  const eindTotaal =
+    eindtijd.getHours() * 60 +
+    eindtijd.getMinutes();
+
+  if (beginTotaal < 9 * 60) {
+    throw new RouteFout(
+      "Beschikbaarheid kan niet eerder dan 09:00 beginnen.",
+      400,
+    );
+  }
+
+  if (eindTotaal > 23 * 60) {
+    throw new RouteFout(
+      "Beschikbaarheid kan niet later dan 23:00 eindigen.",
+      400,
+    );
+  }
+}
+
+/*
+ * ============================================================
+ * ISO WEEK
  * ============================================================
  */
 
 function beginVanISOWeek(
   jaar: number,
   weeknummer: number,
-) {
+): Date {
   const datum = new Date(
-    Date.UTC(jaar, 0, 4),
+    Date.UTC(
+      jaar,
+      0,
+      4,
+    ),
   );
 
   const dag =
@@ -72,29 +165,37 @@ function beginVanISOWeek(
   return datum;
 }
 
-/*
- * ============================================================
- * BESCHIKBAARHEIDSDEADLINE
- * ============================================================
- *
- * De beschikbaarheid van een planningweek sluit
- * 28 dagen vóór de maandag van die planningweek.
- *
- * Voorbeeld:
- *
- * Week 36
- * → maandag week 36
- * → 28 dagen terug
- * → einde week 31
- *
- * Dus:
- * Week 36 → deadline einde week 31
- */
-
-function berekenBeschikbaarheidDeadline(
+function eindeVanISOWeek(
   jaar: number,
   weeknummer: number,
-) {
+): Date {
+  const begin =
+    beginVanISOWeek(
+      jaar,
+      weeknummer,
+    );
+
+  const einde =
+    new Date(begin);
+
+  einde.setUTCDate(
+    einde.getUTCDate() + 6,
+  );
+
+  einde.setUTCHours(
+    23,
+    59,
+    59,
+    999,
+  );
+
+  return einde;
+}
+
+function berekenDeadline(
+  jaar: number,
+  weeknummer: number,
+): Date {
   const weekStart =
     beginVanISOWeek(
       jaar,
@@ -118,47 +219,33 @@ function berekenBeschikbaarheidDeadline(
   return deadline;
 }
 
+function deadlineVerstreken(
+  deadline: Date,
+): boolean {
+  return (
+    new Date().getTime() >
+    deadline.getTime()
+  );
+}
+
 /*
  * ============================================================
- * WEEK
+ * AUTHENTICATIE
  * ============================================================
  */
 
-async function haalWeek(
-  weekId: string,
-) {
-  const week =
-    await prisma.week.findUnique({
-      where: {
-        id: weekId,
-      },
-      include: {
-        vestiging: {
-          select: {
-            id: true,
-            naam: true,
-            organisatieId: true,
-            actief: true,
-          },
-        },
-      },
-    });
+async function haalGebruiker() {
+  const gebruiker =
+    await getCurrentUser();
 
-  if (!week) {
-    throw new ToegangFout(
-      "Planningweek niet gevonden.",
-      404,
+  if (!gebruiker) {
+    throw new RouteFout(
+      "Je moet ingelogd zijn.",
+      401,
     );
   }
 
-  if (!week.vestiging.actief) {
-    throw new ToegangFout(
-      "Deze vestiging is niet actief.",
-      403,
-    );
-  }
-
-  return week;
+  return gebruiker;
 }
 
 /*
@@ -171,44 +258,100 @@ async function haalMedewerker(
   medewerkerId: string,
 ) {
   const medewerker =
-    await prisma.medewerker.findUnique({
-      where: {
-        id: medewerkerId,
-      },
-      select: {
-        id: true,
-        actief: true,
+    await prisma.medewerker.findUnique(
+      {
+        where: {
+          id: medewerkerId,
+        },
 
-        vestigingen: {
-          select: {
-            vestigingId: true,
+        select: {
+          id: true,
+          actief: true,
 
-            vestiging: {
-              select: {
-                organisatieId: true,
-                actief: true,
+          vestigingen: {
+            select: {
+              vestigingId: true,
+
+              vestiging: {
+                select: {
+                  organisatieId: true,
+                  actief: true,
+                },
               },
             },
           },
         },
       },
-    });
+    );
 
   if (!medewerker) {
-    throw new ToegangFout(
+    throw new RouteFout(
       "Medewerker niet gevonden.",
       404,
     );
   }
 
   if (!medewerker.actief) {
-    throw new ToegangFout(
+    throw new RouteFout(
       "Deze medewerker is niet actief.",
       403,
     );
   }
 
   return medewerker;
+}
+
+/*
+ * ============================================================
+ * PLANNINGWEEK
+ * ============================================================
+ */
+
+async function haalWeek(
+  weekId: string,
+) {
+  const week =
+    await prisma.week.findUnique(
+      {
+        where: {
+          id: weekId,
+        },
+
+        select: {
+          id: true,
+          jaar: true,
+          weeknummer: true,
+          status: true,
+          vestigingId: true,
+          beschikbaarheidDeadline: true,
+
+          vestiging: {
+            select: {
+              id: true,
+              naam: true,
+              organisatieId: true,
+              actief: true,
+            },
+          },
+        },
+      },
+    );
+
+  if (!week) {
+    throw new RouteFout(
+      "Planningweek niet gevonden.",
+      404,
+    );
+  }
+
+  if (!week.vestiging.actief) {
+    throw new RouteFout(
+      "Deze vestiging is niet actief.",
+      403,
+    );
+  }
+
+  return week;
 }
 
 /*
@@ -222,183 +365,197 @@ async function bepaalToegang(
   weekId: string,
 ) {
   const gebruiker =
-    await getCurrentUser();
-
-  if (!gebruiker) {
-    throw new ToegangFout(
-      "Je bent niet ingelogd.",
-      401,
-    );
-  }
-
-  const week =
-    await haalWeek(weekId);
+    await haalGebruiker();
 
   const medewerker =
     await haalMedewerker(
       medewerkerId,
     );
 
-  const gekoppeldAanVestiging =
+  const week =
+    await haalWeek(weekId);
+
+  const organisatieId =
+    week.vestiging.organisatieId;
+
+  const medewerkerHeeftVestiging =
     medewerker.vestigingen.some(
       (relatie) =>
         relatie.vestigingId ===
           week.vestigingId &&
         relatie.vestiging.actief &&
-        relatie.vestiging
-          .organisatieId ===
-          week.vestiging
-            .organisatieId,
+        relatie.vestiging.organisatieId ===
+          organisatieId,
     );
 
-  if (!gekoppeldAanVestiging) {
-    throw new ToegangFout(
-      "De medewerker is niet gekoppeld aan de vestiging van deze week.",
+  if (!medewerkerHeeftVestiging) {
+    throw new RouteFout(
+      "De medewerker is niet gekoppeld aan deze vestiging.",
       403,
     );
   }
 
-  const beheerder =
-    gebruiker.organisaties.some(
-      (relatie) => {
-        if (
-          !relatie.actief ||
-          !relatie.organisatie
-            .actief
-        ) {
-          return false;
-        }
-
-        if (
-          relatie.organisatieId !==
-          week.vestiging
-            .organisatieId
-        ) {
-          return false;
-        }
-
-        const rol =
-          relatie.rol.naam.toLowerCase();
-
-        return (
-          rol === "eigenaar" ||
-          rol === "teamleider"
-        );
-      },
+  const organisatieRelaties =
+    gebruiker.organisaties.filter(
+      (relatie) =>
+        relatie.organisatieId ===
+          organisatieId &&
+        relatie.actief &&
+        relatie.organisatie.actief,
     );
 
-  const eigenMedewerker =
+  if (
+    organisatieRelaties.length ===
+    0
+  ) {
+    throw new RouteFout(
+      "Je hebt geen toegang tot deze organisatie.",
+      403,
+    );
+  }
+
+  const isEigenaar =
+    organisatieRelaties.some(
+      (relatie) =>
+        relatie.rol.naam
+          .trim()
+          .toLowerCase() ===
+        "eigenaar",
+    );
+
+  const isTeamleider =
+    organisatieRelaties.some(
+      (relatie) =>
+        relatie.rol.naam
+          .trim()
+          .toLowerCase() ===
+        "teamleider",
+    );
+
+  const isBeheerder =
+    isEigenaar ||
+    isTeamleider;
+
+  const isEigenMedewerker =
     gebruiker.medewerker?.id ===
     medewerkerId;
 
   if (
-    !beheerder &&
-    !eigenMedewerker
+    !isBeheerder &&
+    !isEigenMedewerker
   ) {
-    throw new ToegangFout(
-      "Je mag alleen je eigen beschikbaarheid beheren.",
+    throw new RouteFout(
+      "Je hebt geen toestemming om deze beschikbaarheid te bekijken.",
       403,
     );
   }
 
+  const deadline =
+    week.beschikbaarheidDeadline ??
+    berekenDeadline(
+      week.jaar,
+      week.weeknummer,
+    );
+
   return {
-    week,
+    gebruiker,
     medewerker,
-    beheerder,
-    eigenMedewerker,
+    week,
+    deadline,
+    isEigenaar,
+    isTeamleider,
+    isBeheerder,
+    isEigenMedewerker,
   };
 }
 
 /*
  * ============================================================
- * DEADLINE
+ * FORMATTEREN
  * ============================================================
  */
 
-function haalEffectieveDeadline(
-  jaar: number,
-  weeknummer: number,
-  opgeslagenDeadline:
-    | Date
-    | null,
+function formatteerBeschikbaarheid(
+  beschikbaarheid: {
+    id: string;
+    medewerkerId: string;
+    weekId: string;
+    datum: Date;
+    begintijd: Date | null;
+    eindtijd: Date | null;
+    status: string;
+    opmerking: string | null;
+  },
 ) {
-  if (opgeslagenDeadline) {
-    return opgeslagenDeadline;
-  }
+  return {
+    id: beschikbaarheid.id,
 
-  return berekenBeschikbaarheidDeadline(
-    jaar,
-    weeknummer,
-  );
-}
+    medewerkerId:
+      beschikbaarheid.medewerkerId,
 
-function deadlineVerstreken(
-  deadline: Date,
-) {
-  return new Date() > deadline;
+    weekId:
+      beschikbaarheid.weekId,
+
+    datum:
+      beschikbaarheid.datum.toISOString(),
+
+    begintijd:
+      beschikbaarheid.begintijd
+        ? beschikbaarheid.begintijd.toISOString()
+        : null,
+
+    eindtijd:
+      beschikbaarheid.eindtijd
+        ? beschikbaarheid.eindtijd.toISOString()
+        : null,
+
+    status:
+      beschikbaarheid.status,
+
+    opmerking:
+      beschikbaarheid.opmerking,
+  };
 }
 
 /*
  * ============================================================
- * DATUM / TIJD
+ * DATUM MOET BINNEN WEEK VALLEN
  * ============================================================
  */
 
-function parseDate(
-  waarde: unknown,
+function controleerDatumBinnenWeek(
+  datum: Date,
+  jaar: number,
+  weeknummer: number,
 ) {
-  if (
-    typeof waarde !== "string"
-  ) {
-    return null;
-  }
+  const weekStart =
+    beginVanISOWeek(
+      jaar,
+      weeknummer,
+    );
 
-  const datum = new Date(
-    waarde,
+  const weekEinde =
+    eindeVanISOWeek(
+      jaar,
+      weeknummer,
+    );
+
+  const datumControle =
+    new Date(datum);
+
+  datumControle.setUTCHours(
+    0,
+    0,
+    0,
+    0,
   );
 
   if (
-    Number.isNaN(
-      datum.getTime(),
-    )
+    datumControle < weekStart ||
+    datumControle > weekEinde
   ) {
-    return null;
-  }
-
-  return datum;
-}
-
-function controleerTijden(
-  begintijd: Date,
-  eindtijd: Date,
-) {
-  if (eindtijd <= begintijd) {
-    throw new ToegangFout(
-      "De eindtijd moet na de begintijd liggen.",
-      400,
-    );
-  }
-
-  const beginMinuten =
-    begintijd.getHours() * 60 +
-    begintijd.getMinutes();
-
-  const eindMinuten =
-    eindtijd.getHours() * 60 +
-    eindtijd.getMinutes();
-
-  const minimum =
-    9 * 60;
-
-  const maximum =
-    23 * 60;
-
-  if (
-    beginMinuten < minimum ||
-    eindMinuten > maximum
-  ) {
-    throw new ToegangFout(
-      "Beschikbaarheid kan alleen tussen 09:00 en 23:00 worden opgegeven.",
+    throw new RouteFout(
+      `De gekozen datum valt niet binnen week ${weeknummer}.`,
       400,
     );
   }
@@ -421,16 +578,16 @@ export async function GET(
       id: medewerkerId,
     } = await params;
 
-    const { searchParams } =
+    const url =
       new URL(request.url);
 
     const weekId =
-      searchParams.get(
+      url.searchParams.get(
         "weekId",
       );
 
     if (!weekId) {
-      return jsonError(
+      return fout(
         "weekId is verplicht.",
         400,
       );
@@ -442,14 +599,6 @@ export async function GET(
         weekId,
       );
 
-    const deadline =
-      haalEffectieveDeadline(
-        toegang.week.jaar,
-        toegang.week.weeknummer,
-        toegang.week
-          .beschikbaarheidDeadline,
-      );
-
     const beschikbaarheden =
       await prisma.beschikbaarheid.findMany(
         {
@@ -457,6 +606,7 @@ export async function GET(
             medewerkerId,
             weekId,
           },
+
           orderBy: [
             {
               datum: "asc",
@@ -468,51 +618,77 @@ export async function GET(
         },
       );
 
+    const gesloten =
+      deadlineVerstreken(
+        toegang.deadline,
+      );
+
     return NextResponse.json({
       beschikbaarheden:
         beschikbaarheden.map(
-          (beschikbaarheid) => ({
-            id: beschikbaarheid.id,
-            datum:
-              beschikbaarheid.datum.toISOString(),
-            begintijd:
-              beschikbaarheid.begintijd.toISOString(),
-            eindtijd:
-              beschikbaarheid.eindtijd.toISOString(),
-            status:
-              beschikbaarheid.status,
-            opmerking:
-              beschikbaarheid.opmerking,
-          }),
+          formatteerBeschikbaarheid,
         ),
 
       week: {
         id: toegang.week.id,
-        jaar: toegang.week.jaar,
+
+        jaar:
+          toegang.week.jaar,
+
         weeknummer:
           toegang.week.weeknummer,
-        status: toegang.week.status,
+
+        status:
+          toegang.week.status,
+
         beschikbaarheidDeadline:
-          deadline.toISOString(),
+          toegang.deadline.toISOString(),
+      },
+
+      rechten: {
+        isEigenaar:
+          toegang.isEigenaar,
+
+        isTeamleider:
+          toegang.isTeamleider,
+
+        isBeheerder:
+          toegang.isBeheerder,
+
+        isEigenMedewerker:
+          toegang.isEigenMedewerker,
+
+        magWijzigen:
+          toegang.isBeheerder ||
+          (
+            toegang.isEigenMedewerker &&
+            !gesloten
+          ),
+
+        magVerwijderen:
+          toegang.isBeheerder ||
+          (
+            toegang.isEigenMedewerker &&
+            !gesloten
+          ),
       },
     });
   } catch (error) {
+    console.error(
+      "Beschikbaarheid ophalen mislukt:",
+      error,
+    );
+
     if (
-      error instanceof
-      ToegangFout
+      error instanceof RouteFout
     ) {
-      return jsonError(
+      return fout(
         error.message,
         error.status,
       );
     }
 
-    console.error(
-      "Fout bij ophalen beschikbaarheid:",
-      error,
-    );
-
-    return jsonError(
+    return fout(
       "De beschikbaarheden konden niet worden opgehaald.",
       500,
     );
@@ -536,47 +712,27 @@ export async function POST(
       id: medewerkerId,
     } = await params;
 
-    const body =
-      await request.json();
+    let body: RequestBody;
+
+    try {
+      body =
+        (await request.json()) as RequestBody;
+    } catch {
+      return fout(
+        "De aanvraag bevat geen geldige JSON.",
+        400,
+      );
+    }
 
     const weekId =
       typeof body.weekId ===
       "string"
-        ? body.weekId
+        ? body.weekId.trim()
         : "";
 
-    const datum =
-      typeof body.datum ===
-      "string"
-        ? body.datum
-        : "";
-
-    const begintijd =
-      typeof body.begintijd ===
-      "string"
-        ? body.begintijd
-        : "";
-
-    const eindtijd =
-      typeof body.eindtijd ===
-      "string"
-        ? body.eindtijd
-        : "";
-
-    const opmerking =
-      typeof body.opmerking ===
-      "string"
-        ? body.opmerking.trim()
-        : null;
-
-    if (
-      !weekId ||
-      !datum ||
-      !begintijd ||
-      !eindtijd
-    ) {
-      return jsonError(
-        "weekId, datum, begintijd en eindtijd zijn verplicht.",
+    if (!weekId) {
+      return fout(
+        "weekId is verplicht.",
         400,
       );
     }
@@ -588,85 +744,147 @@ export async function POST(
       );
 
     /*
-     * ========================================================
-     * DEADLINE CONTROLEREN
-     * ========================================================
+     * Eigenaar/teamleider mag ook na de
+     * deadline wijzigingen invoeren.
      *
-     * Een eigenaar of teamleider mag ook na de deadline
-     * beschikbaarheid beheren.
-     *
-     * Een gewone medewerker niet.
-     *
-     * Wanneer de deadline in Prisma nog NULL is,
-     * wordt automatisch de nieuwe standaarddeadline
-     * gebruikt.
+     * Een normale medewerker niet.
      */
-
-    const deadline =
-      haalEffectieveDeadline(
-        toegang.week.jaar,
-        toegang.week.weeknummer,
-        toegang.week
-          .beschikbaarheidDeadline,
-      );
-
     if (
       deadlineVerstreken(
-        deadline,
+        toegang.deadline,
       ) &&
-      !toegang.beheerder
+      !toegang.isBeheerder
     ) {
-      return jsonError(
+      return fout(
         "De deadline voor het doorgeven van beschikbaarheid is verstreken.",
         403,
       );
     }
 
-    /*
-     * ========================================================
-     * DATUM EN TIJD CONTROLEREN
-     * ========================================================
-     */
+    const datum =
+      parseDatum(
+        body.datum,
+      );
 
-    const datumWaarde =
-      parseDate(datum);
-
-    const begintijdWaarde =
-      parseDate(begintijd);
-
-    const eindtijdWaarde =
-      parseDate(eindtijd);
-
-    if (!datumWaarde) {
-      return jsonError(
-        "De datum is ongeldig.",
+    if (!datum) {
+      return fout(
+        "Datum is ongeldig.",
         400,
       );
     }
 
+    controleerDatumBinnenWeek(
+      datum,
+      toegang.week.jaar,
+      toegang.week.weeknummer,
+    );
+
+    const status =
+      body.status ??
+      "BESCHIKBAAR";
+
     if (
-      !begintijdWaarde ||
-      !eindtijdWaarde
+      !isGeldigeStatus(status)
     ) {
-      return jsonError(
-        "De begin- of eindtijd is ongeldig.",
+      return fout(
+        "De beschikbaarheidsstatus is ongeldig. Gebruik BESCHIKBAAR of NIET_BESCHIKBAAR.",
+        400,
+      );
+    }
+
+    /*
+     * ========================================================
+     * NIET BESCHIKBAAR
+     * ========================================================
+     *
+     * Geen begin- of eindtijd.
+     *
+     * We gebruiken hier bewust een kleine typebrug
+     * omdat de lokaal gegenereerde Prisma Client
+     * kennelijk nog een ouder type bevat waarin
+     * begintijd/eindtijd verplicht zijn.
+     *
+     * De databasevelden zijn in schema.prisma:
+     *
+     * begintijd DateTime?
+     * eindtijd DateTime?
+     */
+
+    if (
+      status ===
+      "NIET_BESCHIKBAAR"
+    ) {
+      const data = {
+        medewerkerId,
+        weekId,
+        datum,
+        begintijd: null,
+        eindtijd: null,
+        status,
+        opmerking:
+          typeof body.opmerking ===
+          "string"
+            ? body.opmerking.trim() ||
+              null
+            : null,
+      };
+
+      const beschikbaarheid =
+        await prisma.beschikbaarheid.create(
+          {
+            data: data as any,
+          },
+        );
+
+      return NextResponse.json(
+        {
+          success: true,
+
+          beschikbaarheid:
+            formatteerBeschikbaarheid(
+              beschikbaarheid,
+            ),
+        },
+        {
+          status: 201,
+        },
+      );
+    }
+
+    /*
+     * ========================================================
+     * BESCHIKBAAR
+     * ========================================================
+     */
+
+    const begintijd =
+      parseDatum(
+        body.begintijd,
+      );
+
+    const eindtijd =
+      parseDatum(
+        body.eindtijd,
+      );
+
+    if (!begintijd) {
+      return fout(
+        "Begintijd is ongeldig.",
+        400,
+      );
+    }
+
+    if (!eindtijd) {
+      return fout(
+        "Eindtijd is ongeldig.",
         400,
       );
     }
 
     controleerTijden(
-      begintijdWaarde,
-      eindtijdWaarde,
+      begintijd,
+      eindtijd,
     );
-
-    /*
-     * ========================================================
-     * BESCHIKBAARHEID OPSLAAN
-     * ========================================================
-     *
-     * Een ingevuld tijdsblok betekent automatisch:
-     * BESCHIKBAAR.
-     */
 
     const beschikbaarheid =
       await prisma.beschikbaarheid.create(
@@ -674,54 +892,49 @@ export async function POST(
           data: {
             medewerkerId,
             weekId,
-            datum: datumWaarde,
-            begintijd:
-              begintijdWaarde,
-            eindtijd:
-              eindtijdWaarde,
-            status:
-              "BESCHIKBAAR",
+            datum,
+            begintijd,
+            eindtijd,
+            status,
             opmerking:
-              opmerking || null,
+              typeof body.opmerking ===
+              "string"
+                ? body.opmerking.trim() ||
+                  null
+                : null,
           },
         },
       );
 
     return NextResponse.json(
       {
-        id: beschikbaarheid.id,
-        datum:
-          beschikbaarheid.datum.toISOString(),
-        begintijd:
-          beschikbaarheid.begintijd.toISOString(),
-        eindtijd:
-          beschikbaarheid.eindtijd.toISOString(),
-        status:
-          beschikbaarheid.status,
-        opmerking:
-          beschikbaarheid.opmerking,
+        success: true,
+
+        beschikbaarheid:
+          formatteerBeschikbaarheid(
+            beschikbaarheid,
+          ),
       },
       {
         status: 201,
       },
     );
   } catch (error) {
+    console.error(
+      "Beschikbaarheid opslaan mislukt:",
+      error,
+    );
+
     if (
-      error instanceof
-      ToegangFout
+      error instanceof RouteFout
     ) {
-      return jsonError(
+      return fout(
         error.message,
         error.status,
       );
     }
 
-    console.error(
-      "Fout bij aanmaken beschikbaarheid:",
-      error,
-    );
-
-    return jsonError(
+    return fout(
       "De beschikbaarheid kon niet worden opgeslagen.",
       500,
     );

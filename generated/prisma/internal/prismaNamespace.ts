@@ -412,6 +412,7 @@ export const ModelName = {
   MedewerkerTag: 'MedewerkerTag',
   Week: 'Week',
   Beschikbaarheid: 'Beschikbaarheid',
+  VakantieAanvraag: 'VakantieAanvraag',
   Dienst: 'Dienst',
   DienstTag: 'DienstTag',
   DienstBezetting: 'DienstBezetting',
@@ -428,7 +429,9 @@ export const ModelName = {
   Levering: 'Levering',
   LeveringRegel: 'LeveringRegel',
   Status: 'Status',
-  Instelling: 'Instelling'
+  Instelling: 'Instelling',
+  VerloningsPeriode: 'VerloningsPeriode',
+  VerloningsRegel: 'VerloningsRegel'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -444,7 +447,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "organisatie" | "vestiging" | "openingstijdenPeriode" | "organisatieGebruiker" | "systeemGebruiker" | "systeemGebruikerVestiging" | "rol" | "auditLog" | "medewerker" | "medewerkerVestiging" | "medewerkerRol" | "tag" | "medewerkerTag" | "week" | "beschikbaarheid" | "dienst" | "dienstTag" | "dienstBezetting" | "ruilverzoek" | "urenRegistratie" | "productType" | "product" | "vestigingProduct" | "bestelling" | "bestelRegel" | "voorraadTelling" | "voorraadTellingRegel" | "voorraadMutatie" | "levering" | "leveringRegel" | "status" | "instelling"
+    modelProps: "organisatie" | "vestiging" | "openingstijdenPeriode" | "organisatieGebruiker" | "systeemGebruiker" | "systeemGebruikerVestiging" | "rol" | "auditLog" | "medewerker" | "medewerkerVestiging" | "medewerkerRol" | "tag" | "medewerkerTag" | "week" | "beschikbaarheid" | "vakantieAanvraag" | "dienst" | "dienstTag" | "dienstBezetting" | "ruilverzoek" | "urenRegistratie" | "productType" | "product" | "vestigingProduct" | "bestelling" | "bestelRegel" | "voorraadTelling" | "voorraadTellingRegel" | "voorraadMutatie" | "levering" | "leveringRegel" | "status" | "instelling" | "verloningsPeriode" | "verloningsRegel"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1555,6 +1558,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.BeschikbaarheidCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.BeschikbaarheidCountAggregateOutputType> | number
+        }
+      }
+    }
+    VakantieAanvraag: {
+      payload: Prisma.$VakantieAanvraagPayload<ExtArgs>
+      fields: Prisma.VakantieAanvraagFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.VakantieAanvraagFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VakantieAanvraagPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.VakantieAanvraagFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VakantieAanvraagPayload>
+        }
+        findFirst: {
+          args: Prisma.VakantieAanvraagFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VakantieAanvraagPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.VakantieAanvraagFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VakantieAanvraagPayload>
+        }
+        findMany: {
+          args: Prisma.VakantieAanvraagFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VakantieAanvraagPayload>[]
+        }
+        create: {
+          args: Prisma.VakantieAanvraagCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VakantieAanvraagPayload>
+        }
+        createMany: {
+          args: Prisma.VakantieAanvraagCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.VakantieAanvraagCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VakantieAanvraagPayload>[]
+        }
+        delete: {
+          args: Prisma.VakantieAanvraagDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VakantieAanvraagPayload>
+        }
+        update: {
+          args: Prisma.VakantieAanvraagUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VakantieAanvraagPayload>
+        }
+        deleteMany: {
+          args: Prisma.VakantieAanvraagDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.VakantieAanvraagUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.VakantieAanvraagUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VakantieAanvraagPayload>[]
+        }
+        upsert: {
+          args: Prisma.VakantieAanvraagUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VakantieAanvraagPayload>
+        }
+        aggregate: {
+          args: Prisma.VakantieAanvraagAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateVakantieAanvraag>
+        }
+        groupBy: {
+          args: Prisma.VakantieAanvraagGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VakantieAanvraagGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.VakantieAanvraagCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VakantieAanvraagCountAggregateOutputType> | number
         }
       }
     }
@@ -2816,6 +2893,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    VerloningsPeriode: {
+      payload: Prisma.$VerloningsPeriodePayload<ExtArgs>
+      fields: Prisma.VerloningsPeriodeFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.VerloningsPeriodeFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsPeriodePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.VerloningsPeriodeFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsPeriodePayload>
+        }
+        findFirst: {
+          args: Prisma.VerloningsPeriodeFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsPeriodePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.VerloningsPeriodeFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsPeriodePayload>
+        }
+        findMany: {
+          args: Prisma.VerloningsPeriodeFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsPeriodePayload>[]
+        }
+        create: {
+          args: Prisma.VerloningsPeriodeCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsPeriodePayload>
+        }
+        createMany: {
+          args: Prisma.VerloningsPeriodeCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.VerloningsPeriodeCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsPeriodePayload>[]
+        }
+        delete: {
+          args: Prisma.VerloningsPeriodeDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsPeriodePayload>
+        }
+        update: {
+          args: Prisma.VerloningsPeriodeUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsPeriodePayload>
+        }
+        deleteMany: {
+          args: Prisma.VerloningsPeriodeDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.VerloningsPeriodeUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.VerloningsPeriodeUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsPeriodePayload>[]
+        }
+        upsert: {
+          args: Prisma.VerloningsPeriodeUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsPeriodePayload>
+        }
+        aggregate: {
+          args: Prisma.VerloningsPeriodeAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateVerloningsPeriode>
+        }
+        groupBy: {
+          args: Prisma.VerloningsPeriodeGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VerloningsPeriodeGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.VerloningsPeriodeCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VerloningsPeriodeCountAggregateOutputType> | number
+        }
+      }
+    }
+    VerloningsRegel: {
+      payload: Prisma.$VerloningsRegelPayload<ExtArgs>
+      fields: Prisma.VerloningsRegelFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.VerloningsRegelFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsRegelPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.VerloningsRegelFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsRegelPayload>
+        }
+        findFirst: {
+          args: Prisma.VerloningsRegelFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsRegelPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.VerloningsRegelFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsRegelPayload>
+        }
+        findMany: {
+          args: Prisma.VerloningsRegelFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsRegelPayload>[]
+        }
+        create: {
+          args: Prisma.VerloningsRegelCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsRegelPayload>
+        }
+        createMany: {
+          args: Prisma.VerloningsRegelCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.VerloningsRegelCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsRegelPayload>[]
+        }
+        delete: {
+          args: Prisma.VerloningsRegelDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsRegelPayload>
+        }
+        update: {
+          args: Prisma.VerloningsRegelUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsRegelPayload>
+        }
+        deleteMany: {
+          args: Prisma.VerloningsRegelDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.VerloningsRegelUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.VerloningsRegelUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsRegelPayload>[]
+        }
+        upsert: {
+          args: Prisma.VerloningsRegelUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsRegelPayload>
+        }
+        aggregate: {
+          args: Prisma.VerloningsRegelAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateVerloningsRegel>
+        }
+        groupBy: {
+          args: Prisma.VerloningsRegelGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VerloningsRegelGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.VerloningsRegelCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VerloningsRegelCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -3064,6 +3289,26 @@ export const BeschikbaarheidScalarFieldEnum = {
 export type BeschikbaarheidScalarFieldEnum = (typeof BeschikbaarheidScalarFieldEnum)[keyof typeof BeschikbaarheidScalarFieldEnum]
 
 
+export const VakantieAanvraagScalarFieldEnum = {
+  id: 'id',
+  medewerkerId: 'medewerkerId',
+  vestigingId: 'vestigingId',
+  startDatum: 'startDatum',
+  eindDatum: 'eindDatum',
+  type: 'type',
+  opmerking: 'opmerking',
+  status: 'status',
+  beoordeeldDoorId: 'beoordeeldDoorId',
+  beoordeeldOp: 'beoordeeldOp',
+  redenAfwijzing: 'redenAfwijzing',
+  aangevraagdOp: 'aangevraagdOp',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type VakantieAanvraagScalarFieldEnum = (typeof VakantieAanvraagScalarFieldEnum)[keyof typeof VakantieAanvraagScalarFieldEnum]
+
+
 export const DienstScalarFieldEnum = {
   id: 'id',
   weekId: 'weekId',
@@ -3302,6 +3547,38 @@ export const InstellingScalarFieldEnum = {
 } as const
 
 export type InstellingScalarFieldEnum = (typeof InstellingScalarFieldEnum)[keyof typeof InstellingScalarFieldEnum]
+
+
+export const VerloningsPeriodeScalarFieldEnum = {
+  id: 'id',
+  periodeStart: 'periodeStart',
+  periodeEinde: 'periodeEinde',
+  jaar: 'jaar',
+  maand: 'maand',
+  status: 'status',
+  gegenereerdOp: 'gegenereerdOp',
+  gecontroleerdDoorId: 'gecontroleerdDoorId',
+  gecontroleerdOp: 'gecontroleerdOp',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type VerloningsPeriodeScalarFieldEnum = (typeof VerloningsPeriodeScalarFieldEnum)[keyof typeof VerloningsPeriodeScalarFieldEnum]
+
+
+export const VerloningsRegelScalarFieldEnum = {
+  id: 'id',
+  verloningsPeriodeId: 'verloningsPeriodeId',
+  medewerkerId: 'medewerkerId',
+  vestigingId: 'vestigingId',
+  medewerkerNaam: 'medewerkerNaam',
+  gewerkteDagen: 'gewerkteDagen',
+  gewerkteUren: 'gewerkteUren',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type VerloningsRegelScalarFieldEnum = (typeof VerloningsRegelScalarFieldEnum)[keyof typeof VerloningsRegelScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -3635,6 +3912,7 @@ export type GlobalOmitConfig = {
   medewerkerTag?: Prisma.MedewerkerTagOmit
   week?: Prisma.WeekOmit
   beschikbaarheid?: Prisma.BeschikbaarheidOmit
+  vakantieAanvraag?: Prisma.VakantieAanvraagOmit
   dienst?: Prisma.DienstOmit
   dienstTag?: Prisma.DienstTagOmit
   dienstBezetting?: Prisma.DienstBezettingOmit
@@ -3652,6 +3930,8 @@ export type GlobalOmitConfig = {
   leveringRegel?: Prisma.LeveringRegelOmit
   status?: Prisma.StatusOmit
   instelling?: Prisma.InstellingOmit
+  verloningsPeriode?: Prisma.VerloningsPeriodeOmit
+  verloningsRegel?: Prisma.VerloningsRegelOmit
 }
 
 /* Types for Logging */

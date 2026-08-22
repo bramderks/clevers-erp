@@ -99,6 +99,7 @@ export default async function DienstPagina({
     where: {
       id,
     },
+
     include: {
       week: {
         select: {
@@ -116,6 +117,7 @@ export default async function DienstPagina({
         include: {
           tag: true,
         },
+
         orderBy: {
           tag: {
             volgorde: "asc",
@@ -136,6 +138,7 @@ export default async function DienstPagina({
             },
           },
         },
+
         orderBy: {
           aangemaaktOp: "asc",
         },
@@ -161,6 +164,19 @@ export default async function DienstPagina({
    * ============================================================
    * RECHTEN
    * ============================================================
+   *
+   * Eigenaar:
+   * - mag de dienst bekijken
+   * - mag de dienst wijzigen
+   * - krijgt de bewerkfunctie te zien
+   *
+   * Teamleider:
+   * - mag de dienst bekijken
+   * - mag de dienst NIET wijzigen
+   *
+   * Medewerker:
+   * - mag de dienst bekijken
+   * - mag de dienst NIET wijzigen
    */
 
   const isEigenaar =
@@ -168,8 +184,7 @@ export default async function DienstPagina({
       (relatie) =>
         relatie.actief &&
         relatie.organisatie.actief &&
-        relatie.rol.naam.toLowerCase() ===
-          "eigenaar",
+        relatie.rol.naam.toLowerCase() === "eigenaar",
     );
 
   const isTeamleider =
@@ -177,15 +192,19 @@ export default async function DienstPagina({
       (relatie) =>
         relatie.actief &&
         relatie.organisatie.actief &&
-        relatie.rol.naam.toLowerCase() ===
-          "teamleider",
+        relatie.rol.naam.toLowerCase() === "teamleider",
     );
-
-  const magBewerken =
-    isEigenaar || isTeamleider;
 
   const isMedewerker =
     gebruiker.medewerker != null;
+
+  /*
+   * ALLEEN DE EIGENAAR MAG BEWERKEN.
+   *
+   * Teamleider en medewerker mogen alles bekijken,
+   * maar krijgen geen bewerkactie.
+   */
+  const magBewerken = isEigenaar;
 
   const eigenBezetting =
     isMedewerker &&
@@ -213,8 +232,7 @@ export default async function DienstPagina({
             </h1>
 
             <p className="mt-2 text-sm text-slate-600">
-              {formatTime(dienst.begintijd)}{" "}
-              -{" "}
+              {formatTime(dienst.begintijd)} -{" "}
               {formatTime(dienst.eindtijd)}
             </p>
           </div>
@@ -247,8 +265,7 @@ export default async function DienstPagina({
             </p>
 
             <p className="mt-2 text-sm font-medium text-slate-900">
-              {formatTime(dienst.begintijd)}{" "}
-              -{" "}
+              {formatTime(dienst.begintijd)} -{" "}
               {formatTime(dienst.eindtijd)}
             </p>
           </div>
@@ -256,7 +273,7 @@ export default async function DienstPagina({
       </section>
 
       {/* ======================================================
-          ACTIES
+          ACTIES — ALLEEN EIGENAAR
           ====================================================== */}
 
       {magBewerken && (
@@ -268,15 +285,14 @@ export default async function DienstPagina({
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                Wijzig de dienst alleen wanneer dat nodig is.
+                Wijzig de datum, tijden, planningtags,
+                opmerkingen en bezetting van deze dienst.
               </p>
             </div>
 
             <DienstBewerkToggle
               dienst={dienst}
-              vestigingId={
-                dienst.week.vestigingId
-              }
+              vestigingId={dienst.week.vestigingId}
             />
           </div>
         </section>
@@ -300,9 +316,7 @@ export default async function DienstPagina({
 
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
             {dienst.tags.length}{" "}
-            {dienst.tags.length === 1
-              ? "tag"
-              : "tags"}
+            {dienst.tags.length === 1 ? "tag" : "tags"}
           </span>
         </div>
 
@@ -354,90 +368,101 @@ export default async function DienstPagina({
           </p>
         ) : (
           <div className="mt-4 grid gap-3">
-            {dienst.bezetting.map(
-              (bezetting) => (
-                <div
-                  key={bezetting.id}
-                  className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
-                >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">
-                        {bezetting.medewerker
-                          ? formatName(
-                              bezetting.medewerker,
-                            )
-                          : "Open positie"}
-                      </p>
-
+            {dienst.bezetting.map((bezetting) => (
+              <div
+                key={bezetting.id}
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">
                       {bezetting.medewerker
-                        ?.personeelsnummer && (
-                        <p className="mt-1 text-xs text-slate-500">
-                          Personeelsnummer:{" "}
-                          {
-                            bezetting
-                              .medewerker
-                              .personeelsnummer
-                          }
-                        </p>
-                      )}
-                    </div>
+                        ? formatName(bezetting.medewerker)
+                        : "Open positie"}
+                    </p>
 
-                    <span
-                      className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${statusKlassen(
-                        bezetting.status,
-                      )}`}
-                    >
-                      {statusLabel(
-                        bezetting.status,
-                      )}
-                    </span>
+                    {bezetting.medewerker
+                      ?.personeelsnummer && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        Personeelsnummer:{" "}
+                        {bezetting.medewerker.personeelsnummer}
+                      </p>
+                    )}
                   </div>
+
+                  <span
+                    className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${statusKlassen(
+                      bezetting.status,
+                    )}`}
+                  >
+                    {statusLabel(bezetting.status)}
+                  </span>
                 </div>
-              ),
-            )}
+              </div>
+            ))}
           </div>
         )}
       </section>
 
       {/* ======================================================
-          MEDEWERKER LEESMODUS
+          MEDEWERKER / LEESMODUS
           ====================================================== */}
 
-      {isMedewerker &&
-        !magBewerken && (
-          <section className="rounded-xl border bg-white p-6 shadow-sm">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">
-                  Mijn planning
-                </h2>
+      {isMedewerker && !magBewerken && (
+        <section className="rounded-xl border bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">
+                Mijn planning
+              </h2>
 
-                <p className="mt-1 text-sm text-slate-500">
-                  Je kunt deze dienst bekijken,
-                  maar niet wijzigen.
-                </p>
-              </div>
-
-              <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                Leesmodus
-              </span>
+              <p className="mt-1 text-sm text-slate-500">
+                Je kunt deze dienst bekijken, maar niet wijzigen.
+              </p>
             </div>
 
-            {eigenBezetting && (
-              <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                <p className="text-sm font-semibold text-emerald-800">
-                  Je bent ingepland op deze dienst.
-                </p>
+            <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+              Leesmodus
+            </span>
+          </div>
 
-                <p className="mt-1 text-sm text-emerald-700">
-                  Je kunt de gegevens van deze
-                  dienst hier bekijken.
-                </p>
-              </div>
-            )}
-          </section>
-        )}
+          {eigenBezetting && (
+            <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+              <p className="text-sm font-semibold text-emerald-800">
+                Je bent ingepland op deze dienst.
+              </p>
+
+              <p className="mt-1 text-sm text-emerald-700">
+                Je kunt de gegevens van deze dienst hier bekijken.
+              </p>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ======================================================
+          TEAMLEIDER — LEESMODUS
+          ====================================================== */}
+
+      {isTeamleider && !isEigenaar && (
+        <section className="rounded-xl border bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">
+                Planning bekijken
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Je hebt inzage in deze dienst, maar kunt de dienst niet wijzigen.
+              </p>
+            </div>
+
+            <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+              Leesmodus
+            </span>
+          </div>
+        </section>
+      )}
 
       {/* ======================================================
           OPMERKINGEN

@@ -310,6 +310,7 @@ export type UrenRegistratieWhereInput = {
   gewijzigdOp?: Prisma.DateTimeFilter<"UrenRegistratie"> | Date | string
   dienstBezetting?: Prisma.XOR<Prisma.DienstBezettingScalarRelationFilter, Prisma.DienstBezettingWhereInput>
   medewerker?: Prisma.XOR<Prisma.MedewerkerScalarRelationFilter, Prisma.MedewerkerWhereInput>
+  vestiging?: Prisma.XOR<Prisma.VestigingScalarRelationFilter, Prisma.VestigingWhereInput>
 }
 
 export type UrenRegistratieOrderByWithRelationInput = {
@@ -331,6 +332,7 @@ export type UrenRegistratieOrderByWithRelationInput = {
   gewijzigdOp?: Prisma.SortOrder
   dienstBezetting?: Prisma.DienstBezettingOrderByWithRelationInput
   medewerker?: Prisma.MedewerkerOrderByWithRelationInput
+  vestiging?: Prisma.VestigingOrderByWithRelationInput
 }
 
 export type UrenRegistratieWhereUniqueInput = Prisma.AtLeast<{
@@ -355,6 +357,7 @@ export type UrenRegistratieWhereUniqueInput = Prisma.AtLeast<{
   gewijzigdOp?: Prisma.DateTimeFilter<"UrenRegistratie"> | Date | string
   dienstBezetting?: Prisma.XOR<Prisma.DienstBezettingScalarRelationFilter, Prisma.DienstBezettingWhereInput>
   medewerker?: Prisma.XOR<Prisma.MedewerkerScalarRelationFilter, Prisma.MedewerkerWhereInput>
+  vestiging?: Prisma.XOR<Prisma.VestigingScalarRelationFilter, Prisma.VestigingWhereInput>
 }, "id" | "dienstBezettingId">
 
 export type UrenRegistratieOrderByWithAggregationInput = {
@@ -405,7 +408,6 @@ export type UrenRegistratieScalarWhereWithAggregatesInput = {
 
 export type UrenRegistratieCreateInput = {
   id?: string
-  vestigingId: string
   datum: Date | string
   taak?: string | null
   werkelijkeBegintijd: Date | string
@@ -420,6 +422,7 @@ export type UrenRegistratieCreateInput = {
   gewijzigdOp?: Date | string
   dienstBezetting: Prisma.DienstBezettingCreateNestedOneWithoutUrenregistratieInput
   medewerker: Prisma.MedewerkerCreateNestedOneWithoutUrenregistratiesInput
+  vestiging: Prisma.VestigingCreateNestedOneWithoutUrenregistratiesInput
 }
 
 export type UrenRegistratieUncheckedCreateInput = {
@@ -443,7 +446,6 @@ export type UrenRegistratieUncheckedCreateInput = {
 
 export type UrenRegistratieUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  vestigingId?: Prisma.StringFieldUpdateOperationsInput | string
   datum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   taak?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   werkelijkeBegintijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -458,6 +460,7 @@ export type UrenRegistratieUpdateInput = {
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dienstBezetting?: Prisma.DienstBezettingUpdateOneRequiredWithoutUrenregistratieNestedInput
   medewerker?: Prisma.MedewerkerUpdateOneRequiredWithoutUrenregistratiesNestedInput
+  vestiging?: Prisma.VestigingUpdateOneRequiredWithoutUrenregistratiesNestedInput
 }
 
 export type UrenRegistratieUncheckedUpdateInput = {
@@ -500,7 +503,6 @@ export type UrenRegistratieCreateManyInput = {
 
 export type UrenRegistratieUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  vestigingId?: Prisma.StringFieldUpdateOperationsInput | string
   datum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   taak?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   werkelijkeBegintijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -616,6 +618,48 @@ export type UrenRegistratieSumOrderByAggregateInput = {
   gewerkteUren?: Prisma.SortOrder
 }
 
+export type UrenRegistratieCreateNestedManyWithoutVestigingInput = {
+  create?: Prisma.XOR<Prisma.UrenRegistratieCreateWithoutVestigingInput, Prisma.UrenRegistratieUncheckedCreateWithoutVestigingInput> | Prisma.UrenRegistratieCreateWithoutVestigingInput[] | Prisma.UrenRegistratieUncheckedCreateWithoutVestigingInput[]
+  connectOrCreate?: Prisma.UrenRegistratieCreateOrConnectWithoutVestigingInput | Prisma.UrenRegistratieCreateOrConnectWithoutVestigingInput[]
+  createMany?: Prisma.UrenRegistratieCreateManyVestigingInputEnvelope
+  connect?: Prisma.UrenRegistratieWhereUniqueInput | Prisma.UrenRegistratieWhereUniqueInput[]
+}
+
+export type UrenRegistratieUncheckedCreateNestedManyWithoutVestigingInput = {
+  create?: Prisma.XOR<Prisma.UrenRegistratieCreateWithoutVestigingInput, Prisma.UrenRegistratieUncheckedCreateWithoutVestigingInput> | Prisma.UrenRegistratieCreateWithoutVestigingInput[] | Prisma.UrenRegistratieUncheckedCreateWithoutVestigingInput[]
+  connectOrCreate?: Prisma.UrenRegistratieCreateOrConnectWithoutVestigingInput | Prisma.UrenRegistratieCreateOrConnectWithoutVestigingInput[]
+  createMany?: Prisma.UrenRegistratieCreateManyVestigingInputEnvelope
+  connect?: Prisma.UrenRegistratieWhereUniqueInput | Prisma.UrenRegistratieWhereUniqueInput[]
+}
+
+export type UrenRegistratieUpdateManyWithoutVestigingNestedInput = {
+  create?: Prisma.XOR<Prisma.UrenRegistratieCreateWithoutVestigingInput, Prisma.UrenRegistratieUncheckedCreateWithoutVestigingInput> | Prisma.UrenRegistratieCreateWithoutVestigingInput[] | Prisma.UrenRegistratieUncheckedCreateWithoutVestigingInput[]
+  connectOrCreate?: Prisma.UrenRegistratieCreateOrConnectWithoutVestigingInput | Prisma.UrenRegistratieCreateOrConnectWithoutVestigingInput[]
+  upsert?: Prisma.UrenRegistratieUpsertWithWhereUniqueWithoutVestigingInput | Prisma.UrenRegistratieUpsertWithWhereUniqueWithoutVestigingInput[]
+  createMany?: Prisma.UrenRegistratieCreateManyVestigingInputEnvelope
+  set?: Prisma.UrenRegistratieWhereUniqueInput | Prisma.UrenRegistratieWhereUniqueInput[]
+  disconnect?: Prisma.UrenRegistratieWhereUniqueInput | Prisma.UrenRegistratieWhereUniqueInput[]
+  delete?: Prisma.UrenRegistratieWhereUniqueInput | Prisma.UrenRegistratieWhereUniqueInput[]
+  connect?: Prisma.UrenRegistratieWhereUniqueInput | Prisma.UrenRegistratieWhereUniqueInput[]
+  update?: Prisma.UrenRegistratieUpdateWithWhereUniqueWithoutVestigingInput | Prisma.UrenRegistratieUpdateWithWhereUniqueWithoutVestigingInput[]
+  updateMany?: Prisma.UrenRegistratieUpdateManyWithWhereWithoutVestigingInput | Prisma.UrenRegistratieUpdateManyWithWhereWithoutVestigingInput[]
+  deleteMany?: Prisma.UrenRegistratieScalarWhereInput | Prisma.UrenRegistratieScalarWhereInput[]
+}
+
+export type UrenRegistratieUncheckedUpdateManyWithoutVestigingNestedInput = {
+  create?: Prisma.XOR<Prisma.UrenRegistratieCreateWithoutVestigingInput, Prisma.UrenRegistratieUncheckedCreateWithoutVestigingInput> | Prisma.UrenRegistratieCreateWithoutVestigingInput[] | Prisma.UrenRegistratieUncheckedCreateWithoutVestigingInput[]
+  connectOrCreate?: Prisma.UrenRegistratieCreateOrConnectWithoutVestigingInput | Prisma.UrenRegistratieCreateOrConnectWithoutVestigingInput[]
+  upsert?: Prisma.UrenRegistratieUpsertWithWhereUniqueWithoutVestigingInput | Prisma.UrenRegistratieUpsertWithWhereUniqueWithoutVestigingInput[]
+  createMany?: Prisma.UrenRegistratieCreateManyVestigingInputEnvelope
+  set?: Prisma.UrenRegistratieWhereUniqueInput | Prisma.UrenRegistratieWhereUniqueInput[]
+  disconnect?: Prisma.UrenRegistratieWhereUniqueInput | Prisma.UrenRegistratieWhereUniqueInput[]
+  delete?: Prisma.UrenRegistratieWhereUniqueInput | Prisma.UrenRegistratieWhereUniqueInput[]
+  connect?: Prisma.UrenRegistratieWhereUniqueInput | Prisma.UrenRegistratieWhereUniqueInput[]
+  update?: Prisma.UrenRegistratieUpdateWithWhereUniqueWithoutVestigingInput | Prisma.UrenRegistratieUpdateWithWhereUniqueWithoutVestigingInput[]
+  updateMany?: Prisma.UrenRegistratieUpdateManyWithWhereWithoutVestigingInput | Prisma.UrenRegistratieUpdateManyWithWhereWithoutVestigingInput[]
+  deleteMany?: Prisma.UrenRegistratieScalarWhereInput | Prisma.UrenRegistratieScalarWhereInput[]
+}
+
 export type UrenRegistratieCreateNestedManyWithoutMedewerkerInput = {
   create?: Prisma.XOR<Prisma.UrenRegistratieCreateWithoutMedewerkerInput, Prisma.UrenRegistratieUncheckedCreateWithoutMedewerkerInput> | Prisma.UrenRegistratieCreateWithoutMedewerkerInput[] | Prisma.UrenRegistratieUncheckedCreateWithoutMedewerkerInput[]
   connectOrCreate?: Prisma.UrenRegistratieCreateOrConnectWithoutMedewerkerInput | Prisma.UrenRegistratieCreateOrConnectWithoutMedewerkerInput[]
@@ -698,9 +742,8 @@ export type DecimalFieldUpdateOperationsInput = {
   divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
 }
 
-export type UrenRegistratieCreateWithoutMedewerkerInput = {
+export type UrenRegistratieCreateWithoutVestigingInput = {
   id?: string
-  vestigingId: string
   datum: Date | string
   taak?: string | null
   werkelijkeBegintijd: Date | string
@@ -714,6 +757,91 @@ export type UrenRegistratieCreateWithoutMedewerkerInput = {
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
   dienstBezetting: Prisma.DienstBezettingCreateNestedOneWithoutUrenregistratieInput
+  medewerker: Prisma.MedewerkerCreateNestedOneWithoutUrenregistratiesInput
+}
+
+export type UrenRegistratieUncheckedCreateWithoutVestigingInput = {
+  id?: string
+  dienstBezettingId: string
+  medewerkerId: string
+  datum: Date | string
+  taak?: string | null
+  werkelijkeBegintijd: Date | string
+  werkelijkeEindtijd: Date | string
+  pauzeMinuten?: number
+  gewerkteUren: runtime.Decimal | runtime.DecimalJsLike | number | string
+  status?: string
+  gecontroleerdDoorId?: string | null
+  gecontroleerdOp?: Date | string | null
+  opmerking?: string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+}
+
+export type UrenRegistratieCreateOrConnectWithoutVestigingInput = {
+  where: Prisma.UrenRegistratieWhereUniqueInput
+  create: Prisma.XOR<Prisma.UrenRegistratieCreateWithoutVestigingInput, Prisma.UrenRegistratieUncheckedCreateWithoutVestigingInput>
+}
+
+export type UrenRegistratieCreateManyVestigingInputEnvelope = {
+  data: Prisma.UrenRegistratieCreateManyVestigingInput | Prisma.UrenRegistratieCreateManyVestigingInput[]
+  skipDuplicates?: boolean
+}
+
+export type UrenRegistratieUpsertWithWhereUniqueWithoutVestigingInput = {
+  where: Prisma.UrenRegistratieWhereUniqueInput
+  update: Prisma.XOR<Prisma.UrenRegistratieUpdateWithoutVestigingInput, Prisma.UrenRegistratieUncheckedUpdateWithoutVestigingInput>
+  create: Prisma.XOR<Prisma.UrenRegistratieCreateWithoutVestigingInput, Prisma.UrenRegistratieUncheckedCreateWithoutVestigingInput>
+}
+
+export type UrenRegistratieUpdateWithWhereUniqueWithoutVestigingInput = {
+  where: Prisma.UrenRegistratieWhereUniqueInput
+  data: Prisma.XOR<Prisma.UrenRegistratieUpdateWithoutVestigingInput, Prisma.UrenRegistratieUncheckedUpdateWithoutVestigingInput>
+}
+
+export type UrenRegistratieUpdateManyWithWhereWithoutVestigingInput = {
+  where: Prisma.UrenRegistratieScalarWhereInput
+  data: Prisma.XOR<Prisma.UrenRegistratieUpdateManyMutationInput, Prisma.UrenRegistratieUncheckedUpdateManyWithoutVestigingInput>
+}
+
+export type UrenRegistratieScalarWhereInput = {
+  AND?: Prisma.UrenRegistratieScalarWhereInput | Prisma.UrenRegistratieScalarWhereInput[]
+  OR?: Prisma.UrenRegistratieScalarWhereInput[]
+  NOT?: Prisma.UrenRegistratieScalarWhereInput | Prisma.UrenRegistratieScalarWhereInput[]
+  id?: Prisma.StringFilter<"UrenRegistratie"> | string
+  dienstBezettingId?: Prisma.StringFilter<"UrenRegistratie"> | string
+  medewerkerId?: Prisma.StringFilter<"UrenRegistratie"> | string
+  vestigingId?: Prisma.StringFilter<"UrenRegistratie"> | string
+  datum?: Prisma.DateTimeFilter<"UrenRegistratie"> | Date | string
+  taak?: Prisma.StringNullableFilter<"UrenRegistratie"> | string | null
+  werkelijkeBegintijd?: Prisma.DateTimeFilter<"UrenRegistratie"> | Date | string
+  werkelijkeEindtijd?: Prisma.DateTimeFilter<"UrenRegistratie"> | Date | string
+  pauzeMinuten?: Prisma.IntFilter<"UrenRegistratie"> | number
+  gewerkteUren?: Prisma.DecimalFilter<"UrenRegistratie"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  status?: Prisma.StringFilter<"UrenRegistratie"> | string
+  gecontroleerdDoorId?: Prisma.StringNullableFilter<"UrenRegistratie"> | string | null
+  gecontroleerdOp?: Prisma.DateTimeNullableFilter<"UrenRegistratie"> | Date | string | null
+  opmerking?: Prisma.StringNullableFilter<"UrenRegistratie"> | string | null
+  aangemaaktOp?: Prisma.DateTimeFilter<"UrenRegistratie"> | Date | string
+  gewijzigdOp?: Prisma.DateTimeFilter<"UrenRegistratie"> | Date | string
+}
+
+export type UrenRegistratieCreateWithoutMedewerkerInput = {
+  id?: string
+  datum: Date | string
+  taak?: string | null
+  werkelijkeBegintijd: Date | string
+  werkelijkeEindtijd: Date | string
+  pauzeMinuten?: number
+  gewerkteUren: runtime.Decimal | runtime.DecimalJsLike | number | string
+  status?: string
+  gecontroleerdDoorId?: string | null
+  gecontroleerdOp?: Date | string | null
+  opmerking?: string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  dienstBezetting: Prisma.DienstBezettingCreateNestedOneWithoutUrenregistratieInput
+  vestiging: Prisma.VestigingCreateNestedOneWithoutUrenregistratiesInput
 }
 
 export type UrenRegistratieUncheckedCreateWithoutMedewerkerInput = {
@@ -760,31 +888,8 @@ export type UrenRegistratieUpdateManyWithWhereWithoutMedewerkerInput = {
   data: Prisma.XOR<Prisma.UrenRegistratieUpdateManyMutationInput, Prisma.UrenRegistratieUncheckedUpdateManyWithoutMedewerkerInput>
 }
 
-export type UrenRegistratieScalarWhereInput = {
-  AND?: Prisma.UrenRegistratieScalarWhereInput | Prisma.UrenRegistratieScalarWhereInput[]
-  OR?: Prisma.UrenRegistratieScalarWhereInput[]
-  NOT?: Prisma.UrenRegistratieScalarWhereInput | Prisma.UrenRegistratieScalarWhereInput[]
-  id?: Prisma.StringFilter<"UrenRegistratie"> | string
-  dienstBezettingId?: Prisma.StringFilter<"UrenRegistratie"> | string
-  medewerkerId?: Prisma.StringFilter<"UrenRegistratie"> | string
-  vestigingId?: Prisma.StringFilter<"UrenRegistratie"> | string
-  datum?: Prisma.DateTimeFilter<"UrenRegistratie"> | Date | string
-  taak?: Prisma.StringNullableFilter<"UrenRegistratie"> | string | null
-  werkelijkeBegintijd?: Prisma.DateTimeFilter<"UrenRegistratie"> | Date | string
-  werkelijkeEindtijd?: Prisma.DateTimeFilter<"UrenRegistratie"> | Date | string
-  pauzeMinuten?: Prisma.IntFilter<"UrenRegistratie"> | number
-  gewerkteUren?: Prisma.DecimalFilter<"UrenRegistratie"> | runtime.Decimal | runtime.DecimalJsLike | number | string
-  status?: Prisma.StringFilter<"UrenRegistratie"> | string
-  gecontroleerdDoorId?: Prisma.StringNullableFilter<"UrenRegistratie"> | string | null
-  gecontroleerdOp?: Prisma.DateTimeNullableFilter<"UrenRegistratie"> | Date | string | null
-  opmerking?: Prisma.StringNullableFilter<"UrenRegistratie"> | string | null
-  aangemaaktOp?: Prisma.DateTimeFilter<"UrenRegistratie"> | Date | string
-  gewijzigdOp?: Prisma.DateTimeFilter<"UrenRegistratie"> | Date | string
-}
-
 export type UrenRegistratieCreateWithoutDienstBezettingInput = {
   id?: string
-  vestigingId: string
   datum: Date | string
   taak?: string | null
   werkelijkeBegintijd: Date | string
@@ -798,6 +903,7 @@ export type UrenRegistratieCreateWithoutDienstBezettingInput = {
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
   medewerker: Prisma.MedewerkerCreateNestedOneWithoutUrenregistratiesInput
+  vestiging: Prisma.VestigingCreateNestedOneWithoutUrenregistratiesInput
 }
 
 export type UrenRegistratieUncheckedCreateWithoutDienstBezettingInput = {
@@ -836,7 +942,6 @@ export type UrenRegistratieUpdateToOneWithWhereWithoutDienstBezettingInput = {
 
 export type UrenRegistratieUpdateWithoutDienstBezettingInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  vestigingId?: Prisma.StringFieldUpdateOperationsInput | string
   datum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   taak?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   werkelijkeBegintijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -850,12 +955,85 @@ export type UrenRegistratieUpdateWithoutDienstBezettingInput = {
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   medewerker?: Prisma.MedewerkerUpdateOneRequiredWithoutUrenregistratiesNestedInput
+  vestiging?: Prisma.VestigingUpdateOneRequiredWithoutUrenregistratiesNestedInput
 }
 
 export type UrenRegistratieUncheckedUpdateWithoutDienstBezettingInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   medewerkerId?: Prisma.StringFieldUpdateOperationsInput | string
   vestigingId?: Prisma.StringFieldUpdateOperationsInput | string
+  datum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  taak?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  werkelijkeBegintijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  werkelijkeEindtijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  pauzeMinuten?: Prisma.IntFieldUpdateOperationsInput | number
+  gewerkteUren?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  gecontroleerdDoorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gecontroleerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  opmerking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type UrenRegistratieCreateManyVestigingInput = {
+  id?: string
+  dienstBezettingId: string
+  medewerkerId: string
+  datum: Date | string
+  taak?: string | null
+  werkelijkeBegintijd: Date | string
+  werkelijkeEindtijd: Date | string
+  pauzeMinuten?: number
+  gewerkteUren: runtime.Decimal | runtime.DecimalJsLike | number | string
+  status?: string
+  gecontroleerdDoorId?: string | null
+  gecontroleerdOp?: Date | string | null
+  opmerking?: string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+}
+
+export type UrenRegistratieUpdateWithoutVestigingInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  datum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  taak?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  werkelijkeBegintijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  werkelijkeEindtijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  pauzeMinuten?: Prisma.IntFieldUpdateOperationsInput | number
+  gewerkteUren?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  gecontroleerdDoorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gecontroleerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  opmerking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dienstBezetting?: Prisma.DienstBezettingUpdateOneRequiredWithoutUrenregistratieNestedInput
+  medewerker?: Prisma.MedewerkerUpdateOneRequiredWithoutUrenregistratiesNestedInput
+}
+
+export type UrenRegistratieUncheckedUpdateWithoutVestigingInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  dienstBezettingId?: Prisma.StringFieldUpdateOperationsInput | string
+  medewerkerId?: Prisma.StringFieldUpdateOperationsInput | string
+  datum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  taak?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  werkelijkeBegintijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  werkelijkeEindtijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  pauzeMinuten?: Prisma.IntFieldUpdateOperationsInput | number
+  gewerkteUren?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  gecontroleerdDoorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gecontroleerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  opmerking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type UrenRegistratieUncheckedUpdateManyWithoutVestigingInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  dienstBezettingId?: Prisma.StringFieldUpdateOperationsInput | string
+  medewerkerId?: Prisma.StringFieldUpdateOperationsInput | string
   datum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   taak?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   werkelijkeBegintijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -890,7 +1068,6 @@ export type UrenRegistratieCreateManyMedewerkerInput = {
 
 export type UrenRegistratieUpdateWithoutMedewerkerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  vestigingId?: Prisma.StringFieldUpdateOperationsInput | string
   datum?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   taak?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   werkelijkeBegintijd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -904,6 +1081,7 @@ export type UrenRegistratieUpdateWithoutMedewerkerInput = {
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dienstBezetting?: Prisma.DienstBezettingUpdateOneRequiredWithoutUrenregistratieNestedInput
+  vestiging?: Prisma.VestigingUpdateOneRequiredWithoutUrenregistratiesNestedInput
 }
 
 export type UrenRegistratieUncheckedUpdateWithoutMedewerkerInput = {
@@ -963,6 +1141,7 @@ export type UrenRegistratieSelect<ExtArgs extends runtime.Types.Extensions.Inter
   gewijzigdOp?: boolean
   dienstBezetting?: boolean | Prisma.DienstBezettingDefaultArgs<ExtArgs>
   medewerker?: boolean | Prisma.MedewerkerDefaultArgs<ExtArgs>
+  vestiging?: boolean | Prisma.VestigingDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["urenRegistratie"]>
 
 export type UrenRegistratieSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -984,6 +1163,7 @@ export type UrenRegistratieSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   gewijzigdOp?: boolean
   dienstBezetting?: boolean | Prisma.DienstBezettingDefaultArgs<ExtArgs>
   medewerker?: boolean | Prisma.MedewerkerDefaultArgs<ExtArgs>
+  vestiging?: boolean | Prisma.VestigingDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["urenRegistratie"]>
 
 export type UrenRegistratieSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1005,6 +1185,7 @@ export type UrenRegistratieSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   gewijzigdOp?: boolean
   dienstBezetting?: boolean | Prisma.DienstBezettingDefaultArgs<ExtArgs>
   medewerker?: boolean | Prisma.MedewerkerDefaultArgs<ExtArgs>
+  vestiging?: boolean | Prisma.VestigingDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["urenRegistratie"]>
 
 export type UrenRegistratieSelectScalar = {
@@ -1030,14 +1211,17 @@ export type UrenRegistratieOmit<ExtArgs extends runtime.Types.Extensions.Interna
 export type UrenRegistratieInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   dienstBezetting?: boolean | Prisma.DienstBezettingDefaultArgs<ExtArgs>
   medewerker?: boolean | Prisma.MedewerkerDefaultArgs<ExtArgs>
+  vestiging?: boolean | Prisma.VestigingDefaultArgs<ExtArgs>
 }
 export type UrenRegistratieIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   dienstBezetting?: boolean | Prisma.DienstBezettingDefaultArgs<ExtArgs>
   medewerker?: boolean | Prisma.MedewerkerDefaultArgs<ExtArgs>
+  vestiging?: boolean | Prisma.VestigingDefaultArgs<ExtArgs>
 }
 export type UrenRegistratieIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   dienstBezetting?: boolean | Prisma.DienstBezettingDefaultArgs<ExtArgs>
   medewerker?: boolean | Prisma.MedewerkerDefaultArgs<ExtArgs>
+  vestiging?: boolean | Prisma.VestigingDefaultArgs<ExtArgs>
 }
 
 export type $UrenRegistratiePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1045,6 +1229,7 @@ export type $UrenRegistratiePayload<ExtArgs extends runtime.Types.Extensions.Int
   objects: {
     dienstBezetting: Prisma.$DienstBezettingPayload<ExtArgs>
     medewerker: Prisma.$MedewerkerPayload<ExtArgs>
+    vestiging: Prisma.$VestigingPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1075,9 +1260,13 @@ export type $UrenRegistratiePayload<ExtArgs extends runtime.Types.Extensions.Int
      */
     gewerkteUren: runtime.Decimal
     /**
+     * -----------------------------------------------------
+     * Status
+     * 
      * TE_CONTROLEREN
      * DEFINITIEF
      * AFGEKEURD
+     * -----------------------------------------------------
      */
     status: string
     /**
@@ -1484,6 +1673,7 @@ export interface Prisma__UrenRegistratieClient<T, Null = never, ExtArgs extends 
   readonly [Symbol.toStringTag]: "PrismaPromise"
   dienstBezetting<T extends Prisma.DienstBezettingDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DienstBezettingDefaultArgs<ExtArgs>>): Prisma.Prisma__DienstBezettingClient<runtime.Types.Result.GetResult<Prisma.$DienstBezettingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   medewerker<T extends Prisma.MedewerkerDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MedewerkerDefaultArgs<ExtArgs>>): Prisma.Prisma__MedewerkerClient<runtime.Types.Result.GetResult<Prisma.$MedewerkerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  vestiging<T extends Prisma.VestigingDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.VestigingDefaultArgs<ExtArgs>>): Prisma.Prisma__VestigingClient<runtime.Types.Result.GetResult<Prisma.$VestigingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.

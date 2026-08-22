@@ -243,6 +243,7 @@ export type BeschikbaarheidOrderByWithRelationInput = {
 
 export type BeschikbaarheidWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  weekId_medewerkerId_datum?: Prisma.BeschikbaarheidWeekIdMedewerkerIdDatumCompoundUniqueInput
   AND?: Prisma.BeschikbaarheidWhereInput | Prisma.BeschikbaarheidWhereInput[]
   OR?: Prisma.BeschikbaarheidWhereInput[]
   NOT?: Prisma.BeschikbaarheidWhereInput | Prisma.BeschikbaarheidWhereInput[]
@@ -257,7 +258,7 @@ export type BeschikbaarheidWhereUniqueInput = Prisma.AtLeast<{
   gewijzigdOp?: Prisma.DateTimeFilter<"Beschikbaarheid"> | Date | string
   week?: Prisma.XOR<Prisma.WeekScalarRelationFilter, Prisma.WeekWhereInput>
   medewerker?: Prisma.XOR<Prisma.MedewerkerScalarRelationFilter, Prisma.MedewerkerWhereInput>
-}, "id">
+}, "id" | "weekId_medewerkerId_datum">
 
 export type BeschikbaarheidOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -388,6 +389,12 @@ export type BeschikbaarheidListRelationFilter = {
 
 export type BeschikbaarheidOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type BeschikbaarheidWeekIdMedewerkerIdDatumCompoundUniqueInput = {
+  weekId: string
+  medewerkerId: string
+  datum: Date | string
 }
 
 export type BeschikbaarheidCountOrderByAggregateInput = {
@@ -813,9 +820,13 @@ export type $BeschikbaarheidPayload<ExtArgs extends runtime.Types.Extensions.Int
     begintijd: Date
     eindtijd: Date
     /**
+     * -----------------------------------------------------
+     * Beschikbaarheidsstatus
+     * 
      * BESCHIKBAAR
      * NIET_BESCHIKBAAR
      * VOORKEUR
+     * -----------------------------------------------------
      */
     status: string
     opmerking: string | null
