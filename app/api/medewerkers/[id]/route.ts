@@ -5,10 +5,8 @@ import {
 
 import {
   getCurrentUser,
-  hasPermission,
 } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { permissions } from "@/lib/permissions";
 import { medewerkerService } from "@/lib/services/medewerker.service";
 
 type RouteContext = {
@@ -32,12 +30,6 @@ type Aanhef =
 type ContractType =
   | "OPROEP"
   | "VAST";
-
-/*
- * ========================================================
- * DATUM VALIDATIE
- * ========================================================
- */
 
 function maakDatum(
   waarde: unknown,
@@ -70,8 +62,9 @@ function maakDatum(
     return null;
   }
 
-  const datum =
-    new Date(String(waarde));
+  const datum = new Date(
+    String(waarde),
+  );
 
   if (
     Number.isNaN(
@@ -86,12 +79,6 @@ function maakDatum(
   return datum;
 }
 
-/*
- * ========================================================
- * NUMERIEKE WAARDEN
- * ========================================================
- */
-
 function maakNummer(
   waarde: unknown,
   veldnaam: string,
@@ -104,8 +91,9 @@ function maakNummer(
     return null;
   }
 
-  const nummer =
-    Number(waarde);
+  const nummer = Number(
+    waarde,
+  );
 
   if (
     !Number.isFinite(
@@ -126,12 +114,6 @@ function maakNummer(
   return nummer;
 }
 
-/*
- * ========================================================
- * AANHEF
- * ========================================================
- */
-
 function controleerAanhef(
   waarde: unknown,
 ): Aanhef {
@@ -148,12 +130,6 @@ function controleerAanhef(
 
   return waarde;
 }
-
-/*
- * ========================================================
- * CONTRACTTYPE
- * ========================================================
- */
 
 function controleerContractType(
   waarde: unknown,
@@ -177,12 +153,6 @@ function controleerContractType(
 
   return waarde;
 }
-
-/*
- * ========================================================
- * TEKST VALIDATIE
- * ========================================================
- */
 
 function controleerTekst(
   waarde: unknown,
@@ -237,12 +207,6 @@ function controleerTekst(
   return tekst || null;
 }
 
-/*
- * ========================================================
- * E-MAIL
- * ========================================================
- */
-
 function controleerEmail(
   waarde: unknown,
 ): string {
@@ -278,12 +242,6 @@ function controleerEmail(
   return email;
 }
 
-/*
- * ========================================================
- * TELEFOON
- * ========================================================
- */
-
 function controleerTelefoon(
   waarde: unknown,
 ): string {
@@ -307,12 +265,6 @@ function controleerTelefoon(
   return telefoon;
 }
 
-/*
- * ========================================================
- * OBJECT VALIDATIE
- * ========================================================
- */
-
 function controleerObject(
   waarde: unknown,
   foutmelding: string,
@@ -332,12 +284,6 @@ function controleerObject(
     unknown
   >;
 }
-
-/*
- * ========================================================
- * STRING ARRAY VALIDATIE
- * ========================================================
- */
 
 function controleerStringArray(
   waarde: unknown,
@@ -373,12 +319,6 @@ function controleerStringArray(
   );
 }
 
-/*
- * ========================================================
- * PATCH
- * ========================================================
- */
-
 export async function PATCH(
   request: NextRequest,
   { params }: RouteContext,
@@ -386,12 +326,6 @@ export async function PATCH(
   try {
     const { id } =
       await params;
-
-    /*
-     * ======================================================
-     * INLOGGEN
-     * ======================================================
-     */
 
     const gebruiker =
       await getCurrentUser();
@@ -422,7 +356,7 @@ export async function PATCH(
 
     /*
      * ======================================================
-     * MEDEWERKER OPHALEN
+     * MEDEWERKER
      * ======================================================
      */
 
@@ -465,7 +399,7 @@ export async function PATCH(
 
     /*
      * ======================================================
-     * ORGANISATIES BEPALEN
+     * ORGANISATIES VAN MEDEWERKER
      * ======================================================
      */
 
@@ -474,19 +408,12 @@ export async function PATCH(
         new Set(
           medewerker.vestigingen
             .filter(
-              (
-                medewerkerVestiging,
-              ) =>
-                medewerkerVestiging
-                  .vestiging
-                  .actief,
+              (relatie) =>
+                relatie.vestiging.actief,
             )
             .map(
-              (
-                medewerkerVestiging,
-              ) =>
-                medewerkerVestiging
-                  .vestiging
+              (relatie) =>
+                relatie.vestiging
                   .organisatieId,
             ),
         ),
@@ -508,34 +435,28 @@ export async function PATCH(
 
     /*
      * ======================================================
-     * AUTORISATIE
+     * EIGENAAR CONTROLEREN
      * ======================================================
+     *
+     * De Eigenaar is organisatiebreed.
+     * Er wordt dus niet naar een specifieke vestiging gekeken.
      */
 
-    const organisatiesMetRecht:
-      string[] = [];
+    const isEigenaar =
+      gebruiker.organisaties.some(
+        (relatie) =>
+          relatie.actief &&
+          relatie.organisatie.actief &&
+          relatie.rol.naam
+            .trim()
+            .toLowerCase() ===
+            "eigenaar" &&
+          organisatieIds.includes(
+            relatie.organisatieId,
+          ),
+      );
 
-    for (
-      const organisatieId of
-      organisatieIds
-    ) {
-      const heeftRecht =
-        await hasPermission(
-          permissions.medewerkers.update,
-          organisatieId,
-        );
-
-      if (heeftRecht) {
-        organisatiesMetRecht.push(
-          organisatieId,
-        );
-      }
-    }
-
-    if (
-      organisatiesMetRecht.length ===
-      0
-    ) {
+    if (!isEigenaar) {
       return NextResponse.json(
         {
           error:
@@ -549,7 +470,7 @@ export async function PATCH(
 
     /*
      * ======================================================
-     * REQUEST LEZEN
+     * REQUEST
      * ======================================================
      */
 
@@ -582,8 +503,9 @@ export async function PATCH(
       );
     }
 
-    const section: Section =
-      sectionValue;
+    const section:
+      Section =
+        sectionValue;
 
     const data =
       controleerObject(
@@ -593,29 +515,12 @@ export async function PATCH(
 
     /*
      * ======================================================
-     * SECTIE AFHANDELEN
+     * ALGEMEEN
      * ======================================================
-     *
-     * Een switch voorkomt dat TypeScript de Section-unie
-     * verkeerd vernauwt door meerdere opeenvolgende
-     * vergelijkingen.
      */
 
     switch (section) {
-      /*
-       * ====================================================
-       * ALGEMEEN
-       * ====================================================
-       */
-
       case "algemeen": {
-        const geboortedatum =
-          maakDatum(
-            data.geboortedatum,
-            true,
-            "Geboortedatum",
-          );
-
         const updateData = {
           personeelsnummer:
             controleerTekst(
@@ -654,7 +559,12 @@ export async function PATCH(
               "Roepnaam",
             ),
 
-          geboortedatum,
+          geboortedatum:
+            maakDatum(
+              data.geboortedatum,
+              true,
+              "Geboortedatum",
+            ),
 
           email:
             controleerEmail(
@@ -682,12 +592,37 @@ export async function PATCH(
       }
 
       /*
-       * ====================================================
+       * ======================================================
        * CONTRACT
-       * ====================================================
+       * ======================================================
        */
 
       case "contract": {
+        const datumInDienst =
+          maakDatum(
+            data.datumInDienst,
+            false,
+            "Datum in dienst",
+          );
+
+        const datumUitDienst =
+          maakDatum(
+            data.datumUitDienst,
+            false,
+            "Datum uit dienst",
+          );
+
+        if (
+          datumInDienst &&
+          datumUitDienst &&
+          datumUitDienst <
+            datumInDienst
+        ) {
+          throw new Error(
+            "Datum uit dienst kan niet vóór datum in dienst liggen.",
+          );
+        }
+
         const updateData = {
           contractType:
             controleerContractType(
@@ -700,19 +635,9 @@ export async function PATCH(
               "Contracturen",
             ),
 
-          datumInDienst:
-            maakDatum(
-              data.datumInDienst,
-              false,
-              "Datum in dienst",
-            ),
+          datumInDienst,
 
-          datumUitDienst:
-            maakDatum(
-              data.datumUitDienst,
-              false,
-              "Datum uit dienst",
-            ),
+          datumUitDienst,
         };
 
         const resultaat =
@@ -730,9 +655,9 @@ export async function PATCH(
       }
 
       /*
-       * ====================================================
+       * ======================================================
        * VESTIGINGEN
-       * ====================================================
+       * ======================================================
        */
 
       case "vestigingen": {
@@ -767,19 +692,6 @@ export async function PATCH(
           );
         }
 
-        /*
-         * --------------------------------------------------
-         * VESTIGINGEN CONTROLEREN
-         * --------------------------------------------------
-         *
-         * Iedere geselecteerde vestiging moet:
-         *
-         * - bestaan;
-         * - actief zijn;
-         * - behoren tot een organisatie waarvoor de gebruiker
-         *   het recht medewerkers.update heeft.
-         */
-
         const vestigingen =
           await prisma.vestiging.findMany(
             {
@@ -791,14 +703,12 @@ export async function PATCH(
                 actief: true,
 
                 organisatieId: {
-                  in:
-                    organisatiesMetRecht,
+                  in: organisatieIds,
                 },
               },
 
               select: {
                 id: true,
-                organisatieId: true,
               },
             },
           );
@@ -808,36 +718,9 @@ export async function PATCH(
           vestigingIds.length
         ) {
           throw new Error(
-            "Een of meer geselecteerde vestigingen bestaan niet, zijn niet actief of vallen buiten jouw toegestane organisatie.",
+            "Een of meer geselecteerde vestigingen bestaan niet of zijn niet actief.",
           );
         }
-
-        /*
-         * --------------------------------------------------
-         * HOOFDVESTIGING CONTROLEREN
-         * --------------------------------------------------
-         */
-
-        const hoofdvestiging =
-          vestigingen.find(
-            (vestiging) =>
-              vestiging.id ===
-              hoofdvestigingId,
-          );
-
-        if (
-          !hoofdvestiging
-        ) {
-          throw new Error(
-            "De gekozen hoofdvestiging bestaat niet, is niet actief of valt buiten jouw toegestane organisatie.",
-          );
-        }
-
-        /*
-         * --------------------------------------------------
-         * OPSLAAN
-         * --------------------------------------------------
-         */
 
         const resultaat =
           await medewerkerService.setVestigingen(
@@ -849,16 +732,17 @@ export async function PATCH(
         return NextResponse.json({
           id,
           section,
-          vestigingen: resultaat,
+          vestigingen:
+            resultaat,
           melding:
             "De vestigingen zijn succesvol opgeslagen.",
         });
       }
 
       /*
-       * ====================================================
+       * ======================================================
        * VERLONING
-       * ====================================================
+       * ======================================================
        */
 
       case "verloning": {
@@ -884,21 +768,15 @@ export async function PATCH(
         });
       }
 
-      /*
-       * ====================================================
-       * ONBEREIKBARE FALLBACK
-       * ====================================================
-       */
-
       default: {
-        const _onbereikbareSection: never =
-          section;
+        const _section:
+          never = section;
 
         return NextResponse.json(
           {
             error:
               `Onbekende bewerksectie: ${String(
-                _onbereikbareSection,
+                _section,
               )}`,
           },
           {

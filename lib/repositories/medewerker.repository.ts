@@ -25,6 +25,7 @@ type MedewerkerUpdateData = {
     | null;
 
   contractUren?: number | null;
+
   uurloon?: number | null;
 
   datumInDienst?: Date | null;
@@ -37,6 +38,12 @@ type FindAllOptions = {
 };
 
 export const medewerkerRepository = {
+  /*
+   * ============================================================
+   * ALLE MEDEWERKERS
+   * ============================================================
+   */
+
   async findAll(
     options: FindAllOptions = {},
   ) {
@@ -84,25 +91,61 @@ export const medewerkerRepository = {
       },
 
       include: {
+        /*
+         * STATUS
+         */
+
         status: true,
+
+        /*
+         * VESTIGINGEN
+         */
 
         vestigingen: {
           include: {
             vestiging: true,
           },
+
+          orderBy: {
+            hoofdvestiging: "desc",
+          },
         },
+
+        /*
+         * ROLLEN
+         */
 
         rollen: {
           include: {
             rol: true,
           },
+
+          orderBy: {
+            rol: {
+              naam: "asc",
+            },
+          },
         },
+
+        /*
+         * TAGS
+         */
 
         tags: {
           include: {
             tag: true,
           },
+
+          orderBy: {
+            tag: {
+              volgorde: "asc",
+            },
+          },
         },
+
+        /*
+         * BESCHIKBAARHEID
+         */
 
         beschikbaarheden: {
           orderBy: [
@@ -115,6 +158,29 @@ export const medewerkerRepository = {
           ],
         },
 
+        /*
+         * VAKANTIE
+         */
+
+        vakantieAanvragen: {
+          orderBy: [
+            {
+              startDatum: "asc",
+            },
+            {
+              eindDatum: "asc",
+            },
+          ],
+
+          include: {
+            vestiging: true,
+          },
+        },
+
+        /*
+         * PLANNING
+         */
+
         diensten: {
           include: {
             dienst: {
@@ -125,6 +191,12 @@ export const medewerkerRepository = {
                   include: {
                     tag: true,
                   },
+
+                  orderBy: {
+                    tag: {
+                      volgorde: "asc",
+                    },
+                  },
                 },
               },
             },
@@ -133,6 +205,23 @@ export const medewerkerRepository = {
           orderBy: {
             dienst: {
               datum: "asc",
+            },
+          },
+        },
+
+        /*
+         * VERLONING
+         */
+
+        verloningsRegels: {
+          include: {
+            verloningsPeriode: true,
+            vestiging: true,
+          },
+
+          orderBy: {
+            verloningsPeriode: {
+              periodeStart: "desc",
             },
           },
         },
@@ -149,6 +238,12 @@ export const medewerkerRepository = {
     });
   },
 
+  /*
+   * ============================================================
+   * MEDEWERKER OP ID
+   * ============================================================
+   */
+
   async findById(id: string) {
     return prisma.medewerker.findUnique({
       where: {
@@ -156,25 +251,75 @@ export const medewerkerRepository = {
       },
 
       include: {
+        /*
+         * SYSTEEMGEBRUIKER
+         */
+
+        systeemGebruiker: {
+          select: {
+            id: true,
+            naam: true,
+            email: true,
+            actief: true,
+            laatsteLoginOp: true,
+          },
+        },
+
+        /*
+         * STATUS
+         */
+
         status: true,
+
+        /*
+         * VESTIGINGEN
+         */
 
         vestigingen: {
           include: {
             vestiging: true,
           },
+
+          orderBy: {
+            hoofdvestiging: "desc",
+          },
         },
+
+        /*
+         * ROLLEN
+         */
 
         rollen: {
           include: {
             rol: true,
           },
+
+          orderBy: {
+            rol: {
+              naam: "asc",
+            },
+          },
         },
+
+        /*
+         * TAGS
+         */
 
         tags: {
           include: {
             tag: true,
           },
+
+          orderBy: {
+            tag: {
+              volgorde: "asc",
+            },
+          },
         },
+
+        /*
+         * BESCHIKBAARHEID
+         */
 
         beschikbaarheden: {
           orderBy: [
@@ -187,6 +332,29 @@ export const medewerkerRepository = {
           ],
         },
 
+        /*
+         * VAKANTIE
+         */
+
+        vakantieAanvragen: {
+          include: {
+            vestiging: true,
+          },
+
+          orderBy: [
+            {
+              startDatum: "desc",
+            },
+            {
+              eindDatum: "desc",
+            },
+          ],
+        },
+
+        /*
+         * PLANNING
+         */
+
         diensten: {
           include: {
             dienst: {
@@ -196,6 +364,12 @@ export const medewerkerRepository = {
                 tags: {
                   include: {
                     tag: true,
+                  },
+
+                  orderBy: {
+                    tag: {
+                      volgorde: "asc",
+                    },
                   },
                 },
               },
@@ -208,9 +382,40 @@ export const medewerkerRepository = {
             },
           },
         },
+
+        /*
+         * VERLONING
+         */
+
+        verloningsRegels: {
+          include: {
+            verloningsPeriode: true,
+            vestiging: true,
+          },
+
+          orderBy: {
+            verloningsPeriode: {
+              periodeStart: "desc",
+            },
+          },
+        },
       },
     });
   },
+
+  /*
+   * ============================================================
+   * MEDEWERKER BIJWERKEN
+   * ============================================================
+   *
+   * De repository voert alleen de database-update uit.
+   *
+   * Welke velden iemand daadwerkelijk mag wijzigen wordt
+   * bepaald door de service/API-laag.
+   *
+   * Vestigingen, rollen, tags en status hebben afzonderlijke
+   * methodes.
+   */
 
   async update(
     id: string,
@@ -284,7 +489,8 @@ export const medewerkerRepository = {
 
         ...(data.uurloon !==
           undefined && {
-          uurloon: data.uurloon,
+          uurloon:
+            data.uurloon,
         }),
 
         ...(data.datumInDienst !==
@@ -301,6 +507,12 @@ export const medewerkerRepository = {
       },
     });
   },
+
+  /*
+   * ============================================================
+   * STATUS BIJWERKEN
+   * ============================================================
+   */
 
   async updateStatus(
     id: string,
@@ -322,6 +534,12 @@ export const medewerkerRepository = {
     });
   },
 
+  /*
+   * ============================================================
+   * ACTIVEREN
+   * ============================================================
+   */
+
   async setActivatie(
     id: string,
     statusId: string,
@@ -341,18 +559,62 @@ export const medewerkerRepository = {
     });
   },
 
+  /*
+   * ============================================================
+   * VESTIGINGEN INSTELLEN
+   * ============================================================
+   */
+
   async setVestigingen(
     medewerkerId: string,
     vestigingIds: string[],
     hoofdvestigingId: string,
   ) {
+    const uniekeVestigingIds =
+      Array.from(
+        new Set(vestigingIds),
+      );
+
     if (
-      !vestigingIds.includes(
+      uniekeVestigingIds.length ===
+      0
+    ) {
+      throw new Error(
+        "Een medewerker moet aan minimaal één vestiging gekoppeld zijn.",
+      );
+    }
+
+    if (
+      !uniekeVestigingIds.includes(
         hoofdvestigingId,
       )
     ) {
       throw new Error(
         "De hoofdvestiging moet ook aan de medewerker gekoppeld zijn.",
+      );
+    }
+
+    const vestigingen =
+      await prisma.vestiging.findMany({
+        where: {
+          id: {
+            in: uniekeVestigingIds,
+          },
+
+          actief: true,
+        },
+
+        select: {
+          id: true,
+        },
+      });
+
+    if (
+      vestigingen.length !==
+      uniekeVestigingIds.length
+    ) {
+      throw new Error(
+        "Een medewerker kan alleen aan bestaande en actieve vestigingen worden gekoppeld.",
       );
     }
 
@@ -366,21 +628,19 @@ export const medewerkerRepository = {
           },
         );
 
-        if (vestigingIds.length > 0) {
-          await tx.medewerkerVestiging.createMany(
-            {
-              data: vestigingIds.map(
-                (vestigingId) => ({
-                  medewerkerId,
-                  vestigingId,
-                  hoofdvestiging:
-                    vestigingId ===
-                    hoofdvestigingId,
-                }),
-              ),
-            },
-          );
-        }
+        await tx.medewerkerVestiging.createMany(
+          {
+            data: uniekeVestigingIds.map(
+              (vestigingId) => ({
+                medewerkerId,
+                vestigingId,
+                hoofdvestiging:
+                  vestigingId ===
+                  hoofdvestigingId,
+              }),
+            ),
+          },
+        );
 
         return tx.medewerkerVestiging.findMany(
           {
@@ -401,10 +661,21 @@ export const medewerkerRepository = {
     );
   },
 
+  /*
+   * ============================================================
+   * ROLLEN INSTELLEN
+   * ============================================================
+   */
+
   async setRollen(
     medewerkerId: string,
     rolIds: string[],
   ) {
+    const uniekeRolIds =
+      Array.from(
+        new Set(rolIds),
+      );
+
     return prisma.$transaction(
       async (tx) => {
         await tx.medewerkerRol.deleteMany(
@@ -415,10 +686,12 @@ export const medewerkerRepository = {
           },
         );
 
-        if (rolIds.length > 0) {
+        if (
+          uniekeRolIds.length > 0
+        ) {
           await tx.medewerkerRol.createMany(
             {
-              data: rolIds.map(
+              data: uniekeRolIds.map(
                 (rolId) => ({
                   medewerkerId,
                   rolId,
@@ -449,10 +722,21 @@ export const medewerkerRepository = {
     );
   },
 
+  /*
+   * ============================================================
+   * TAGS INSTELLEN
+   * ============================================================
+   */
+
   async setTags(
     medewerkerId: string,
     tagIds: string[],
   ) {
+    const uniekeTagIds =
+      Array.from(
+        new Set(tagIds),
+      );
+
     return prisma.$transaction(
       async (tx) => {
         await tx.medewerkerTag.deleteMany(
@@ -463,10 +747,12 @@ export const medewerkerRepository = {
           },
         );
 
-        if (tagIds.length > 0) {
+        if (
+          uniekeTagIds.length > 0
+        ) {
           await tx.medewerkerTag.createMany(
             {
-              data: tagIds.map(
+              data: uniekeTagIds.map(
                 (tagId) => ({
                   medewerkerId,
                   tagId,

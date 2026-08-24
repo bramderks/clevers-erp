@@ -55,6 +55,26 @@ type MedewerkerFilter = {
 
 /*
  * ============================================================
+ * HULPFUNCTIES
+ * ============================================================
+ */
+
+function trimNullable(
+  value: string | null | undefined,
+) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null) {
+    return null;
+  }
+
+  return value.trim() || null;
+}
+
+/*
+ * ============================================================
  * STATUS
  * ============================================================
  */
@@ -83,7 +103,7 @@ async function getStatusId(
 
 /*
  * ============================================================
- * EIGEN GEGEVENS
+ * EIGEN GEGEVENS CONTROLEREN
  * ============================================================
  */
 
@@ -138,6 +158,95 @@ function controleerEigenGegevens(
         "Telefoonnummer mag niet leeg zijn.",
       );
     }
+  }
+}
+
+/*
+ * ============================================================
+ * ALGEMENE BEHEERGEGEVENS CONTROLEREN
+ * ============================================================
+ */
+
+function controleerMedewerkerUpdate(
+  data: MedewerkerUpdateData,
+) {
+  if (
+    data.voornaam !== undefined &&
+    !data.voornaam.trim()
+  ) {
+    throw new Error(
+      "Voornaam mag niet leeg zijn.",
+    );
+  }
+
+  if (
+    data.achternaam !== undefined &&
+    !data.achternaam.trim()
+  ) {
+    throw new Error(
+      "Achternaam mag niet leeg zijn.",
+    );
+  }
+
+  if (data.email !== undefined) {
+    const email =
+      data.email.trim();
+
+    if (!email) {
+      throw new Error(
+        "E-mailadres mag niet leeg zijn.",
+      );
+    }
+
+    if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+        email,
+      )
+    ) {
+      throw new Error(
+        "Het e-mailadres is ongeldig.",
+      );
+    }
+  }
+
+  if (
+    data.telefoon !== undefined &&
+    !data.telefoon.trim()
+  ) {
+    throw new Error(
+      "Telefoonnummer mag niet leeg zijn.",
+    );
+  }
+
+  if (
+    data.contractUren !== undefined &&
+    data.contractUren !== null &&
+    data.contractUren < 0
+  ) {
+    throw new Error(
+      "Contracturen kunnen niet negatief zijn.",
+    );
+  }
+
+  if (
+    data.uurloon !== undefined &&
+    data.uurloon !== null &&
+    data.uurloon < 0
+  ) {
+    throw new Error(
+      "Uurloon kan niet negatief zijn.",
+    );
+  }
+
+  if (
+    data.datumInDienst &&
+    data.datumUitDienst &&
+    data.datumUitDienst <
+      data.datumInDienst
+  ) {
+    throw new Error(
+      "De datum uit dienst kan niet vóór de datum in dienst liggen.",
+    );
   }
 }
 
@@ -289,6 +398,12 @@ export const medewerkerService = {
    */
 
   async getById(id: string) {
+    if (!id?.trim()) {
+      throw new Error(
+        "Medewerker-ID ontbreekt.",
+      );
+    }
+
     const medewerker =
       await medewerkerRepository.findById(
         id,
@@ -308,10 +423,13 @@ export const medewerkerService = {
    * MEDEWERKER BIJWERKEN
    * ==========================================================
    *
-   * Voor algemene, contract- en verloningsgegevens.
+   * Dit is de beheerfunctie.
    *
-   * Vestigingen worden bewust via setVestigingen()
-   * verwerkt.
+   * Deze methode is bedoeld voor gegevens die door een
+   * bevoegde beheerder/eigenaar mogen worden gewijzigd.
+   *
+   * Vestigingen, rollen, tags en status worden bewust via
+   * afzonderlijke methodes verwerkt.
    */
 
   async update(
@@ -320,9 +438,106 @@ export const medewerkerService = {
   ) {
     await this.getById(id);
 
+    controleerMedewerkerUpdate(
+      data,
+    );
+
+    const opgeschoondeData: MedewerkerUpdateData =
+      {
+        ...(data.personeelsnummer !==
+          undefined && {
+          personeelsnummer:
+            data.personeelsnummer
+              ?.trim() || null,
+        }),
+
+        ...(data.aanhef !==
+          undefined && {
+          aanhef: data.aanhef,
+        }),
+
+        ...(data.voornaam !==
+          undefined && {
+          voornaam:
+            data.voornaam.trim(),
+        }),
+
+        ...(data.tussenvoegsel !==
+          undefined && {
+          tussenvoegsel:
+            trimNullable(
+              data.tussenvoegsel,
+            ),
+        }),
+
+        ...(data.achternaam !==
+          undefined && {
+          achternaam:
+            data.achternaam.trim(),
+        }),
+
+        ...(data.roepnaam !==
+          undefined && {
+          roepnaam:
+            trimNullable(
+              data.roepnaam,
+            ),
+        }),
+
+        ...(data.geboortedatum !==
+          undefined && {
+          geboortedatum:
+            data.geboortedatum,
+        }),
+
+        ...(data.email !==
+          undefined && {
+          email:
+            data.email
+              .trim()
+              .toLowerCase(),
+        }),
+
+        ...(data.telefoon !==
+          undefined && {
+          telefoon:
+            data.telefoon.trim(),
+        }),
+
+        ...(data.contractType !==
+          undefined && {
+          contractType:
+            data.contractType,
+        }),
+
+        ...(data.contractUren !==
+          undefined && {
+          contractUren:
+            data.contractUren,
+        }),
+
+        ...(data.uurloon !==
+          undefined && {
+          uurloon:
+            data.uurloon,
+        }),
+
+        ...(data.datumInDienst !==
+          undefined && {
+          datumInDienst:
+            data.datumInDienst,
+        }),
+
+        ...(data.datumUitDienst !==
+          undefined && {
+          datumUitDienst:
+            data.datumUitDienst,
+        }),
+      };
+
     return medewerkerRepository.update(
       id,
-      data,
+      opgeschoondeData,
     );
   },
 
@@ -331,10 +546,20 @@ export const medewerkerService = {
    * EIGEN GEGEVENS BIJWERKEN
    * ==========================================================
    *
-   * Deze methode is bedoeld voor de medewerker zelf.
-   * Beheergegevens zoals personeelsnummer,
-   * contract, uurloon en vestigingen vallen hier
-   * bewust niet onder.
+   * Alleen persoonlijke/contactgegevens.
+   *
+   * Beheergegevens zoals:
+   * - personeelsnummer
+   * - geboortedatum
+   * - contract
+   * - uurloon
+   * - in/uit dienst
+   * - vestigingen
+   * - rollen
+   * - tags
+   * - status
+   *
+   * vallen hier bewust buiten.
    */
 
   async updateEigenGegevens(
@@ -363,8 +588,9 @@ export const medewerkerService = {
         ...(data.tussenvoegsel !==
           undefined && {
           tussenvoegsel:
-            data.tussenvoegsel
-              ?.trim() || null,
+            trimNullable(
+              data.tussenvoegsel,
+            ),
         }),
 
         ...(data.achternaam !==
@@ -376,15 +602,17 @@ export const medewerkerService = {
         ...(data.roepnaam !==
           undefined && {
           roepnaam:
-            data.roepnaam?.trim() ||
-            null,
+            trimNullable(
+              data.roepnaam,
+            ),
         }),
 
         ...(data.email !==
           undefined && {
-          email: data.email
-            .trim()
-            .toLowerCase(),
+          email:
+            data.email
+              .trim()
+              .toLowerCase(),
         }),
 
         ...(data.telefoon !==
@@ -411,11 +639,14 @@ export const medewerkerService = {
     vestigingIds: string[],
     hoofdvestigingId: string,
   ) {
-    await this.getById(id);
+    const medewerker =
+      await this.getById(id);
 
     const uniekeVestigingIds =
       Array.from(
-        new Set(vestigingIds),
+        new Set(
+          vestigingIds.filter(Boolean),
+        ),
       );
 
     if (
@@ -428,6 +659,7 @@ export const medewerkerService = {
     }
 
     if (
+      !hoofdvestigingId ||
       !uniekeVestigingIds.includes(
         hoofdvestigingId,
       )
@@ -437,11 +669,49 @@ export const medewerkerService = {
       );
     }
 
+    /*
+     * De vestigingen moeten allemaal binnen dezelfde
+     * organisatie(s) vallen als de medewerker.
+     *
+     * De medewerker kan dus niet per ongeluk aan een
+     * vestiging uit een andere organisatie worden gekoppeld.
+     */
+
+    const medewerkerOrganisatieIds =
+      Array.from(
+        new Set(
+          medewerker.vestigingen
+            .map(
+              (
+                medewerkerVestiging,
+              ) =>
+                medewerkerVestiging
+                  .vestiging
+                  .organisatieId,
+            )
+            .filter(Boolean),
+        ),
+      );
+
+    if (
+      medewerkerOrganisatieIds.length ===
+      0
+    ) {
+      throw new Error(
+        "De medewerker is niet aan een geldige organisatie gekoppeld.",
+      );
+    }
+
     const actieveVestigingen =
       await prisma.vestiging.findMany({
         where: {
           id: {
             in: uniekeVestigingIds,
+          },
+
+          organisatieId: {
+            in:
+              medewerkerOrganisatieIds,
           },
 
           actief: true,
@@ -458,7 +728,7 @@ export const medewerkerService = {
       uniekeVestigingIds.length
     ) {
       throw new Error(
-        "Een medewerker kan alleen aan actieve vestigingen worden gekoppeld.",
+        "Een medewerker kan alleen aan actieve vestigingen binnen de eigen organisatie worden gekoppeld.",
       );
     }
 
@@ -483,7 +753,9 @@ export const medewerkerService = {
 
     const uniekeRolIds =
       Array.from(
-        new Set(rolIds),
+        new Set(
+          rolIds.filter(Boolean),
+        ),
       );
 
     return medewerkerRepository.setRollen(
@@ -506,7 +778,9 @@ export const medewerkerService = {
 
     const uniekeTagIds =
       Array.from(
-        new Set(tagIds),
+        new Set(
+          tagIds.filter(Boolean),
+        ),
       );
 
     return medewerkerRepository.setTags(
@@ -557,7 +831,7 @@ export const medewerkerService = {
       );
     }
 
-    if (!geactiveerdDoor) {
+    if (!geactiveerdDoor?.trim()) {
       throw new Error(
         "Een medewerker kan alleen worden geactiveerd door een ingelogde systeemgebruiker.",
       );

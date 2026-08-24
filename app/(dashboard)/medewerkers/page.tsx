@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   ArrowRight,
+  Upload,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -261,12 +262,23 @@ export default async function MedewerkersPage({
       <PageToolbar
         title="Medewerkers"
         actions={
-          <Link href="/medewerkers/nieuw">
-            <Button>
-              <UserPlus size={18} />
-              Nieuwe medewerker
-            </Button>
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            {isEigenaar && (
+              <Link href="/medewerkers/importeren">
+                <Button variant="secondary">
+                  <Upload size={18} />
+                  Medewerkers importeren
+                </Button>
+              </Link>
+            )}
+
+            <Link href="/medewerkers/nieuw">
+              <Button>
+                <UserPlus size={18} />
+                Nieuwe medewerker
+              </Button>
+            </Link>
+          </div>
         }
       />
 
