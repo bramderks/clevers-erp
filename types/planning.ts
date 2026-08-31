@@ -35,8 +35,8 @@ export type Beschikbaarheid = {
   weekId: string;
   medewerkerId: string;
   datum: string;
-begintijd: string | null;
-eindtijd: string | null;
+  begintijd: string | null;
+  eindtijd: string | null;
   status: BeschikbaarheidStatus;
   opmerking: string | null;
 };
@@ -54,13 +54,20 @@ export type DienstBezetting = {
   dienstId: string;
   medewerkerId: string | null;
   status: DienstBezettingStatus;
+
   medewerker: {
     id: string;
     personeelsnummer: string | null;
-    aanhef: "DHR" | "MEVR" | "ANDERS" | "GEEN_OPGAVE";
+    aanhef:
+      | "DHR"
+      | "MEVR"
+      | "ANDERS"
+      | "GEEN_OPGAVE";
     voornaam: string;
     tussenvoegsel: string | null;
     achternaam: string;
+
+    tags: MedewerkerTag[];
   } | null;
 };
 

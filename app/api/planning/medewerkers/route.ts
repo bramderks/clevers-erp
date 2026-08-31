@@ -47,7 +47,9 @@ export async function GET(
         {
           fout: "Je moet ingelogd zijn.",
         },
-        { status: 401 },
+        {
+          status: 401,
+        },
       );
     }
 
@@ -66,7 +68,9 @@ export async function GET(
           fout:
             "vestigingId is verplicht.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
@@ -76,15 +80,21 @@ export async function GET(
           fout:
             "datum is verplicht.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
     const beginVanDag =
-      datumTekstNaarBeginVanDag(datum);
+      datumTekstNaarBeginVanDag(
+        datum,
+      );
 
     const eindeVanDag =
-      datumTekstNaarEindeVanDag(datum);
+      datumTekstNaarEindeVanDag(
+        datum,
+      );
 
     if (
       !beginVanDag ||
@@ -95,7 +105,9 @@ export async function GET(
           fout:
             "Datum moet een geldige datum zijn.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
@@ -111,7 +123,9 @@ export async function GET(
           fout:
             "Geen toegang tot de medewerkers van deze vestiging.",
         },
-        { status: 403 },
+        {
+          status: 403,
+        },
       );
     }
 
@@ -226,6 +240,12 @@ export async function GET(
                 },
               },
             },
+
+            orderBy: {
+              dienst: {
+                begintijd: "asc",
+              },
+            },
           },
         },
 
@@ -272,10 +292,13 @@ export async function GET(
             medewerker.diensten.map(
               (bezetting) => ({
                 id: bezetting.id,
+
                 dienstId:
                   bezetting.dienstId,
+
                 status:
                   bezetting.status,
+
                 dienst:
                   bezetting.dienst,
               }),
@@ -285,7 +308,8 @@ export async function GET(
 
     return NextResponse.json({
       huidigeMedewerkerId,
-      medewerkers: resultaat,
+      medewerkers:
+        resultaat,
     });
   } catch (error) {
     console.error(
@@ -298,7 +322,9 @@ export async function GET(
         fout:
           "De medewerkers konden niet worden opgehaald.",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     );
   }
 }

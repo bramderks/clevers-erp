@@ -30,7 +30,8 @@ type BeschikbaarheidWeekSelectorProps = {
   vestigingen: Vestiging[];
   medewerkerId: string;
   isBeheerder: boolean;
-  onSelected: (
+  bewerkmodus?: boolean;
+  onSelected?: (
     vestigingId: string,
     week: SelectorWeek,
   ) => void;
@@ -51,7 +52,6 @@ type DagBeschikbaarheid = {
   begintijd: string;
   eindtijd: string;
   opmerking: string;
-  actief: boolean;
   opgeslagen: boolean;
 };
 
@@ -114,11 +114,12 @@ function parseDatum(
   }
 
   /*
-   * YYYY-MM-DD behandelen als lokale kalenderdatum.
-   * Hiermee voorkomen we UTC-verschuivingen.
+   * Een losse YYYY-MM-DD moet als lokale kalenderdatum
+   * worden behandeld. Zo voorkomen we UTC-verschuivingen.
    */
-  const alleenDatum =
-    tekst.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const alleenDatum = tekst.match(
+    /^(\d{4})-(\d{2})-(\d{2})$/,
+  );
 
   if (alleenDatum) {
     const jaar = Number(alleenDatum[1]);
@@ -324,22 +325,8 @@ function maakWeekDagen(
 }
 
 /* ============================================================
-   BESCHIKBAARHEID
+   TIJDEN
    ============================================================ */
-
-function standaardDag(
-  datum: string,
-): DagBeschikbaarheid {
-  return {
-    datum,
-    status: "NIET_BESCHIKBAAR",
-    begintijd: "",
-    eindtijd: "",
-    opmerking: "",
-    actief: false,
-    opgeslagen: false,
-  };
-}
 
 function maakTijden(): string[] {
   const tijden: string[] = [];
@@ -369,8 +356,9 @@ function maakTijden(): string[] {
 function tijdNaarMinuten(
   tijd: string,
 ): number | null {
-  const match =
-    tijd.match(/^(\d{2}):(\d{2})$/);
+  const match = tijd.match(
+    /^(\d{2}):(\d{2})$/,
+  );
 
   if (!match) {
     return null;
@@ -412,13 +400,6 @@ function tijdenGeldig(
   const eind =
     tijdNaarMinuten(eindtijd);
 
-  if (
-    begin === null ||
-    eind === null
-  ) {
-    return false;
-  }
-
   const minimum =
     tijdNaarMinuten(MIN_TIJD);
 
@@ -426,6 +407,8 @@ function tijdenGeldig(
     tijdNaarMinuten(MAX_TIJD);
 
   if (
+    begin === null ||
+    eind === null ||
     minimum === null ||
     maximum === null
   ) {
@@ -451,11 +434,156 @@ function tijdenGeldig(
   );
 }
 
+function normaliseerTijd(
+  waarde: unknown,
+): string {
+  if (
+    typeof waarde !== "string" ||
+    !waarde
+  ) {
+    return "";
+  }
+
+  const match = waarde.match(
+    /^(\d{1,2}):(\d{2})/,
+  );
+
+  if (!match) {
+    return "";
+  }
+
+  const uren = Number(match[1]);
+  const minuten = Number(match[2]);
+
+  if (
+    Number.isNaN(uren) ||
+    Number.isNaN(minuten) ||
+    uren < 0 ||
+    uren > 23 ||
+    minuten < 0 ||
+    minuten > 59
+  ) {
+    return "";
+  }
+
+  return `${String(uren).padStart(
+    2,
+    "0",
+  )}:${String(minuten).padStart(
+    2,
+    "0",
+  )}`;
+}
+
+function haalTijdUitWaarde(
+  waarde: unknown,
+): string {
+  const directeTijd =
+    normaliseerTijd(waarde);
+
+  if (directeTijd) {
+    return directeTijd;
+  }
+
+  if (
+    typeof waarde !== "string" ||
+    !waarde
+  ) {
+    return "";
+  }
+
+  const datum = parseDatum(waarde);
+
+  if (!datum) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat(
+    "nl-NL",
+    {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    },
+  )
+    .format(datum)
+    .replace(".", ":");
+}
+
 /* ============================================================
-   DEADLINE / WEEK WEERGAVE
+   BESCHIKBAARHEID NORMALISEREN
    ============================================================ */
 
-function deadlineVerstreken(
+function haalDatumUitWaarde(
+  waarde: unknown,
+): string | null {
+  if (!waarde) {
+    return null;
+  }
+
+  if (typeof waarde === "string") {
+    if (
+      /^\d{4}-\d{2}-\d{2}$/.test(
+        waarde,
+      )
+    ) {
+      return waarde;
+    }
+
+    const datum = parseDatum(waarde);
+
+    return datum
+      ? formatteerDatumSleutel(datum)
+      : null;
+  }
+
+  if (
+    typeof waarde === "object" &&
+    waarde !== null
+  ) {
+    const object =
+      waarde as Record<
+        string,
+        unknown
+      >;
+
+    const mogelijkeWaarden = [
+      object.datum,
+      object.date,
+      object.startdatum,
+    ];
+
+    for (const item of mogelijkeWaarden) {
+      const datum =
+        haalDatumUitWaarde(item);
+
+      if (datum) {
+        return datum;
+      }
+    }
+  }
+
+  return null;
+}
+
+function standaardDag(
+  datum: string,
+): DagBeschikbaarheid {
+  return {
+    datum,
+    status: "NIET_BESCHIKBAAR",
+    begintijd: "",
+    eindtijd: "",
+    opmerking: "",
+    opgeslagen: false,
+  };
+}
+
+/* ============================================================
+   DEADLINE
+   ============================================================ */
+
+function isDeadlineVerstreken(
   week: SelectorWeek,
 ): boolean {
   if (!week.beschikbaarheidDeadline) {
@@ -476,7 +604,8 @@ function deadlineVerstreken(
 function formatteerDeadline(
   deadline: string,
 ): string {
-  const datum = parseDatum(deadline);
+  const datum =
+    parseDatum(deadline);
 
   if (!datum) {
     return "Onbekende deadline";
@@ -496,7 +625,8 @@ function formatteerDeadline(
 function formatteerWeekPeriode(
   week: SelectorWeek,
 ): string {
-  const start = bepaalWeekStart(week);
+  const start =
+    bepaalWeekStart(week);
 
   if (!start) {
     return `Week ${week.weeknummer}`;
@@ -541,7 +671,7 @@ function formatteerWeekPeriode(
 }
 
 /* ============================================================
-   API HELPERS
+   API
    ============================================================ */
 
 async function leesJsonResponse<T>(
@@ -555,7 +685,9 @@ async function leesJsonResponse<T>(
   }
 
   try {
-    return JSON.parse(tekst) as T;
+    return JSON.parse(
+      tekst,
+    ) as T;
   } catch {
     throw new Error(
       "De server gaf een ongeldig antwoord terug.",
@@ -568,17 +700,18 @@ async function haalWeekStatusOp(
   weekId: string,
 ): Promise<WeekStatus> {
   try {
-    const response = await fetch(
-      `/api/medewerkers/${encodeURIComponent(
-        medewerkerId,
-      )}/beschikbaarheid?weekId=${encodeURIComponent(
-        weekId,
-      )}`,
-      {
-        method: "GET",
-        cache: "no-store",
-      },
-    );
+    const response =
+      await fetch(
+        `/api/medewerkers/${encodeURIComponent(
+          medewerkerId,
+        )}/beschikbaarheid?weekId=${encodeURIComponent(
+          weekId,
+        )}`,
+        {
+          method: "GET",
+          cache: "no-store",
+        },
+      );
 
     const resultaat =
       await leesJsonResponse<BeschikbaarheidApiResponse>(
@@ -611,150 +744,6 @@ async function haalWeekStatusOp(
 
     return "FOUT";
   }
-}
-
-/* ============================================================
-   BESCHIKBAARHEID NORMALISEREN
-   ============================================================ */
-
-function haalDatumUitBeschikbaarheid(
-  waarde: unknown,
-): string | null {
-  if (!waarde) {
-    return null;
-  }
-
-  if (typeof waarde === "string") {
-    /*
-     * Als het alleen YYYY-MM-DD is, rechtstreeks
-     * gebruiken zodat geen timezoneverschuiving ontstaat.
-     */
-    if (
-      /^\d{4}-\d{2}-\d{2}$/.test(
-        waarde,
-      )
-    ) {
-      return waarde;
-    }
-
-    const datum = parseDatum(waarde);
-
-    return datum
-      ? formatteerDatumSleutel(datum)
-      : null;
-  }
-
-  if (
-    typeof waarde === "object" &&
-    waarde !== null
-  ) {
-    const object =
-      waarde as Record<
-        string,
-        unknown
-      >;
-
-    const mogelijkeWaarden = [
-      object.datum,
-      object.date,
-      object.startdatum,
-    ];
-
-    for (const item of mogelijkeWaarden) {
-      const datum =
-        haalDatumUitBeschikbaarheid(
-          item,
-        );
-
-      if (datum) {
-        return datum;
-      }
-    }
-  }
-
-  return null;
-}
-
-function normaliseerTijd(
-  waarde: unknown,
-): string {
-  if (
-    typeof waarde !== "string" ||
-    !waarde
-  ) {
-    return "";
-  }
-
-  const match =
-    waarde.match(
-      /^(\d{1,2}):(\d{2})/,
-    );
-
-  if (!match) {
-    return "";
-  }
-
-  const uren = Number(match[1]);
-  const minuten = Number(match[2]);
-
-  if (
-    Number.isNaN(uren) ||
-    Number.isNaN(minuten)
-  ) {
-    return "";
-  }
-
-  if (
-    uren < 0 ||
-    uren > 23 ||
-    minuten < 0 ||
-    minuten > 59
-  ) {
-    return "";
-  }
-
-  return `${String(uren).padStart(
-    2,
-    "0",
-  )}:${String(minuten).padStart(
-    2,
-    "0",
-  )}`;
-}
-
-function haalTijdUitBeschikbaarheid(
-  waarde: unknown,
-): string {
-  if (
-    typeof waarde !== "string" ||
-    !waarde
-  ) {
-    return "";
-  }
-
-  const directeTijd =
-    normaliseerTijd(waarde);
-
-  if (directeTijd) {
-    return directeTijd;
-  }
-
-  const datum = parseDatum(waarde);
-
-  if (!datum) {
-    return "";
-  }
-
-  return new Intl.DateTimeFormat(
-    "nl-NL",
-    {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    },
-  )
-    .format(datum)
-    .replace(".", ":");
 }
 
 /* ============================================================
@@ -807,24 +796,21 @@ export default function BeschikbaarheidWeekSelector({
   vestigingen,
   medewerkerId,
   isBeheerder,
+  bewerkmodus = false,
   onSelected,
 }: BeschikbaarheidWeekSelectorProps) {
-  const [
-    vestigingId,
-    setVestigingId,
-  ] = useState<string>(
-    vestigingen[0]?.id ?? "",
-  );
+  const [vestigingId, setVestigingId] =
+    useState<string>(
+      vestigingen[0]?.id ?? "",
+    );
 
   const [weken, setWeken] =
     useState<SelectorWeek[]>([]);
 
-  const [
-    weekStatussen,
-    setWeekStatussen,
-  ] = useState<
-    Record<string, WeekStatus>
-  >({});
+  const [weekStatussen, setWeekStatussen] =
+    useState<
+      Record<string, WeekStatus>
+    >({});
 
   const [weekId, setWeekId] =
     useState<string>("");
@@ -850,18 +836,19 @@ export default function BeschikbaarheidWeekSelector({
   const [error, setError] =
     useState<string | null>(null);
 
-  const [
-    dagFouten,
-    setDagFouten,
-  ] = useState<
-    Record<string, string>
-  >({});
+  const [dagFouten, setDagFouten] =
+    useState<
+      Record<string, string>
+    >({});
 
   const [
     dagenInvoer,
     setDagenInvoer,
   ] = useState<
-    Record<string, DagBeschikbaarheid>
+    Record<
+      string,
+      DagBeschikbaarheid
+    >
   >({});
 
   const planbordRef =
@@ -872,28 +859,29 @@ export default function BeschikbaarheidWeekSelector({
   const onSelectedRef =
     useRef(onSelected);
 
-  /* ==========================================================
-     CALLBACK ACTUEEL HOUDEN
-     ========================================================== */
-
   useEffect(() => {
     onSelectedRef.current =
       onSelected;
   }, [onSelected]);
 
-  /* ==========================================================
-     GESELECTEERDE WEEK
-     ========================================================== */
+  /*
+   * Alleen de Eigenaar krijgt via de pagina
+   * daadwerkelijke bewerkrechten.
+   *
+   * bewerkmodus bepaalt vervolgens of de
+   * eigenaar daadwerkelijk aan het wijzigen is.
+   */
+  const magBewerken =
+    isBeheerder && bewerkmodus;
 
   const geselecteerdeWeek =
     useMemo<SelectorWeek | null>(() => {
-      const week =
+      return (
         weken.find(
-          (item) =>
-            item.id === weekId,
-        );
-
-      return week ?? null;
+          (week) =>
+            week.id === weekId,
+        ) ?? null
+      );
     }, [weken, weekId]);
 
   const geselecteerdeStatus =
@@ -903,12 +891,21 @@ export default function BeschikbaarheidWeekSelector({
         ]
       : undefined;
 
-  const geselecteerdeDeadlineVerstreken =
+  const deadlineVerstreken =
     geselecteerdeWeek
-      ? deadlineVerstreken(
+      ? isDeadlineVerstreken(
           geselecteerdeWeek,
         )
       : false;
+
+  /*
+   * De eigenaar mag ook na de deadline
+   * aanpassen. Andere gebruikers niet.
+   */
+  const wijzigingToegestaan =
+    magBewerken &&
+    (!deadlineVerstreken ||
+      isBeheerder);
 
   const weekDagen = useMemo(
     () =>
@@ -937,15 +934,106 @@ export default function BeschikbaarheidWeekSelector({
 
     let actief = true;
 
-    async function laadWeekStatussen(
-      wekenOmTeControleren: SelectorWeek[],
-    ): Promise<void> {
-      setLoadingStatussen(true);
+    async function laadWeken() {
+      setLoading(true);
+      setError(null);
+      setWeekStatussen({});
+      setDagenInvoer({});
+      setDagFouten({});
 
       try {
+        const response =
+          await fetch(
+            `/api/medewerkers/${encodeURIComponent(
+              medewerkerId,
+            )}/beschikbaarheid/weken?vestigingId=${encodeURIComponent(
+              vestigingId,
+            )}`,
+            {
+              method: "GET",
+              cache: "no-store",
+            },
+          );
+
+        const resultaat =
+          await leesJsonResponse<WekenApiResponse>(
+            response,
+          );
+
+        if (!response.ok) {
+          throw new Error(
+            resultaat.fout ??
+              resultaat.error ??
+              "De planningweken konden niet worden opgehaald.",
+          );
+        }
+
+        const opgehaaldeWeken =
+          Array.isArray(
+            resultaat.weken,
+          )
+            ? resultaat.weken.filter(
+                (week) =>
+                  Boolean(
+                    week &&
+                      typeof week.id ===
+                        "string" &&
+                      week.id.length > 0 &&
+                      Number.isInteger(
+                        week.jaar,
+                      ) &&
+                      Number.isInteger(
+                        week.weeknummer,
+                      ),
+                  ),
+              )
+            : [];
+
+        if (!actief) {
+          return;
+        }
+
+        setWeken(
+          opgehaaldeWeken,
+        );
+
+        const eersteOpenstaandeWeek =
+          resultaat.eersteOpenstaandeWeek ??
+          null;
+
+        const eersteWeek =
+          eersteOpenstaandeWeek &&
+          opgehaaldeWeken.some(
+            (week) =>
+              week.id ===
+              eersteOpenstaandeWeek.id,
+          )
+            ? eersteOpenstaandeWeek
+            : opgehaaldeWeken[0] ??
+              null;
+
+        if (eersteWeek) {
+          setWeekId(
+            eersteWeek.id,
+          );
+
+          onSelectedRef.current?.(
+            vestigingId,
+            eersteWeek,
+          );
+        } else {
+          setWeekId("");
+        }
+
+        /*
+         * De status van iedere zichtbare week
+         * wordt parallel opgehaald.
+         */
+        setLoadingStatussen(true);
+
         const resultaten =
           await Promise.all(
-            wekenOmTeControleren.map(
+            opgehaaldeWeken.map(
               async (week) => {
                 const status =
                   await haalWeekStatusOp(
@@ -974,107 +1062,6 @@ export default function BeschikbaarheidWeekSelector({
           >,
         );
       } catch (error) {
-        console.error(
-          "Fout bij laden weekstatussen:",
-          error,
-        );
-      } finally {
-        if (actief) {
-          setLoadingStatussen(false);
-        }
-      }
-    }
-
-    async function laadWeken(): Promise<void> {
-      setLoading(true);
-      setError(null);
-      setWeekStatussen({});
-
-      try {
-        const response = await fetch(
-          `/api/medewerkers/${encodeURIComponent(
-            medewerkerId,
-          )}/beschikbaarheid/weken?vestigingId=${encodeURIComponent(
-            vestigingId,
-          )}`,
-          {
-            method: "GET",
-            cache: "no-store",
-          },
-        );
-
-        const resultaat =
-          await leesJsonResponse<WekenApiResponse>(
-            response,
-          );
-
-        if (!response.ok) {
-          throw new Error(
-            resultaat.fout ??
-              resultaat.error ??
-              "De planningweken konden niet worden opgehaald.",
-          );
-        }
-
-        const opgehaaldeWeken =
-          Array.isArray(
-            resultaat.weken,
-          )
-            ? resultaat.weken.filter(
-                (week): week is SelectorWeek =>
-                  Boolean(
-                    week &&
-                      typeof week.id ===
-                        "string" &&
-                      week.id.length > 0 &&
-                      Number.isInteger(
-                        week.jaar,
-                      ) &&
-                      Number.isInteger(
-                        week.weeknummer,
-                      ),
-                  ),
-              )
-            : [];
-
-        if (!actief) {
-          return;
-        }
-
-        setWeken(opgehaaldeWeken);
-
-        const eersteOpenstaandeWeek =
-          resultaat.eersteOpenstaandeWeek ??
-          null;
-
-        const eersteWeek =
-          eersteOpenstaandeWeek &&
-          opgehaaldeWeken.some(
-            (week) =>
-              week.id ===
-              eersteOpenstaandeWeek.id,
-          )
-            ? eersteOpenstaandeWeek
-            : opgehaaldeWeken[0] ??
-              null;
-
-        if (eersteWeek) {
-          setWeekId(
-            eersteWeek.id,
-          );
-
-          onSelectedRef.current(
-            vestigingId,
-            eersteWeek,
-          );
-        } else {
-          setWeekId("");
-        }
-
-        void laadWeekStatussen(
-          opgehaaldeWeken,
-        );
-      } catch (error) {
         if (!actief) {
           return;
         }
@@ -1096,6 +1083,7 @@ export default function BeschikbaarheidWeekSelector({
       } finally {
         if (actief) {
           setLoading(false);
+          setLoadingStatussen(false);
         }
       }
     }
@@ -1115,12 +1103,6 @@ export default function BeschikbaarheidWeekSelector({
      ========================================================== */
 
   useEffect(() => {
-    /*
-     * Belangrijk:
-     * hier wordt de null-check bewust bovenaan gedaan.
-     * Daardoor is geselecteerdeWeek daarna binnen deze
-     * effect-scope veilig als SelectorWeek.
-     */
     if (!geselecteerdeWeek) {
       setDagenInvoer({});
       setDagFouten({});
@@ -1151,21 +1133,22 @@ export default function BeschikbaarheidWeekSelector({
 
     let actief = true;
 
-    async function laadBeschikbaarheid(): Promise<void> {
+    async function laadBeschikbaarheid() {
       setLoadingDagen(true);
 
       try {
-        const response = await fetch(
-          `/api/medewerkers/${encodeURIComponent(
-            medewerkerId,
-          )}/beschikbaarheid?weekId=${encodeURIComponent(
-            week.id,
-          )}`,
-          {
-            method: "GET",
-            cache: "no-store",
-          },
-        );
+        const response =
+          await fetch(
+            `/api/medewerkers/${encodeURIComponent(
+              medewerkerId,
+            )}/beschikbaarheid?weekId=${encodeURIComponent(
+              week.id,
+            )}`,
+            {
+              method: "GET",
+              cache: "no-store",
+            },
+          );
 
         const resultaat =
           await leesJsonResponse<BeschikbaarheidApiResponse>(
@@ -1214,7 +1197,7 @@ export default function BeschikbaarheidWeekSelector({
             >;
 
           const datum =
-            haalDatumUitBeschikbaarheid(
+            haalDatumUitWaarde(
               item.datum ??
                 item.date ??
                 item.startdatum,
@@ -1234,29 +1217,15 @@ export default function BeschikbaarheidWeekSelector({
               ? "BESCHIKBAAR"
               : "NIET_BESCHIKBAAR";
 
-          let begintijd =
-            normaliseerTijd(
+          const begintijd =
+            haalTijdUitWaarde(
               item.begintijd,
             );
 
-          let eindtijd =
-            normaliseerTijd(
+          const eindtijd =
+            haalTijdUitWaarde(
               item.eindtijd,
             );
-
-          if (!begintijd) {
-            begintijd =
-              haalTijdUitBeschikbaarheid(
-                item.begintijd,
-              );
-          }
-
-          if (!eindtijd) {
-            eindtijd =
-              haalTijdUitBeschikbaarheid(
-                item.eindtijd,
-              );
-          }
 
           nieuweInvoer[datum] = {
             datum,
@@ -1268,9 +1237,6 @@ export default function BeschikbaarheidWeekSelector({
               "string"
                 ? item.opmerking
                 : "",
-            actief:
-              status ===
-              "BESCHIKBAAR",
             opgeslagen: true,
           };
         }
@@ -1330,8 +1296,9 @@ export default function BeschikbaarheidWeekSelector({
 
     setWeekId(nieuweWeekId);
     setError(null);
+    setDagFouten({});
 
-    onSelectedRef.current(
+    onSelectedRef.current?.(
       vestigingId,
       week,
     );
@@ -1352,44 +1319,57 @@ export default function BeschikbaarheidWeekSelector({
 
   function wijzigDag(
     datum: string,
-    wijziging: Partial<DagBeschikbaarheid>,
+    wijziging: Partial<
+      DagBeschikbaarheid
+    >,
   ): void {
-    setDagenInvoer((vorige) => {
-      const bestaandeDag =
-        vorige[datum] ??
-        standaardDag(datum);
+    if (!wijzigingToegestaan) {
+      return;
+    }
 
-      return {
-        ...vorige,
-        [datum]: {
-          ...bestaandeDag,
-          ...wijziging,
-          opgeslagen: false,
-        },
-      };
-    });
+    setDagenInvoer(
+      (vorige) => {
+        const bestaandeDag =
+          vorige[datum] ??
+          standaardDag(datum);
 
-    setDagFouten((vorige) => {
-      const volgende = {
-        ...vorige,
-      };
+        return {
+          ...vorige,
+          [datum]: {
+            ...bestaandeDag,
+            ...wijziging,
+            opgeslagen: false,
+          },
+        };
+      },
+    );
 
-      delete volgende[datum];
+    setDagFouten(
+      (vorige) => {
+        const volgende = {
+          ...vorige,
+        };
 
-      return volgende;
-    });
+        delete volgende[datum];
+
+        return volgende;
+      },
+    );
   }
 
   function maakDagBeschikbaar(
     datum: string,
   ): void {
+    if (!wijzigingToegestaan) {
+      return;
+    }
+
     const huidigeDag =
       dagenInvoer[datum] ??
       standaardDag(datum);
 
     wijzigDag(datum, {
       status: "BESCHIKBAAR",
-      actief: true,
       begintijd:
         huidigeDag.begintijd ||
         MIN_TIJD,
@@ -1402,9 +1382,12 @@ export default function BeschikbaarheidWeekSelector({
   function maakDagNietBeschikbaar(
     datum: string,
   ): void {
+    if (!wijzigingToegestaan) {
+      return;
+    }
+
     wijzigDag(datum, {
       status: "NIET_BESCHIKBAAR",
-      actief: false,
       begintijd: "",
       eindtijd: "",
     });
@@ -1417,11 +1400,6 @@ export default function BeschikbaarheidWeekSelector({
   async function slaDagOp(
     datum: string,
   ): Promise<void> {
-    /*
-     * Nogmaals expliciet ophalen en controleren.
-     * Hierdoor kan geselecteerdeWeek nooit null zijn
-     * binnen de rest van deze functie.
-     */
     const week =
       geselecteerdeWeek;
 
@@ -1432,33 +1410,42 @@ export default function BeschikbaarheidWeekSelector({
       return;
     }
 
+    if (!wijzigingToegestaan) {
+      return;
+    }
+
     const dag =
       dagenInvoer[datum] ??
       standaardDag(datum);
 
-    setDagFouten((vorige) => {
-      const volgende = {
-        ...vorige,
-      };
+    setDagFouten(
+      (vorige) => {
+        const volgende = {
+          ...vorige,
+        };
 
-      delete volgende[datum];
+        delete volgende[datum];
 
-      return volgende;
-    });
+        return volgende;
+      },
+    );
 
-    if (
-      dag.actief &&
-      dag.status === "BESCHIKBAAR"
-    ) {
+    const beschikbaar =
+      dag.status ===
+      "BESCHIKBAAR";
+
+    if (beschikbaar) {
       if (
         !dag.begintijd ||
         !dag.eindtijd
       ) {
-        setDagFouten((vorige) => ({
-          ...vorige,
-          [datum]:
-            "Vul een begin- en eindtijd in.",
-        }));
+        setDagFouten(
+          (vorige) => ({
+            ...vorige,
+            [datum]:
+              "Vul een begin- en eindtijd in.",
+          }),
+        );
 
         return;
       }
@@ -1469,25 +1456,29 @@ export default function BeschikbaarheidWeekSelector({
           dag.eindtijd,
         )
       ) {
-        setDagFouten((vorige) => ({
-          ...vorige,
-          [datum]:
-            "Kies geldige tijden tussen 09:00 en 23:00 in stappen van 30 minuten.",
-        }));
+        setDagFouten(
+          (vorige) => ({
+            ...vorige,
+            [datum]:
+              "Kies geldige tijden tussen 09:00 en 23:00 in stappen van 30 minuten.",
+          }),
+        );
 
         return;
       }
     }
 
     if (
-      geselecteerdeDeadlineVerstreken &&
+      deadlineVerstreken &&
       !isBeheerder
     ) {
-      setDagFouten((vorige) => ({
-        ...vorige,
-        [datum]:
-          "De deadline voor deze week is verstreken.",
-      }));
+      setDagFouten(
+        (vorige) => ({
+          ...vorige,
+          [datum]:
+            "De deadline voor deze week is verstreken.",
+        }),
+      );
 
       return;
     }
@@ -1511,11 +1502,6 @@ export default function BeschikbaarheidWeekSelector({
       let eindtijd:
         | string
         | null = null;
-
-      const beschikbaar =
-        dag.actief &&
-        dag.status ===
-          "BESCHIKBAAR";
 
       if (beschikbaar) {
         const beginDatum =
@@ -1548,31 +1534,32 @@ export default function BeschikbaarheidWeekSelector({
           eindDatum.toISOString();
       }
 
-      const response = await fetch(
-        `/api/medewerkers/${encodeURIComponent(
-          medewerkerId,
-        )}/beschikbaarheid`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
+      const response =
+        await fetch(
+          `/api/medewerkers/${encodeURIComponent(
+            medewerkerId,
+          )}/beschikbaarheid`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              weekId: week.id,
+              datum:
+                datumWaarde.toISOString(),
+              begintijd,
+              eindtijd,
+              status: beschikbaar
+                ? "BESCHIKBAAR"
+                : "NIET_BESCHIKBAAR",
+              opmerking:
+                dag.opmerking.trim() ||
+                null,
+            }),
           },
-          body: JSON.stringify({
-            weekId: week.id,
-            datum:
-              datumWaarde.toISOString(),
-            begintijd,
-            eindtijd,
-            status: beschikbaar
-              ? "BESCHIKBAAR"
-              : "NIET_BESCHIKBAAR",
-            opmerking:
-              dag.opmerking.trim() ||
-              null,
-          }),
-        },
-      );
+        );
 
       const resultaat =
         await leesJsonResponse<{
@@ -1588,19 +1575,21 @@ export default function BeschikbaarheidWeekSelector({
         );
       }
 
-      setDagenInvoer((vorige) => {
-        const bestaandeDag =
-          vorige[datum] ??
-          standaardDag(datum);
+      setDagenInvoer(
+        (vorige) => {
+          const bestaandeDag =
+            vorige[datum] ??
+            standaardDag(datum);
 
-        return {
-          ...vorige,
-          [datum]: {
-            ...bestaandeDag,
-            opgeslagen: true,
-          },
-        };
-      });
+          return {
+            ...vorige,
+            [datum]: {
+              ...bestaandeDag,
+              opgeslagen: true,
+            },
+          };
+        },
+      );
 
       const nieuweStatus =
         await haalWeekStatusOp(
@@ -1608,27 +1597,52 @@ export default function BeschikbaarheidWeekSelector({
           week.id,
         );
 
-      setWeekStatussen((vorige) => ({
-        ...vorige,
-        [week.id]:
-          nieuweStatus,
-      }));
+      setWeekStatussen(
+        (vorige) => ({
+          ...vorige,
+          [week.id]:
+            nieuweStatus,
+        }),
+      );
     } catch (error) {
       console.error(
         "Fout bij opslaan dag:",
         error,
       );
 
-      setDagFouten((vorige) => ({
-        ...vorige,
-        [datum]:
-          error instanceof Error
-            ? error.message
-            : "De beschikbaarheid kon niet worden opgeslagen.",
-      }));
+      setDagFouten(
+        (vorige) => ({
+          ...vorige,
+          [datum]:
+            error instanceof Error
+              ? error.message
+              : "De beschikbaarheid kon niet worden opgeslagen.",
+        }),
+      );
     } finally {
       setOpslaanDatum(null);
     }
+  }
+
+  /* ==========================================================
+     GEEN VESTIGINGEN
+     ========================================================== */
+
+  if (vestigingen.length === 0) {
+    return (
+      <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white px-5 py-6 text-center">
+          <p className="text-sm font-semibold text-slate-700">
+            Geen vestiging gekoppeld
+          </p>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Deze medewerker heeft nog geen vestiging
+            waaraan beschikbaarheid kan worden gekoppeld.
+          </p>
+        </div>
+      </section>
+    );
   }
 
   /* ==========================================================
@@ -1636,110 +1650,126 @@ export default function BeschikbaarheidWeekSelector({
      ========================================================== */
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5">
+    <section className="space-y-6">
       {/* ======================================================
           SELECTIE
           ====================================================== */}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
-        <div>
-          <label
-            htmlFor="beschikbaarheid-vestiging"
-            className="mb-2 block text-sm font-semibold text-slate-700"
-          >
-            Vestiging
-          </label>
+      <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
+          <div>
+            <label
+              htmlFor="beschikbaarheid-vestiging"
+              className="mb-2 block text-sm font-semibold text-slate-700"
+            >
+              Vestiging
+            </label>
 
-          <select
-            id="beschikbaarheid-vestiging"
-            value={vestigingId}
-            onChange={(event) => {
-              setVestigingId(
-                event.target.value,
-              );
-              setWeekId("");
-              setWeekStatussen({});
-              setDagenInvoer({});
-              setDagFouten({});
-              setError(null);
-            }}
-            disabled={
-              loading ||
-              vestigingen.length <= 1
-            }
-            className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm font-medium text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100 disabled:bg-slate-100 disabled:text-slate-500"
-          >
-            {vestigingen.map(
-              (vestiging) => (
-                <option
-                  key={vestiging.id}
-                  value={vestiging.id}
-                >
-                  {vestiging.naam}
+            <select
+              id="beschikbaarheid-vestiging"
+              value={vestigingId}
+              onChange={(event) => {
+                setVestigingId(
+                  event.target.value,
+                );
+                setWeekId("");
+                setWeekStatussen({});
+                setDagenInvoer({});
+                setDagFouten({});
+                setError(null);
+              }}
+              disabled={
+                loading ||
+                vestigingen.length <= 1
+              }
+              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm font-medium text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100 disabled:bg-slate-100 disabled:text-slate-500"
+            >
+              {vestigingen.map(
+                (vestiging) => (
+                  <option
+                    key={vestiging.id}
+                    value={vestiging.id}
+                  >
+                    {vestiging.naam}
+                  </option>
+                ),
+              )}
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="beschikbaarheid-week"
+              className="mb-2 block text-sm font-semibold text-slate-700"
+            >
+              Planningweek
+            </label>
+
+            <select
+              id="beschikbaarheid-week"
+              value={weekId}
+              onChange={(event) =>
+                selecteerWeek(
+                  event.target.value,
+                )
+              }
+              disabled={
+                loading ||
+                weken.length === 0
+              }
+              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm font-medium text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100 disabled:bg-slate-100 disabled:text-slate-500"
+            >
+              {weken.length === 0 ? (
+                <option value="">
+                  {loading
+                    ? "Beschikbare weken laden..."
+                    : "Geen weken beschikbaar"}
                 </option>
-              ),
-            )}
-          </select>
+              ) : (
+                weken.map((week) => (
+                  <option
+                    key={week.id}
+                    value={week.id}
+                  >
+                    Week{" "}
+                    {week.weeknummer}{" "}
+                    · {week.jaar}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
         </div>
 
-        <div>
-          <label
-            htmlFor="beschikbaarheid-week"
-            className="mb-2 block text-sm font-semibold text-slate-700"
-          >
-            Planningweek
-          </label>
+        {/* ====================================================
+            UITLEG BEWERKRECHTEN
+            ==================================================== */}
 
-          <select
-            id="beschikbaarheid-week"
-            value={weekId}
-            onChange={(event) =>
-              selecteerWeek(
-                event.target.value,
-              )
-            }
-            disabled={
-              loading ||
-              weken.length === 0
-            }
-            className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm font-medium text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100 disabled:bg-slate-100 disabled:text-slate-500"
-          >
-            {weken.length === 0 ? (
-              <option value="">
-                {loading
-                  ? "Beschikbare weken laden..."
-                  : "Geen weken beschikbaar"}
-              </option>
-            ) : (
-              weken.map((week) => (
-                <option
-                  key={week.id}
-                  value={week.id}
-                >
-                  Week {week.weeknummer} ·{" "}
-                  {week.jaar}
-                </option>
-              ))
-            )}
-          </select>
-        </div>
+        {!magBewerken && (
+          <div className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
+            <p className="text-xs font-medium text-slate-500">
+              Beschikbaarheid wordt hier alleen
+              bekeken.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ======================================================
-          WEEKKAARTEN
+          WEEKOVERZICHT
           ====================================================== */}
 
       {weken.length > 0 && (
-        <div className="mt-6 border-t border-slate-200 pt-6">
-          <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h3 className="text-sm font-semibold text-slate-900">
+              <h3 className="text-base font-semibold text-slate-900">
                 Beschikbaarheid per week
               </h3>
 
               <p className="mt-1 text-sm text-slate-500">
-                Klik op een week om het
-                7-daagse planbord te openen.
+                Selecteer een planningweek om de
+                beschikbaarheid per dag te bekijken.
               </p>
             </div>
 
@@ -1758,7 +1788,7 @@ export default function BeschikbaarheidWeekSelector({
                 ];
 
               const gesloten =
-                deadlineVerstreken(
+                isDeadlineVerstreken(
                   week,
                 );
 
@@ -1859,82 +1889,98 @@ export default function BeschikbaarheidWeekSelector({
       {geselecteerdeWeek && (
         <div
           ref={planbordRef}
-          className="mt-8 scroll-mt-6 border-t border-slate-200 pt-6"
+          className="scroll-mt-6"
         >
-          <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                Weekplanbord
-              </p>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Beschikbaarheid
+                </p>
 
-              <h2 className="mt-1 text-xl font-bold text-slate-900">
-                Week{" "}
-                {
-                  geselecteerdeWeek.weeknummer
-                }{" "}
-                ·{" "}
-                {geselecteerdeWeek.jaar}
-              </h2>
+                <h2 className="mt-1 text-xl font-bold text-slate-900">
+                  Week{" "}
+                  {
+                    geselecteerdeWeek.weeknummer
+                  }{" "}
+                  ·{" "}
+                  {
+                    geselecteerdeWeek.jaar
+                  }
+                </h2>
 
-              <p className="mt-1 text-sm text-slate-500">
-                {formatteerWeekPeriode(
-                  geselecteerdeWeek,
-                )}
-              </p>
-            </div>
+                <p className="mt-1 text-sm text-slate-500">
+                  {formatteerWeekPeriode(
+                    geselecteerdeWeek,
+                  )}
+                </p>
+              </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <StatusBadge
-                status={
-                  geselecteerdeStatus
-                }
-              />
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge
+                  status={
+                    geselecteerdeStatus
+                  }
+                />
 
-              {geselecteerdeWeek.beschikbaarheidDeadline && (
-                <span
-                  className={[
-                    "rounded-full px-3 py-1 text-xs font-semibold",
-                    geselecteerdeDeadlineVerstreken
+                {geselecteerdeWeek.beschikbaarheidDeadline && (
+                  <span
+                    className={[
+                      "rounded-full px-3 py-1 text-xs font-semibold",
+                      deadlineVerstreken
+                        ? isBeheerder
+                          ? "bg-blue-100 text-blue-800"
+                          : "bg-red-100 text-red-800"
+                        : "bg-slate-100 text-slate-600",
+                    ].join(" ")}
+                  >
+                    {deadlineVerstreken
                       ? isBeheerder
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-red-100 text-red-800"
-                      : "bg-slate-100 text-slate-600",
-                  ].join(" ")}
-                >
-                  {geselecteerdeDeadlineVerstreken
-                    ? isBeheerder
-                      ? "Deadline verstreken · aanpassen toegestaan"
-                      : "Deadline verstreken"
-                    : `Deadline ${formatteerDeadline(
-                        geselecteerdeWeek.beschikbaarheidDeadline,
-                      )}`}
-                </span>
+                        ? "Deadline verstreken · aanpassen toegestaan"
+                        : "Deadline verstreken"
+                      : `Deadline ${formatteerDeadline(
+                          geselecteerdeWeek.beschikbaarheidDeadline,
+                        )}`}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {!magBewerken &&
+              deadlineVerstreken && (
+                <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                  <p className="text-sm font-semibold text-red-800">
+                    De deadline voor deze week is
+                    verstreken.
+                  </p>
+
+                  <p className="mt-1 text-sm text-red-700">
+                    De beschikbaarheid kan alleen door
+                    de eigenaar worden aangepast.
+                  </p>
+                </div>
               )}
-            </div>
-          </div>
 
-          {loadingDagen ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-              <p className="text-sm font-medium text-slate-600">
-                Beschikbaarheid van deze
-                week laden...
-              </p>
-            </div>
-          ) : weekDagen.length !== 7 ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
-              <p className="text-sm font-semibold text-red-800">
-                De week kon niet correct
-                worden opgebouwd.
-              </p>
+            {loadingDagen ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center">
+                <p className="text-sm font-medium text-slate-600">
+                  Beschikbaarheid van deze week laden...
+                </p>
+              </div>
+            ) : weekDagen.length !== 7 ? (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
+                <p className="text-sm font-semibold text-red-800">
+                  De week kon niet correct worden
+                  opgebouwd.
+                </p>
 
-              <p className="mt-1 text-sm text-red-700">
-                De planningweek bevat geen
-                geldige startdatum.
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <p className="mt-1 text-sm text-red-700">
+                  De planningweek bevat geen geldige
+                  startdatum.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-2xl border border-slate-200">
                 <div className="min-w-[1190px]">
                   <div className="grid grid-cols-7 divide-x divide-slate-200">
                     {weekDagen.map(
@@ -1948,9 +1994,8 @@ export default function BeschikbaarheidWeekSelector({
                           );
 
                         const beschikbaar =
-                          invoer.actief &&
                           invoer.status ===
-                            "BESCHIKBAAR";
+                          "BESCHIKBAAR";
 
                         const fout =
                           dagFouten[
@@ -1961,19 +2006,19 @@ export default function BeschikbaarheidWeekSelector({
                           opslaanDatum ===
                           dag.datum;
 
-                        const wijzigingToegestaan =
-                          !geselecteerdeDeadlineVerstreken ||
-                          isBeheerder;
-
                         return (
                           <div
-                            key={`dag-${dag.datum}`}
+                            key={
+                              dag.datum
+                            }
                             className={[
-                              "min-h-[390px] bg-white p-4 transition",
+                              "min-h-[420px] bg-white p-4 transition",
                               beschikbaar
                                 ? "bg-green-50/30"
                                 : "bg-slate-50/40",
-                            ].join(" ")}
+                            ].join(
+                              " ",
+                            )}
                           >
                             {/* DAGKOP */}
 
@@ -1986,7 +2031,9 @@ export default function BeschikbaarheidWeekSelector({
 
                                   <div className="mt-1 flex items-baseline gap-1.5">
                                     <span className="text-2xl font-bold text-slate-900">
-                                      {dag.nummer}
+                                      {
+                                        dag.nummer
+                                      }
                                     </span>
 
                                     <span className="text-xs font-medium text-slate-400">
@@ -2013,21 +2060,19 @@ export default function BeschikbaarheidWeekSelector({
                                   </p>
 
                                   <p className="mt-1 text-xs text-green-700">
-                                    Geef hieronder je
-                                    tijden aan.
+                                    Beschikbaar tussen de
+                                    opgegeven tijden.
                                   </p>
                                 </div>
                               ) : (
                                 <div className="rounded-xl border border-slate-200 bg-slate-100 p-3">
                                   <p className="text-sm font-bold text-slate-700">
-                                    Niet
-                                    beschikbaar
+                                    Niet beschikbaar
                                   </p>
 
                                   <p className="mt-1 text-xs text-slate-500">
-                                    Je bent deze
-                                    dag niet
-                                    beschikbaar.
+                                    Deze dag is niet als
+                                    beschikbaar opgegeven.
                                   </p>
                                 </div>
                               )}
@@ -2035,43 +2080,43 @@ export default function BeschikbaarheidWeekSelector({
 
                             {/* BESCHIKBAARHEID AAN/UIT */}
 
-                            <div className="mt-3">
-                              {beschikbaar ? (
-                                <button
-                                  type="button"
-                                  disabled={
-                                    opslaan ||
-                                    !wijzigingToegestaan
-                                  }
-                                  onClick={() =>
-                                    maakDagNietBeschikbaar(
-                                      dag.datum,
-                                    )
-                                  }
-                                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                  Niet
-                                  beschikbaar
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  disabled={
-                                    opslaan ||
-                                    !wijzigingToegestaan
-                                  }
-                                  onClick={() =>
-                                    maakDagBeschikbaar(
-                                      dag.datum,
-                                    )
-                                  }
-                                  className="w-full rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs font-semibold text-green-800 transition hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                  Beschikbaar
-                                  maken
-                                </button>
-                              )}
-                            </div>
+                            {magBewerken && (
+                              <div className="mt-3">
+                                {beschikbaar ? (
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      opslaan ||
+                                      !wijzigingToegestaan
+                                    }
+                                    onClick={() =>
+                                      maakDagNietBeschikbaar(
+                                        dag.datum,
+                                      )
+                                    }
+                                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    Niet beschikbaar
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      opslaan ||
+                                      !wijzigingToegestaan
+                                    }
+                                    onClick={() =>
+                                      maakDagBeschikbaar(
+                                        dag.datum,
+                                      )
+                                    }
+                                    className="w-full rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs font-semibold text-green-800 transition hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    Beschikbaar maken
+                                  </button>
+                                )}
+                              </div>
+                            )}
 
                             {/* TIJDEN */}
 
@@ -2091,6 +2136,7 @@ export default function BeschikbaarheidWeekSelector({
                                       invoer.begintijd
                                     }
                                     disabled={
+                                      !magBewerken ||
                                       opslaan ||
                                       !wijzigingToegestaan
                                     }
@@ -2107,7 +2153,7 @@ export default function BeschikbaarheidWeekSelector({
                                         },
                                       )
                                     }
-                                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm font-medium text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 disabled:bg-slate-100"
+                                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm font-medium text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 disabled:bg-slate-100 disabled:text-slate-500"
                                   >
                                     <option value="">
                                       Kies tijd
@@ -2146,6 +2192,7 @@ export default function BeschikbaarheidWeekSelector({
                                       invoer.eindtijd
                                     }
                                     disabled={
+                                      !magBewerken ||
                                       opslaan ||
                                       !wijzigingToegestaan
                                     }
@@ -2162,7 +2209,7 @@ export default function BeschikbaarheidWeekSelector({
                                         },
                                       )
                                     }
-                                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm font-medium text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 disabled:bg-slate-100"
+                                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm font-medium text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 disabled:bg-slate-100 disabled:text-slate-500"
                                   >
                                     <option value="">
                                       Kies tijd
@@ -2201,6 +2248,7 @@ export default function BeschikbaarheidWeekSelector({
                                       invoer.opmerking
                                     }
                                     disabled={
+                                      !magBewerken ||
                                       opslaan ||
                                       !wijzigingToegestaan
                                     }
@@ -2219,7 +2267,7 @@ export default function BeschikbaarheidWeekSelector({
                                     }
                                     rows={2}
                                     placeholder="Optioneel"
-                                    className="mt-1 w-full resize-none rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 disabled:bg-slate-100"
+                                    className="mt-1 w-full resize-none rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 disabled:bg-slate-100 disabled:text-slate-500"
                                   />
                                 </div>
                               </div>
@@ -2230,11 +2278,8 @@ export default function BeschikbaarheidWeekSelector({
                             {!beschikbaar && (
                               <div className="mt-5 rounded-xl border border-dashed border-slate-200 bg-white p-3">
                                 <p className="text-xs leading-5 text-slate-500">
-                                  Geen
-                                  beschikbaarheid
-                                  opgegeven
-                                  voor deze
-                                  dag.
+                                  Geen beschikbaarheid
+                                  opgegeven voor deze dag.
                                 </p>
                               </div>
                             )}
@@ -2251,30 +2296,34 @@ export default function BeschikbaarheidWeekSelector({
 
                             {/* OPSLAAN */}
 
-                            <button
-                              type="button"
-                              disabled={
-                                opslaan ||
-                                !wijzigingToegestaan
-                              }
-                              onClick={() =>
-                                void slaDagOp(
-                                  dag.datum,
-                                )
-                              }
-                              className={[
-                                "mt-4 w-full rounded-lg px-3 py-2.5 text-xs font-bold transition",
-                                opslaan
-                                  ? "cursor-not-allowed bg-slate-200 text-slate-500"
-                                  : !wijzigingToegestaan
-                                    ? "cursor-not-allowed bg-slate-200 text-slate-400"
-                                    : "bg-slate-900 text-white hover:bg-slate-800",
-                              ].join(" ")}
-                            >
-                              {opslaan
-                                ? "Opslaan..."
-                                : "Dag opslaan"}
-                            </button>
+                            {magBewerken && (
+                              <button
+                                type="button"
+                                disabled={
+                                  opslaan ||
+                                  !wijzigingToegestaan
+                                }
+                                onClick={() =>
+                                  void slaDagOp(
+                                    dag.datum,
+                                  )
+                                }
+                                className={[
+                                  "mt-4 w-full rounded-lg px-3 py-2.5 text-xs font-bold transition",
+                                  opslaan
+                                    ? "cursor-not-allowed bg-slate-200 text-slate-500"
+                                    : !wijzigingToegestaan
+                                      ? "cursor-not-allowed bg-slate-200 text-slate-400"
+                                      : "bg-slate-900 text-white hover:bg-slate-800",
+                                ].join(
+                                  " ",
+                                )}
+                              >
+                                {opslaan
+                                  ? "Opslaan..."
+                                  : "Dag opslaan"}
+                              </button>
+                            )}
                           </div>
                         );
                       },
@@ -2282,10 +2331,11 @@ export default function BeschikbaarheidWeekSelector({
                   </div>
                 </div>
               </div>
+            )}
 
-              {/* LEGENDA */}
+            {/* LEGENDA */}
 
-              <div className="mt-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <div className="mt-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-2">
                     <span className="h-3 w-3 rounded-full bg-green-500" />
@@ -2305,14 +2355,13 @@ export default function BeschikbaarheidWeekSelector({
                 </div>
 
                 <p className="text-xs text-slate-400">
-                  Wijzig per dag je
-                  beschikbaarheid en sla de
-                  dag op.
+                  {magBewerken
+                    ? "Wijzig per dag je beschikbaarheid en sla de dag op."
+                    : "Beschikbaarheid wordt alleen bekeken."}
                 </p>
               </div>
-            </>
-          )}
-        </div>
+            </div>
+          </div>
       )}
 
       {/* ======================================================
@@ -2320,10 +2369,9 @@ export default function BeschikbaarheidWeekSelector({
           ====================================================== */}
 
       {error && (
-        <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
           <p className="text-sm font-semibold text-red-800">
-            Beschikbaarheid kon niet worden
-            geladen
+            Beschikbaarheid kon niet worden geladen
           </p>
 
           <p className="mt-1 text-sm text-red-700">
@@ -2331,6 +2379,6 @@ export default function BeschikbaarheidWeekSelector({
           </p>
         </div>
       )}
-    </div>
+    </section>
   );
 }

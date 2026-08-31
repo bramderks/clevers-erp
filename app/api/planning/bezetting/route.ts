@@ -15,6 +15,12 @@ const TOEGESTANE_STATUSSEN = [
 type BezettingStatus =
   (typeof TOEGESTANE_STATUSSEN)[number];
 
+type BhvControle = {
+  vereist: boolean;
+  gedekt: boolean;
+  aantalBhv: number;
+};
+
 async function haalDienstOp(
   dienstId: string,
 ) {
@@ -22,8 +28,13 @@ async function haalDienstOp(
     where: {
       id: dienstId,
     },
+
     select: {
       id: true,
+      datum: true,
+      begintijd: true,
+      eindtijd: true,
+
       week: {
         select: {
           vestigingId: true,
@@ -33,7 +44,98 @@ async function haalDienstOp(
   });
 }
 
-export async function GET(request: Request) {
+async function controleerBhv(
+  dienstId: string,
+): Promise<BhvControle> {
+  const bezettingen =
+    await prisma.dienstBezetting.findMany({
+      where: {
+        dienstId,
+
+        medewerkerId: {
+          not: null,
+        },
+
+        status: {
+          not: "AFGEZEGD",
+        },
+
+        medewerker: {
+          actief: true,
+        },
+      },
+
+      select: {
+        medewerker: {
+          select: {
+            tags: {
+              where: {
+                tag: {
+                  actief: true,
+                },
+              },
+
+              select: {
+                tag: {
+                  select: {
+                    naam: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+  const aantalBhv =
+    bezettingen.filter(
+      (bezetting) =>
+        bezetting.medewerker?.tags.some(
+          (medewerkerTag) =>
+            medewerkerTag.tag.naam
+              .trim()
+              .toLowerCase() === "bhv",
+        ) ?? false,
+    ).length;
+
+  return {
+    vereist: true,
+    gedekt: aantalBhv > 0,
+    aantalBhv,
+  };
+}
+
+async function haalBezettingOp(
+  dienstId: string,
+) {
+  return prisma.dienstBezetting.findMany({
+    where: {
+      dienstId,
+    },
+
+    include: {
+      medewerker: {
+        select: {
+          id: true,
+          personeelsnummer: true,
+          aanhef: true,
+          voornaam: true,
+          tussenvoegsel: true,
+          achternaam: true,
+        },
+      },
+    },
+
+    orderBy: {
+      aangemaaktOp: "asc",
+    },
+  });
+}
+
+export async function GET(
+  request: Request,
+) {
   try {
     const { searchParams } =
       new URL(request.url);
@@ -47,7 +149,9 @@ export async function GET(request: Request) {
           fout:
             "dienstId is verplicht.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
@@ -60,7 +164,9 @@ export async function GET(request: Request) {
           fout:
             "Dienst niet gevonden.",
         },
-        { status: 404 },
+        {
+          status: 404,
+        },
       );
     }
 
@@ -76,35 +182,24 @@ export async function GET(request: Request) {
           fout:
             "Geen toegang tot deze planning.",
         },
-        { status: 403 },
+        {
+          status: 403,
+        },
       );
     }
 
-    const bezetting =
-      await prisma.dienstBezetting.findMany({
-        where: {
-          dienstId,
-        },
-        include: {
-          medewerker: {
-            select: {
-              id: true,
-              personeelsnummer: true,
-              aanhef: true,
-              voornaam: true,
-              tussenvoegsel: true,
-              achternaam: true,
-            },
-          },
-        },
-        orderBy: {
-          aangemaaktOp: "asc",
-        },
-      });
-
-    return NextResponse.json(
+    const [
       bezetting,
-    );
+      bhvControle,
+    ] = await Promise.all([
+      haalBezettingOp(dienstId),
+      controleerBhv(dienstId),
+    ]);
+
+    return NextResponse.json({
+      bezetting,
+      bhvControle,
+    });
   } catch (error) {
     console.error(
       "Fout bij ophalen bezetting:",
@@ -116,19 +211,28 @@ export async function GET(request: Request) {
         fout:
           "De bezetting kon niet worden opgehaald.",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     );
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request,
+) {
   try {
-    const body = await request.json();
+    const body =
+      await request.json();
 
-    const dienstId = body?.dienstId;
+    const dienstId =
+      body?.dienstId;
+
     const medewerkerId =
       body?.medewerkerId;
-    const status = body?.status;
+
+    const status =
+      body?.status;
 
     if (
       typeof dienstId !== "string" ||
@@ -139,7 +243,9 @@ export async function POST(request: Request) {
           fout:
             "dienstId is verplicht.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
@@ -153,7 +259,9 @@ export async function POST(request: Request) {
           fout:
             "medewerkerId is ongeldig.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
@@ -166,7 +274,9 @@ export async function POST(request: Request) {
           fout:
             "Dienst niet gevonden.",
         },
-        { status: 404 },
+        {
+          status: 404,
+        },
       );
     }
 
@@ -182,7 +292,9 @@ export async function POST(request: Request) {
           fout:
             "Je hebt geen rechten om de bezetting te wijzigen.",
         },
-        { status: 403 },
+        {
+          status: 403,
+        },
       );
     }
 
@@ -200,15 +312,24 @@ export async function POST(request: Request) {
           fout:
             "Ongeldige bezettingsstatus.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
+    /*
+     * Een daadwerkelijk gekoppelde medewerker
+     * wordt altijd direct BEVESTIGD.
+     *
+     * OPEN blijft alleen bedoeld voor een
+     * lege/open dienstpositie.
+     */
     const gekozenStatus: BezettingStatus =
-      typeof status === "string"
-        ? (status as BezettingStatus)
-        : medewerkerId
-          ? "GEPLAND"
+      medewerkerId
+        ? "BEVESTIGD"
+        : status !== undefined
+          ? (status as BezettingStatus)
           : "OPEN";
 
     if (medewerkerId) {
@@ -217,14 +338,17 @@ export async function POST(request: Request) {
           where: {
             id: medewerkerId,
           },
+
           select: {
             id: true,
             actief: true,
+
             vestigingen: {
               where: {
                 vestigingId:
                   dienst.week.vestigingId,
               },
+
               select: {
                 id: true,
               },
@@ -238,7 +362,9 @@ export async function POST(request: Request) {
             fout:
               "Medewerker niet gevonden.",
           },
-          { status: 404 },
+          {
+            status: 404,
+          },
         );
       }
 
@@ -248,7 +374,9 @@ export async function POST(request: Request) {
             fout:
               "Een inactieve medewerker kan niet worden ingepland.",
           },
-          { status: 400 },
+          {
+            status: 400,
+          },
         );
       }
 
@@ -261,7 +389,9 @@ export async function POST(request: Request) {
             fout:
               "Deze medewerker hoort niet bij deze vestiging.",
           },
-          { status: 400 },
+          {
+            status: 400,
+          },
         );
       }
 
@@ -270,7 +400,12 @@ export async function POST(request: Request) {
           where: {
             dienstId,
             medewerkerId,
+
+            status: {
+              not: "AFGEZEGD",
+            },
           },
+
           select: {
             id: true,
           },
@@ -282,7 +417,61 @@ export async function POST(request: Request) {
             fout:
               "Deze medewerker staat al op deze dienst.",
           },
-          { status: 409 },
+          {
+            status: 409,
+          },
+        );
+      }
+
+      /*
+       * Controleer of deze medewerker
+       * op hetzelfde moment al een andere
+       * actieve dienst heeft.
+       */
+      const overlappendeDienst =
+        await prisma.dienstBezetting.findFirst(
+          {
+            where: {
+              medewerkerId,
+
+              status: {
+                notIn: [
+                  "AFGEZEGD",
+                ],
+              },
+
+              dienst: {
+                id: {
+                  not: dienstId,
+                },
+
+                datum: dienst.datum,
+
+                begintijd: {
+                  lt: dienst.eindtijd,
+                },
+
+                eindtijd: {
+                  gt: dienst.begintijd,
+                },
+              },
+            },
+
+            select: {
+              id: true,
+            },
+          },
+        );
+
+      if (overlappendeDienst) {
+        return NextResponse.json(
+          {
+            fout:
+              "Deze medewerker heeft al een overlappende dienst.",
+          },
+          {
+            status: 409,
+          },
         );
       }
     }
@@ -291,13 +480,17 @@ export async function POST(request: Request) {
       await prisma.dienstBezetting.create({
         data: {
           dienstId,
+
           medewerkerId:
             typeof medewerkerId ===
             "string"
               ? medewerkerId
               : null,
-          status: gekozenStatus,
+
+          status:
+            gekozenStatus,
         },
+
         include: {
           medewerker: {
             select: {
@@ -312,9 +505,28 @@ export async function POST(request: Request) {
         },
       });
 
+    /*
+     * BHV wordt nooit door de planner
+     * handmatig ingesteld.
+     *
+     * Na iedere wijziging aan de bezetting
+     * wordt automatisch gecontroleerd of
+     * er minimaal één actieve BHV'er op
+     * de dienst staat.
+     */
+    const bhvControle =
+      await controleerBhv(
+        dienstId,
+      );
+
     return NextResponse.json(
-      bezetting,
-      { status: 201 },
+      {
+        ...bezetting,
+        bhvControle,
+      },
+      {
+        status: 201,
+      },
     );
   } catch (error) {
     console.error(
@@ -327,7 +539,9 @@ export async function POST(request: Request) {
         fout:
           "De bezetting kon niet worden toegevoegd.",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     );
   }
 }

@@ -88,27 +88,12 @@ function eindeVanISOWeek(
   return datum;
 }
 
-/**
- * Berekent automatisch de uiterste datum
- * waarop een medewerker beschikbaarheid
- * voor deze planningweek mag doorgeven.
- *
- * Voorbeeld:
- *
- * Planningweek 36
- * ↓
- * vier weken eerder
- * ↓
- * deadline = einde week 31
- *
- * De deadline is dus altijd:
- *
- * maandag van de planningweek
- * minus 1 dag
- * minus 4 weken
- *
- * oftewel het einde van week - 5.
+/*
+ * ============================================================
+ * BESCHIKBAARHEIDSDEADLINE
+ * ============================================================
  */
+
 function berekenBeschikbaarheidDeadline(
   jaar: number,
   weeknummer: number,
@@ -122,13 +107,6 @@ function berekenBeschikbaarheidDeadline(
   const deadline =
     new Date(weekStart);
 
-  /*
-   * 29 dagen terug:
-   *
-   * maandag week 36
-   * - 29 dagen
-   * = zondag week 31
-   */
   deadline.setUTCDate(
     deadline.getUTCDate() - 29,
   );
@@ -142,6 +120,12 @@ function berekenBeschikbaarheidDeadline(
 
   return deadline;
 }
+
+/*
+ * ============================================================
+ * ISO-WEEK
+ * ============================================================
+ */
 
 function isoWeekVanDatum(
   datum: Date,
@@ -197,17 +181,6 @@ function isoWeekVanDatum(
     jaar,
     weeknummer,
   };
-}
-
-function vergelijkWeken(
-  a: ISOWeek,
-  b: ISOWeek,
-) {
-  if (a.jaar !== b.jaar) {
-    return a.jaar - b.jaar;
-  }
-
-  return a.weeknummer - b.weeknummer;
 }
 
 /*
@@ -294,6 +267,7 @@ async function synchroniseerSeizoen(
       where: {
         id: vestigingId,
       },
+
       select: {
         id: true,
         seizoenStart: true,
@@ -307,10 +281,6 @@ async function synchroniseerSeizoen(
     );
   }
 
-  /*
-   * Zolang het seizoen niet is ingesteld,
-   * laten we bestaande planningweken bestaan.
-   */
   if (
     !isGeldigeDatum(
       vestiging.seizoenStart,
@@ -349,6 +319,7 @@ async function synchroniseerSeizoen(
       where: {
         vestigingId,
       },
+
       select: {
         id: true,
         jaar: true,
@@ -366,10 +337,6 @@ async function synchroniseerSeizoen(
       ),
     );
 
-  /*
-   * Nieuwe seizoenweken krijgen direct
-   * hun automatische beschikbaarheidsdeadline.
-   */
   const nieuweWeken =
     seizoenWeken.filter(
       (week) =>
@@ -394,14 +361,11 @@ async function synchroniseerSeizoen(
             ),
         }),
       ),
+
       skipDuplicates: true,
     });
   }
 
-  /*
-   * Bestaande weken zonder deadline krijgen
-   * alsnog automatisch de juiste deadline.
-   */
   const wekenZonderDeadline =
     bestaandeWeken.filter(
       (week) =>
@@ -414,6 +378,7 @@ async function synchroniseerSeizoen(
       where: {
         id: week.id,
       },
+
       data: {
         beschikbaarheidDeadline:
           berekenBeschikbaarheidDeadline(
@@ -424,13 +389,6 @@ async function synchroniseerSeizoen(
     });
   }
 
-  /*
-   * Bestaande weken buiten het seizoen
-   * worden afgesloten.
-   *
-   * Weken binnen het seizoen behouden
-   * hun huidige status.
-   */
   const buitenSeizoen =
     bestaandeWeken.filter(
       (week) =>
@@ -456,6 +414,7 @@ async function synchroniseerSeizoen(
           ),
         },
       },
+
       data: {
         status: "AFGESLOTEN",
       },
@@ -495,6 +454,7 @@ async function haalPlanningOp(
       {
         jaar: "desc",
       },
+
       {
         weeknummer: "desc",
       },
@@ -506,6 +466,7 @@ async function haalPlanningOp(
           {
             datum: "asc",
           },
+
           {
             begintijd: "asc",
           },
@@ -534,6 +495,18 @@ async function haalPlanningOp(
                   voornaam: true,
                   tussenvoegsel: true,
                   achternaam: true,
+
+                  tags: {
+                    include: {
+                      tag: true,
+                    },
+
+                    orderBy: {
+                      tag: {
+                        volgorde: "asc",
+                      },
+                    },
+                  },
                 },
               },
             },
@@ -550,6 +523,7 @@ async function haalPlanningOp(
           {
             datum: "asc",
           },
+
           {
             begintijd: "asc",
           },
@@ -591,6 +565,7 @@ export async function GET(
           fout:
             "vestigingId is verplicht.",
         },
+
         {
           status: 400,
         },
@@ -609,6 +584,7 @@ export async function GET(
           fout:
             "Geen toegang tot deze planning.",
         },
+
         {
           status: 403,
         },
@@ -638,6 +614,7 @@ export async function GET(
           fout:
             "Jaar en weeknummer moeten geldige getallen zijn.",
         },
+
         {
           status: 400,
         },
@@ -654,19 +631,13 @@ export async function GET(
           fout:
             "Weeknummer moet tussen 1 en 53 liggen.",
         },
+
         {
           status: 400,
         },
       );
     }
 
-    /*
-     * Synchroniseer eerst:
-     *
-     * - ontbrekende weken
-     * - deadlines
-     * - seizoenstatussen
-     */
     await synchroniseerSeizoen(
       vestigingId,
     );
@@ -694,6 +665,7 @@ export async function GET(
             ? error.message
             : "De planning kon niet worden opgehaald.",
       },
+
       {
         status: 500,
       },
@@ -735,6 +707,7 @@ export async function POST(
           fout:
             "vestigingId, jaar en weeknummer zijn verplicht.",
         },
+
         {
           status: 400,
         },
@@ -753,6 +726,7 @@ export async function POST(
           fout:
             "Je hebt geen rechten om een planningweek aan te maken.",
         },
+
         {
           status: 403,
         },
@@ -768,6 +742,7 @@ export async function POST(
           fout:
             "Weeknummer moet tussen 1 en 53 liggen.",
         },
+
         {
           status: 400,
         },
@@ -785,6 +760,7 @@ export async function POST(
           fout:
             "Ongeldige planningstatus.",
         },
+
         {
           status: 400,
         },
@@ -796,6 +772,7 @@ export async function POST(
         where: {
           id: vestigingId,
         },
+
         select: {
           id: true,
           seizoenStart: true,
@@ -809,17 +786,13 @@ export async function POST(
           fout:
             "Vestiging bestaat niet.",
         },
+
         {
           status: 404,
         },
       );
     }
 
-    /*
-     * Als een seizoen is ingesteld,
-     * mag een handmatig aangemaakte week
-     * niet buiten dat seizoen vallen.
-     */
     if (
       isGeldigeDatum(
         vestiging.seizoenStart,
@@ -837,6 +810,7 @@ export async function POST(
             fout:
               "De seizoenstart moet vóór de seizoeneinde liggen.",
           },
+
           {
             status: 400,
           },
@@ -859,6 +833,7 @@ export async function POST(
             fout:
               "Deze planningweek valt buiten het ingestelde seizoen.",
           },
+
           {
             status: 400,
           },
@@ -866,14 +841,6 @@ export async function POST(
       }
     }
 
-    /*
-     * De deadline wordt ALTIJD automatisch
-     * berekend.
-     *
-     * Een eventueel meegestuurde
-     * beschikbaarheidDeadline wordt bewust
-     * genegeerd.
-     */
     const beschikbaarheidDeadline =
       berekenBeschikbaarheidDeadline(
         jaar,
@@ -901,6 +868,7 @@ export async function POST(
           fout:
             "Deze planningweek bestaat al.",
         },
+
         {
           status: 409,
         },
@@ -936,6 +904,7 @@ export async function POST(
         fout:
           "De planningweek kon niet worden aangemaakt.",
       },
+
       {
         status: 500,
       },

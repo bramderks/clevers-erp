@@ -36,8 +36,8 @@ type PlanningMedewerker = {
     weekId: string;
     medewerkerId: string;
     datum: string;
-    begintijd: string;
-    eindtijd: string;
+    begintijd: string | null;
+    eindtijd: string | null;
     status: string;
     opmerking: string | null;
   }[];
@@ -59,6 +59,15 @@ type PlanningMedewerker = {
       }[];
     };
   }[];
+};
+
+type MedewerkersResponse = {
+  huidigeMedewerkerId: string | null;
+  medewerkers: PlanningMedewerker[];
+};
+
+type DienstAangemaaktResponse = Dienst & {
+  id: string;
 };
 
 type DienstFormProps = {
@@ -104,7 +113,9 @@ function maakTijden(
   return tijden;
 }
 
-function tijdNaarMinuten(tijd: string) {
+function tijdNaarMinuten(
+  tijd: string,
+) {
   const [uren, minuten] =
     tijd.split(":").map(Number);
 
@@ -157,7 +168,8 @@ function dienstOverlapt(
 
   const bestaandeEinde =
     new Date(
-      dienst.eindtijd ?? `${datum}T23:00:00`,
+      dienst.eindtijd ??
+        `${datum}T23:00:00`,
     ).getTime();
 
   const nieuweStart =
@@ -167,7 +179,9 @@ function dienstOverlapt(
 
   const nieuweEinde =
     new Date(
-      `${datum}T${eindtijd ?? "23:00"}`,
+      `${datum}T${
+        eindtijd ?? "23:00"
+      }`,
     ).getTime();
 
   if (
@@ -196,11 +210,21 @@ function dienstOverlapt(
 }
 
 function tijdUitDatum(
-  waarde: string,
+  waarde: string | null,
 ) {
-  const datum = new Date(waarde);
+  if (!waarde) {
+    return null;
+  }
 
-  if (Number.isNaN(datum.getTime())) {
+  const datum = new Date(
+    waarde,
+  );
+
+  if (
+    Number.isNaN(
+      datum.getTime(),
+    )
+  ) {
     return null;
   }
 
@@ -267,8 +291,10 @@ function beschikbaarheidsNiveau(
           );
 
         if (
-          beschikbaarStart === null ||
-          beschikbaarEinde === null
+          beschikbaarStart ===
+            null ||
+          beschikbaarEinde ===
+            null
         ) {
           return false;
         }
@@ -282,7 +308,9 @@ function beschikbaarheidsNiveau(
       },
     );
 
-  if (volledigeBeschikbaarheid) {
+  if (
+    volledigeBeschikbaarheid
+  ) {
     return "groen" as const;
   }
 
@@ -304,8 +332,10 @@ function beschikbaarheidsNiveau(
           );
 
         if (
-          beschikbaarStart === null ||
-          beschikbaarEinde === null
+          beschikbaarStart ===
+            null ||
+          beschikbaarEinde ===
+            null
         ) {
           return false;
         }
@@ -319,7 +349,9 @@ function beschikbaarheidsNiveau(
       },
     );
 
-  if (gedeeltelijkeBeschikbaarheid) {
+  if (
+    gedeeltelijkeBeschikbaarheid
+  ) {
     return "geel" as const;
   }
 
@@ -334,9 +366,22 @@ function medewerkerHeeftTag(
     (tag) =>
       tagNamen.some(
         (tagNaam) =>
-          tagNaam.toLowerCase() ===
-          tag.naam.toLowerCase(),
+          tagNaam
+            .trim()
+            .toLowerCase() ===
+          tag.naam
+            .trim()
+            .toLowerCase(),
       ),
+  );
+}
+
+function medewerkerIsBhv(
+  medewerker: PlanningMedewerker,
+) {
+  return medewerkerHeeftTag(
+    medewerker,
+    ["BHV"],
   );
 }
 
@@ -362,7 +407,8 @@ function medewerkerHeeftDienstOverlap(
 
       const bestaandeEinde =
         new Date(
-          bezetting.dienst.eindtijd ?? `${datum}T23:00:00`,
+          bezetting.dienst.eindtijd ??
+            `${datum}T23:00:00`,
         ).getTime();
 
       const nieuweStart =
@@ -372,7 +418,9 @@ function medewerkerHeeftDienstOverlap(
 
       const nieuweEinde =
         new Date(
-          `${datum}T${eindtijd ?? "23:00"}`,
+          `${datum}T${
+            eindtijd ?? "23:00"
+          }`,
         ).getTime();
 
       if (
@@ -410,8 +458,12 @@ function dienstHeeftTag(
     (dienstTag) =>
       tagNamen.some(
         (tagNaam) =>
-          tagNaam.toLowerCase() ===
-          dienstTag.tag.naam.toLowerCase(),
+          tagNaam
+            .trim()
+            .toLowerCase() ===
+          dienstTag.tag.naam
+            .trim()
+            .toLowerCase(),
       ),
   );
 }
@@ -429,7 +481,84 @@ function formatteerDienstTijd(
       hour: "2-digit",
       minute: "2-digit",
     },
-  ).format(new Date(datum));
+  ).format(
+    new Date(datum),
+  );
+}
+
+function isMedewerkersResponse(
+  waarde: unknown,
+): waarde is MedewerkersResponse {
+  if (
+    waarde === null ||
+    typeof waarde !== "object" ||
+    Array.isArray(waarde)
+  ) {
+    return false;
+  }
+
+  const record =
+    waarde as Record<
+      string,
+      unknown
+    >;
+
+  return (
+    Array.isArray(
+      record.medewerkers,
+    ) &&
+    (
+      record.huidigeMedewerkerId ===
+        null ||
+      typeof record.huidigeMedewerkerId ===
+        "string"
+    )
+  );
+}
+
+function isDienstAangemaaktResponse(
+  waarde: unknown,
+): waarde is DienstAangemaaktResponse {
+  return (
+    waarde !== null &&
+    typeof waarde === "object" &&
+    !Array.isArray(waarde) &&
+    "id" in waarde &&
+    typeof waarde.id === "string"
+  );
+}
+
+function foutUitResponse(
+  waarde: unknown,
+  standaard: string,
+) {
+  if (
+    waarde !== null &&
+    typeof waarde === "object" &&
+    !Array.isArray(waarde)
+  ) {
+    const record =
+      waarde as Record<
+        string,
+        unknown
+      >;
+
+    if (
+      typeof record.fout ===
+      "string"
+    ) {
+      return record.fout;
+    }
+
+    if (
+      typeof record.error ===
+      "string"
+    ) {
+      return record.error;
+    }
+  }
+
+  return standaard;
 }
 
 export default function DienstForm({
@@ -464,9 +593,9 @@ export default function DienstForm({
   const [
     geselecteerdeTags,
     setGeselecteerdeTags,
-  ] = useState<Record<string, number>>(
-    {},
-  );
+  ] = useState<
+    Record<string, number>
+  >({});
 
   const [
     medewerkers,
@@ -513,39 +642,61 @@ export default function DienstForm({
     setDatum(initialDatum);
   }, [initialDatum]);
 
+  /*
+   * ======================================================
+   * PLANNINGTAGS
+   * ======================================================
+   *
+   * BHV komt vanaf nu niet meer als functie in het formulier.
+   * De API hoort alleen echte selecteerbare functies terug te geven.
+   */
+
   useEffect(() => {
     async function laadTags() {
       try {
         setLadenTags(true);
         setFout(null);
 
-        const response = await fetch(
-          `/api/planning/tags?vestigingId=${encodeURIComponent(
-            vestigingId,
-          )}`,
-          {
-            method: "GET",
-            cache: "no-store",
-          },
-        );
+        const response =
+          await fetch(
+            `/api/planning/tags?vestigingId=${encodeURIComponent(
+              vestigingId,
+            )}`,
+            {
+              method: "GET",
+              cache: "no-store",
+            },
+          );
 
-        const data =
+        const data: unknown =
           await response.json();
 
         if (!response.ok) {
           throw new Error(
-            data?.fout ??
+            foutUitResponse(
+              data,
               "De planningtags konden niet worden opgehaald.",
+            ),
           );
         }
 
-        if (!Array.isArray(data)) {
+        if (
+          !Array.isArray(data)
+        ) {
           throw new Error(
             "De planningtags hebben een ongeldig formaat.",
           );
         }
 
-        setTags(data);
+        setTags(
+          (data as PlanningTag[]).filter(
+            (tag) =>
+              tag.naam
+                .trim()
+                .toLowerCase() !==
+              "bhv",
+          ),
+        );
       } catch (error) {
         console.error(
           "Fout bij laden planningtags:",
@@ -565,6 +716,12 @@ export default function DienstForm({
     void laadTags();
   }, [vestigingId]);
 
+  /*
+   * ======================================================
+   * INITIËLE TAG
+   * ======================================================
+   */
+
   useEffect(() => {
     if (
       !initialTagNaam ||
@@ -573,10 +730,23 @@ export default function DienstForm({
       return;
     }
 
+    if (
+      initialTagNaam
+        .trim()
+        .toLowerCase() ===
+      "bhv"
+    ) {
+      return;
+    }
+
     const tag = tags.find(
       (item) =>
-        item.naam.toLowerCase() ===
-        initialTagNaam.toLowerCase(),
+        item.naam
+          .trim()
+          .toLowerCase() ===
+        initialTagNaam
+          .trim()
+          .toLowerCase(),
     );
 
     if (!tag) {
@@ -590,7 +760,16 @@ export default function DienstForm({
           huidig[tag.id] ?? 1,
       }),
     );
-  }, [initialTagNaam, tags]);
+  }, [
+    initialTagNaam,
+    tags,
+  ]);
+
+  /*
+   * ======================================================
+   * MEDEWERKERS
+   * ======================================================
+   */
 
   useEffect(() => {
     if (!datum) {
@@ -601,36 +780,46 @@ export default function DienstForm({
     async function laadMedewerkers() {
       try {
         setLadenMedewerkers(true);
+        setFout(null);
 
-        const response = await fetch(
-          `/api/planning/medewerkers?vestigingId=${encodeURIComponent(
-            vestigingId,
-          )}&datum=${encodeURIComponent(
-            datum,
-          )}`,
-          {
-            method: "GET",
-            cache: "no-store",
-          },
-        );
+        const response =
+          await fetch(
+            `/api/planning/medewerkers?vestigingId=${encodeURIComponent(
+              vestigingId,
+            )}&datum=${encodeURIComponent(
+              datum,
+            )}`,
+            {
+              method: "GET",
+              cache: "no-store",
+            },
+          );
 
-        const data =
+        const data: unknown =
           await response.json();
 
         if (!response.ok) {
           throw new Error(
-            data?.fout ??
+            foutUitResponse(
+              data,
               "De medewerkers konden niet worden opgehaald.",
+            ),
           );
         }
 
-        if (!Array.isArray(data)) {
+        if (
+          !isMedewerkersResponse(
+            data,
+          )
+        ) {
           throw new Error(
             "De medewerkers hebben een ongeldig formaat.",
           );
         }
 
-        setMedewerkers(data);
+        setMedewerkers(
+          data.medewerkers,
+        );
       } catch (error) {
         console.error(
           "Fout bij laden medewerkers planning:",
@@ -638,13 +827,28 @@ export default function DienstForm({
         );
 
         setMedewerkers([]);
+
+        setFout(
+          error instanceof Error
+            ? error.message
+            : "De medewerkers konden niet worden opgehaald.",
+        );
       } finally {
         setLadenMedewerkers(false);
       }
     }
 
     void laadMedewerkers();
-  }, [vestigingId, datum]);
+  }, [
+    vestigingId,
+    datum,
+  ]);
+
+  /*
+   * ======================================================
+   * BESTAANDE DIENSTEN
+   * ======================================================
+   */
 
   useEffect(() => {
     if (!datum) {
@@ -656,33 +860,40 @@ export default function DienstForm({
       try {
         setLadenDiensten(true);
 
-        const response = await fetch(
-          `/api/planning/diensten?weekId=${encodeURIComponent(
-            weekId,
-          )}`,
-          {
-            method: "GET",
-            cache: "no-store",
-          },
-        );
+        const response =
+          await fetch(
+            `/api/planning/diensten?weekId=${encodeURIComponent(
+              weekId,
+            )}`,
+            {
+              method: "GET",
+              cache: "no-store",
+            },
+          );
 
-        const data =
+        const data: unknown =
           await response.json();
 
         if (!response.ok) {
           throw new Error(
-            data?.fout ??
+            foutUitResponse(
+              data,
               "De bestaande diensten konden niet worden opgehaald.",
+            ),
           );
         }
 
-        if (!Array.isArray(data)) {
+        if (
+          !Array.isArray(data)
+        ) {
           throw new Error(
             "De diensten hebben een ongeldig formaat.",
           );
         }
 
-        setDiensten(data);
+        setDiensten(
+          data as Dienst[],
+        );
       } catch (error) {
         console.error(
           "Fout bij laden diensten:",
@@ -690,13 +901,28 @@ export default function DienstForm({
         );
 
         setDiensten([]);
+
+        setFout(
+          error instanceof Error
+            ? error.message
+            : "De bestaande diensten konden niet worden opgehaald.",
+        );
       } finally {
         setLadenDiensten(false);
       }
     }
 
     void laadDiensten();
-  }, [weekId, datum]);
+  }, [
+    weekId,
+    datum,
+  ]);
+
+  /*
+   * ======================================================
+   * TAG-OVERLAP WAARSCHUWINGEN
+   * ======================================================
+   */
 
   useEffect(() => {
     if (
@@ -745,8 +971,12 @@ export default function DienstForm({
                 (dienstTag) =>
                   gekozenTagNamen.some(
                     (naam) =>
-                      naam.toLowerCase() ===
-                      dienstTag.tag.naam.toLowerCase(),
+                      naam
+                        .trim()
+                        .toLowerCase() ===
+                      dienstTag.tag.naam
+                        .trim()
+                        .toLowerCase(),
                   ),
               )
               .map(
@@ -782,6 +1012,17 @@ export default function DienstForm({
     tags,
   ]);
 
+  /*
+   * ======================================================
+   * PASSENDE MEDEWERKERS
+   * ======================================================
+   *
+   * Alleen de gekozen functies bepalen welke medewerkers
+   * in de lijst komen.
+   *
+   * BHV is hier bewust geen filter.
+   */
+
   const passendeMedewerkers =
     useMemo(() => {
       if (
@@ -807,11 +1048,14 @@ export default function DienstForm({
           );
 
       return medewerkers
-        .filter((medewerker) =>
-          medewerkerHeeftTag(
-            medewerker,
-            gekozenTagNamen,
-          ),
+        .filter(
+          (medewerker) =>
+            gekozenTagNamen.length ===
+              0 ||
+            medewerkerHeeftTag(
+              medewerker,
+              gekozenTagNamen,
+            ),
         )
         .sort((a, b) =>
           volledigeNaam(
@@ -825,10 +1069,53 @@ export default function DienstForm({
       medewerkers,
       datum,
       begintijd,
-      eindtijd,
       geselecteerdeTags,
       tags,
     ]);
+
+  /*
+   * ======================================================
+   * AUTOMATISCHE BHV-CONTROLE
+   * ======================================================
+   */
+
+  const geselecteerdeMedewerkerLijst =
+    useMemo(
+      () =>
+        medewerkers.filter(
+          (medewerker) =>
+            geselecteerdeMedewerkers[
+              medewerker.id
+            ] === true,
+        ),
+      [
+        medewerkers,
+        geselecteerdeMedewerkers,
+      ],
+    );
+
+  const aantalGeselecteerdeBhv =
+    useMemo(
+      () =>
+        geselecteerdeMedewerkerLijst.filter(
+          medewerker =>
+            medewerkerIsBhv(
+              medewerker,
+            ),
+        ).length,
+      [
+        geselecteerdeMedewerkerLijst,
+      ],
+    );
+
+  const bhvGedekt =
+    aantalGeselecteerdeBhv > 0;
+
+  /*
+   * ======================================================
+   * TIJDEN
+   * ======================================================
+   */
 
   const startTijden =
     useMemo(
@@ -864,7 +1151,15 @@ export default function DienstForm({
       );
     }, [begintijd]);
 
-  function toggleTag(tagId: string) {
+  /*
+   * ======================================================
+   * TAGS
+   * ======================================================
+   */
+
+  function toggleTag(
+    tagId: string,
+  ) {
     setGeselecteerdeTags(
       (huidig) => {
         if (
@@ -911,6 +1206,12 @@ export default function DienstForm({
       }),
     );
   }
+
+  /*
+   * ======================================================
+   * MEDEWERKERS
+   * ======================================================
+   */
 
   function toggleMedewerker(
     medewerkerId: string,
@@ -980,17 +1281,25 @@ export default function DienstForm({
           },
         );
 
-      const data =
+      const data: unknown =
         await response.json();
 
       if (!response.ok) {
         throw new Error(
-          data?.fout ??
+          foutUitResponse(
+            data,
             "Een medewerker kon niet worden ingepland.",
+          ),
         );
       }
     }
   }
+
+  /*
+   * ======================================================
+   * DIENST AANMAKEN
+   * ======================================================
+   */
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
@@ -1017,10 +1326,14 @@ export default function DienstForm({
 
     const eindeMinuten =
       eindtijd
-        ? tijdNaarMinuten(eindtijd)
+        ? tijdNaarMinuten(
+            eindtijd,
+          )
         : null;
 
-    if (startMinuten === null) {
+    if (
+      startMinuten === null
+    ) {
       setFout(
         "Vul een geldige begintijd in.",
       );
@@ -1028,7 +1341,10 @@ export default function DienstForm({
       return;
     }
 
-    if (eindtijd && eindeMinuten === null) {
+    if (
+      eindtijd &&
+      eindeMinuten === null
+    ) {
       setFout(
         "Vul een geldige eindtijd in.",
       );
@@ -1038,7 +1354,8 @@ export default function DienstForm({
 
     if (
       eindeMinuten !== null &&
-      eindeMinuten <= startMinuten
+      eindeMinuten <=
+        startMinuten
     ) {
       setFout(
         "Eindtijd moet na de begintijd liggen.",
@@ -1049,8 +1366,10 @@ export default function DienstForm({
 
     if (
       startMinuten % 15 !== 0 ||
-      (eindeMinuten !== null &&
-        eindeMinuten % 15 !== 0)
+      (
+        eindeMinuten !== null &&
+        eindeMinuten % 15 !== 0
+      )
     ) {
       setFout(
         "Diensten kunnen alleen per 15 minuten worden gepland.",
@@ -1072,7 +1391,8 @@ export default function DienstForm({
 
     if (
       eindeMinuten !== null &&
-      eindeMinuten > EINDE_MINUTEN
+      eindeMinuten >
+        EINDE_MINUTEN
     ) {
       setFout(
         "Een dienst kan niet na 23:00 eindigen.",
@@ -1117,18 +1437,24 @@ export default function DienstForm({
             },
             body: JSON.stringify({
               weekId,
-              datum: new Date(
-                `${datum}T00:00`,
-              ).toISOString(),
+
+              datum:
+                new Date(
+                  `${datum}T00:00`,
+                ).toISOString(),
+
               begintijd:
                 start.toISOString(),
+
               eindtijd:
                 einde
                   ? einde.toISOString()
                   : null,
+
               opmerkingen:
                 opmerkingen.trim() ||
                 null,
+
               tags: Object.entries(
                 geselecteerdeTags,
               ).map(
@@ -1144,21 +1470,31 @@ export default function DienstForm({
           },
         );
 
-      const data =
+      const data: unknown =
         await response.json();
 
       if (!response.ok) {
         throw new Error(
-          data?.fout ??
+          foutUitResponse(
+            data,
             "De dienst kon niet worden aangemaakt.",
+          ),
         );
       }
 
-      if (data?.id) {
-        await planMedewerkers(
-          data.id,
+      if (
+        !isDienstAangemaaktResponse(
+          data,
+        )
+      ) {
+        throw new Error(
+          "De dienst is aangemaakt, maar de server gaf geen geldig dienst-ID terug.",
         );
       }
+
+      await planMedewerkers(
+        data.id,
+      );
 
       setBegintijd("");
       setEindtijd("");
@@ -1187,6 +1523,12 @@ export default function DienstForm({
     }
   }
 
+  /*
+   * ======================================================
+   * RENDER
+   * ======================================================
+   */
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -1203,11 +1545,16 @@ export default function DienstForm({
           direct in.
         </p>
 
-        {initialTagNaam && (
-          <p className="mt-2 text-sm font-medium text-cyan-700">
-            Taak: {initialTagNaam}
-          </p>
-        )}
+        {initialTagNaam &&
+          initialTagNaam
+            .trim()
+            .toLowerCase() !==
+            "bhv" && (
+            <p className="mt-2 text-sm font-medium text-cyan-700">
+              Taak:{" "}
+              {initialTagNaam}
+            </p>
+          )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -1248,6 +1595,7 @@ export default function DienstForm({
               setBegintijd(
                 event.target.value,
               );
+
               setEindtijd("");
             }}
             className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-900"
@@ -1282,9 +1630,17 @@ export default function DienstForm({
             id="dienst-eindtijd"
             value={eindtijd}
             onChange={(event) => {
-              const waarde = event.target.value;
-              setEindtijd(waarde);
-              setTotSluit(waarde === "23:00");
+              const waarde =
+                event.target.value;
+
+              setEindtijd(
+                waarde,
+              );
+
+              setTotSluit(
+                waarde ===
+                  "23:00",
+              );
             }}
             className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-900"
           >
@@ -1311,9 +1667,15 @@ export default function DienstForm({
               onChange={(event) => {
                 const aangevinkt =
                   event.target.checked;
-                setTotSluit(aangevinkt);
+
+                setTotSluit(
+                  aangevinkt,
+                );
+
                 setEindtijd(
-                  aangevinkt ? "23:00" : "",
+                  aangevinkt
+                    ? "23:00"
+                    : "",
                 );
               }}
             />
@@ -1374,18 +1736,10 @@ export default function DienstForm({
                   tag.id
                 ] !== undefined;
 
-              const isBhv =
-                tag.naam.toLowerCase() ===
-                "bhv";
-
               return (
                 <div
                   key={tag.id}
-                  className={`flex items-center gap-3 rounded-lg border p-3 ${
-                    isBhv
-                      ? "border-amber-200 bg-amber-50"
-                      : "border-gray-200"
-                  }`}
+                  className="flex items-center gap-3 rounded-lg border border-gray-200 p-3"
                 >
                   <label className="flex flex-1 cursor-pointer items-center gap-2">
                     <input
@@ -1405,29 +1759,28 @@ export default function DienstForm({
                     </span>
                   </label>
 
-                  {geselecteerd &&
-                    !isBhv && (
-                      <input
-                        type="number"
-                        min={1}
-                        value={
-                          geselecteerdeTags[
-                            tag.id
-                          ]
-                        }
-                        onChange={(
-                          event,
-                        ) =>
-                          wijzigAantal(
-                            tag.id,
-                            event.target
-                              .value,
-                          )
-                        }
-                        className="w-20 rounded-lg border border-gray-300 px-2 py-1 text-sm"
-                        aria-label={`Aantal ${tag.naam}`}
-                      />
-                    )}
+                  {geselecteerd && (
+                    <input
+                      type="number"
+                      min={1}
+                      value={
+                        geselecteerdeTags[
+                          tag.id
+                        ]
+                      }
+                      onChange={(
+                        event,
+                      ) =>
+                        wijzigAantal(
+                          tag.id,
+                          event.target
+                            .value,
+                        )
+                      }
+                      className="w-20 rounded-lg border border-gray-300 px-2 py-1 text-sm"
+                      aria-label={`Aantal ${tag.naam}`}
+                    />
+                  )}
                 </div>
               );
             })}
@@ -1459,6 +1812,63 @@ export default function DienstForm({
           </div>
         </div>
       )}
+
+      <div
+        className={`rounded-xl border p-4 ${
+          bhvGedekt
+            ? "border-green-300 bg-green-50"
+            : "border-amber-300 bg-amber-50"
+        }`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900">
+              BHV-controle
+            </h4>
+
+            <p className="mt-1 text-xs text-gray-600">
+              BHV wordt automatisch
+              gecontroleerd op basis
+              van de geselecteerde
+              medewerkers.
+            </p>
+          </div>
+
+          <span
+            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+              bhvGedekt
+                ? "bg-green-100 text-green-800"
+                : "bg-amber-100 text-amber-800"
+            }`}
+          >
+            {bhvGedekt
+              ? "BHV gedekt"
+              : "BHV nog niet gedekt"}
+          </span>
+        </div>
+
+        <p className="mt-3 text-sm">
+          {bhvGedekt ? (
+            <span className="text-green-800">
+              ✓{" "}
+              {aantalGeselecteerdeBhv}{" "}
+              BHV'er
+              {aantalGeselecteerdeBhv !==
+              1
+                ? "s"
+                : ""}{" "}
+              geselecteerd.
+            </span>
+          ) : (
+            <span className="text-amber-800">
+              ⚠ Er is nog geen
+              BHV-gekwalificeerde
+              medewerker
+              geselecteerd.
+            </span>
+          )}
+        </p>
+      </div>
 
       <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
         <div>
@@ -1550,17 +1960,24 @@ export default function DienstForm({
                       "VOORKEUR",
                   );
 
+                const heeftBhv =
+                  medewerkerIsBhv(
+                    medewerker,
+                  );
+
                 const niveauKlassen =
                   niveau === "groen"
                     ? "border-green-300 bg-green-50"
-                    : niveau === "geel"
+                    : niveau ===
+                        "geel"
                       ? "border-amber-300 bg-amber-50"
                       : "border-red-300 bg-red-50";
 
                 const statusTekst =
                   niveau === "groen"
                     ? "Volledig beschikbaar"
-                    : niveau === "geel"
+                    : niveau ===
+                        "geel"
                       ? "Gedeeltelijk beschikbaar"
                       : "Niet beschikbaar";
 
@@ -1572,10 +1989,7 @@ export default function DienstForm({
                     className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition ${niveauKlassen} ${
                       heeftOverlap
                         ? "cursor-not-allowed opacity-60"
-                        : niveau ===
-                            "rood"
-                          ? "cursor-pointer"
-                          : "cursor-pointer"
+                        : "cursor-pointer"
                     }`}
                   >
                     <div className="min-w-0">
@@ -1603,6 +2017,9 @@ export default function DienstForm({
                         {heeftVoorkeur &&
                           !heeftOverlap &&
                           " · voorkeur"}
+
+                        {heeftBhv &&
+                          " · ✓ BHV"}
                       </p>
                     </div>
 

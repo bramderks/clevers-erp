@@ -64,6 +64,14 @@ const RUIL_SELECT = {
               vestigingId: true,
               jaar: true,
               weeknummer: true,
+
+              vestiging: {
+                select: {
+                  id: true,
+                  naam: true,
+                  organisatieId: true,
+                },
+              },
             },
           },
         },
@@ -159,9 +167,6 @@ export async function GET(
         "dienstBezettingId",
       );
 
-    const medewerkerId =
-      gebruiker.medewerker?.id;
-
     if (
       status &&
       !RUIL_STATUSSEN.includes(
@@ -174,8 +179,80 @@ export async function GET(
       );
     }
 
-    if (!medewerkerId) {
+    const medewerkerId =
+      gebruiker.medewerker?.id ?? null;
+
+    const eigenaarOrganisatieIds =
+      gebruiker.organisaties
+        .filter(
+          (relatie) =>
+            relatie.actief &&
+            relatie.organisatie.actief &&
+            relatie.rol.naam.toLowerCase() ===
+              "eigenaar",
+        )
+        .map(
+          (relatie) =>
+            relatie.organisatie.id,
+        );
+
+    const isOrganisatieEigenaar =
+      eigenaarOrganisatieIds.length >
+      0;
+
+    if (
+      !medewerkerId &&
+      !isOrganisatieEigenaar
+    ) {
       return NextResponse.json([]);
+    }
+
+    const medewerkerWaar =
+      medewerkerId
+        ? {
+            OR: [
+              {
+                aanvragerId:
+                  medewerkerId,
+              },
+              {
+                ruilMedewerkerId:
+                  medewerkerId,
+              },
+            ],
+          }
+        : null;
+
+    const eigenaarWaar =
+      isOrganisatieEigenaar
+        ? {
+            dienstBezetting: {
+              dienst: {
+                week: {
+                  vestiging: {
+                    organisatieId: {
+                      in: eigenaarOrganisatieIds,
+                    },
+                  },
+                },
+              },
+            },
+          }
+        : null;
+
+    const toegangsVoorwaarden =
+      [];
+
+    if (medewerkerWaar) {
+      toegangsVoorwaarden.push(
+        medewerkerWaar,
+      );
+    }
+
+    if (eigenaarWaar) {
+      toegangsVoorwaarden.push(
+        eigenaarWaar,
+      );
     }
 
     const waar = {
@@ -191,15 +268,7 @@ export async function GET(
           }
         : {}),
 
-      OR: [
-        {
-          aanvragerId: medewerkerId,
-        },
-        {
-          ruilMedewerkerId:
-            medewerkerId,
-        },
-      ],
+      OR: toegangsVoorwaarden,
     };
 
     const ruilverzoeken =

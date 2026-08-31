@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { hasPermissionForVestiging } from "@/lib/auth";
+import {
+  hasPermissionForVestiging,
+  isEigenaar,
+} from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
@@ -31,11 +34,18 @@ async function haalBezettingOp(
     select: {
       id: true,
       dienstId: true,
+
       dienst: {
         select: {
           week: {
             select: {
               vestigingId: true,
+
+              vestiging: {
+                select: {
+                  organisatieId: true,
+                },
+              },
             },
           },
         },
@@ -52,7 +62,8 @@ export async function PATCH(
     const { id } =
       await context.params;
 
-    const body = await request.json();
+    const body =
+      await request.json();
 
     const bestaandeBezetting =
       await haalBezettingOp(id);
@@ -67,11 +78,50 @@ export async function PATCH(
       );
     }
 
+    const vestigingId =
+      bestaandeBezetting.dienst.week
+        .vestigingId;
+
+    const organisatieId =
+      bestaandeBezetting.dienst.week
+        .vestiging.organisatieId;
+
+    /*
+     * ============================================================
+     * RECHTEN
+     * ============================================================
+     *
+     * Alleen de Eigenaar mag de bezetting
+     * daadwerkelijk wijzigen.
+     *
+     * Teamleider:
+     * - mag planning bekijken
+     * - mag bezetting niet wijzigen
+     *
+     * Medewerker:
+     * - mag planning bekijken
+     * - mag bezetting niet wijzigen
+     */
+
+    const eigenaar =
+      await isEigenaar(
+        organisatieId,
+      );
+
+    if (!eigenaar) {
+      return NextResponse.json(
+        {
+          fout:
+            "Alleen de eigenaar kan de bezetting wijzigen.",
+        },
+        { status: 403 },
+      );
+    }
+
     const toegang =
       await hasPermissionForVestiging(
         permissions.planning.update,
-        bestaandeBezetting.dienst.week
-          .vestigingId,
+        vestigingId,
       );
 
     if (!toegang) {
@@ -113,16 +163,16 @@ export async function PATCH(
               where: {
                 id: body.medewerkerId,
               },
+
               select: {
                 id: true,
                 actief: true,
+
                 vestigingen: {
                   where: {
-                    vestigingId:
-                      bestaandeBezetting
-                        .dienst.week
-                        .vestigingId,
+                    vestigingId,
                   },
+
                   select: {
                     id: true,
                   },
@@ -170,12 +220,15 @@ export async function PATCH(
               where: {
                 dienstId:
                   bestaandeBezetting.dienstId,
+
                 medewerkerId:
                   body.medewerkerId,
+
                 id: {
                   not: id,
                 },
               },
+
               select: {
                 id: true,
               },
@@ -223,7 +276,9 @@ export async function PATCH(
           where: {
             id,
           },
+
           data,
+
           include: {
             medewerker: {
               select: {
@@ -279,11 +334,42 @@ export async function DELETE(
       );
     }
 
+    const vestigingId =
+      bestaandeBezetting.dienst.week
+        .vestigingId;
+
+    const organisatieId =
+      bestaandeBezetting.dienst.week
+        .vestiging.organisatieId;
+
+    /*
+     * ============================================================
+     * RECHTEN
+     * ============================================================
+     *
+     * Alleen de Eigenaar mag een
+     * bezetting verwijderen.
+     */
+
+    const eigenaar =
+      await isEigenaar(
+        organisatieId,
+      );
+
+    if (!eigenaar) {
+      return NextResponse.json(
+        {
+          fout:
+            "Alleen de eigenaar kan de bezetting verwijderen.",
+        },
+        { status: 403 },
+      );
+    }
+
     const toegang =
       await hasPermissionForVestiging(
         permissions.planning.update,
-        bestaandeBezetting.dienst.week
-          .vestigingId,
+        vestigingId,
       );
 
     if (!toegang) {

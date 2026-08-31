@@ -12,6 +12,7 @@ import DienstDetail from "@/components/planning/DienstDetail";
 import DienstForm from "@/components/planning/DienstForm";
 import type {
   Dienst,
+  DienstBezetting,
   PlanningWeek,
 } from "@/types/planning";
 
@@ -31,7 +32,9 @@ type KalenderDag = {
   diensten: PlanningWeek["diensten"];
 };
 
-type Weergave = "week" | "maand";
+type Weergave =
+  | "week"
+  | "maand";
 
 const PLANNING_TAGS = [
   "Leidinggevende",
@@ -41,11 +44,22 @@ const PLANNING_TAGS = [
   "Vaatstraat",
 ] as const;
 
-function maakDatumString(datum: Date) {
-  const jaar = datum.getFullYear();
+/*
+ * ============================================================
+ * DATUM HELPERS
+ * ============================================================
+ */
+
+function maakDatumString(
+  datum: Date,
+) {
+  const jaar =
+    datum.getFullYear();
+
   const maand = String(
     datum.getMonth() + 1,
   ).padStart(2, "0");
+
   const dag = String(
     datum.getDate(),
   ).padStart(2, "0");
@@ -81,10 +95,11 @@ function maakWeekStart(
 function maakWeekDagen(
   week: PlanningWeek,
 ): KalenderDag[] {
-  const weekStart = maakWeekStart(
-    week.jaar,
-    week.weeknummer,
-  );
+  const weekStart =
+    maakWeekStart(
+      week.jaar,
+      week.weeknummer,
+    );
 
   return Array.from(
     { length: 7 },
@@ -129,7 +144,9 @@ function maakWeekDagen(
   );
 }
 
-function dagNaam(datum: Date) {
+function dagNaam(
+  datum: Date,
+) {
   return new Intl.DateTimeFormat(
     "nl-NL",
     {
@@ -138,7 +155,9 @@ function dagNaam(datum: Date) {
   ).format(datum);
 }
 
-function dagNummer(datum: Date) {
+function dagNummer(
+  datum: Date,
+) {
   return new Intl.DateTimeFormat(
     "nl-NL",
     {
@@ -151,12 +170,14 @@ function dagNummer(datum: Date) {
 function formatteerWeekPeriode(
   week: PlanningWeek,
 ) {
-  const start = maakWeekStart(
-    week.jaar,
-    week.weeknummer,
-  );
+  const start =
+    maakWeekStart(
+      week.jaar,
+      week.weeknummer,
+    );
 
-  const einde = new Date(start);
+  const einde =
+    new Date(start);
 
   einde.setDate(
     einde.getDate() + 6,
@@ -184,6 +205,12 @@ function formatteerWeekPeriode(
   return `${startTekst} - ${eindeTekst}`;
 }
 
+/*
+ * ============================================================
+ * MAAND HELPERS
+ * ============================================================
+ */
+
 function maakMaandSleutel(
   datum: Date,
 ) {
@@ -207,17 +234,19 @@ function maakMaandDagen(
   jaar: number,
   maand: number,
 ) {
-  const eersteDag = new Date(
-    jaar,
-    maand,
-    1,
-  );
+  const eersteDag =
+    new Date(
+      jaar,
+      maand,
+      1,
+    );
 
-  const laatsteDag = new Date(
-    jaar,
-    maand + 1,
-    0,
-  );
+  const laatsteDag =
+    new Date(
+      jaar,
+      maand + 1,
+      0,
+    );
 
   const eersteWeekdag =
     eersteDag.getDay() === 0
@@ -266,6 +295,12 @@ function formatteerMaand(
   );
 }
 
+/*
+ * ============================================================
+ * WEEK SELECTIE
+ * ============================================================
+ */
+
 function vindWeekVanVandaag(
   weken: PlanningWeek[],
 ) {
@@ -283,6 +318,12 @@ function vindWeekVanVandaag(
       ),
   );
 }
+
+/*
+ * ============================================================
+ * TAG HELPERS
+ * ============================================================
+ */
 
 function haalTagNamen(
   dienst: Dienst,
@@ -305,24 +346,134 @@ function dienstHeeftTag(
   dienst: Dienst,
   tagNaam: string,
 ) {
-  return haalTagNamen(dienst).some(
+  return haalTagNamen(
+    dienst,
+  ).some(
     (naam) =>
-      naam.toLowerCase() ===
-      tagNaam.toLowerCase(),
+      naam.trim().toLowerCase() ===
+      tagNaam.trim().toLowerCase(),
   );
 }
 
-function heeftBhv(
-  diensten: PlanningWeek["diensten"],
+/*
+ * ============================================================
+ * BHV CONTROLE
+ * ============================================================
+ *
+ * BHV IS GEEN FUNCTIE-AANTAL.
+ *
+ * Wanneer een dienst de BHV-tag heeft,
+ * moet minimaal één actieve ingeplande
+ * medewerker een actieve BHV-tag hebben.
+ */
+
+function dienstVereistBhv(
+  dienst: Dienst,
 ) {
-  return diensten.some(
-    (dienst) =>
-      dienstHeeftTag(
-        dienst,
-        "BHV",
-      ),
+  return dienstHeeftTag(
+    dienst,
+    "BHV",
   );
 }
+
+function medewerkerHeeftBhv(
+  bezetting: DienstBezetting,
+) {
+  if (!bezetting.medewerker) {
+    return false;
+  }
+
+  return bezetting.medewerker.tags.some(
+    (medewerkerTag) =>
+      medewerkerTag.tag.actief &&
+      medewerkerTag.tag.naam
+        .trim()
+        .toLowerCase() === "bhv",
+  );
+}
+
+function bezettingIsActief(
+  bezetting: DienstBezetting,
+) {
+  return (
+    bezetting.status !==
+    "AFGEZEGD"
+  );
+}
+
+function controleerDienstBhv(
+  dienst: Dienst,
+) {
+  if (!dienstVereistBhv(dienst)) {
+    return {
+      vereist: false,
+      gedekt: true,
+      aantal: 0,
+    };
+  }
+
+  const bhvMedewerkers =
+    dienst.bezetting.filter(
+      (bezetting) =>
+        bezettingIsActief(
+          bezetting,
+        ) &&
+        medewerkerHeeftBhv(
+          bezetting,
+        ),
+    );
+
+  return {
+    vereist: true,
+    gedekt:
+      bhvMedewerkers.length > 0,
+    aantal:
+      bhvMedewerkers.length,
+  };
+}
+
+function controleerDagBhv(
+  diensten: Dienst[],
+) {
+  const bhvDiensten =
+    diensten.filter(
+      (dienst) =>
+        dienstVereistBhv(
+          dienst,
+        ),
+    );
+
+  if (bhvDiensten.length === 0) {
+    return {
+      vereist: false,
+      gedekt: true,
+      ontbrekendeDiensten: 0,
+    };
+  }
+
+  const ontbrekendeDiensten =
+    bhvDiensten.filter(
+      (dienst) =>
+        !controleerDienstBhv(
+          dienst,
+        ).gedekt,
+    );
+
+  return {
+    vereist: true,
+    gedekt:
+      ontbrekendeDiensten.length ===
+      0,
+    ontbrekendeDiensten:
+      ontbrekendeDiensten.length,
+  };
+}
+
+/*
+ * ============================================================
+ * COMPONENT
+ * ============================================================
+ */
 
 export default function PlanningOverzicht({
   weken,
@@ -333,13 +484,24 @@ export default function PlanningOverzicht({
   kanVerwijderen = false,
   onGewijzigd,
 }: PlanningOverzichtProps) {
-  const router = useRouter();
+  const router =
+    useRouter();
+
+  /*
+   * Alleen Eigenaar en Teamleider
+   * mogen diensten aanmaken/bewerken.
+   *
+   * Medewerker is uitsluitend
+   * bekijken.
+   */
 
   const kanDienstToevoegen =
-    isEigenaar || isTeamleider;
+    isEigenaar ||
+    isTeamleider;
 
   const kanDienstBewerken =
-    isEigenaar || isTeamleider;
+    isEigenaar ||
+    isTeamleider;
 
   const [
     geselecteerdeWeekId,
@@ -388,12 +550,24 @@ export default function PlanningOverzicht({
       null,
     );
 
+  /*
+   * ============================================================
+   * WEKEN SORTEREN
+   * ============================================================
+   */
+
   const gesorteerdeWeken =
     useMemo(() => {
       return [...weken].sort(
         (a, b) => {
-          if (a.jaar !== b.jaar) {
-            return a.jaar - b.jaar;
+          if (
+            a.jaar !==
+            b.jaar
+          ) {
+            return (
+              a.jaar -
+              b.jaar
+            );
           }
 
           return (
@@ -404,6 +578,12 @@ export default function PlanningOverzicht({
       );
     }, [weken]);
 
+  /*
+   * ============================================================
+   * INITIËLE WEEK SELECTEREN
+   * ============================================================
+   */
+
   useEffect(() => {
     if (
       gesorteerdeWeken.length ===
@@ -412,11 +592,13 @@ export default function PlanningOverzicht({
       setGeselecteerdeWeekId(
         null,
       );
+
       setToevoegDatum(null);
       setToevoegTag(null);
       setGeselecteerdeMaand(
         null,
       );
+
       return;
     }
 
@@ -451,6 +633,12 @@ export default function PlanningOverzicht({
     );
   }, [gesorteerdeWeken]);
 
+  /*
+   * ============================================================
+   * GESELECTEERDE WEEK
+   * ============================================================
+   */
+
   const geselecteerdeWeek =
     useMemo(() => {
       if (
@@ -474,6 +662,12 @@ export default function PlanningOverzicht({
       geselecteerdeWeekId,
     ]);
 
+  /*
+   * ============================================================
+   * MAAND SYNCHRONISEREN
+   * ============================================================
+   */
+
   useEffect(() => {
     if (!geselecteerdeWeek) {
       return;
@@ -493,13 +687,24 @@ export default function PlanningOverzicht({
     );
   }, [geselecteerdeWeek]);
 
+  /*
+   * ============================================================
+   * HUIDIGE MEDEWERKER
+   * ============================================================
+   */
+
   useEffect(() => {
     if (!geselecteerdeWeek) {
-      setHuidigeMedewerkerId(null);
+      setHuidigeMedewerkerId(
+        null,
+      );
+
       return;
     }
 
-    const week = geselecteerdeWeek;
+    const week =
+      geselecteerdeWeek;
+
     let actief = true;
 
     async function laadHuidigeMedewerker() {
@@ -568,6 +773,12 @@ export default function PlanningOverzicht({
     vestigingId,
   ]);
 
+  /*
+   * ============================================================
+   * WEEK NAVIGATIE
+   * ============================================================
+   */
+
   const geselecteerdeIndex =
     geselecteerdeWeek
       ? gesorteerdeWeken.findIndex(
@@ -593,6 +804,12 @@ export default function PlanningOverzicht({
         ]
       : null;
 
+  /*
+   * ============================================================
+   * KALENDER DAGEN
+   * ============================================================
+   */
+
   const kalenderDagen =
     useMemo(() => {
       if (!geselecteerdeWeek) {
@@ -603,6 +820,12 @@ export default function PlanningOverzicht({
         geselecteerdeWeek,
       );
     }, [geselecteerdeWeek]);
+
+  /*
+   * ============================================================
+   * MAAND DAGEN
+   * ============================================================
+   */
 
   const maandDagen =
     useMemo(() => {
@@ -616,12 +839,19 @@ export default function PlanningOverzicht({
       );
     }, [geselecteerdeMaand]);
 
+  /*
+   * ============================================================
+   * BESCHIKBARE MAANDEN
+   * ============================================================
+   */
+
   const beschikbareMaanden =
     useMemo(() => {
-      const maanden = new Map<
-        string,
-        Date
-      >();
+      const maanden =
+        new Map<
+          string,
+          Date
+        >();
 
       for (const week of gesorteerdeWeken) {
         const start =
@@ -631,9 +861,15 @@ export default function PlanningOverzicht({
           );
 
         const sleutel =
-          maakMaandSleutel(start);
+          maakMaandSleutel(
+            start,
+          );
 
-        if (!maanden.has(sleutel)) {
+        if (
+          !maanden.has(
+            sleutel,
+          )
+        ) {
           maanden.set(
             sleutel,
             maakMaandStart(
@@ -682,6 +918,12 @@ export default function PlanningOverzicht({
         ]
       : null;
 
+  /*
+   * ============================================================
+   * SCROLL NAAR DIENSTFORMULIER
+   * ============================================================
+   */
+
   useEffect(() => {
     if (!toevoegDatum) {
       return;
@@ -698,9 +940,17 @@ export default function PlanningOverzicht({
       }, 50);
 
     return () => {
-      window.clearTimeout(timer);
+      window.clearTimeout(
+        timer,
+      );
     };
   }, [toevoegDatum]);
+
+  /*
+   * ============================================================
+   * ACTIES
+   * ============================================================
+   */
 
   function selecteerWeek(
     week: PlanningWeek,
@@ -738,10 +988,12 @@ export default function PlanningOverzicht({
       );
 
       setWeergave("week");
+
       return;
     }
 
-    const vandaag = new Date();
+    const vandaag =
+      new Date();
 
     let dichtstbijzijnde:
       | PlanningWeek
@@ -821,6 +1073,12 @@ export default function PlanningOverzicht({
     );
   }
 
+  /*
+   * ============================================================
+   * GEEN WEKEN
+   * ============================================================
+   */
+
   if (weken.length === 0) {
     return (
       <section className="space-y-4">
@@ -854,6 +1112,10 @@ export default function PlanningOverzicht({
 
   return (
     <section className="space-y-6">
+      {/* =======================================================
+          NAVIGATIE
+          ======================================================= */}
+
       <div className="rounded-xl border bg-white">
         <div className="flex flex-col gap-4 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
@@ -970,7 +1232,9 @@ export default function PlanningOverzicht({
               <button
                 type="button"
                 onClick={() =>
-                  setWeergave("week")
+                  setWeergave(
+                    "week",
+                  )
                 }
                 className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
                   weergave === "week"
@@ -984,7 +1248,9 @@ export default function PlanningOverzicht({
               <button
                 type="button"
                 onClick={() =>
-                  setWeergave("maand")
+                  setWeergave(
+                    "maand",
+                  )
                 }
                 className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
                   weergave === "maand"
@@ -997,6 +1263,10 @@ export default function PlanningOverzicht({
             </div>
           </div>
         </div>
+
+        {/* =====================================================
+            WEEKWEERGAVE
+            ===================================================== */}
 
         {weergave === "week" ? (
           <>
@@ -1014,7 +1284,9 @@ export default function PlanningOverzicht({
               </p>
 
               <p className="text-xs font-medium text-gray-500">
-                {geselecteerdeWeek.status}
+                {
+                  geselecteerdeWeek.status
+                }
               </p>
             </div>
 
@@ -1026,8 +1298,8 @@ export default function PlanningOverzicht({
                       toevoegDatum ===
                       dag.datumString;
 
-                    const bhv =
-                      heeftBhv(
+                    const bhvControle =
+                      controleerDagBhv(
                         dag.diensten,
                       );
 
@@ -1075,24 +1347,31 @@ export default function PlanningOverzicht({
                             )}
                           </div>
 
-                          <div className="mt-2">
-                            <span
-                              className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                                bhv
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-red-100 text-red-700"
-                              }`}
-                            >
-                              {bhv
-                                ? "BHV ✓"
-                                : "BHV ontbreekt"}
-                            </span>
-                          </div>
+                          {bhvControle.vereist && (
+                            <div className="mt-2">
+                              <span
+                                className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                                  bhvControle.gedekt
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-red-100 text-red-700"
+                                }`}
+                              >
+                                {bhvControle.gedekt
+                                  ? "BHV gedekt ✓"
+                                  : bhvControle.ontbrekendeDiensten ===
+                                    1
+                                    ? "BHV ontbreekt"
+                                    : `${bhvControle.ontbrekendeDiensten} BHV-diensten niet gedekt`}
+                              </span>
+                            </div>
+                          )}
                         </div>
 
                         <div className="divide-y">
                           {PLANNING_TAGS.map(
-                            (tagNaam) => {
+                            (
+                              tagNaam,
+                            ) => {
                               const tagDiensten =
                                 dag.diensten.filter(
                                   (
@@ -1173,6 +1452,10 @@ export default function PlanningOverzicht({
             </div>
           </>
         ) : (
+          /* ===================================================
+              MAANDWEERGAVE
+              =================================================== */
+
           <div className="overflow-x-auto">
             <div className="min-w-[900px]">
               <div className="grid grid-cols-7 border-b bg-gray-50">
@@ -1198,7 +1481,9 @@ export default function PlanningOverzicht({
 
               <div className="grid grid-cols-7">
                 {maandDagen.map(
-                  (datum) => {
+                  (
+                    datum,
+                  ) => {
                     const datumString =
                       maakDatumString(
                         datum,
@@ -1212,11 +1497,15 @@ export default function PlanningOverzicht({
 
                     const week =
                       gesorteerdeWeken.find(
-                        (week) =>
+                        (
+                          week,
+                        ) =>
                           maakWeekDagen(
                             week,
                           ).some(
-                            (dag) =>
+                            (
+                              dag,
+                            ) =>
                               dag.datumString ===
                               datumString,
                           ),
@@ -1225,7 +1514,9 @@ export default function PlanningOverzicht({
                     const diensten =
                       week?.diensten
                         .filter(
-                          (dienst) =>
+                          (
+                            dienst,
+                          ) =>
                             maakDatumString(
                               new Date(
                                 dienst.datum,
@@ -1234,7 +1525,10 @@ export default function PlanningOverzicht({
                             datumString,
                         )
                         .sort(
-                          (a, b) =>
+                          (
+                            a,
+                            b,
+                          ) =>
                             new Date(
                               a.begintijd,
                             ).getTime() -
@@ -1249,11 +1543,16 @@ export default function PlanningOverzicht({
                         new Date(),
                       );
 
+                    const dagBinnenPlanning =
+                      Boolean(week);
+
                     const status =
-                      diensten.length ===
-                      0
-                        ? "probleem"
-                        : "compleet";
+                      !dagBinnenPlanning
+                        ? "buiten"
+                        : diensten.length ===
+                            0
+                          ? "probleem"
+                          : "compleet";
 
                     return (
                       <div
@@ -1291,22 +1590,24 @@ export default function PlanningOverzicht({
                           )}
                         </div>
 
-                        <div className="mt-2">
-                          <div
-                            className={`h-8 w-full rounded-lg ${
-                              status ===
-                              "compleet"
-                                ? "bg-green-500"
-                                : "bg-red-500"
-                            }`}
-                            title={
-                              status ===
-                              "compleet"
-                                ? "Planning gevuld"
-                                : "Planning ontbreekt"
-                            }
-                          />
-                        </div>
+                        {dagBinnenPlanning && (
+                          <div className="mt-2">
+                            <div
+                              className={`h-8 w-full rounded-lg ${
+                                status ===
+                                "compleet"
+                                  ? "bg-green-500"
+                                  : "bg-red-500"
+                              }`}
+                              title={
+                                status ===
+                                "compleet"
+                                  ? "Planning gevuld"
+                                  : "Planning ontbreekt"
+                              }
+                            />
+                          </div>
+                        )}
                       </div>
                     );
                   },
@@ -1316,6 +1617,10 @@ export default function PlanningOverzicht({
           </div>
         )}
       </div>
+
+      {/* =======================================================
+          DIENST TOEVOEGEN
+          ======================================================= */}
 
       {kanDienstToevoegen &&
         toevoegDatum && (
@@ -1339,6 +1644,7 @@ export default function PlanningOverzicht({
               onAangemaakt={() => {
                 setToevoegDatum(null);
                 setToevoegTag(null);
+
                 onGewijzigd?.();
               }}
             />

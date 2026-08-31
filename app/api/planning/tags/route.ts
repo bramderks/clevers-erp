@@ -9,7 +9,7 @@ const PLANNING_TAGS = [
   "Bediening",
   "Vaatstraat",
   "Handijs",
-  "BHV",
+  "Coupes",
 ] as const;
 
 export async function GET(request: Request) {

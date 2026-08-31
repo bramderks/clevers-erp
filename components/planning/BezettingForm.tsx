@@ -19,9 +19,15 @@ type Medewerker = {
   achternaam: string;
 };
 
+type MedewerkersResponse = {
+  huidigeMedewerkerId: string | null;
+  medewerkers: Medewerker[];
+};
+
 type BezettingFormProps = {
   dienstId: string;
   vestigingId: string;
+  datum?: string;
   onAangemaakt?: () => void;
 };
 
@@ -37,9 +43,24 @@ function naamMedewerker(
     .join(" ");
 }
 
+function datumVoorApi(
+  datum: string,
+) {
+  const waarde = new Date(datum);
+
+  if (Number.isNaN(waarde.getTime())) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat(
+    "sv-SE",
+  ).format(waarde);
+}
+
 export default function BezettingForm({
   dienstId,
   vestigingId,
+  datum,
   onAangemaakt,
 }: BezettingFormProps) {
   const [medewerkers, setMedewerkers] =
@@ -47,10 +68,6 @@ export default function BezettingForm({
 
   const [medewerkerId, setMedewerkerId] =
     useState("");
-
-  const [status, setStatus] = useState<
-    "GEPLAND" | "BEVESTIGD"
-  >("GEPLAND");
 
   const [
     ladenMedewerkers,
@@ -67,32 +84,92 @@ export default function BezettingForm({
     let actief = true;
 
     async function laadMedewerkers() {
+      if (!vestigingId) {
+        if (actief) {
+          setMedewerkers([]);
+          setLadenMedewerkers(false);
+        }
+
+        return;
+      }
+
+      if (!datum) {
+        if (actief) {
+          setMedewerkers([]);
+          setLadenMedewerkers(false);
+          setFout(
+            "De datum van de dienst ontbreekt.",
+          );
+        }
+
+        return;
+      }
+
+      const datumVoorRequest =
+        datumVoorApi(datum);
+
+      if (!datumVoorRequest) {
+        if (actief) {
+          setMedewerkers([]);
+          setLadenMedewerkers(false);
+          setFout(
+            "De datum van de dienst is ongeldig.",
+          );
+        }
+
+        return;
+      }
+
       try {
         setLadenMedewerkers(true);
         setFout(null);
 
-        const response = await fetch(
-          `/api/planning/medewerkers?vestigingId=${encodeURIComponent(
-            vestigingId,
-          )}`,
-          {
-            method: "GET",
-            cache: "no-store",
-          },
-        );
+        const response =
+          await fetch(
+            `/api/planning/medewerkers?vestigingId=${encodeURIComponent(
+              vestigingId,
+            )}&datum=${encodeURIComponent(
+              datumVoorRequest,
+            )}`,
+            {
+              method: "GET",
+              credentials: "include",
+              cache: "no-store",
+            },
+          );
 
         const data =
-          await response.json();
+          (await response.json()) as
+            | MedewerkersResponse
+            | { fout?: string };
 
         if (!response.ok) {
           throw new Error(
-            data?.fout ??
-              "De medewerkers konden niet worden opgehaald.",
+            "fout" in data &&
+            typeof data.fout ===
+              "string"
+              ? data.fout
+              : "De medewerkers konden niet worden opgehaald.",
+          );
+        }
+
+        if (
+          !data ||
+          typeof data !== "object" ||
+          !("medewerkers" in data) ||
+          !Array.isArray(
+            data.medewerkers,
+          )
+        ) {
+          throw new Error(
+            "Ongeldige medewerkersgegevens ontvangen.",
           );
         }
 
         if (actief) {
-          setMedewerkers(data);
+          setMedewerkers(
+            data.medewerkers,
+          );
         }
       } catch (error) {
         console.error(
@@ -101,6 +178,8 @@ export default function BezettingForm({
         );
 
         if (actief) {
+          setMedewerkers([]);
+
           setFout(
             error instanceof Error
               ? error.message
@@ -114,17 +193,12 @@ export default function BezettingForm({
       }
     }
 
-    if (vestigingId) {
-      void laadMedewerkers();
-    } else {
-      setMedewerkers([]);
-      setLadenMedewerkers(false);
-    }
+    void laadMedewerkers();
 
     return () => {
       actief = false;
     };
-  }, [vestigingId]);
+  }, [vestigingId, datum]);
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
@@ -157,21 +231,23 @@ export default function BezettingForm({
     try {
       setLaden(true);
 
-      const response = await fetch(
-        "/api/planning/bezetting",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
+      const response =
+        await fetch(
+          "/api/planning/bezetting",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify({
+              dienstId,
+              medewerkerId,
+              status: "BEVESTIGD",
+            }),
           },
-          body: JSON.stringify({
-            dienstId,
-            medewerkerId,
-            status,
-          }),
-        },
-      );
+        );
 
       const data =
         await response.json();
@@ -184,7 +260,6 @@ export default function BezettingForm({
       }
 
       setMedewerkerId("");
-      setStatus("GEPLAND");
 
       onAangemaakt?.();
     } catch (error) {
@@ -206,14 +281,14 @@ export default function BezettingForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-5 rounded-xl border bg-white p-6"
+      className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
     >
       <div>
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-semibold text-slate-900">
           Medewerker inplannen
         </h2>
 
-        <p className="mt-1 text-sm text-gray-600">
+        <p className="mt-1 text-sm text-slate-500">
           Voeg een medewerker toe aan
           deze dienst.
         </p>
@@ -222,7 +297,7 @@ export default function BezettingForm({
       <div>
         <label
           htmlFor="bezetting-medewerker"
-          className="block text-sm font-medium text-gray-900"
+          className="mb-1.5 block text-sm font-medium text-slate-700"
         >
           Medewerker
         </label>
@@ -235,14 +310,19 @@ export default function BezettingForm({
               event.target.value,
             )
           }
-          disabled={ladenMedewerkers}
-          className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-900 disabled:opacity-50"
+          disabled={
+            ladenMedewerkers ||
+            laden
+          }
+          className="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-70"
           required
         >
           <option value="">
             {ladenMedewerkers
               ? "Medewerkers laden..."
-              : "Selecteer medewerker"}
+              : medewerkers.length === 0
+                ? "Geen medewerkers beschikbaar"
+                : "Selecteer medewerker"}
           </option>
 
           {medewerkers.map(
@@ -254,14 +334,18 @@ export default function BezettingForm({
                 {naamMedewerker(
                   medewerker,
                 )}
+                {medewerker.personeelsnummer
+                  ? ` — ${medewerker.personeelsnummer}`
+                  : ""}
               </option>
             ),
           )}
         </select>
 
         {!ladenMedewerkers &&
-          medewerkers.length === 0 && (
-            <p className="mt-2 text-xs text-gray-500">
+          medewerkers.length === 0 &&
+          !fout && (
+            <p className="mt-2 text-xs text-slate-500">
               Er zijn geen actieve
               medewerkers beschikbaar
               voor deze vestiging.
@@ -269,57 +353,49 @@ export default function BezettingForm({
           )}
       </div>
 
-      <div>
-        <label
-          htmlFor="bezetting-status"
-          className="block text-sm font-medium text-gray-900"
-        >
-          Status
-        </label>
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+        <div className="flex items-center gap-2">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-bold text-white">
+            ✓
+          </span>
 
-        <select
-          id="bezetting-status"
-          value={status}
-          onChange={(event) =>
-            setStatus(
-              event.target.value as
-                | "GEPLAND"
-                | "BEVESTIGD",
-            )
-          }
-          className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-900"
-        >
-          <option value="GEPLAND">
-            Gepland
-          </option>
+          <p className="text-sm font-semibold text-emerald-800">
+            Direct bevestigd
+          </p>
+        </div>
 
-          <option value="BEVESTIGD">
-            Bevestigd
-          </option>
-        </select>
+        <p className="mt-1.5 text-xs leading-5 text-emerald-700">
+          Een medewerker die hier aan
+          de dienst wordt gekoppeld,
+          krijgt direct de status
+          Bevestigd.
+        </p>
       </div>
 
       {fout && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3">
           <p className="text-sm text-red-700">
             {fout}
           </p>
         </div>
       )}
 
-      <button
-        type="submit"
-        disabled={
-          laden ||
-          ladenMedewerkers ||
-          medewerkers.length === 0
-        }
-        className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {laden
-          ? "Inplannen..."
-          : "Medewerker inplannen"}
-      </button>
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          disabled={
+            laden ||
+            ladenMedewerkers ||
+            medewerkers.length === 0 ||
+            !medewerkerId
+          }
+          className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {laden
+            ? "Inplannen..."
+            : "Medewerker inplannen"}
+        </button>
+      </div>
     </form>
   );
 }

@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 
-import { hasPermissionForVestiging } from "@/lib/auth";
+import {
+  getCurrentUser,
+  hasPermissionForVestiging,
+  isEigenaar,
+} from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
@@ -119,6 +123,19 @@ export async function GET(
   context: RouteContext,
 ) {
   try {
+    const gebruiker = await getCurrentUser();
+
+    if (!gebruiker) {
+      return NextResponse.json(
+        {
+          fout: "Je moet ingelogd zijn.",
+        },
+        {
+          status: 401,
+        },
+      );
+    }
+
     const { id } = await context.params;
 
     const dienst = await haalDienstOp(id);
@@ -154,7 +171,9 @@ export async function GET(
     const volledigeDienst =
       await haalDienstVolledigOp(id);
 
-    return NextResponse.json(volledigeDienst);
+    return NextResponse.json(
+      volledigeDienst,
+    );
   } catch (error) {
     console.error(
       "Fout bij ophalen dienst:",
@@ -163,7 +182,8 @@ export async function GET(
 
     return NextResponse.json(
       {
-        fout: "De dienst kon niet worden opgehaald.",
+        fout:
+          "De dienst kon niet worden opgehaald.",
       },
       {
         status: 500,
@@ -177,9 +197,20 @@ export async function PATCH(
   context: RouteContext,
 ) {
   try {
-    const { id } = await context.params;
+    const gebruiker = await getCurrentUser();
 
-    const body = await request.json();
+    if (!gebruiker) {
+      return NextResponse.json(
+        {
+          fout: "Je moet ingelogd zijn.",
+        },
+        {
+          status: 401,
+        },
+      );
+    }
+
+    const { id } = await context.params;
 
     const bestaandeDienst =
       await haalDienstOp(id);
@@ -191,6 +222,43 @@ export async function PATCH(
         },
         {
           status: 404,
+        },
+      );
+    }
+
+    /*
+     * ============================================================
+     * RECHTEN
+     * ============================================================
+     *
+     * Alleen de Eigenaar mag een dienst wijzigen.
+     *
+     * Teamleider:
+     * - mag bekijken
+     * - mag niet wijzigen
+     *
+     * Medewerker:
+     * - mag bekijken
+     * - mag niet wijzigen
+     *
+     * Eigenaar is organisatiebreed.
+     */
+
+    const eigenaar =
+      await isEigenaar(
+        await haalOrganisatieIdOp(
+          bestaandeDienst.week.vestigingId,
+        ),
+      );
+
+    if (!eigenaar) {
+      return NextResponse.json(
+        {
+          fout:
+            "Alleen de eigenaar kan deze dienst wijzigen.",
+        },
+        {
+          status: 403,
         },
       );
     }
@@ -212,6 +280,8 @@ export async function PATCH(
         },
       );
     }
+
+    const body = await request.json();
 
     const huidigeDienst =
       await prisma.dienst.findUnique({
@@ -268,7 +338,8 @@ export async function PATCH(
       if (Number.isNaN(begintijd.getTime())) {
         return NextResponse.json(
           {
-            fout: "Begintijd moet geldig zijn.",
+            fout:
+              "Begintijd moet geldig zijn.",
           },
           {
             status: 400,
@@ -287,7 +358,8 @@ export async function PATCH(
       if (Number.isNaN(eindtijd.getTime())) {
         return NextResponse.json(
           {
-            fout: "Eindtijd moet geldig zijn.",
+            fout:
+              "Eindtijd moet geldig zijn.",
           },
           {
             status: 400,
@@ -356,40 +428,49 @@ export async function PATCH(
           : [];
 
       const bestaandeTagIds = new Set(
-        bestaandeTags.map((tag) => tag.id),
+        bestaandeTags.map(
+          (tag) => tag.id,
+        ),
       );
 
-      geldigeTags = tags.filter((tag) =>
-        bestaandeTagIds.has(tag.tagId),
+      geldigeTags = tags.filter(
+        (tag) =>
+          bestaandeTagIds.has(
+            tag.tagId,
+          ),
       );
     }
 
-    await prisma.$transaction(async (tx) => {
-      await tx.dienst.update({
-        where: {
-          id,
-        },
-        data,
-      });
-
-      if (geldigeTags !== undefined) {
-        await tx.dienstTag.deleteMany({
+    await prisma.$transaction(
+      async (tx) => {
+        await tx.dienst.update({
           where: {
-            dienstId: id,
+            id,
           },
+          data,
         });
 
-        if (geldigeTags.length > 0) {
-          await tx.dienstTag.createMany({
-            data: geldigeTags.map((tag) => ({
+        if (geldigeTags !== undefined) {
+          await tx.dienstTag.deleteMany({
+            where: {
               dienstId: id,
-              tagId: tag.tagId,
-              aantal: tag.aantal,
-            })),
+            },
           });
+
+          if (geldigeTags.length > 0) {
+            await tx.dienstTag.createMany({
+              data: geldigeTags.map(
+                (tag) => ({
+                  dienstId: id,
+                  tagId: tag.tagId,
+                  aantal: tag.aantal,
+                }),
+              ),
+            });
+          }
         }
-      }
-    });
+      },
+    );
 
     const dienst =
       await haalDienstVolledigOp(id);
@@ -418,9 +499,23 @@ export async function DELETE(
   context: RouteContext,
 ) {
   try {
+    const gebruiker = await getCurrentUser();
+
+    if (!gebruiker) {
+      return NextResponse.json(
+        {
+          fout: "Je moet ingelogd zijn.",
+        },
+        {
+          status: 401,
+        },
+      );
+    }
+
     const { id } = await context.params;
 
-    const dienst = await haalDienstOp(id);
+    const dienst =
+      await haalDienstOp(id);
 
     if (!dienst) {
       return NextResponse.json(
@@ -429,6 +524,30 @@ export async function DELETE(
         },
         {
           status: 404,
+        },
+      );
+    }
+
+    /*
+     * Alleen de Eigenaar mag een dienst
+     * verwijderen.
+     */
+
+    const eigenaar =
+      await isEigenaar(
+        await haalOrganisatieIdOp(
+          dienst.week.vestigingId,
+        ),
+      );
+
+    if (!eigenaar) {
+      return NextResponse.json(
+        {
+          fout:
+            "Alleen de eigenaar kan deze dienst verwijderen.",
+        },
+        {
+          status: 403,
         },
       );
     }
@@ -476,4 +595,26 @@ export async function DELETE(
       },
     );
   }
+}
+
+async function haalOrganisatieIdOp(
+  vestigingId: string,
+) {
+  const vestiging =
+    await prisma.vestiging.findUnique({
+      where: {
+        id: vestigingId,
+      },
+      select: {
+        organisatieId: true,
+      },
+    });
+
+  if (!vestiging) {
+    throw new Error(
+      "Vestiging niet gevonden.",
+    );
+  }
+
+  return vestiging.organisatieId;
 }

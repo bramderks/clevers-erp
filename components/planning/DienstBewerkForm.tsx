@@ -36,8 +36,8 @@ type PlanningMedewerker = {
     weekId: string;
     medewerkerId: string;
     datum: string;
-    begintijd: string;
-    eindtijd: string;
+    begintijd: string | null;
+    eindtijd: string | null;
     status: string;
     opmerking: string | null;
   }[];
@@ -47,6 +47,11 @@ type PlanningMedewerker = {
     dienstId: string;
     status: string;
   }[];
+};
+
+type MedewerkersResponse = {
+  huidigeMedewerkerId: string | null;
+  medewerkers: PlanningMedewerker[];
 };
 
 type DienstBewerkFormProps = {
@@ -199,6 +204,20 @@ function bezettingMedewerkerId(
   );
 }
 
+function datumVoorApi(
+  waarde: string,
+) {
+  const datum = new Date(waarde);
+
+  if (Number.isNaN(datum.getTime())) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat(
+    "sv-SE",
+  ).format(datum);
+}
+
 export default function DienstBewerkForm({
   dienst,
   vestigingId,
@@ -312,12 +331,15 @@ export default function DienstBewerkForm({
     setDatum(
       datumUitDatum(dienst.datum),
     );
+
     setBegintijd(
       tijdUitDatum(dienst.begintijd),
     );
+
     setEindtijd(
       tijdUitDatum(dienst.eindtijd),
     );
+
     setOpmerkingen(
       dienst.opmerkingen ?? "",
     );
@@ -404,6 +426,16 @@ export default function DienstBewerkForm({
       return;
     }
 
+    const datumVoorRequest =
+      datumVoorApi(datum);
+
+    if (!datumVoorRequest) {
+      setMedewerkers([]);
+      return;
+    }
+
+    let actief = true;
+
     async function laadMedewerkers() {
       try {
         setLadenMedewerkers(true);
@@ -413,7 +445,7 @@ export default function DienstBewerkForm({
             `/api/planning/medewerkers?vestigingId=${encodeURIComponent(
               vestigingId,
             )}&datum=${encodeURIComponent(
-              datum,
+              datumVoorRequest!,
             )}`,
             {
               method: "GET",
@@ -423,35 +455,58 @@ export default function DienstBewerkForm({
           );
 
         const data =
-          await response.json();
+          (await response.json()) as
+            | MedewerkersResponse
+            | { fout?: string };
 
         if (!response.ok) {
           throw new Error(
-            data?.fout ??
-              "De medewerkers konden niet worden opgehaald.",
+            "fout" in data &&
+            typeof data.fout === "string"
+              ? data.fout
+              : "De medewerkers konden niet worden opgehaald.",
           );
         }
 
-        if (!Array.isArray(data)) {
+        if (
+          !data ||
+          typeof data !== "object" ||
+          !("medewerkers" in data) ||
+          !Array.isArray(
+            data.medewerkers,
+          )
+        ) {
           throw new Error(
             "De medewerkers hebben een ongeldig formaat.",
           );
         }
 
-        setMedewerkers(data);
+        if (actief) {
+          setMedewerkers(
+            data.medewerkers,
+          );
+        }
       } catch (error) {
         console.error(
           "Fout bij laden medewerkers:",
           error,
         );
 
-        setMedewerkers([]);
+        if (actief) {
+          setMedewerkers([]);
+        }
       } finally {
-        setLadenMedewerkers(false);
+        if (actief) {
+          setLadenMedewerkers(false);
+        }
       }
     }
 
     void laadMedewerkers();
+
+    return () => {
+      actief = false;
+    };
   }, [vestigingId, datum]);
 
   function toggleTag(
@@ -610,6 +665,21 @@ export default function DienstBewerkForm({
         `${datum}T${eindtijd}`,
       );
 
+      if (
+        Number.isNaN(
+          start.getTime(),
+        ) ||
+        Number.isNaN(
+          einde.getTime(),
+        )
+      ) {
+        setFout(
+          "De datum of tijden zijn ongeldig.",
+        );
+
+        return;
+      }
+
       const response =
         await fetch(
           `/api/planning/diensten/${dienst.id}`,
@@ -623,8 +693,7 @@ export default function DienstBewerkForm({
             body: JSON.stringify({
               datum:
                 start
-                  .toISOString()
-                  .slice(0, 10),
+                  .toISOString(),
               begintijd:
                 start.toISOString(),
               eindtijd:
@@ -864,7 +933,10 @@ export default function DienstBewerkForm({
       onSubmit={opslaanDienst}
       className="space-y-6"
     >
-      {/* DIENSTGEGEVENS */}
+      {/* ======================================================
+          DIENSTGEGEVENS
+          ====================================================== */}
+
       <section className="rounded-xl border bg-white p-6 shadow-sm">
         <div className="mb-5">
           <h2 className="text-lg font-semibold text-slate-900">
@@ -998,7 +1070,10 @@ export default function DienstBewerkForm({
         </div>
       </section>
 
-      {/* TAGS */}
+      {/* ======================================================
+          TAGS
+          ====================================================== */}
+
       <section className="rounded-xl border bg-white p-6 shadow-sm">
         <div className="mb-5">
           <h2 className="text-lg font-semibold text-slate-900">
@@ -1093,7 +1168,10 @@ export default function DienstBewerkForm({
         )}
       </section>
 
-      {/* BEZETTING */}
+      {/* ======================================================
+          BEZETTING
+          ====================================================== */}
+
       <section className="rounded-xl border bg-white p-6 shadow-sm">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -1198,7 +1276,10 @@ export default function DienstBewerkForm({
           )}
         </div>
 
-        {/* MEDEWERKER TOEVOEGEN */}
+        {/* ====================================================
+            MEDEWERKER TOEVOEGEN
+            ==================================================== */}
+
         <div className="mt-5 border-t border-slate-200 pt-5">
           <h3 className="text-sm font-semibold text-slate-900">
             Medewerker toevoegen
@@ -1207,7 +1288,7 @@ export default function DienstBewerkForm({
           <p className="mt-1 text-xs text-slate-500">
             Een medewerker die hier wordt
             toegevoegd, wordt direct
-            BEVESTIGD.
+            bevestigd.
           </p>
 
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
@@ -1267,7 +1348,10 @@ export default function DienstBewerkForm({
         </div>
       </section>
 
-      {/* MELDINGEN */}
+      {/* ======================================================
+          MELDINGEN
+          ====================================================== */}
+
       {fout && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {fout}
@@ -1280,7 +1364,10 @@ export default function DienstBewerkForm({
         </div>
       )}
 
-      {/* OPSLAAN */}
+      {/* ======================================================
+          OPSLAAN
+          ====================================================== */}
+
       <div className="flex justify-end">
         <button
           type="submit"
