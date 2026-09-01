@@ -49,35 +49,42 @@ export type DienstTag = {
   tag: PlanningTag;
 };
 
+export type PlanningMedewerker = {
+  id: string;
+  personeelsnummer: string | null;
+
+  aanhef:
+    | "DHR"
+    | "MEVR"
+    | "ANDERS"
+    | "GEEN_OPGAVE";
+
+  voornaam: string;
+  tussenvoegsel: string | null;
+  achternaam: string;
+
+  tags: MedewerkerTag[];
+};
+
 export type DienstBezetting = {
   id: string;
   dienstId: string;
   medewerkerId: string | null;
   status: DienstBezettingStatus;
 
-  medewerker: {
-    id: string;
-    personeelsnummer: string | null;
-    aanhef:
-      | "DHR"
-      | "MEVR"
-      | "ANDERS"
-      | "GEEN_OPGAVE";
-    voornaam: string;
-    tussenvoegsel: string | null;
-    achternaam: string;
-
-    tags: MedewerkerTag[];
-  } | null;
+  medewerker: PlanningMedewerker | null;
 };
 
 export type Dienst = {
   id: string;
   weekId: string;
+
   datum: string;
   begintijd: string;
   eindtijd: string;
+
   opmerkingen: string | null;
+
   tags: DienstTag[];
   bezetting: DienstBezetting[];
 };
@@ -85,10 +92,14 @@ export type Dienst = {
 export type PlanningWeek = {
   id: string;
   vestigingId: string;
+
   jaar: number;
   weeknummer: number;
+
   status: PlanningStatus;
+
   beschikbaarheidDeadline: string | null;
+
   diensten: Dienst[];
   beschikbaarheden: Beschikbaarheid[];
 };

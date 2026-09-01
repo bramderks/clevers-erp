@@ -14,6 +14,36 @@ type RouteContext = {
   }>;
 };
 
+type PlanningTagInput = {
+  tagId: string;
+  aantal: number;
+};
+
+const START_MINUTEN = 9 * 60;
+const EINDE_MINUTEN = 23 * 60;
+
+async function haalOrganisatieIdOp(
+  vestigingId: string,
+): Promise<string> {
+  const vestiging =
+    await prisma.vestiging.findUnique({
+      where: {
+        id: vestigingId,
+      },
+      select: {
+        organisatieId: true,
+      },
+    });
+
+  if (!vestiging) {
+    throw new Error(
+      "Vestiging niet gevonden.",
+    );
+  }
+
+  return vestiging.organisatieId;
+}
+
 async function haalDienstOp(id: string) {
   return prisma.dienst.findUnique({
     where: {
@@ -23,6 +53,7 @@ async function haalDienstOp(id: string) {
       id: true,
       week: {
         select: {
+          id: true,
           vestigingId: true,
         },
       },
@@ -30,22 +61,41 @@ async function haalDienstOp(id: string) {
   });
 }
 
-async function haalDienstVolledigOp(id: string) {
+async function haalDienstVolledigOp(
+  id: string,
+) {
   return prisma.dienst.findUnique({
     where: {
       id,
     },
+
     include: {
+      week: {
+        select: {
+          id: true,
+          vestigingId: true,
+
+          vestiging: {
+            select: {
+              id: true,
+              naam: true,
+            },
+          },
+        },
+      },
+
       tags: {
         include: {
           tag: true,
         },
+
         orderBy: {
           tag: {
             volgorde: "asc",
           },
         },
       },
+
       bezetting: {
         include: {
           medewerker: {
@@ -59,6 +109,7 @@ async function haalDienstVolledigOp(id: string) {
             },
           },
         },
+
         orderBy: {
           aangemaaktOp: "asc",
         },
@@ -67,54 +118,97 @@ async function haalDienstVolledigOp(id: string) {
   });
 }
 
-function verwerkTags(tags: unknown) {
+function verwerkTags(
+  tags: unknown,
+): PlanningTagInput[] {
   if (!Array.isArray(tags)) {
     return [];
   }
 
+  const uniekeTags = new Map<
+    string,
+    PlanningTagInput
+  >();
+
+  for (const tag of tags) {
+    if (typeof tag === "string") {
+      uniekeTags.set(tag, {
+        tagId: tag,
+        aantal: 1,
+      });
+
+      continue;
+    }
+
+    if (
+      typeof tag === "object" &&
+      tag !== null &&
+      "tagId" in tag &&
+      typeof tag.tagId === "string"
+    ) {
+      const aantal =
+        "aantal" in tag &&
+        typeof tag.aantal === "number" &&
+        Number.isInteger(tag.aantal) &&
+        tag.aantal > 0
+          ? tag.aantal
+          : 1;
+
+      uniekeTags.set(tag.tagId, {
+        tagId: tag.tagId,
+        aantal,
+      });
+    }
+  }
+
   return Array.from(
-    new Map(
-      tags
-        .map((tag: unknown) => {
-          if (typeof tag === "string") {
-            return {
-              tagId: tag,
-              aantal: 1,
-            };
-          }
+    uniekeTags.values(),
+  );
+}
 
-          if (
-            typeof tag === "object" &&
-            tag !== null &&
-            "tagId" in tag &&
-            typeof tag.tagId === "string"
-          ) {
-            const aantal =
-              "aantal" in tag &&
-              typeof tag.aantal === "number" &&
-              Number.isInteger(tag.aantal) &&
-              tag.aantal > 0
-                ? tag.aantal
-                : 1;
+function datumUitWaarde(
+  waarde: unknown,
+): Date | null {
+  if (typeof waarde !== "string") {
+    return null;
+  }
 
-            return {
-              tagId: tag.tagId,
-              aantal,
-            };
-          }
+  const datum = new Date(waarde);
 
-          return null;
-        })
-        .filter(
-          (
-            tag,
-          ): tag is {
-            tagId: string;
-            aantal: number;
-          } => tag !== null,
-        )
-        .map((tag) => [tag.tagId, tag]),
-    ).values(),
+  if (Number.isNaN(datum.getTime())) {
+    return null;
+  }
+
+  return datum;
+}
+
+function tijdNaarMinuten(
+  datum: Date,
+): number {
+  return (
+    datum.getHours() * 60 +
+    datum.getMinutes()
+  );
+}
+
+function isGeldigeKwartierTijd(
+  datum: Date,
+): boolean {
+  return datum.getMinutes() % 15 === 0;
+}
+
+function maakDatumMetTijd(
+  datum: Date,
+  tijd: Date,
+): Date {
+  return new Date(
+    datum.getFullYear(),
+    datum.getMonth(),
+    datum.getDate(),
+    tijd.getHours(),
+    tijd.getMinutes(),
+    0,
+    0,
   );
 }
 
@@ -123,12 +217,14 @@ export async function GET(
   context: RouteContext,
 ) {
   try {
-    const gebruiker = await getCurrentUser();
+    const gebruiker =
+      await getCurrentUser();
 
     if (!gebruiker) {
       return NextResponse.json(
         {
-          fout: "Je moet ingelogd zijn.",
+          fout:
+            "Je moet ingelogd zijn.",
         },
         {
           status: 401,
@@ -136,14 +232,29 @@ export async function GET(
       );
     }
 
-    const { id } = await context.params;
+    const { id } =
+      await context.params;
 
-    const dienst = await haalDienstOp(id);
+    if (!id) {
+      return NextResponse.json(
+        {
+          fout:
+            "Dienst-ID ontbreekt.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    const dienst =
+      await haalDienstOp(id);
 
     if (!dienst) {
       return NextResponse.json(
         {
-          fout: "Dienst niet gevonden.",
+          fout:
+            "Dienst niet gevonden.",
         },
         {
           status: 404,
@@ -160,7 +271,8 @@ export async function GET(
     if (!toegang) {
       return NextResponse.json(
         {
-          fout: "Geen toegang tot deze planning.",
+          fout:
+            "Geen toegang tot deze planning.",
         },
         {
           status: 403,
@@ -170,6 +282,18 @@ export async function GET(
 
     const volledigeDienst =
       await haalDienstVolledigOp(id);
+
+    if (!volledigeDienst) {
+      return NextResponse.json(
+        {
+          fout:
+            "Dienst niet gevonden.",
+        },
+        {
+          status: 404,
+        },
+      );
+    }
 
     return NextResponse.json(
       volledigeDienst,
@@ -197,12 +321,14 @@ export async function PATCH(
   context: RouteContext,
 ) {
   try {
-    const gebruiker = await getCurrentUser();
+    const gebruiker =
+      await getCurrentUser();
 
     if (!gebruiker) {
       return NextResponse.json(
         {
-          fout: "Je moet ingelogd zijn.",
+          fout:
+            "Je moet ingelogd zijn.",
         },
         {
           status: 401,
@@ -210,15 +336,46 @@ export async function PATCH(
       );
     }
 
-    const { id } = await context.params;
+    const { id } =
+      await context.params;
+
+    if (!id) {
+      return NextResponse.json(
+        {
+          fout:
+            "Dienst-ID ontbreekt.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
 
     const bestaandeDienst =
-      await haalDienstOp(id);
+      await prisma.dienst.findUnique({
+        where: {
+          id,
+        },
+
+        select: {
+          id: true,
+          datum: true,
+          begintijd: true,
+          eindtijd: true,
+
+          week: {
+            select: {
+              vestigingId: true,
+            },
+          },
+        },
+      });
 
     if (!bestaandeDienst) {
       return NextResponse.json(
         {
-          fout: "Dienst niet gevonden.",
+          fout:
+            "Dienst niet gevonden.",
         },
         {
           status: 404,
@@ -231,24 +388,25 @@ export async function PATCH(
      * RECHTEN
      * ============================================================
      *
-     * Alleen de Eigenaar mag een dienst wijzigen.
+     * Alleen de Eigenaar mag diensten wijzigen.
      *
      * Teamleider:
-     * - mag bekijken
-     * - mag niet wijzigen
+     * - volledige inzage
+     * - geen wijzigingen
      *
      * Medewerker:
-     * - mag bekijken
-     * - mag niet wijzigen
-     *
-     * Eigenaar is organisatiebreed.
+     * - relevante inzage
+     * - geen wijzigingen
      */
+
+    const organisatieId =
+      await haalOrganisatieIdOp(
+        bestaandeDienst.week.vestigingId,
+      );
 
     const eigenaar =
       await isEigenaar(
-        await haalOrganisatieIdOp(
-          bestaandeDienst.week.vestigingId,
-        ),
+        organisatieId,
       );
 
     if (!eigenaar) {
@@ -281,45 +439,49 @@ export async function PATCH(
       );
     }
 
-    const body = await request.json();
+    const body: unknown =
+      await request.json();
 
-    const huidigeDienst =
-      await prisma.dienst.findUnique({
-        where: {
-          id,
-        },
-        select: {
-          datum: true,
-          begintijd: true,
-          eindtijd: true,
-        },
-      });
-
-    if (!huidigeDienst) {
+    if (
+      !body ||
+      typeof body !== "object"
+    ) {
       return NextResponse.json(
         {
-          fout: "Dienst niet gevonden.",
+          fout:
+            "Ongeldige aanvraag.",
         },
         {
-          status: 404,
+          status: 400,
         },
       );
     }
 
-    const data: {
-      datum?: Date;
-      begintijd?: Date;
-      eindtijd?: Date;
-      opmerkingen?: string | null;
-    } = {};
+    const invoer =
+      body as Record<string, unknown>;
 
-    if (body.datum !== undefined) {
-      const datum = new Date(body.datum);
+    /*
+     * ============================================================
+     * DATUM
+     * ============================================================
+     */
 
-      if (Number.isNaN(datum.getTime())) {
+    let nieuweDatum =
+      bestaandeDienst.datum;
+
+    if (
+      invoer.datum !== undefined
+    ) {
+      const datum =
+        datumUitWaarde(
+          invoer.datum,
+        );
+
+      if (!datum) {
         return NextResponse.json(
           {
-            fout: "Datum moet geldig zijn.",
+            fout:
+              "Datum moet geldig zijn.",
           },
           {
             status: 400,
@@ -327,15 +489,30 @@ export async function PATCH(
         );
       }
 
-      data.datum = datum;
+      nieuweDatum = datum;
     }
 
-    if (body.begintijd !== undefined) {
-      const begintijd = new Date(
-        body.begintijd,
-      );
+    /*
+     * ============================================================
+     * TIJDEN
+     * ============================================================
+     */
 
-      if (Number.isNaN(begintijd.getTime())) {
+    let nieuweBegintijd =
+      bestaandeDienst.begintijd;
+
+    let nieuweEindtijd =
+      bestaandeDienst.eindtijd;
+
+    if (
+      invoer.begintijd !== undefined
+    ) {
+      const begintijd =
+        datumUitWaarde(
+          invoer.begintijd,
+        );
+
+      if (!begintijd) {
         return NextResponse.json(
           {
             fout:
@@ -347,15 +524,28 @@ export async function PATCH(
         );
       }
 
-      data.begintijd = begintijd;
+      nieuweBegintijd =
+        maakDatumMetTijd(
+          nieuweDatum,
+          begintijd,
+        );
+    } else {
+      nieuweBegintijd =
+        maakDatumMetTijd(
+          nieuweDatum,
+          bestaandeDienst.begintijd,
+        );
     }
 
-    if (body.eindtijd !== undefined) {
-      const eindtijd = new Date(
-        body.eindtijd,
-      );
+    if (
+      invoer.eindtijd !== undefined
+    ) {
+      const eindtijd =
+        datumUitWaarde(
+          invoer.eindtijd,
+        );
 
-      if (Number.isNaN(eindtijd.getTime())) {
+      if (!eindtijd) {
         return NextResponse.json(
           {
             fout:
@@ -367,18 +557,32 @@ export async function PATCH(
         );
       }
 
-      data.eindtijd = eindtijd;
+      nieuweEindtijd =
+        maakDatumMetTijd(
+          nieuweDatum,
+          eindtijd,
+        );
+    } else {
+      nieuweEindtijd =
+        maakDatumMetTijd(
+          nieuweDatum,
+          bestaandeDienst.eindtijd,
+        );
     }
 
-    const begintijd =
-      data.begintijd ??
-      huidigeDienst.begintijd;
+    const beginMinuten =
+      tijdNaarMinuten(
+        nieuweBegintijd,
+      );
 
-    const eindtijd =
-      data.eindtijd ??
-      huidigeDienst.eindtijd;
+    const eindeMinuten =
+      tijdNaarMinuten(
+        nieuweEindtijd,
+      );
 
-    if (eindtijd <= begintijd) {
+    if (
+      eindeMinuten <= beginMinuten
+    ) {
       return NextResponse.json(
         {
           fout:
@@ -390,56 +594,162 @@ export async function PATCH(
       );
     }
 
-    if (body.opmerkingen !== undefined) {
-      data.opmerkingen =
-        typeof body.opmerkingen === "string" &&
-        body.opmerkingen.trim().length > 0
-          ? body.opmerkingen.trim()
+    if (
+      !isGeldigeKwartierTijd(
+        nieuweBegintijd,
+      ) ||
+      !isGeldigeKwartierTijd(
+        nieuweEindtijd,
+      )
+    ) {
+      return NextResponse.json(
+        {
+          fout:
+            "Diensten kunnen alleen per 15 minuten worden gepland.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (
+      beginMinuten < START_MINUTEN
+    ) {
+      return NextResponse.json(
+        {
+          fout:
+            "Een dienst kan niet vóór 09:00 starten.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (
+      eindeMinuten > EINDE_MINUTEN
+    ) {
+      return NextResponse.json(
+        {
+          fout:
+            "Een dienst kan niet na 23:00 eindigen.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    /*
+     * ============================================================
+     * OPMERKINGEN
+     * ============================================================
+     */
+
+    let opmerkingen:
+      | string
+      | null
+      | undefined;
+
+    if (
+      invoer.opmerkingen !== undefined
+    ) {
+      opmerkingen =
+        typeof invoer.opmerkingen ===
+          "string" &&
+        invoer.opmerkingen.trim()
+          .length > 0
+          ? invoer.opmerkingen.trim()
           : null;
     }
 
+    /*
+     * ============================================================
+     * TAGS
+     * ============================================================
+     */
+
     let geldigeTags:
-      | {
-          tagId: string;
-          aantal: number;
-        }[]
+      | PlanningTagInput[]
       | undefined;
 
-    if (body.tags !== undefined) {
-      const tags = verwerkTags(body.tags);
+    if (
+      invoer.tags !== undefined
+    ) {
+      const tags =
+        verwerkTags(
+          invoer.tags,
+        );
 
-      const tagIds = tags.map(
-        (tag) => tag.tagId,
-      );
+      if (tags.length === 0) {
+        return NextResponse.json(
+          {
+            fout:
+              "Selecteer minimaal één geldige planningstag.",
+          },
+          {
+            status: 400,
+          },
+        );
+      }
+
+      const tagIds =
+        tags.map(
+          (tag) => tag.tagId,
+        );
 
       const bestaandeTags =
-        tagIds.length > 0
-          ? await prisma.tag.findMany({
-              where: {
-                id: {
-                  in: tagIds,
-                },
-                actief: true,
-              },
-              select: {
-                id: true,
-              },
-            })
-          : [];
+        await prisma.tag.findMany({
+          where: {
+            id: {
+              in: tagIds,
+            },
 
-      const bestaandeTagIds = new Set(
-        bestaandeTags.map(
-          (tag) => tag.id,
-        ),
-      );
+            actief: true,
+          },
 
-      geldigeTags = tags.filter(
-        (tag) =>
-          bestaandeTagIds.has(
-            tag.tagId,
+          select: {
+            id: true,
+          },
+        });
+
+      const bestaandeTagIds =
+        new Set(
+          bestaandeTags.map(
+            (tag) => tag.id,
           ),
-      );
+        );
+
+      geldigeTags =
+        tags.filter(
+          (tag) =>
+            bestaandeTagIds.has(
+              tag.tagId,
+            ),
+        );
+
+      if (
+        geldigeTags.length !==
+        tags.length
+      ) {
+        return NextResponse.json(
+          {
+            fout:
+              "Eén of meerdere planningtags bestaan niet of zijn niet actief.",
+          },
+          {
+            status: 400,
+          },
+        );
+      }
     }
+
+    /*
+     * ============================================================
+     * OPSLAAN
+     * ============================================================
+     */
 
     await prisma.$transaction(
       async (tx) => {
@@ -447,18 +757,36 @@ export async function PATCH(
           where: {
             id,
           },
-          data,
+
+          data: {
+            datum: nieuweDatum,
+            begintijd:
+              nieuweBegintijd,
+            eindtijd:
+              nieuweEindtijd,
+
+            ...(opmerkingen !==
+            undefined
+              ? {
+                  opmerkingen,
+                }
+              : {}),
+          },
         });
 
-        if (geldigeTags !== undefined) {
-          await tx.dienstTag.deleteMany({
-            where: {
-              dienstId: id,
+        if (
+          geldigeTags !== undefined
+        ) {
+          await tx.dienstTag.deleteMany(
+            {
+              where: {
+                dienstId: id,
+              },
             },
-          });
+          );
 
-          if (geldigeTags.length > 0) {
-            await tx.dienstTag.createMany({
+          await tx.dienstTag.createMany(
+            {
               data: geldigeTags.map(
                 (tag) => ({
                   dienstId: id,
@@ -466,8 +794,8 @@ export async function PATCH(
                   aantal: tag.aantal,
                 }),
               ),
-            });
-          }
+            },
+          );
         }
       },
     );
@@ -475,7 +803,9 @@ export async function PATCH(
     const dienst =
       await haalDienstVolledigOp(id);
 
-    return NextResponse.json(dienst);
+    return NextResponse.json(
+      dienst,
+    );
   } catch (error) {
     console.error(
       "Fout bij wijzigen dienst:",
@@ -499,12 +829,14 @@ export async function DELETE(
   context: RouteContext,
 ) {
   try {
-    const gebruiker = await getCurrentUser();
+    const gebruiker =
+      await getCurrentUser();
 
     if (!gebruiker) {
       return NextResponse.json(
         {
-          fout: "Je moet ingelogd zijn.",
+          fout:
+            "Je moet ingelogd zijn.",
         },
         {
           status: 401,
@@ -512,7 +844,20 @@ export async function DELETE(
       );
     }
 
-    const { id } = await context.params;
+    const { id } =
+      await context.params;
+
+    if (!id) {
+      return NextResponse.json(
+        {
+          fout:
+            "Dienst-ID ontbreekt.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
 
     const dienst =
       await haalDienstOp(id);
@@ -520,7 +865,8 @@ export async function DELETE(
     if (!dienst) {
       return NextResponse.json(
         {
-          fout: "Dienst niet gevonden.",
+          fout:
+            "Dienst niet gevonden.",
         },
         {
           status: 404,
@@ -529,15 +875,21 @@ export async function DELETE(
     }
 
     /*
-     * Alleen de Eigenaar mag een dienst
-     * verwijderen.
+     * ============================================================
+     * RECHTEN
+     * ============================================================
+     *
+     * Alleen de Eigenaar mag een dienst verwijderen.
      */
+
+    const organisatieId =
+      await haalOrganisatieIdOp(
+        dienst.week.vestigingId,
+      );
 
     const eigenaar =
       await isEigenaar(
-        await haalOrganisatieIdOp(
-          dienst.week.vestigingId,
-        ),
+        organisatieId,
       );
 
     if (!eigenaar) {
@@ -595,26 +947,4 @@ export async function DELETE(
       },
     );
   }
-}
-
-async function haalOrganisatieIdOp(
-  vestigingId: string,
-) {
-  const vestiging =
-    await prisma.vestiging.findUnique({
-      where: {
-        id: vestigingId,
-      },
-      select: {
-        organisatieId: true,
-      },
-    });
-
-  if (!vestiging) {
-    throw new Error(
-      "Vestiging niet gevonden.",
-    );
-  }
-
-  return vestiging.organisatieId;
 }

@@ -54,6 +54,10 @@ type MedewerkersResponse = {
   medewerkers: PlanningMedewerker[];
 };
 
+type ApiFoutResponse = {
+  fout?: string;
+};
+
 type DienstBewerkFormProps = {
   dienst: Dienst;
   vestigingId: string;
@@ -63,7 +67,9 @@ type DienstBewerkFormProps = {
 const START_MINUTEN = 9 * 60;
 const EINDE_MINUTEN = 23 * 60;
 
-function minutenNaarTijd(minuten: number) {
+function minutenNaarTijd(
+  minuten: number,
+): string {
   const uren = Math.floor(minuten / 60);
   const minutenDeel = minuten % 60;
 
@@ -79,7 +85,7 @@ function minutenNaarTijd(minuten: number) {
 function maakTijden(
   vanaf: number,
   tot: number,
-) {
+): string[] {
   const tijden: string[] = [];
 
   for (
@@ -97,13 +103,26 @@ function maakTijden(
 
 function tijdNaarMinuten(
   tijd: string,
-) {
-  const [uren, minuten] =
-    tijd.split(":").map(Number);
+): number | null {
+  const match =
+    /^(\d{1,2}):(\d{2})$/.exec(
+      tijd,
+    );
+
+  if (!match) {
+    return null;
+  }
+
+  const uren = Number(match[1]);
+  const minuten = Number(match[2]);
 
   if (
     Number.isNaN(uren) ||
-    Number.isNaN(minuten)
+    Number.isNaN(minuten) ||
+    uren < 0 ||
+    uren > 23 ||
+    minuten < 0 ||
+    minuten > 59
   ) {
     return null;
   }
@@ -111,64 +130,113 @@ function tijdNaarMinuten(
   return uren * 60 + minuten;
 }
 
-function tijdUitDatum(
-  waarde: string,
-) {
+function datumNaarInput(
+  waarde: string | null | undefined,
+): string {
+  if (!waarde) {
+    return "";
+  }
+
+  if (
+    /^\d{4}-\d{2}-\d{2}$/.test(
+      waarde,
+    )
+  ) {
+    return waarde;
+  }
+
   const datum = new Date(waarde);
 
   if (Number.isNaN(datum.getTime())) {
     return "";
   }
 
-  return datum
-    .toISOString()
-    .slice(11, 16);
+  return [
+    datum.getFullYear(),
+    String(
+      datum.getMonth() + 1,
+    ).padStart(2, "0"),
+    String(
+      datum.getDate(),
+    ).padStart(2, "0"),
+  ].join("-");
 }
 
-function datumUitDatum(
-  waarde: string,
-) {
+function tijdNaarInput(
+  waarde: string | null | undefined,
+): string {
+  if (!waarde) {
+    return "";
+  }
+
+  const directeTijd =
+    /^(\d{1,2}):(\d{2})/.exec(
+      waarde,
+    );
+
+  if (directeTijd) {
+    return `${directeTijd[1].padStart(
+      2,
+      "0",
+    )}:${directeTijd[2]}`;
+  }
+
   const datum = new Date(waarde);
 
   if (Number.isNaN(datum.getTime())) {
     return "";
   }
 
-  return datum
-    .toISOString()
-    .slice(0, 10);
+  return [
+    String(
+      datum.getHours(),
+    ).padStart(2, "0"),
+    String(
+      datum.getMinutes(),
+    ).padStart(2, "0"),
+  ].join(":");
 }
 
 function volledigeNaam(
-  medewerker: PlanningMedewerker,
-) {
+  medewerker: {
+    voornaam: string;
+    tussenvoegsel: string | null | undefined;
+    achternaam: string;
+  },
+): string {
   return [
     medewerker.voornaam,
     medewerker.tussenvoegsel,
     medewerker.achternaam,
   ]
-    .filter(Boolean)
+    .filter(
+      (
+        onderdeel,
+      ): onderdeel is string =>
+        typeof onderdeel === "string" &&
+        onderdeel.trim().length > 0,
+    )
     .join(" ");
 }
 
 function statusLabel(
   status: string,
-) {
+): string {
   switch (status) {
-    case "BEVESTIGD":
-      return "Bevestigd";
+    case "OPEN":
+      return "Open";
 
     case "GEPLAND":
       return "Gepland";
+
+    case "BEVESTIGD":
+      return "Bevestigd";
 
     case "AFGEZEGD":
       return "Afgezegd";
 
     case "GEWERKT":
       return "Gewerkt";
-
-    case "OPEN":
-      return "Open";
 
     default:
       return status;
@@ -177,7 +245,7 @@ function statusLabel(
 
 function statusKlassen(
   status: string,
-) {
+): string {
   switch (status) {
     case "BEVESTIGD":
     case "GEWERKT":
@@ -189,14 +257,17 @@ function statusKlassen(
     case "AFGEZEGD":
       return "border-slate-200 bg-slate-100 text-slate-500";
 
+    case "OPEN":
+      return "border-blue-200 bg-blue-50 text-blue-700";
+
     default:
-      return "border-red-200 bg-red-50 text-red-700";
+      return "border-slate-200 bg-slate-100 text-slate-600";
   }
 }
 
 function bezettingMedewerkerId(
   bezetting: Dienst["bezetting"][number],
-) {
+): string | null {
   return (
     bezetting.medewerkerId ??
     bezetting.medewerker?.id ??
@@ -204,18 +275,24 @@ function bezettingMedewerkerId(
   );
 }
 
-function datumVoorApi(
-  waarde: string,
-) {
-  const datum = new Date(waarde);
-
-  if (Number.isNaN(datum.getTime())) {
-    return null;
+function foutmeldingUitResponse(
+  data: unknown,
+  standaardFout: string,
+): string {
+  if (
+    data &&
+    typeof data === "object" &&
+    "fout" in data &&
+    typeof (data as ApiFoutResponse).fout ===
+      "string"
+  ) {
+    return (
+      (data as ApiFoutResponse).fout ??
+      standaardFout
+    );
   }
 
-  return new Intl.DateTimeFormat(
-    "sv-SE",
-  ).format(datum);
+  return standaardFout;
 }
 
 export default function DienstBewerkForm({
@@ -225,17 +302,17 @@ export default function DienstBewerkForm({
 }: DienstBewerkFormProps) {
   const [datum, setDatum] =
     useState(
-      datumUitDatum(dienst.datum),
+      datumNaarInput(dienst.datum),
     );
 
   const [begintijd, setBegintijd] =
     useState(
-      tijdUitDatum(dienst.begintijd),
+      tijdNaarInput(dienst.begintijd),
     );
 
   const [eindtijd, setEindtijd] =
     useState(
-      tijdUitDatum(dienst.eindtijd),
+      tijdNaarInput(dienst.eindtijd),
     );
 
   const [opmerkingen, setOpmerkingen] =
@@ -249,16 +326,16 @@ export default function DienstBewerkForm({
   const [
     geselecteerdeTags,
     setGeselecteerdeTags,
-  ] = useState<
-    Record<string, number>
-  >({});
+  ] = useState<Record<string, number>>(
+    {},
+  );
 
   const [
     medewerkers,
     setMedewerkers,
-  ] = useState<
-    PlanningMedewerker[]
-  >([]);
+  ] = useState<PlanningMedewerker[]>(
+    [],
+  );
 
   const [
     ladenTags,
@@ -278,19 +355,13 @@ export default function DienstBewerkForm({
   const [
     bezettingBezig,
     setBezettingBezig,
-  ] = useState<string | null>(
-    null,
-  );
+  ] = useState<string | null>(null);
 
   const [fout, setFout] =
     useState<string | null>(null);
 
-  const [
-    succes,
-    setSucces,
-  ] = useState<string | null>(
-    null,
-  );
+  const [succes, setSucces] =
+    useState<string | null>(null);
 
   const startTijden = useMemo(
     () =>
@@ -302,19 +373,10 @@ export default function DienstBewerkForm({
   );
 
   const eindTijden = useMemo(() => {
-    if (!begintijd) {
-      return maakTijden(
-        START_MINUTEN + 15,
-        EINDE_MINUTEN,
-      );
-    }
+    const startMinuten =
+      tijdNaarMinuten(begintijd);
 
-    const start =
-      tijdNaarMinuten(
-        begintijd,
-      );
-
-    if (start === null) {
+    if (startMinuten === null) {
       return maakTijden(
         START_MINUTEN + 15,
         EINDE_MINUTEN,
@@ -322,22 +384,22 @@ export default function DienstBewerkForm({
     }
 
     return maakTijden(
-      start + 15,
+      startMinuten + 15,
       EINDE_MINUTEN,
     );
   }, [begintijd]);
 
   useEffect(() => {
     setDatum(
-      datumUitDatum(dienst.datum),
+      datumNaarInput(dienst.datum),
     );
 
     setBegintijd(
-      tijdUitDatum(dienst.begintijd),
+      tijdNaarInput(dienst.begintijd),
     );
 
     setEindtijd(
-      tijdUitDatum(dienst.eindtijd),
+      tijdNaarInput(dienst.eindtijd),
     );
 
     setOpmerkingen(
@@ -350,15 +412,15 @@ export default function DienstBewerkForm({
     > = {};
 
     for (const dienstTag of dienst.tags) {
-      bestaandeTags[
-        dienstTag.tag.id
-      ] = dienstTag.aantal;
+      bestaandeTags[dienstTag.tagId] =
+        dienstTag.aantal;
     }
 
     setGeselecteerdeTags(
       bestaandeTags,
     );
   }, [
+    dienst.id,
     dienst.datum,
     dienst.begintijd,
     dienst.eindtijd,
@@ -367,30 +429,32 @@ export default function DienstBewerkForm({
   ]);
 
   useEffect(() => {
+    let actief = true;
+
     async function laadTags() {
       try {
         setLadenTags(true);
-        setFout(null);
 
-        const response =
-          await fetch(
-            `/api/planning/tags?vestigingId=${encodeURIComponent(
-              vestigingId,
-            )}`,
-            {
-              method: "GET",
-              cache: "no-store",
-              credentials: "include",
-            },
-          );
+        const response = await fetch(
+          `/api/planning/tags?vestigingId=${encodeURIComponent(
+            vestigingId,
+          )}`,
+          {
+            method: "GET",
+            cache: "no-store",
+            credentials: "include",
+          },
+        );
 
-        const data =
+        const data: unknown =
           await response.json();
 
         if (!response.ok) {
           throw new Error(
-            data?.fout ??
+            foutmeldingUitResponse(
+              data,
               "De planningtags konden niet worden opgehaald.",
+            ),
           );
         }
 
@@ -400,37 +464,45 @@ export default function DienstBewerkForm({
           );
         }
 
-        setTags(data);
+        if (actief) {
+          setTags(
+            data as PlanningTag[],
+          );
+        }
       } catch (error) {
         console.error(
           "Fout bij laden planningtags:",
           error,
         );
 
-        setFout(
-          error instanceof Error
-            ? error.message
-            : "De planningtags konden niet worden opgehaald.",
-        );
+        if (actief) {
+          setTags([]);
+
+          setFout(
+            error instanceof Error
+              ? error.message
+              : "De planningtags konden niet worden opgehaald.",
+          );
+        }
       } finally {
-        setLadenTags(false);
+        if (actief) {
+          setLadenTags(false);
+        }
       }
     }
 
     void laadTags();
+
+    return () => {
+      actief = false;
+    };
   }, [vestigingId]);
 
   useEffect(() => {
     if (!datum) {
       setMedewerkers([]);
-      return;
-    }
+      setLadenMedewerkers(false);
 
-    const datumVoorRequest =
-      datumVoorApi(datum);
-
-    if (!datumVoorRequest) {
-      setMedewerkers([]);
       return;
     }
 
@@ -440,42 +512,46 @@ export default function DienstBewerkForm({
       try {
         setLadenMedewerkers(true);
 
-        const response =
-          await fetch(
-            `/api/planning/medewerkers?vestigingId=${encodeURIComponent(
-              vestigingId,
-            )}&datum=${encodeURIComponent(
-              datumVoorRequest!,
-            )}`,
-            {
-              method: "GET",
-              cache: "no-store",
-              credentials: "include",
-            },
-          );
+        const response = await fetch(
+          `/api/planning/medewerkers?vestigingId=${encodeURIComponent(
+            vestigingId,
+          )}&datum=${encodeURIComponent(
+            datum,
+          )}`,
+          {
+            method: "GET",
+            cache: "no-store",
+            credentials: "include",
+          },
+        );
 
-        const data =
-          (await response.json()) as
-            | MedewerkersResponse
-            | { fout?: string };
+        const data: unknown =
+          await response.json();
 
         if (!response.ok) {
           throw new Error(
-            "fout" in data &&
-            typeof data.fout === "string"
-              ? data.fout
-              : "De medewerkers konden niet worden opgehaald.",
+            foutmeldingUitResponse(
+              data,
+              "De medewerkers konden niet worden opgehaald.",
+            ),
           );
         }
 
         if (
           !data ||
           typeof data !== "object" ||
-          !("medewerkers" in data) ||
-          !Array.isArray(
-            data.medewerkers,
-          )
+          !("medewerkers" in data)
         ) {
+          throw new Error(
+            "De medewerkers hebben een ongeldig formaat.",
+          );
+        }
+
+        const medewerkersData =
+          (data as MedewerkersResponse)
+            .medewerkers;
+
+        if (!Array.isArray(medewerkersData)) {
           throw new Error(
             "De medewerkers hebben een ongeldig formaat.",
           );
@@ -483,7 +559,7 @@ export default function DienstBewerkForm({
 
         if (actief) {
           setMedewerkers(
-            data.medewerkers,
+            medewerkersData,
           );
         }
       } catch (error) {
@@ -514,10 +590,7 @@ export default function DienstBewerkForm({
   ) {
     setGeselecteerdeTags(
       (huidig) => {
-        if (
-          huidig[tagId] !==
-          undefined
-        ) {
+        if (tagId in huidig) {
           const nieuw = {
             ...huidig,
           };
@@ -539,8 +612,7 @@ export default function DienstBewerkForm({
     tagId: string,
     waarde: string,
   ) {
-    const aantal =
-      Number(waarde);
+    const aantal = Number(waarde);
 
     if (
       !Number.isInteger(aantal) ||
@@ -578,14 +650,10 @@ export default function DienstBewerkForm({
     }
 
     const startMinuten =
-      tijdNaarMinuten(
-        begintijd,
-      );
+      tijdNaarMinuten(begintijd);
 
     const eindeMinuten =
-      tijdNaarMinuten(
-        eindtijd,
-      );
+      tijdNaarMinuten(eindtijd);
 
     if (
       startMinuten === null ||
@@ -599,8 +667,7 @@ export default function DienstBewerkForm({
     }
 
     if (
-      eindeMinuten <=
-      startMinuten
+      eindeMinuten <= startMinuten
     ) {
       setFout(
         "Eindtijd moet na de begintijd liggen.",
@@ -610,42 +677,8 @@ export default function DienstBewerkForm({
     }
 
     if (
-      startMinuten % 15 !== 0 ||
-      eindeMinuten % 15 !== 0
-    ) {
-      setFout(
-        "Diensten kunnen alleen per 15 minuten worden gepland.",
-      );
-
-      return;
-    }
-
-    if (
-      startMinuten <
-      START_MINUTEN
-    ) {
-      setFout(
-        "Een dienst kan niet vóór 09:00 starten.",
-      );
-
-      return;
-    }
-
-    if (
-      eindeMinuten >
-      EINDE_MINUTEN
-    ) {
-      setFout(
-        "Een dienst kan niet na 23:00 eindigen.",
-      );
-
-      return;
-    }
-
-    if (
-      Object.keys(
-        geselecteerdeTags,
-      ).length === 0
+      Object.keys(geselecteerdeTags).length ===
+      0
     ) {
       setFout(
         "Selecteer minimaal één planningstag.",
@@ -657,72 +690,42 @@ export default function DienstBewerkForm({
     try {
       setOpslaanBezig(true);
 
-      const start = new Date(
-        `${datum}T${begintijd}`,
-      );
-
-      const einde = new Date(
-        `${datum}T${eindtijd}`,
-      );
-
-      if (
-        Number.isNaN(
-          start.getTime(),
-        ) ||
-        Number.isNaN(
-          einde.getTime(),
-        )
-      ) {
-        setFout(
-          "De datum of tijden zijn ongeldig.",
-        );
-
-        return;
-      }
-
-      const response =
-        await fetch(
-          `/api/planning/diensten/${dienst.id}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-            credentials: "include",
-            body: JSON.stringify({
-              datum:
-                start
-                  .toISOString(),
-              begintijd:
-                start.toISOString(),
-              eindtijd:
-                einde.toISOString(),
-              opmerkingen:
-                opmerkingen.trim() ||
-                null,
-              tags: Object.entries(
-                geselecteerdeTags,
-              ).map(
-                ([
-                  tagId,
-                  aantal,
-                ]) => ({
-                  tagId,
-                  aantal,
-                }),
-              ),
-            }),
+      const response = await fetch(
+        `/api/planning/diensten/${dienst.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type":
+              "application/json",
           },
-        );
+          credentials: "include",
+          body: JSON.stringify({
+            datum,
+            begintijd,
+            eindtijd,
+            opmerkingen:
+              opmerkingen.trim() || null,
+            tags: Object.entries(
+              geselecteerdeTags,
+            ).map(
+              ([tagId, aantal]) => ({
+                tagId,
+                aantal,
+              }),
+            ),
+          }),
+        },
+      );
 
-      const data =
+      const data: unknown =
         await response.json();
 
       if (!response.ok) {
         throw new Error(
-          data?.fout ??
+          foutmeldingUitResponse(
+            data,
             "De dienst kon niet worden opgeslagen.",
+          ),
         );
       }
 
@@ -757,11 +760,9 @@ export default function DienstBewerkForm({
     const bestaatAl =
       dienst.bezetting.some(
         (bezetting) =>
-          bezettingMedewerkerId(
-            bezetting,
-          ) === medewerkerId &&
-          bezetting.status !==
-            "AFGEZEGD",
+          bezettingMedewerkerId(bezetting) ===
+            medewerkerId &&
+          bezetting.status !== "AFGEZEGD",
       );
 
     if (bestaatAl) {
@@ -776,36 +777,36 @@ export default function DienstBewerkForm({
       setBezettingBezig(
         medewerkerId,
       );
+
       setFout(null);
       setSucces(null);
 
-      const response =
-        await fetch(
-          "/api/planning/bezetting",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-            credentials: "include",
-            body: JSON.stringify({
-              dienstId:
-                dienst.id,
-              medewerkerId,
-              status:
-                "BEVESTIGD",
-            }),
+      const response = await fetch(
+        "/api/planning/bezetting",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
           },
-        );
+          credentials: "include",
+          body: JSON.stringify({
+            dienstId: dienst.id,
+            medewerkerId,
+            status: "BEVESTIGD",
+          }),
+        },
+      );
 
-      const data =
+      const data: unknown =
         await response.json();
 
       if (!response.ok) {
         throw new Error(
-          data?.fout ??
+          foutmeldingUitResponse(
+            data,
             "De medewerker kon niet aan de dienst worden gekoppeld.",
+          ),
         );
       }
 
@@ -845,25 +846,27 @@ export default function DienstBewerkForm({
       setBezettingBezig(
         bezettingId,
       );
+
       setFout(null);
       setSucces(null);
 
-      const response =
-        await fetch(
-          `/api/planning/bezetting/${bezettingId}`,
-          {
-            method: "DELETE",
-            credentials: "include",
-          },
-        );
+      const response = await fetch(
+        `/api/planning/bezetting/${bezettingId}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
 
-      const data =
+      const data: unknown =
         await response.json();
 
       if (!response.ok) {
         throw new Error(
-          data?.fout ??
+          foutmeldingUitResponse(
+            data,
             "De medewerker kon niet van de dienst worden verwijderd.",
+          ),
         );
       }
 
@@ -893,8 +896,7 @@ export default function DienstBewerkForm({
       dienst.bezetting
         .filter(
           (bezetting) =>
-            bezetting.status !==
-            "AFGEZEGD",
+            bezetting.status !== "AFGEZEGD",
         )
         .map(
           (bezetting) =>
@@ -904,10 +906,9 @@ export default function DienstBewerkForm({
         )
         .filter(
           (
-            id,
-          ): id is string =>
-            typeof id ===
-            "string",
+            medewerkerId,
+          ): medewerkerId is string =>
+            medewerkerId !== null,
         ),
     );
 
@@ -920,23 +921,23 @@ export default function DienstBewerkForm({
           ),
       )
       .sort((a, b) =>
-        volledigeNaam(
-          a,
-        ).localeCompare(
+        volledigeNaam(a).localeCompare(
           volledigeNaam(b),
           "nl",
         ),
       );
+
+  const aantalActieveBezetting =
+    dienst.bezetting.filter(
+      (bezetting) =>
+        bezetting.status !== "AFGEZEGD",
+    ).length;
 
   return (
     <form
       onSubmit={opslaanDienst}
       className="space-y-6"
     >
-      {/* ======================================================
-          DIENSTGEGEVENS
-          ====================================================== */}
-
       <section className="rounded-xl border bg-white p-6 shadow-sm">
         <div className="mb-5">
           <h2 className="text-lg font-semibold text-slate-900">
@@ -964,9 +965,7 @@ export default function DienstBewerkForm({
               type="date"
               value={datum}
               onChange={(event) =>
-                setDatum(
-                  event.target.value,
-                )
+                setDatum(event.target.value)
               }
               disabled={opslaanBezig}
               className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-50"
@@ -996,16 +995,14 @@ export default function DienstBewerkForm({
                 Kies begintijd...
               </option>
 
-              {startTijden.map(
-                (tijd) => (
-                  <option
-                    key={tijd}
-                    value={tijd}
-                  >
-                    {tijd}
-                  </option>
-                ),
-              )}
+              {startTijden.map((tijd) => (
+                <option
+                  key={tijd}
+                  value={tijd}
+                >
+                  {tijd}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -1032,16 +1029,14 @@ export default function DienstBewerkForm({
                 Kies eindtijd...
               </option>
 
-              {eindTijden.map(
-                (tijd) => (
-                  <option
-                    key={tijd}
-                    value={tijd}
-                  >
-                    {tijd}
-                  </option>
-                ),
-              )}
+              {eindTijden.map((tijd) => (
+                <option
+                  key={tijd}
+                  value={tijd}
+                >
+                  {tijd}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -1070,10 +1065,6 @@ export default function DienstBewerkForm({
         </div>
       </section>
 
-      {/* ======================================================
-          TAGS
-          ====================================================== */}
-
       <section className="rounded-xl border bg-white p-6 shadow-sm">
         <div className="mb-5">
           <h2 className="text-lg font-semibold text-slate-900">
@@ -1093,16 +1084,15 @@ export default function DienstBewerkForm({
           </p>
         ) : tags.length === 0 ? (
           <p className="text-sm text-slate-500">
-            Er zijn geen actieve
-            planningtags beschikbaar.
+            Er zijn geen actieve planningtags
+            beschikbaar.
           </p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {tags.map((tag) => {
               const geselecteerd =
-                geselecteerdeTags[
-                  tag.id
-                ] !== undefined;
+                geselecteerdeTags[tag.id] !==
+                undefined;
 
               return (
                 <div
@@ -1117,17 +1107,11 @@ export default function DienstBewerkForm({
                     <label className="flex cursor-pointer items-center gap-2">
                       <input
                         type="checkbox"
-                        checked={
-                          geselecteerd
-                        }
+                        checked={geselecteerd}
                         onChange={() =>
-                          toggleTag(
-                            tag.id,
-                          )
+                          toggleTag(tag.id)
                         }
-                        disabled={
-                          opslaanBezig
-                        }
+                        disabled={opslaanBezig}
                         className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                       />
 
@@ -1145,18 +1129,13 @@ export default function DienstBewerkForm({
                             tag.id
                           ] ?? 1
                         }
-                        onChange={(
-                          event,
-                        ) =>
+                        onChange={(event) =>
                           wijzigAantal(
                             tag.id,
-                            event.target
-                              .value,
+                            event.target.value,
                           )
                         }
-                        disabled={
-                          opslaanBezig
-                        }
+                        disabled={opslaanBezig}
                         className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-center text-sm text-slate-800 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                       />
                     )}
@@ -1167,10 +1146,6 @@ export default function DienstBewerkForm({
           </div>
         )}
       </section>
-
-      {/* ======================================================
-          BEZETTING
-          ====================================================== */}
 
       <section className="rounded-xl border bg-white p-6 shadow-sm">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1186,20 +1161,15 @@ export default function DienstBewerkForm({
           </div>
 
           <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
-            {
-              dienst.bezetting.filter(
-                (bezetting) =>
-                  bezetting.status !==
-                  "AFGEZEGD",
-              ).length
-            }{" "}
-            personen
+            {aantalActieveBezetting}{" "}
+            {aantalActieveBezetting === 1
+              ? "persoon"
+              : "personen"}
           </span>
         </div>
 
         <div className="space-y-3">
-          {dienst.bezetting.length ===
-          0 ? (
+          {dienst.bezetting.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500">
               Er is nog geen medewerker
               gekoppeld.
@@ -1212,16 +1182,14 @@ export default function DienstBewerkForm({
 
                 return (
                   <div
-                    key={
-                      bezetting.id
-                    }
+                    key={bezetting.id}
                     className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div>
                       <div className="font-medium text-slate-900">
                         {medewerker
                           ? volledigeNaam(
-                              medewerker as PlanningMedewerker,
+                              medewerker,
                             )
                           : "Open positie"}
                       </div>
@@ -1248,37 +1216,33 @@ export default function DienstBewerkForm({
 
                     {bezetting.status !==
                       "GEWERKT" &&
-                      bezetting.status !==
-                        "AFGEZEGD" && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            void verwijderBezetting(
-                              bezetting.id,
-                            )
-                          }
-                          disabled={
-                            bezettingBezig ===
-                            bezetting.id
-                          }
-                          className="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {bezettingBezig ===
+                    bezetting.status !==
+                      "AFGEZEGD" && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void verwijderBezetting(
+                            bezetting.id,
+                          )
+                        }
+                        disabled={
+                          bezettingBezig ===
                           bezetting.id
-                            ? "Bezig..."
-                            : "Verwijderen"}
-                        </button>
-                      )}
+                        }
+                        className="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {bezettingBezig ===
+                        bezetting.id
+                          ? "Bezig..."
+                          : "Verwijderen"}
+                      </button>
+                    )}
                   </div>
                 );
               },
             )
           )}
         </div>
-
-        {/* ====================================================
-            MEDEWERKER TOEVOEGEN
-            ==================================================== */}
 
         <div className="mt-5 border-t border-slate-200 pt-5">
           <h3 className="text-sm font-semibold text-slate-900">
@@ -1291,7 +1255,7 @@ export default function DienstBewerkForm({
             bevestigd.
           </p>
 
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <div className="mt-3">
             <select
               defaultValue=""
               disabled={
@@ -1310,10 +1274,9 @@ export default function DienstBewerkForm({
                   medewerkerId,
                 );
 
-                event.target.value =
-                  "";
+                event.target.value = "";
               }}
-              className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-50"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-50"
             >
               <option value="">
                 {ladenMedewerkers
@@ -1327,16 +1290,10 @@ export default function DienstBewerkForm({
               {beschikbareMedewerkers.map(
                 (medewerker) => (
                   <option
-                    key={
-                      medewerker.id
-                    }
-                    value={
-                      medewerker.id
-                    }
+                    key={medewerker.id}
+                    value={medewerker.id}
                   >
-                    {volledigeNaam(
-                      medewerker,
-                    )}
+                    {volledigeNaam(medewerker)}
                     {medewerker.personeelsnummer
                       ? ` — ${medewerker.personeelsnummer}`
                       : ""}
@@ -1347,10 +1304,6 @@ export default function DienstBewerkForm({
           </div>
         </div>
       </section>
-
-      {/* ======================================================
-          MELDINGEN
-          ====================================================== */}
 
       {fout && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -1363,10 +1316,6 @@ export default function DienstBewerkForm({
           {succes}
         </div>
       )}
-
-      {/* ======================================================
-          OPSLAAN
-          ====================================================== */}
 
       <div className="flex justify-end">
         <button
