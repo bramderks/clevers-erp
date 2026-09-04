@@ -1,0 +1,1525 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// ======================================================
+/// PLATFORM
+/// ======================================================
+
+model Organisatie {
+  id String @id @default(cuid())
+
+  code String @unique
+  naam String @unique
+
+  actief Boolean @default(true)
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  vestigingen Vestiging[]
+  gebruikers  OrganisatieGebruiker[]
+
+  aangemaaktDoor String?
+  gewijzigdDoor  String?
+
+  @@index([actief])
+}
+
+model Vestiging {
+  id String @id @default(cuid())
+
+  organisatieId String
+  organisatie   Organisatie @relation(fields: [organisatieId], references: [id], onDelete: Cascade)
+
+  vakantieAanvragen VakantieAanvraag[]
+
+  code String
+  naam String
+
+  actief Boolean @default(true)
+
+  /// -----------------------------------------------------
+  /// SEIZOEN
+  ///
+  /// Bepaalt de periode waarin de personeelsplanning
+  /// actief is.
+  ///
+  /// Binnen deze periode worden automatisch
+  /// planningweken aangemaakt.
+  ///
+  /// Buiten deze periode worden planningweken
+  /// automatisch afgesloten.
+  /// -----------------------------------------------------
+
+  seizoenStart DateTime?
+  seizoenEinde DateTime?
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  medewerkers MedewerkerVestiging[]
+
+  weken              Week[]
+  bestellingen       Bestelling[]
+  voorraadTellingen  VoorraadTelling[]
+  voorraadMutaties   VoorraadMutatie[]
+  vestigingProducten VestigingProduct[]
+
+  urenregistraties UrenRegistratie[]
+  verloningsRegels VerloningsRegel[]
+
+  openingstijden   OpeningstijdenPeriode[]
+  vestigingToegang SysteemGebruikerVestiging[]
+
+  aangemaaktDoor String?
+  gewijzigdDoor  String?
+
+  @@unique([organisatieId, code])
+  @@unique([organisatieId, naam])
+  @@index([organisatieId])
+  @@index([actief])
+  @@index([seizoenStart])
+  @@index([seizoenEinde])
+}
+
+model OpeningstijdenPeriode {
+  id String @id @default(cuid())
+
+  vestigingId String
+  vestiging   Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  startDatum DateTime
+  eindDatum  DateTime
+
+  openingstijd  String
+  sluitingstijd String
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  @@index([vestigingId])
+  @@index([vestigingId, startDatum, eindDatum])
+}
+
+model OrganisatieGebruiker {
+  id String @id @default(cuid())
+
+  organisatieId String
+  organisatie   Organisatie @relation(fields: [organisatieId], references: [id], onDelete: Cascade)
+
+  systeemGebruikerId String
+  systeemGebruiker   SysteemGebruiker @relation(fields: [systeemGebruikerId], references: [id], onDelete: Cascade)
+
+  rolId String
+  rol   Rol    @relation(fields: [rolId], references: [id], onDelete: Restrict)
+
+  actief Boolean @default(true)
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  @@unique([organisatieId, systeemGebruikerId])
+  @@index([systeemGebruikerId])
+  @@index([organisatieId])
+  @@index([rolId])
+  @@index([organisatieId, actief])
+}
+
+model SysteemGebruiker {
+  id String @id @default(cuid())
+
+  naam           String
+  email          String @unique
+  wachtwoordHash String
+
+  actief         Boolean   @default(true)
+  laatsteLoginOp DateTime?
+
+  medewerker Medewerker?
+
+  organisaties     OrganisatieGebruiker[]
+  vestigingToegang SysteemGebruikerVestiging[]
+  auditLogs        AuditLog[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  @@index([actief])
+}
+
+model SysteemGebruikerVestiging {
+  id String @id @default(cuid())
+
+  systeemGebruikerId String
+  vestigingId        String
+
+  systeemGebruiker SysteemGebruiker @relation(fields: [systeemGebruikerId], references: [id], onDelete: Cascade)
+  vestiging        Vestiging        @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  actief Boolean @default(true)
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  @@unique([systeemGebruikerId, vestigingId])
+  @@index([systeemGebruikerId])
+  @@index([vestigingId])
+  @@index([vestigingId, actief])
+}
+
+model Rol {
+  id String @id @default(cuid())
+
+  naam         String  @unique
+  omschrijving String?
+
+  organisatieGebruikers OrganisatieGebruiker[]
+  medewerkerRollen      MedewerkerRol[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+
+  systeemGebruikerId String?
+
+  systeemGebruiker SysteemGebruiker? @relation(fields: [systeemGebruikerId], references: [id], onDelete: SetNull)
+
+  module   String
+  actie    String
+  recordId String?
+  details  Json?
+
+  aangemaaktOp DateTime @default(now())
+
+  @@index([module])
+  @@index([aangemaaktOp])
+}
+
+/// ======================================================
+/// MEDEWERKERS
+/// ======================================================
+
+enum Aanhef {
+  DHR
+  MEVR
+  ANDERS
+  GEEN_OPGAVE
+}
+
+enum ContractType {
+  OPROEP
+  VAST
+}
+
+/// ======================================================
+/// MEDEWERKER
+/// ======================================================
+
+model Medewerker {
+  id String @id @default(cuid())
+
+  systeemGebruikerId String? @unique
+
+  systeemGebruiker SysteemGebruiker? @relation(fields: [systeemGebruikerId], references: [id], onDelete: SetNull)
+
+  personeelsnummer String? @unique
+
+  aanhef Aanhef
+
+  voornaam      String
+  tussenvoegsel String?
+  achternaam    String
+  roepnaam      String?
+
+  geboortedatum DateTime
+
+  email    String @unique
+  telefoon String
+
+  statusId String
+
+  status Status @relation(fields: [statusId], references: [id], onDelete: Restrict)
+
+  aanmeldingOp DateTime @default(now())
+
+  geactiveerdOp   DateTime?
+  geactiveerdDoor String?
+
+  actief Boolean @default(false)
+
+  contractType ContractType?
+
+  contractUren Decimal? @db.Decimal(5, 2)
+
+  uurloon Decimal? @db.Decimal(8, 2)
+
+  datumInDienst  DateTime?
+  datumUitDienst DateTime?
+
+  /// ----------------------------------------------------
+  /// VESTIGINGEN
+  /// ----------------------------------------------------
+
+  vestigingen MedewerkerVestiging[]
+
+  /// ----------------------------------------------------
+  /// VAKANTIE
+  /// ----------------------------------------------------
+
+  vakantieAanvragen VakantieAanvraag[]
+
+  /// ----------------------------------------------------
+  /// ROLLEN EN TAGS
+  /// ----------------------------------------------------
+
+  rollen MedewerkerRol[]
+
+  tags MedewerkerTag[]
+
+  /// ----------------------------------------------------
+  /// PLANNING
+  /// ----------------------------------------------------
+
+  beschikbaarheden Beschikbaarheid[]
+
+  diensten DienstBezetting[]
+
+  /// ----------------------------------------------------
+  /// URENREGISTRATIE
+  /// ----------------------------------------------------
+
+  urenregistraties UrenRegistratie[]
+
+  /// ----------------------------------------------------
+  /// VERLONING
+  /// ----------------------------------------------------
+
+  /// Definitieve verloningsregels per periode
+  /// en vestiging.
+  verloningsRegels VerloningsRegel[]
+
+  /// Controle van de maandelijkse verloning
+  /// door de medewerker.
+  ///
+  /// Per verloningsperiode bestaat maximaal
+  /// één VerloningsControle per medewerker.
+  verloningsControles VerloningsControle[]
+
+  /// ----------------------------------------------------
+  /// DIENST RUILEN
+  /// ----------------------------------------------------
+
+  ruilverzoekenAangevraagd Ruilverzoek[] @relation("RuilverzoekenAangevraagd")
+
+  ruilverzoekenOntvangen Ruilverzoek[] @relation("RuilverzoekenOntvangen")
+
+  /// ----------------------------------------------------
+  /// AUDIT
+  /// ----------------------------------------------------
+
+  aangemaaktOp DateTime @default(now())
+
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([statusId])
+  @@index([actief])
+  @@index([achternaam])
+  @@index([voornaam])
+}
+
+/// ======================================================
+/// MEDEWERKER - VESTIGING
+/// ======================================================
+
+model MedewerkerVestiging {
+  id String @id @default(cuid())
+
+  medewerkerId String
+
+  vestigingId String
+
+  hoofdvestiging Boolean @default(false)
+
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  aangemaaktOp DateTime @default(now())
+
+  @@unique([medewerkerId, vestigingId])
+  @@index([medewerkerId])
+  @@index([vestigingId])
+}
+
+/// ======================================================
+/// MEDEWERKER - ROL
+/// ======================================================
+
+model MedewerkerRol {
+  id String @id @default(cuid())
+
+  medewerkerId String
+
+  rolId String
+
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+
+  rol Rol @relation(fields: [rolId], references: [id], onDelete: Cascade)
+
+  aangemaaktOp DateTime @default(now())
+
+  @@unique([medewerkerId, rolId])
+  @@index([medewerkerId])
+  @@index([rolId])
+}
+
+/// ======================================================
+/// PERSONEELSPLANNING
+/// ======================================================
+
+/// ======================================================
+/// TAGS
+/// ======================================================
+
+model Tag {
+  id String @id @default(cuid())
+
+  naam String @unique
+
+  volgorde Int @default(0)
+
+  actief Boolean @default(true)
+
+  medewerkers MedewerkerTag[]
+  diensten    DienstTag[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  @@index([volgorde])
+  @@index([actief])
+}
+
+/// ======================================================
+/// MEDEWERKER - TAG
+/// ======================================================
+
+model MedewerkerTag {
+  id String @id @default(cuid())
+
+  medewerkerId String
+  tagId        String
+
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+  tag        Tag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([medewerkerId, tagId])
+  @@index([medewerkerId])
+  @@index([tagId])
+}
+
+/// ======================================================
+/// WEEK
+/// ======================================================
+
+model Week {
+  id String @id @default(cuid())
+
+  vestigingId String
+
+  jaar       Int
+  weeknummer Int
+
+  /// -----------------------------------------------------
+  /// Status
+  ///
+  /// OPEN
+  /// IN_PLANNING
+  /// GEPUBLICEERD
+  /// AFGESLOTEN
+  /// -----------------------------------------------------
+
+  status String @default("OPEN")
+
+  /// -----------------------------------------------------
+  /// Beschikbaarheidsdeadline
+  ///
+  /// Uiterste moment waarop medewerkers hun
+  /// beschikbaarheid voor deze week kunnen doorgeven.
+  ///
+  /// De daadwerkelijke deadline wordt per week
+  /// opgeslagen zodat historische weken hun oorspronkelijke
+  /// deadline behouden.
+  /// -----------------------------------------------------
+
+  beschikbaarheidDeadline DateTime?
+
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  diensten         Dienst[]
+  beschikbaarheden Beschikbaarheid[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  @@unique([vestigingId, jaar, weeknummer])
+  @@index([vestigingId])
+  @@index([jaar, weeknummer])
+  @@index([status])
+  @@index([beschikbaarheidDeadline])
+}
+
+/// ======================================================
+/// BESCHIKBAARHEID
+///
+/// De normale wekelijkse beschikbaarheid van een
+/// medewerker voor de personeelsplanning.
+///
+/// Dit model is NIET bedoeld voor vakantie of langere
+/// afwezigheid. Daarvoor bestaat VakantieAanvraag.
+/// ======================================================
+
+model Beschikbaarheid {
+  id String @id @default(cuid())
+
+  weekId       String
+  medewerkerId String
+
+  datum DateTime
+
+  begintijd DateTime?
+  eindtijd  DateTime?
+
+  /// -----------------------------------------------------
+  /// Beschikbaarheidsstatus
+  ///
+  /// BESCHIKBAAR
+  /// NIET_BESCHIKBAAR
+  /// VOORKEUR
+  /// -----------------------------------------------------
+
+  status String @default("BESCHIKBAAR")
+
+  opmerking String?
+
+  week       Week       @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  @@unique([weekId, medewerkerId, datum])
+  @@index([weekId])
+  @@index([medewerkerId])
+  @@index([datum])
+  @@index([status])
+}
+
+/// ======================================================
+/// VAKANTIE / AFWEZIGHEID
+///
+/// Een vakantieaanvraag staat los van de normale
+/// wekelijkse beschikbaarheid.
+///
+/// De medewerker kan hiermee een langere periode van
+/// afwezigheid aanvragen.
+///
+/// De eigenaar beoordeelt de aanvraag.
+///
+/// Status:
+///
+/// AANGEVRAAGD
+/// GOEDGEKEURD
+/// AFGEWEZEN
+/// GEANNULEERD
+/// ------------------------------------------------------
+///
+/// Voor juni, juli en augustus geldt:
+/// - maximaal 14 dagen aaneengesloten afwezigheid zonder
+///   expliciete vakantieaanvraag;
+/// - langere afwezigheid moet via dit model worden
+///   aangevraagd.
+/// ------------------------------------------------------
+///
+/// De daadwerkelijke beleidscontrole gebeurt in de
+/// applicatielogica. Het model bewaart de aanvraag en
+/// de uiteindelijke beslissing.
+/// ======================================================
+
+model VakantieAanvraag {
+  id String @id @default(cuid())
+
+  medewerkerId String
+  vestigingId  String
+
+  startDatum DateTime
+  eindDatum  DateTime
+
+  /// -----------------------------------------------------
+  /// Type afwezigheid
+  ///
+  /// VAKANTIE
+  /// OVERIG
+  /// -----------------------------------------------------
+
+  type String @default("VAKANTIE")
+
+  opmerking String?
+
+  /// -----------------------------------------------------
+  /// Status
+  ///
+  /// AANGEVRAAGD
+  /// GOEDGEKEURD
+  /// AFGEWEZEN
+  /// GEANNULEERD
+  /// -----------------------------------------------------
+
+  status String @default("AANGEVRAAGD")
+
+  /// -----------------------------------------------------
+  /// Beoordeling door eigenaar
+  /// -----------------------------------------------------
+
+  beoordeeldDoorId String?
+  beoordeeldOp     DateTime?
+
+  redenAfwijzing String?
+
+  aangevraagdOp DateTime @default(now())
+
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+  vestiging  Vestiging  @relation(fields: [vestigingId], references: [id], onDelete: Restrict)
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  @@index([medewerkerId])
+  @@index([vestigingId])
+  @@index([startDatum])
+  @@index([eindDatum])
+  @@index([status])
+  @@index([beoordeeldDoorId])
+}
+
+/// ======================================================
+/// DIENST
+/// ======================================================
+
+model Dienst {
+  id String @id @default(cuid())
+
+  weekId String
+
+  datum DateTime
+
+  begintijd DateTime
+  eindtijd  DateTime
+
+  opmerkingen String?
+
+  week Week @relation(fields: [weekId], references: [id], onDelete: Cascade)
+
+  tags      DienstTag[]
+  bezetting DienstBezetting[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  @@index([weekId])
+  @@index([datum])
+}
+
+/// ======================================================
+/// DIENST - TAG
+/// ======================================================
+
+model DienstTag {
+  id String @id @default(cuid())
+
+  dienstId String
+  tagId    String
+
+  aantal Int @default(1)
+
+  dienst Dienst @relation(fields: [dienstId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([dienstId, tagId])
+  @@index([dienstId])
+  @@index([tagId])
+}
+
+/// ======================================================
+/// DIENST - BEZETTING
+///
+/// Dit is de daadwerkelijke planning.
+///
+/// medewerkerId blijft optioneel zodat een open
+/// dienstplek kan bestaan voordat deze wordt ingevuld.
+///
+/// Status:
+///
+/// OPEN
+/// GEPLAND
+/// BEVESTIGD
+/// AFGEZEGD
+/// GEWERKT
+/// ======================================================
+
+model DienstBezetting {
+  id String @id @default(cuid())
+
+  dienstId String
+
+  medewerkerId String?
+
+  status String @default("OPEN")
+
+  dienst     Dienst      @relation(fields: [dienstId], references: [id], onDelete: Cascade)
+  medewerker Medewerker? @relation(fields: [medewerkerId], references: [id], onDelete: SetNull)
+
+  urenregistratie UrenRegistratie?
+
+  ruilverzoeken Ruilverzoek[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  @@unique([dienstId, medewerkerId])
+  @@index([dienstId])
+  @@index([medewerkerId])
+  @@index([status])
+}
+
+/// ======================================================
+/// DIENST RUILVERZOEK
+///
+/// Een medewerker kan zijn/haar eigen dienst aanbieden
+/// aan een andere medewerker.
+///
+/// Flow:
+///
+/// AANGEVRAAGD
+///       ↓
+/// WACHT_OP_EIGENAAR
+///       ↓
+/// UITGEVOERD
+///
+/// De aangewezen medewerker moet eerst accepteren.
+/// Daarna krijgt de eigenaar een controleactie.
+///
+/// Pas na goedkeuring door de eigenaar wordt de
+/// DienstBezetting daadwerkelijk overgezet naar de
+/// andere medewerker.
+/// ======================================================
+
+model Ruilverzoek {
+  id String @id @default(cuid())
+
+  dienstBezettingId String
+
+  /// Medewerker die de ruil aanvraagt.
+  aanvragerId String
+
+  /// Medewerker die de dienst moet overnemen.
+  ruilMedewerkerId String
+
+  /// -----------------------------------------------------
+  /// Ruilstatus
+  ///
+  /// AANGEVRAAGD
+  /// AFGEWEZEN_DOOR_MEDEWERKER
+  /// WACHT_OP_EIGENAAR
+  /// AFGEWEZEN_DOOR_EIGENAAR
+  /// GOEDGEKEURD
+  /// UITGEVOERD
+  /// -----------------------------------------------------
+
+  status String @default("AANGEVRAAGD")
+
+  aangevraagdOp DateTime @default(now())
+
+  medewerkerGeaccepteerdOp DateTime?
+
+  /// ID van de systeemgebruiker/eigenaar die de ruil
+  /// heeft beoordeeld.
+  ///
+  /// Bewust alleen als ID opgeslagen. Hierdoor is voor
+  /// deze relatie geen wijziging in SysteemGebruiker nodig.
+  eigenaarBeoordeeldDoorId String?
+
+  eigenaarBeoordeeldOp DateTime?
+
+  uitgevoerdOp DateTime?
+
+  dienstBezetting DienstBezetting @relation(fields: [dienstBezettingId], references: [id], onDelete: Cascade)
+
+  aanvrager Medewerker @relation("RuilverzoekenAangevraagd", fields: [aanvragerId], references: [id], onDelete: Cascade)
+
+  ruilMedewerker Medewerker @relation("RuilverzoekenOntvangen", fields: [ruilMedewerkerId], references: [id], onDelete: Cascade)
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  @@index([dienstBezettingId])
+  @@index([aanvragerId])
+  @@index([ruilMedewerkerId])
+  @@index([status])
+  @@index([eigenaarBeoordeeldDoorId])
+}
+
+/// ======================================================
+/// URENREGISTRATIE
+///
+/// De urenregistratie bevat uitsluitend de daadwerkelijk
+/// gewerkte uren.
+///
+/// Planning is nooit de definitieve bron voor gewerkte
+/// uren.
+///
+/// Na afloop van een dienst controleert de eigenaar de
+/// werkelijke begin- en eindtijd en legt deze definitief
+/// vast.
+///
+/// Tijden worden technisch in stappen van 15 minuten
+/// verwerkt.
+///
+/// Status:
+///
+/// TE_CONTROLEREN
+/// DEFINITIEF
+/// AFGEKEURD
+/// ======================================================
+
+model UrenRegistratie {
+  id String @id @default(cuid())
+
+  dienstBezettingId String
+  medewerkerId      String
+
+  /// Vestiging wordt bewust als ID opgeslagen zodat de
+  /// definitieve registratie altijd aan de betreffende
+  /// vestiging gekoppeld blijft.
+  vestigingId String
+
+  datum DateTime
+
+  /// Taak/functie waarvoor de medewerker heeft gewerkt.
+  taak String?
+
+  /// Werkelijke gewerkte tijden.
+  werkelijkeBegintijd DateTime
+  werkelijkeEindtijd  DateTime
+
+  /// Pauze in minuten.
+  pauzeMinuten Int @default(0)
+
+  /// Definitief berekende gewerkte uren.
+  gewerkteUren Decimal @db.Decimal(5, 2)
+
+  /// -----------------------------------------------------
+  /// Status
+  ///
+  /// TE_CONTROLEREN
+  /// DEFINITIEF
+  /// AFGEKEURD
+  /// -----------------------------------------------------
+
+  status String @default("TE_CONTROLEREN")
+
+  /// Systeemgebruiker die de uren heeft gecontroleerd.
+  gecontroleerdDoorId String?
+
+  gecontroleerdOp DateTime?
+
+  opmerking String?
+
+  dienstBezetting DienstBezetting @relation(fields: [dienstBezettingId], references: [id], onDelete: Cascade)
+
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Restrict)
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  @@unique([dienstBezettingId])
+  @@index([medewerkerId])
+  @@index([vestigingId])
+  @@index([datum])
+  @@index([status])
+  @@index([gecontroleerdDoorId])
+}
+
+/// ======================================================
+/// PRODUCTEN
+/// ======================================================
+
+model ProductType {
+  id String @id @default(cuid())
+
+  code String @unique
+  naam String
+
+  volgorde Int
+
+  actief Boolean @default(true)
+
+  producten Product[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  @@index([volgorde])
+  @@index([actief])
+}
+
+model Product {
+  id String @id @default(cuid())
+
+  code String @unique
+  naam String
+
+  productTypeId String
+
+  actief Boolean @default(true)
+
+  volgorde Int
+
+  leverancier   String?
+  artikelnummer String?
+
+  bestelEenheid   String?
+  voorraadEenheid String?
+
+  productType ProductType @relation(fields: [productTypeId], references: [id], onDelete: Restrict)
+
+  vestigingen VestigingProduct[]
+
+  bestelRegels BestelRegel[]
+
+  voorraadTellingen VoorraadTellingRegel[]
+
+  voorraadMutaties VoorraadMutatie[]
+
+  leveringen LeveringRegel[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  @@index([productTypeId])
+  @@index([naam])
+  @@index([actief])
+  @@index([volgorde])
+}
+
+model VestigingProduct {
+  id String @id @default(cuid())
+
+  vestigingId String
+  productId   String
+
+  minimumVoorraad Decimal? @db.Decimal(10, 2)
+
+  bufferVoorraad Decimal? @db.Decimal(10, 2)
+
+  standaardBestelling Decimal? @db.Decimal(10, 2)
+
+  actief Boolean @default(true)
+
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([vestigingId, productId])
+  @@index([vestigingId])
+  @@index([productId])
+  @@index([actief])
+}
+
+/// ======================================================
+/// BESTELLINGEN
+/// ======================================================
+
+model Bestelling {
+  id String @id @default(cuid())
+
+  vestigingId String
+
+  besteldatum DateTime
+  leverdatum  DateTime?
+
+  statusId String
+
+  opmerkingen String?
+
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  status Status @relation(fields: [statusId], references: [id], onDelete: Restrict)
+
+  regels BestelRegel[]
+
+  leveringen Levering[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  @@index([vestigingId])
+  @@index([besteldatum])
+  @@index([statusId])
+}
+
+model BestelRegel {
+  id String @id @default(cuid())
+
+  bestellingId String
+  productId    String
+
+  adviesAantal Decimal @db.Decimal(10, 2)
+
+  besteldAantal Decimal @db.Decimal(10, 2)
+
+  geleverdAantal Decimal? @db.Decimal(10, 2)
+
+  bestelling Bestelling @relation(fields: [bestellingId], references: [id], onDelete: Cascade)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([bestellingId, productId])
+  @@index([bestellingId])
+  @@index([productId])
+}
+
+/// ======================================================
+/// VOORRAAD
+/// ======================================================
+
+model VoorraadTelling {
+  id String @id @default(cuid())
+
+  vestigingId String
+
+  teldatum DateTime
+
+  statusId String
+
+  opmerkingen String?
+
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  status Status @relation(fields: [statusId], references: [id], onDelete: Restrict)
+
+  regels VoorraadTellingRegel[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  @@index([vestigingId])
+  @@index([teldatum])
+  @@index([statusId])
+}
+
+model VoorraadTellingRegel {
+  id String @id @default(cuid())
+
+  tellingId String
+  productId String
+
+  geteld Decimal @db.Decimal(10, 2)
+
+  advies Decimal? @db.Decimal(10, 2)
+
+  bestelling Decimal? @db.Decimal(10, 2)
+
+  telling VoorraadTelling @relation(fields: [tellingId], references: [id], onDelete: Cascade)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([tellingId, productId])
+  @@index([tellingId])
+  @@index([productId])
+}
+
+model VoorraadMutatie {
+  id String @id @default(cuid())
+
+  vestigingId String
+  productId   String
+
+  aantal Decimal @db.Decimal(10, 2)
+
+  reden String
+
+  referentie String?
+
+  opmerkingen String?
+
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  aangemaaktOp DateTime @default(now())
+
+  @@index([vestigingId])
+  @@index([productId])
+  @@index([aangemaaktOp])
+}
+
+/// ======================================================
+/// LEVERINGEN
+/// ======================================================
+
+model Levering {
+  id String @id @default(cuid())
+
+  bestellingId String
+
+  leverdatum DateTime
+
+  pakbonNummer String?
+
+  opmerkingen String?
+
+  bestelling Bestelling @relation(fields: [bestellingId], references: [id], onDelete: Restrict)
+
+  regels LeveringRegel[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  @@index([bestellingId])
+  @@index([leverdatum])
+}
+
+model LeveringRegel {
+  id String @id @default(cuid())
+
+  leveringId String
+  productId  String
+
+  besteld Decimal @db.Decimal(10, 2)
+
+  geleverd Decimal @db.Decimal(10, 2)
+
+  levering Levering @relation(fields: [leveringId], references: [id], onDelete: Cascade)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([leveringId, productId])
+  @@index([leveringId])
+  @@index([productId])
+}
+
+/// ======================================================
+/// INSTELLINGEN
+/// ======================================================
+
+model Status {
+  id String @id @default(cuid())
+
+  /// =====================================================
+  /// Algemeen
+  /// =====================================================
+
+  module String
+
+  code String
+
+  naam String
+
+  omschrijving String?
+
+  /// =====================================================
+  /// Weergave
+  /// =====================================================
+
+  kleur String?
+
+  icoon String?
+
+  cssClass String?
+
+  volgorde Int @default(0)
+
+  actief Boolean @default(true)
+
+  /// =====================================================
+  /// Relaties
+  /// =====================================================
+
+  medewerkers Medewerker[]
+
+  bestellingen Bestelling[]
+
+  voorraadTellingen VoorraadTelling[]
+
+  /// =====================================================
+  /// Audit
+  /// =====================================================
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  @@unique([module, code])
+  @@index([module])
+  @@index([actief])
+  @@index([volgorde])
+}
+
+model Instelling {
+  id String @id @default(cuid())
+
+  sleutel String @unique
+
+  waarde String
+
+  omschrijving String?
+
+  categorie String?
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  @@index([categorie])
+}
+
+/// ======================================================
+/// RAPPORTAGES
+/// ======================================================
+
+/// ======================================================
+/// VERLONINGSPERIODE
+/// ======================================================
+///
+/// Een VerloningsPeriode vertegenwoordigt één volledige
+/// kalendermaand.
+///
+/// Voorbeeld:
+///
+/// Augustus 2026
+///
+/// periodeStart:
+/// 01-08-2026 00:00:00
+///
+/// periodeEinde:
+/// 31-08-2026 23:59:59
+///
+/// ------------------------------------------------------
+/// VERLONINGSCONTROLE
+/// ------------------------------------------------------
+///
+/// Na afloop van de maand krijgen zowel de medewerkers
+/// als de eigenaar tijd om de verloning te controleren.
+///
+/// Controleperiode:
+///
+/// 1e dag van de volgende maand
+/// t/m
+/// 3e dag van de volgende maand 23:59:59
+///
+/// Voorbeeld:
+///
+/// Verloning augustus 2026:
+///
+/// controleStart:
+/// 01-09-2026 00:00:00
+///
+/// controleDeadline:
+/// 03-09-2026 23:59:59
+///
+/// Zowel medewerker als eigenaar kunnen gedurende deze
+/// periode controleren.
+///
+/// Wanneer een medewerker vóór de deadline geen actie
+/// onderneemt, wordt de verloning voor die medewerker
+/// automatisch als akkoord beschouwd.
+///
+/// Vanaf de 4e dag kan de verloning worden verwerkt.
+///
+/// ------------------------------------------------------
+/// STATUS
+/// ------------------------------------------------------
+///
+/// AANGEMAAKT
+///
+/// De verloningsperiode bestaat, maar is nog niet klaar
+/// voor verdere verwerking.
+///
+/// KLAAR
+///
+/// De verloningsperiode en regels zijn volledig
+/// samengesteld en staan klaar voor controle/verwerking.
+///
+/// VERWERKT
+///
+/// De verloningsperiode is definitief verwerkt.
+/// ======================================================
+
+model VerloningsPeriode {
+  id String @id @default(cuid())
+
+  /// ----------------------------------------------------
+  /// VERLONINGSPERIODE
+  /// ----------------------------------------------------
+
+  periodeStart DateTime
+  periodeEinde DateTime
+
+  jaar  Int
+  maand Int
+
+  /// ----------------------------------------------------
+  /// STATUS
+  /// ----------------------------------------------------
+
+  /// AANGEMAAKT
+  /// KLAAR
+  /// VERWERKT
+  status String @default("AANGEMAAKT")
+
+  /// Moment waarop de verloningsperiode is gegenereerd.
+  gegenereerdOp DateTime?
+
+  /// ----------------------------------------------------
+  /// CONTROLEPERIODE
+  /// ----------------------------------------------------
+
+  /// Moment waarop medewerkers en eigenaar de
+  /// verloningsperiode mogen controleren.
+  controleStart DateTime?
+
+  /// Uiterste moment waarop de controle openstaat.
+  ///
+  /// Standaard:
+  /// 3e dag van de volgende maand om 23:59:59.
+  controleDeadline DateTime?
+
+  /// ----------------------------------------------------
+  /// EIGENAARSCONTROLE
+  /// ----------------------------------------------------
+
+  /// Systeemgebruiker die de volledige
+  /// verloningsperiode heeft gecontroleerd.
+  gecontroleerdDoorId String?
+
+  /// Moment waarop de eigenaar de volledige
+  /// verloningsperiode heeft gecontroleerd.
+  gecontroleerdOp DateTime?
+
+  /// ----------------------------------------------------
+  /// RELATIES
+  /// ----------------------------------------------------
+
+  regels    VerloningsRegel[]
+  controles VerloningsControle[]
+
+  /// ----------------------------------------------------
+  /// AUDIT
+  /// ----------------------------------------------------
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  /// ----------------------------------------------------
+  /// INDEXEN
+  /// ----------------------------------------------------
+
+  @@unique([jaar, maand])
+  @@index([jaar, maand])
+  @@index([status])
+  @@index([periodeStart])
+  @@index([periodeEinde])
+  @@index([controleStart])
+  @@index([controleDeadline])
+  @@index([gecontroleerdDoorId])
+}
+
+/// ======================================================
+/// VERLONINGSCONTROLE
+/// ======================================================
+///
+/// Dit model bewaart de controle van een individuele
+/// medewerker over zijn/haar eigen verloning.
+///
+/// Iedere medewerker die voorkomt in een
+/// VerloningsPeriode krijgt één controle-record.
+///
+/// ------------------------------------------------------
+/// FLOW
+/// ------------------------------------------------------
+///
+/// Tijdens de controleperiode kan de medewerker:
+///
+/// - de gewerkte dagen bekijken;
+/// - de gewerkte uren bekijken;
+/// - zijn/haar maandverloning controleren;
+/// - akkoord geven.
+///
+/// Wanneer de medewerker akkoord geeft:
+///
+/// status:
+/// AKKOORD
+///
+/// Wanneer de medewerker vóór de deadline geen actie
+/// onderneemt:
+///
+/// status:
+/// AUTOMATISCH_AKKOORD
+///
+/// Dit betekent:
+///
+/// Geen controle = akkoord.
+///
+/// ------------------------------------------------------
+/// STATUS
+/// ------------------------------------------------------
+///
+/// OPEN
+/// AKKOORD
+/// AUTOMATISCH_AKKOORD
+/// ======================================================
+
+model VerloningsControle {
+  id String @id @default(cuid())
+
+  /// ----------------------------------------------------
+  /// RELATIES
+  /// ----------------------------------------------------
+
+  verloningsPeriodeId String
+  medewerkerId        String
+
+  verloningsPeriode VerloningsPeriode @relation(fields: [verloningsPeriodeId], references: [id], onDelete: Cascade)
+
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+
+  /// ----------------------------------------------------
+  /// STATUS
+  /// ----------------------------------------------------
+
+  /// OPEN
+  /// AKKOORD
+  /// AUTOMATISCH_AKKOORD
+  status String @default("OPEN")
+
+  /// ----------------------------------------------------
+  /// HANDMATIG AKKOORD
+  /// ----------------------------------------------------
+
+  /// Moment waarop de medewerker zelf akkoord gaf.
+  gecontroleerdOp DateTime?
+
+  /// ----------------------------------------------------
+  /// AUTOMATISCH AKKOORD
+  /// ----------------------------------------------------
+
+  /// Moment waarop de medewerker automatisch akkoord
+  /// heeft gekregen doordat de deadline is verlopen.
+  automatischAkkoordOp DateTime?
+
+  /// ----------------------------------------------------
+  /// AUDIT
+  /// ----------------------------------------------------
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  /// ----------------------------------------------------
+  /// INDEXEN
+  /// ----------------------------------------------------
+
+  /// Eén controle per medewerker per verloningsperiode.
+  @@unique([verloningsPeriodeId, medewerkerId])
+  @@index([verloningsPeriodeId])
+  @@index([medewerkerId])
+  @@index([status])
+  @@index([verloningsPeriodeId, status])
+}
+
+/// ======================================================
+/// VERLONINGSREGEL
+/// ======================================================
+///
+/// Een VerloningsRegel bevat het maandtotaal van één
+/// medewerker binnen één vestiging.
+///
+/// De regels vormen de definitieve bron voor:
+///
+/// - gewerkte dagen;
+/// - gewerkte uren;
+/// - medewerker;
+/// - vestiging.
+///
+/// Een medewerker kan meerdere regels hebben binnen één
+/// verloningsperiode wanneer hij/zij in meerdere
+/// vestigingen heeft gewerkt.
+///
+/// Het totaal per medewerker wordt in de applicatie
+/// berekend door alle regels van die medewerker binnen de
+/// betreffende verloningsperiode bij elkaar op te tellen.
+/// ======================================================
+
+model VerloningsRegel {
+  id String @id @default(cuid())
+
+  /// ----------------------------------------------------
+  /// RELATIES
+  /// ----------------------------------------------------
+
+  verloningsPeriodeId String
+  medewerkerId        String
+  vestigingId         String
+
+  /// ----------------------------------------------------
+  /// SNAPSHOT
+  /// ----------------------------------------------------
+
+  /// Snapshot van de naam op het moment waarop de
+  /// maandrapportage wordt gegenereerd.
+  medewerkerNaam String
+
+  /// ----------------------------------------------------
+  /// TOTALEN
+  /// ----------------------------------------------------
+
+  gewerkteDagen Int @default(0)
+
+  gewerkteUren Decimal @db.Decimal(7, 2)
+
+  /// ----------------------------------------------------
+  /// RELATIES
+  /// ----------------------------------------------------
+
+  verloningsPeriode VerloningsPeriode @relation(fields: [verloningsPeriodeId], references: [id], onDelete: Cascade)
+
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Restrict)
+
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Restrict)
+
+  /// ----------------------------------------------------
+  /// AUDIT
+  /// ----------------------------------------------------
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp  DateTime @updatedAt
+
+  /// ----------------------------------------------------
+  /// INDEXEN
+  /// ----------------------------------------------------
+
+  @@unique([verloningsPeriodeId, medewerkerId, vestigingId])
+  @@index([verloningsPeriodeId])
+  @@index([medewerkerId])
+  @@index([vestigingId])
+  @@index([vestigingId, medewerkerNaam])
+}

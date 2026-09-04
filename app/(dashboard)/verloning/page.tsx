@@ -3,12 +3,33 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+import GenereerVerloningForm from "./GenereerVerloningForm";
+
+function formatUren(uren: number) {
+  return uren
+    .toFixed(2)
+    .replace(".", ",");
+}
+
 export default async function VerloningPage() {
-  const gebruiker = await getCurrentUser();
+  /*
+   * ============================================================
+   * GEBRUIKER
+   * ============================================================
+   */
+
+  const gebruiker =
+    await getCurrentUser();
 
   if (!gebruiker) {
     redirect("/login");
   }
+
+  /*
+   * ============================================================
+   * ACTIEVE ORGANISATIES
+   * ============================================================
+   */
 
   const organisaties =
     gebruiker.organisaties.filter(
@@ -21,6 +42,12 @@ export default async function VerloningPage() {
     redirect("/dashboard");
   }
 
+  /*
+   * ============================================================
+   * EIGENAAR CONTROLEREN
+   * ============================================================
+   */
+
   const isEigenaar =
     organisaties.some(
       (relatie) =>
@@ -32,8 +59,43 @@ export default async function VerloningPage() {
     redirect("/dashboard");
   }
 
+  /*
+   * ============================================================
+   * ORGANISATIE-IDS
+   * ============================================================
+   *
+   * Een eigenaar mag uitsluitend verloningsperiodes
+   * zien waarvoor regels bestaan binnen zijn actieve
+   * organisaties.
+   * ============================================================
+   */
+
+  const organisatieIds =
+    organisaties.map(
+      (relatie) =>
+        relatie.organisatieId,
+    );
+
+  /*
+   * ============================================================
+   * VERLONINGSPERIODES OPHALEN
+   * ============================================================
+   */
+
   const periodes =
     await prisma.verloningsPeriode.findMany({
+      where: {
+        regels: {
+          some: {
+            vestiging: {
+              organisatieId: {
+                in: organisatieIds,
+              },
+            },
+          },
+        },
+      },
+
       orderBy: [
         {
           jaar: "desc",
@@ -42,8 +104,17 @@ export default async function VerloningPage() {
           maand: "desc",
         },
       ],
+
       include: {
         regels: {
+          where: {
+            vestiging: {
+              organisatieId: {
+                in: organisatieIds,
+              },
+            },
+          },
+
           select: {
             medewerkerId: true,
             gewerkteDagen: true,
@@ -52,6 +123,37 @@ export default async function VerloningPage() {
         },
       },
     });
+
+  /*
+   * ============================================================
+   * STANDAARD GENERATIEPERIODE
+   * ============================================================
+   *
+   * Standaard wordt de vorige maand geselecteerd.
+   * Dit sluit aan op de automatische cron-flow.
+   * ============================================================
+   */
+
+  const vandaag = new Date();
+
+  const vorigeMaand =
+    new Date(
+      vandaag.getFullYear(),
+      vandaag.getMonth() - 1,
+      1,
+    );
+
+  const standaardJaar =
+    vorigeMaand.getFullYear();
+
+  const standaardMaand =
+    vorigeMaand.getMonth() + 1;
+
+  /*
+   * ============================================================
+   * FORMATTERS
+   * ============================================================
+   */
 
   const maandFormatter =
     new Intl.DateTimeFormat(
@@ -70,6 +172,12 @@ export default async function VerloningPage() {
         year: "numeric",
       },
     );
+
+  /*
+   * ============================================================
+   * TOTALEN BEREKENEN
+   * ============================================================
+   */
 
   const periodesMetTotalen =
     periodes.map((periode) => {
@@ -104,29 +212,55 @@ export default async function VerloningPage() {
         jaar: periode.jaar,
         maand: periode.maand,
         status: periode.status,
+
         gegenereerdOp:
           periode.gegenereerdOp,
+
         periodeStart:
           periode.periodeStart,
+
         aantalMedewerkers:
           medewerkerIds.size,
+
         gewerkteDagen,
+
         gewerkteUren,
       };
     });
 
   return (
     <main className="space-y-8">
+      {/* ========================================================
+       * HEADER
+       * ======================================================== */}
+
       <div>
         <h1 className="text-2xl font-semibold text-slate-900">
           Verloning
         </h1>
 
         <p className="mt-1 text-sm text-slate-600">
-          Automatisch aangemaakte
+          Automatisch en handmatig aangemaakte
           maandoverzichten van gewerkte uren.
         </p>
       </div>
+
+      {/* ========================================================
+       * HANDMATIG GENEREREN
+       * ======================================================== */}
+
+      <GenereerVerloningForm
+        standaardJaar={
+          standaardJaar
+        }
+        standaardMaand={
+          standaardMaand
+        }
+      />
+
+      {/* ========================================================
+       * BESTAANDE PERIODES
+       * ======================================================== */}
 
       <section>
         {periodesMetTotalen.length ===
@@ -139,7 +273,8 @@ export default async function VerloningPage() {
             <p className="mt-1 text-sm text-slate-500">
               Het eerste overzicht verschijnt
               automatisch zodra een volledige
-              maand definitief is geregistreerd.
+              maand definitief is geregistreerd
+              of handmatig wordt gegenereerd.
             </p>
           </div>
         ) : (
@@ -150,9 +285,9 @@ export default async function VerloningPage() {
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                Iedere maand wordt automatisch
-                toegevoegd zodra alle uren definitief
-                zijn.
+                Iedere periode bevat het overzicht
+                van definitief geregistreerde uren
+                per medewerker en vestiging.
               </p>
             </div>
 
@@ -163,8 +298,7 @@ export default async function VerloningPage() {
                     maandFormatter.format(
                       new Date(
                         periode.jaar,
-                        periode.maand -
-                          1,
+                        periode.maand - 1,
                         1,
                       ),
                     );
@@ -183,7 +317,7 @@ export default async function VerloningPage() {
                             tekst:
                               "Verwerkt",
                             klasse:
-                              "bg-green-50 text-green-700",
+                              "bg-emerald-50 text-emerald-700",
                           }
                         : {
                             tekst:
@@ -218,9 +352,7 @@ export default async function VerloningPage() {
                                 " ",
                               )}
                             >
-                              {
-                                status.tekst
-                              }
+                              {status.tekst}
                             </span>
                           </div>
 
@@ -265,14 +397,9 @@ export default async function VerloningPage() {
                             </p>
 
                             <p className="mt-1 font-semibold text-slate-900">
-                              {periode.gewerkteUren
-                                .toFixed(
-                                  2,
-                                )
-                                .replace(
-                                  ".",
-                                  ",",
-                                )}
+                              {formatUren(
+                                periode.gewerkteUren,
+                              )}
                             </p>
                           </div>
                         </div>

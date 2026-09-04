@@ -5,9 +5,77 @@
 /// ======================================================
 /// VERLONINGSPERIODE
 /// ======================================================
+///
+/// Een VerloningsPeriode vertegenwoordigt één volledige
+/// kalendermaand.
+///
+/// Voorbeeld:
+///
+/// Augustus 2026
+///
+/// periodeStart:
+/// 01-08-2026 00:00:00
+///
+/// periodeEinde:
+/// 31-08-2026 23:59:59
+///
+/// ------------------------------------------------------
+/// VERLONINGSCONTROLE
+/// ------------------------------------------------------
+///
+/// Na afloop van de maand krijgen zowel de medewerkers
+/// als de eigenaar tijd om de verloning te controleren.
+///
+/// Controleperiode:
+///
+/// 1e dag van de volgende maand
+/// t/m
+/// 3e dag van de volgende maand 23:59:59
+///
+/// Voorbeeld:
+///
+/// Verloning augustus 2026:
+///
+/// controleStart:
+/// 01-09-2026 00:00:00
+///
+/// controleDeadline:
+/// 03-09-2026 23:59:59
+///
+/// Zowel medewerker als eigenaar kunnen gedurende deze
+/// periode controleren.
+///
+/// Wanneer een medewerker vóór de deadline geen actie
+/// onderneemt, wordt de verloning voor die medewerker
+/// automatisch als akkoord beschouwd.
+///
+/// Vanaf de 4e dag kan de verloning worden verwerkt.
+///
+/// ------------------------------------------------------
+/// STATUS
+/// ------------------------------------------------------
+///
+/// AANGEMAAKT
+///
+/// De verloningsperiode bestaat, maar is nog niet klaar
+/// voor verdere verwerking.
+///
+/// KLAAR
+///
+/// De verloningsperiode en regels zijn volledig
+/// samengesteld en staan klaar voor controle/verwerking.
+///
+/// VERWERKT
+///
+/// De verloningsperiode is definitief verwerkt.
+/// ======================================================
 
 model VerloningsPeriode {
   id String @id @default(cuid())
+
+  /// ----------------------------------------------------
+  /// VERLONINGSPERIODE
+  /// ----------------------------------------------------
 
   periodeStart DateTime
   periodeEinde DateTime
@@ -15,47 +83,234 @@ model VerloningsPeriode {
   jaar Int
   maand Int
 
+  /// ----------------------------------------------------
+  /// STATUS
+  /// ----------------------------------------------------
+
   /// AANGEMAAKT
   /// KLAAR
   /// VERWERKT
   status String @default("AANGEMAAKT")
 
+  /// Moment waarop de verloningsperiode is gegenereerd.
   gegenereerdOp DateTime?
 
+  /// ----------------------------------------------------
+  /// CONTROLEPERIODE
+  /// ----------------------------------------------------
+
+  /// Moment waarop medewerkers en eigenaar de
+  /// verloningsperiode mogen controleren.
+  controleStart DateTime?
+
+  /// Uiterste moment waarop de controle openstaat.
+  ///
+  /// Standaard:
+  /// 3e dag van de volgende maand om 23:59:59.
+  controleDeadline DateTime?
+
+  /// ----------------------------------------------------
+  /// EIGENAARSCONTROLE
+  /// ----------------------------------------------------
+
+  /// Systeemgebruiker die de volledige
+  /// verloningsperiode heeft gecontroleerd.
   gecontroleerdDoorId String?
+
+  /// Moment waarop de eigenaar de volledige
+  /// verloningsperiode heeft gecontroleerd.
   gecontroleerdOp DateTime?
 
+  /// ----------------------------------------------------
+  /// RELATIES
+  /// ----------------------------------------------------
+
   regels VerloningsRegel[]
+  controles VerloningsControle[]
+
+  /// ----------------------------------------------------
+  /// AUDIT
+  /// ----------------------------------------------------
 
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt
 
+  /// ----------------------------------------------------
+  /// INDEXEN
+  /// ----------------------------------------------------
+
   @@unique([jaar, maand])
+
   @@index([jaar, maand])
   @@index([status])
+
   @@index([periodeStart])
   @@index([periodeEinde])
+
+  @@index([controleStart])
+  @@index([controleDeadline])
+
+  @@index([gecontroleerdDoorId])
+}
+
+/// ======================================================
+/// VERLONINGSCONTROLE
+/// ======================================================
+///
+/// Dit model bewaart de controle van een individuele
+/// medewerker over zijn/haar eigen verloning.
+///
+/// Iedere medewerker die voorkomt in een
+/// VerloningsPeriode krijgt één controle-record.
+///
+/// ------------------------------------------------------
+/// FLOW
+/// ------------------------------------------------------
+///
+/// Tijdens de controleperiode kan de medewerker:
+///
+/// - de gewerkte dagen bekijken;
+/// - de gewerkte uren bekijken;
+/// - zijn/haar maandverloning controleren;
+/// - akkoord geven.
+///
+/// Wanneer de medewerker akkoord geeft:
+///
+/// status:
+/// AKKOORD
+///
+/// Wanneer de medewerker vóór de deadline geen actie
+/// onderneemt:
+///
+/// status:
+/// AUTOMATISCH_AKKOORD
+///
+/// Dit betekent:
+///
+/// Geen controle = akkoord.
+///
+/// ------------------------------------------------------
+/// STATUS
+/// ------------------------------------------------------
+///
+/// OPEN
+/// AKKOORD
+/// AUTOMATISCH_AKKOORD
+/// ======================================================
+
+model VerloningsControle {
+  id String @id @default(cuid())
+
+  /// ----------------------------------------------------
+  /// RELATIES
+  /// ----------------------------------------------------
+
+  verloningsPeriodeId String
+  medewerkerId String
+
+  verloningsPeriode VerloningsPeriode @relation(fields: [verloningsPeriodeId], references: [id], onDelete: Cascade)
+
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+
+  /// ----------------------------------------------------
+  /// STATUS
+  /// ----------------------------------------------------
+
+  /// OPEN
+  /// AKKOORD
+  /// AUTOMATISCH_AKKOORD
+  status String @default("OPEN")
+
+  /// ----------------------------------------------------
+  /// HANDMATIG AKKOORD
+  /// ----------------------------------------------------
+
+  /// Moment waarop de medewerker zelf akkoord gaf.
+  gecontroleerdOp DateTime?
+
+  /// ----------------------------------------------------
+  /// AUTOMATISCH AKKOORD
+  /// ----------------------------------------------------
+
+  /// Moment waarop de medewerker automatisch akkoord
+  /// heeft gekregen doordat de deadline is verlopen.
+  automatischAkkoordOp DateTime?
+
+  /// ----------------------------------------------------
+  /// AUDIT
+  /// ----------------------------------------------------
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  /// ----------------------------------------------------
+  /// INDEXEN
+  /// ----------------------------------------------------
+
+  /// Eén controle per medewerker per verloningsperiode.
+  @@unique([verloningsPeriodeId, medewerkerId])
+
+  @@index([verloningsPeriodeId])
+  @@index([medewerkerId])
+
+  @@index([status])
+
+  @@index([verloningsPeriodeId, status])
 }
 
 /// ======================================================
 /// VERLONINGSREGEL
 /// ======================================================
+///
+/// Een VerloningsRegel bevat het maandtotaal van één
+/// medewerker binnen één vestiging.
+///
+/// De regels vormen de definitieve bron voor:
+///
+/// - gewerkte dagen;
+/// - gewerkte uren;
+/// - medewerker;
+/// - vestiging.
+///
+/// Een medewerker kan meerdere regels hebben binnen één
+/// verloningsperiode wanneer hij/zij in meerdere
+/// vestigingen heeft gewerkt.
+///
+/// Het totaal per medewerker wordt in de applicatie
+/// berekend door alle regels van die medewerker binnen de
+/// betreffende verloningsperiode bij elkaar op te tellen.
+/// ======================================================
 
 model VerloningsRegel {
   id String @id @default(cuid())
 
-  verloningsPeriodeId String
+  /// ----------------------------------------------------
+  /// RELATIES
+  /// ----------------------------------------------------
 
+  verloningsPeriodeId String
   medewerkerId String
   vestigingId String
 
-  /// Snapshot van de naam op het moment waarop
-  /// de maandrapportage wordt gegenereerd.
+  /// ----------------------------------------------------
+  /// SNAPSHOT
+  /// ----------------------------------------------------
+
+  /// Snapshot van de naam op het moment waarop de
+  /// maandrapportage wordt gegenereerd.
   medewerkerNaam String
+
+  /// ----------------------------------------------------
+  /// TOTALEN
+  /// ----------------------------------------------------
 
   gewerkteDagen Int @default(0)
 
   gewerkteUren Decimal @db.Decimal(7, 2)
+
+  /// ----------------------------------------------------
+  /// RELATIES
+  /// ----------------------------------------------------
 
   verloningsPeriode VerloningsPeriode @relation(fields: [verloningsPeriodeId], references: [id], onDelete: Cascade)
 
@@ -63,12 +318,23 @@ model VerloningsRegel {
 
   vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Restrict)
 
+  /// ----------------------------------------------------
+  /// AUDIT
+  /// ----------------------------------------------------
+
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt
 
+  /// ----------------------------------------------------
+  /// INDEXEN
+  /// ----------------------------------------------------
+
   @@unique([verloningsPeriodeId, medewerkerId, vestigingId])
+
   @@index([verloningsPeriodeId])
+
   @@index([medewerkerId])
   @@index([vestigingId])
+
   @@index([vestigingId, medewerkerNaam])
 }

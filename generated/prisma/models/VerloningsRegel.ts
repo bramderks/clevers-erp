@@ -962,22 +962,42 @@ export type VerloningsRegelIncludeUpdateManyAndReturn<ExtArgs extends runtime.Ty
 export type $VerloningsRegelPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "VerloningsRegel"
   objects: {
+    /**
+     * ----------------------------------------------------
+     * RELATIES
+     * ----------------------------------------------------
+     */
     verloningsPeriode: Prisma.$VerloningsPeriodePayload<ExtArgs>
     medewerker: Prisma.$MedewerkerPayload<ExtArgs>
     vestiging: Prisma.$VestigingPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    /**
+     * ----------------------------------------------------
+     * RELATIES
+     * ----------------------------------------------------
+     */
     verloningsPeriodeId: string
     medewerkerId: string
     vestigingId: string
     /**
-     * Snapshot van de naam op het moment waarop
-     * de maandrapportage wordt gegenereerd.
+     * Snapshot van de naam op het moment waarop de
+     * maandrapportage wordt gegenereerd.
      */
     medewerkerNaam: string
+    /**
+     * ----------------------------------------------------
+     * TOTALEN
+     * ----------------------------------------------------
+     */
     gewerkteDagen: number
     gewerkteUren: runtime.Decimal
+    /**
+     * ----------------------------------------------------
+     * AUDIT
+     * ----------------------------------------------------
+     */
     aangemaaktOp: Date
     gewijzigdOp: Date
   }, ExtArgs["result"]["verloningsRegel"]>

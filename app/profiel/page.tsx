@@ -1,33 +1,85 @@
+import { redirect } from "next/navigation";
+
 import {
   Shield,
 } from "lucide-react";
 
-import { getCurrentUser } from "@/lib/auth";
+import {
+  getCurrentUser,
+} from "@/lib/auth";
 
 import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
 import Card from "@/components/ui/Card";
-import ProfielGegevensForm from "@/components/profiel/ProfielGegevensForm";
 
 export default async function ProfielPage() {
   const gebruiker =
     await getCurrentUser();
 
   if (!gebruiker) {
-    return null;
+    redirect("/login");
   }
 
-  const rollen = Array.from(
-    new Set(
-      gebruiker.organisaties.map(
-        (relatie) =>
-          relatie.rol.naam,
-      ),
-    ),
-  );
+  /*
+   * ============================================================
+   * MEDEWERKERSPROFIEL
+   * ============================================================
+   *
+   * Wanneer de ingelogde gebruiker gekoppeld is aan een
+   * medewerker, gebruiken we het volledige medewerkerprofiel.
+   *
+   * Hierdoor zien Medewerker en Teamleider alle tabbladen:
+   *
+   * - Algemeen
+   * - Contract
+   * - Vestigingen
+   * - Beschikbaarheid
+   * - Vakantie
+   * - Planning
+   * - Verloning
+   *
+   * De rechten worden vervolgens volledig bepaald in:
+   *
+   * app/medewerkers/[id]/page.tsx
+   *
+   * Eigenaar:
+   * - alle tabbladen bekijken
+   * - alle tabbladen bewerken
+   *
+   * Teamleider:
+   * - alle tabbladen bekijken
+   * - alleen Algemeen van eigen profiel bewerken
+   *
+   * Medewerker:
+   * - alle tabbladen bekijken
+   * - alleen Algemeen van eigen profiel bewerken
+   */
 
-  const medewerker =
-    gebruiker.medewerker;
+  if (
+    gebruiker.medewerker?.id
+  ) {
+    redirect(
+      `/medewerkers/${encodeURIComponent(
+        gebruiker.medewerker.id,
+      )}?tab=algemeen`,
+    );
+  }
+
+  /*
+   * ============================================================
+   * GEBRUIKER ZONDER MEDEWERKERSPROFIEL
+   * ============================================================
+   */
+
+  const rollen =
+    Array.from(
+      new Set(
+        gebruiker.organisaties.map(
+          (relatie) =>
+            relatie.rol.naam,
+        ),
+      ),
+    );
 
   const topbarGebruiker = {
     naam: gebruiker.naam,
@@ -40,7 +92,9 @@ export default async function ProfielPage() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar
-          gebruiker={topbarGebruiker}
+          gebruiker={
+            topbarGebruiker
+          }
         />
 
         <main className="flex-1 overflow-auto p-4 md:p-8">
@@ -51,157 +105,74 @@ export default async function ProfielPage() {
               </h1>
 
               <p className="mt-1 text-sm text-slate-500">
-                Bekijk en beheer je persoonlijke gegevens.
+                Bekijk je accountgegevens.
               </p>
             </div>
 
-            {!medewerker ? (
-              <div className="space-y-6">
-                <Card
-                  title="Account"
-                  description="Je accountgegevens."
-                >
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                        Naam
-                      </p>
+            <div className="space-y-6">
+              <Card
+                title="Account"
+                description="Je accountgegevens."
+              >
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Naam
+                    </p>
 
-                      <p className="mt-1 text-sm font-medium text-slate-900">
-                        {gebruiker.naam}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                        E-mailadres
-                      </p>
-
-                      <p className="mt-1 text-sm font-medium text-slate-900">
-                        {gebruiker.email}
-                      </p>
-                    </div>
+                    <p className="mt-1 text-sm font-medium text-slate-900">
+                      {gebruiker.naam}
+                    </p>
                   </div>
-                </Card>
 
-                <Card
-                  title="Beveiliging"
-                  description="Beheer de beveiliging van je account."
-                >
-                  <div className="flex items-start gap-4">
-                    <Shield
-                      size={20}
-                      className="mt-0.5 text-slate-400"
-                    />
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      E-mailadres
+                    </p>
 
-                    <div>
-                      <p className="text-sm font-medium text-slate-900">
-                        Wachtwoord
-                      </p>
-
-                      <p className="mt-1 text-sm text-slate-500">
-                        Je wachtwoord is beveiligd opgeslagen.
-                      </p>
-                    </div>
+                    <p className="mt-1 text-sm font-medium text-slate-900">
+                      {gebruiker.email}
+                    </p>
                   </div>
-                </Card>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <Card
-                  title="Persoonsgegevens"
-                  description="Gegevens die je zelf kunt beheren."
-                >
-                  <ProfielGegevensForm
-                    gegevens={{
-                      aanhef:
-                        medewerker.aanhef,
-                      voornaam:
-                        medewerker.voornaam,
-                      tussenvoegsel:
-                        medewerker.tussenvoegsel,
-                      achternaam:
-                        medewerker.achternaam,
-                      roepnaam:
-                        medewerker.roepnaam,
-                      email:
-                        medewerker.email,
-                      telefoon:
-                        medewerker.telefoon,
-                    }}
-                  />
-                </Card>
 
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <Card
-                    title="Account"
-                    description="Gegevens van je gebruikersaccount."
-                  >
-                    <div className="space-y-5">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                          Accountnaam
-                        </p>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Rollen
+                    </p>
 
-                        <p className="mt-1 text-sm font-medium text-slate-900">
-                          {gebruiker.naam}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                          E-mailadres
-                        </p>
-
-                        <p className="mt-1 text-sm font-medium text-slate-900">
-                          {gebruiker.email}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                          Rol
-                        </p>
-
-                        <p className="mt-1 text-sm font-medium text-slate-900">
-                          {rollen.length > 0
-                            ? rollen.join(
-                                ", ",
-                              )
-                            : "Gebruiker"}
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-
-                  <Card
-                    title="Beveiliging"
-                    description="Beheer de beveiliging van je account."
-                  >
-                    <div className="flex items-start gap-4">
-                      <Shield
-                        size={20}
-                        className="mt-0.5 text-slate-400"
-                      />
-
-                      <div>
-                        <p className="text-sm font-medium text-slate-900">
-                          Wachtwoord
-                        </p>
-
-                        <p className="mt-1 text-sm text-slate-500">
-                          Je wachtwoord is beveiligd opgeslagen.
-                        </p>
-
-                        <p className="mt-4 text-sm text-slate-500">
-                          Wachtwoord wijzigen wordt later als aparte functie toegevoegd.
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
+                    <p className="mt-1 text-sm font-medium text-slate-900">
+                      {rollen.length > 0
+                        ? rollen.join(
+                            ", ",
+                          )
+                        : "Gebruiker"}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
+              </Card>
+
+              <Card
+                title="Beveiliging"
+                description="Beheer de beveiliging van je account."
+              >
+                <div className="flex items-start gap-4">
+                  <Shield
+                    size={20}
+                    className="mt-0.5 text-slate-400"
+                  />
+
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">
+                      Wachtwoord
+                    </p>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      Je wachtwoord is beveiligd opgeslagen.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </div>
           </div>
         </main>
       </div>

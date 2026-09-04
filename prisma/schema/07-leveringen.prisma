@@ -20,6 +20,7 @@ model Levering {
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt
 
+  @@index([bestellingId])
   @@index([leverdatum])
 }
 
@@ -29,9 +30,9 @@ model LeveringRegel {
   leveringId String
   productId String
 
-  besteld Decimal @db.Decimal(10,2)
+  besteld Decimal @db.Decimal(10, 2)
 
-  geleverd Decimal @db.Decimal(10,2)
+  geleverd Decimal @db.Decimal(10, 2)
 
   levering Levering @relation(fields: [leveringId], references: [id], onDelete: Cascade)
 

@@ -188,6 +188,11 @@ export type Instelling = Prisma.InstellingModel
  */
 export type VerloningsPeriode = Prisma.VerloningsPeriodeModel
 /**
+ * Model VerloningsControle
+ * 
+ */
+export type VerloningsControle = Prisma.VerloningsControleModel
+/**
  * Model VerloningsRegel
  * 
  */

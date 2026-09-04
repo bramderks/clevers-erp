@@ -22,6 +22,7 @@ model Medewerker {
   id String @id @default(cuid())
 
   systeemGebruikerId String? @unique
+
   systeemGebruiker SysteemGebruiker? @relation(fields: [systeemGebruikerId], references: [id], onDelete: SetNull)
 
   personeelsnummer String? @unique
@@ -39,6 +40,7 @@ model Medewerker {
   telefoon String
 
   statusId String
+
   status Status @relation(fields: [statusId], references: [id], onDelete: Restrict)
 
   aanmeldingOp DateTime @default(now())
@@ -49,66 +51,134 @@ model Medewerker {
   actief Boolean @default(false)
 
   contractType ContractType?
+
   contractUren Decimal? @db.Decimal(5, 2)
+
   uurloon Decimal? @db.Decimal(8, 2)
 
   datumInDienst DateTime?
   datumUitDienst DateTime?
 
+  /// ----------------------------------------------------
+  /// VESTIGINGEN
+  /// ----------------------------------------------------
+
   vestigingen MedewerkerVestiging[]
+
+  /// ----------------------------------------------------
+  /// VAKANTIE
+  /// ----------------------------------------------------
+
   vakantieAanvragen VakantieAanvraag[]
 
+  /// ----------------------------------------------------
+  /// ROLLEN EN TAGS
+  /// ----------------------------------------------------
+
   rollen MedewerkerRol[]
+
   tags MedewerkerTag[]
 
+  /// ----------------------------------------------------
+  /// PLANNING
+  /// ----------------------------------------------------
+
   beschikbaarheden Beschikbaarheid[]
+
   diensten DienstBezetting[]
+
+  /// ----------------------------------------------------
+  /// URENREGISTRATIE
+  /// ----------------------------------------------------
+
   urenregistraties UrenRegistratie[]
 
+  /// ----------------------------------------------------
+  /// VERLONING
+  /// ----------------------------------------------------
+
+  /// Definitieve verloningsregels per periode
+  /// en vestiging.
   verloningsRegels VerloningsRegel[]
 
+  /// Controle van de maandelijkse verloning
+  /// door de medewerker.
+  ///
+  /// Per verloningsperiode bestaat maximaal
+  /// één VerloningsControle per medewerker.
+  verloningsControles VerloningsControle[]
+
+  /// ----------------------------------------------------
+  /// DIENST RUILEN
+  /// ----------------------------------------------------
+
   ruilverzoekenAangevraagd Ruilverzoek[] @relation("RuilverzoekenAangevraagd")
+
   ruilverzoekenOntvangen Ruilverzoek[] @relation("RuilverzoekenOntvangen")
 
+  /// ----------------------------------------------------
+  /// AUDIT
+  /// ----------------------------------------------------
+
   aangemaaktOp DateTime @default(now())
+
   gewijzigdOp DateTime @updatedAt
 
   @@index([statusId])
+
   @@index([actief])
+
   @@index([achternaam])
+
   @@index([voornaam])
 }
+
+/// ======================================================
+/// MEDEWERKER - VESTIGING
+/// ======================================================
 
 model MedewerkerVestiging {
   id String @id @default(cuid())
 
   medewerkerId String
+
   vestigingId String
 
   hoofdvestiging Boolean @default(false)
 
   medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+
   vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
 
   aangemaaktOp DateTime @default(now())
 
   @@unique([medewerkerId, vestigingId])
+
   @@index([medewerkerId])
+
   @@index([vestigingId])
 }
+
+/// ======================================================
+/// MEDEWERKER - ROL
+/// ======================================================
 
 model MedewerkerRol {
   id String @id @default(cuid())
 
   medewerkerId String
+
   rolId String
 
   medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+
   rol Rol @relation(fields: [rolId], references: [id], onDelete: Cascade)
 
   aangemaaktOp DateTime @default(now())
 
   @@unique([medewerkerId, rolId])
+
   @@index([medewerkerId])
+
   @@index([rolId])
 }

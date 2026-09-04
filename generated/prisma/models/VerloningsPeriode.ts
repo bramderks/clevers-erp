@@ -44,6 +44,8 @@ export type VerloningsPeriodeMinAggregateOutputType = {
   maand: number | null
   status: string | null
   gegenereerdOp: Date | null
+  controleStart: Date | null
+  controleDeadline: Date | null
   gecontroleerdDoorId: string | null
   gecontroleerdOp: Date | null
   aangemaaktOp: Date | null
@@ -58,6 +60,8 @@ export type VerloningsPeriodeMaxAggregateOutputType = {
   maand: number | null
   status: string | null
   gegenereerdOp: Date | null
+  controleStart: Date | null
+  controleDeadline: Date | null
   gecontroleerdDoorId: string | null
   gecontroleerdOp: Date | null
   aangemaaktOp: Date | null
@@ -72,6 +76,8 @@ export type VerloningsPeriodeCountAggregateOutputType = {
   maand: number
   status: number
   gegenereerdOp: number
+  controleStart: number
+  controleDeadline: number
   gecontroleerdDoorId: number
   gecontroleerdOp: number
   aangemaaktOp: number
@@ -98,6 +104,8 @@ export type VerloningsPeriodeMinAggregateInputType = {
   maand?: true
   status?: true
   gegenereerdOp?: true
+  controleStart?: true
+  controleDeadline?: true
   gecontroleerdDoorId?: true
   gecontroleerdOp?: true
   aangemaaktOp?: true
@@ -112,6 +120,8 @@ export type VerloningsPeriodeMaxAggregateInputType = {
   maand?: true
   status?: true
   gegenereerdOp?: true
+  controleStart?: true
+  controleDeadline?: true
   gecontroleerdDoorId?: true
   gecontroleerdOp?: true
   aangemaaktOp?: true
@@ -126,6 +136,8 @@ export type VerloningsPeriodeCountAggregateInputType = {
   maand?: true
   status?: true
   gegenereerdOp?: true
+  controleStart?: true
+  controleDeadline?: true
   gecontroleerdDoorId?: true
   gecontroleerdOp?: true
   aangemaaktOp?: true
@@ -227,6 +239,8 @@ export type VerloningsPeriodeGroupByOutputType = {
   maand: number
   status: string
   gegenereerdOp: Date | null
+  controleStart: Date | null
+  controleDeadline: Date | null
   gecontroleerdDoorId: string | null
   gecontroleerdOp: Date | null
   aangemaaktOp: Date
@@ -264,11 +278,14 @@ export type VerloningsPeriodeWhereInput = {
   maand?: Prisma.IntFilter<"VerloningsPeriode"> | number
   status?: Prisma.StringFilter<"VerloningsPeriode"> | string
   gegenereerdOp?: Prisma.DateTimeNullableFilter<"VerloningsPeriode"> | Date | string | null
+  controleStart?: Prisma.DateTimeNullableFilter<"VerloningsPeriode"> | Date | string | null
+  controleDeadline?: Prisma.DateTimeNullableFilter<"VerloningsPeriode"> | Date | string | null
   gecontroleerdDoorId?: Prisma.StringNullableFilter<"VerloningsPeriode"> | string | null
   gecontroleerdOp?: Prisma.DateTimeNullableFilter<"VerloningsPeriode"> | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFilter<"VerloningsPeriode"> | Date | string
   gewijzigdOp?: Prisma.DateTimeFilter<"VerloningsPeriode"> | Date | string
   regels?: Prisma.VerloningsRegelListRelationFilter
+  controles?: Prisma.VerloningsControleListRelationFilter
 }
 
 export type VerloningsPeriodeOrderByWithRelationInput = {
@@ -279,11 +296,14 @@ export type VerloningsPeriodeOrderByWithRelationInput = {
   maand?: Prisma.SortOrder
   status?: Prisma.SortOrder
   gegenereerdOp?: Prisma.SortOrderInput | Prisma.SortOrder
+  controleStart?: Prisma.SortOrderInput | Prisma.SortOrder
+  controleDeadline?: Prisma.SortOrderInput | Prisma.SortOrder
   gecontroleerdDoorId?: Prisma.SortOrderInput | Prisma.SortOrder
   gecontroleerdOp?: Prisma.SortOrderInput | Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
   gewijzigdOp?: Prisma.SortOrder
   regels?: Prisma.VerloningsRegelOrderByRelationAggregateInput
+  controles?: Prisma.VerloningsControleOrderByRelationAggregateInput
 }
 
 export type VerloningsPeriodeWhereUniqueInput = Prisma.AtLeast<{
@@ -298,11 +318,14 @@ export type VerloningsPeriodeWhereUniqueInput = Prisma.AtLeast<{
   maand?: Prisma.IntFilter<"VerloningsPeriode"> | number
   status?: Prisma.StringFilter<"VerloningsPeriode"> | string
   gegenereerdOp?: Prisma.DateTimeNullableFilter<"VerloningsPeriode"> | Date | string | null
+  controleStart?: Prisma.DateTimeNullableFilter<"VerloningsPeriode"> | Date | string | null
+  controleDeadline?: Prisma.DateTimeNullableFilter<"VerloningsPeriode"> | Date | string | null
   gecontroleerdDoorId?: Prisma.StringNullableFilter<"VerloningsPeriode"> | string | null
   gecontroleerdOp?: Prisma.DateTimeNullableFilter<"VerloningsPeriode"> | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFilter<"VerloningsPeriode"> | Date | string
   gewijzigdOp?: Prisma.DateTimeFilter<"VerloningsPeriode"> | Date | string
   regels?: Prisma.VerloningsRegelListRelationFilter
+  controles?: Prisma.VerloningsControleListRelationFilter
 }, "id" | "jaar_maand">
 
 export type VerloningsPeriodeOrderByWithAggregationInput = {
@@ -313,6 +336,8 @@ export type VerloningsPeriodeOrderByWithAggregationInput = {
   maand?: Prisma.SortOrder
   status?: Prisma.SortOrder
   gegenereerdOp?: Prisma.SortOrderInput | Prisma.SortOrder
+  controleStart?: Prisma.SortOrderInput | Prisma.SortOrder
+  controleDeadline?: Prisma.SortOrderInput | Prisma.SortOrder
   gecontroleerdDoorId?: Prisma.SortOrderInput | Prisma.SortOrder
   gecontroleerdOp?: Prisma.SortOrderInput | Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
@@ -335,6 +360,8 @@ export type VerloningsPeriodeScalarWhereWithAggregatesInput = {
   maand?: Prisma.IntWithAggregatesFilter<"VerloningsPeriode"> | number
   status?: Prisma.StringWithAggregatesFilter<"VerloningsPeriode"> | string
   gegenereerdOp?: Prisma.DateTimeNullableWithAggregatesFilter<"VerloningsPeriode"> | Date | string | null
+  controleStart?: Prisma.DateTimeNullableWithAggregatesFilter<"VerloningsPeriode"> | Date | string | null
+  controleDeadline?: Prisma.DateTimeNullableWithAggregatesFilter<"VerloningsPeriode"> | Date | string | null
   gecontroleerdDoorId?: Prisma.StringNullableWithAggregatesFilter<"VerloningsPeriode"> | string | null
   gecontroleerdOp?: Prisma.DateTimeNullableWithAggregatesFilter<"VerloningsPeriode"> | Date | string | null
   aangemaaktOp?: Prisma.DateTimeWithAggregatesFilter<"VerloningsPeriode"> | Date | string
@@ -349,11 +376,14 @@ export type VerloningsPeriodeCreateInput = {
   maand: number
   status?: string
   gegenereerdOp?: Date | string | null
+  controleStart?: Date | string | null
+  controleDeadline?: Date | string | null
   gecontroleerdDoorId?: string | null
   gecontroleerdOp?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
   regels?: Prisma.VerloningsRegelCreateNestedManyWithoutVerloningsPeriodeInput
+  controles?: Prisma.VerloningsControleCreateNestedManyWithoutVerloningsPeriodeInput
 }
 
 export type VerloningsPeriodeUncheckedCreateInput = {
@@ -364,11 +394,14 @@ export type VerloningsPeriodeUncheckedCreateInput = {
   maand: number
   status?: string
   gegenereerdOp?: Date | string | null
+  controleStart?: Date | string | null
+  controleDeadline?: Date | string | null
   gecontroleerdDoorId?: string | null
   gecontroleerdOp?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
   regels?: Prisma.VerloningsRegelUncheckedCreateNestedManyWithoutVerloningsPeriodeInput
+  controles?: Prisma.VerloningsControleUncheckedCreateNestedManyWithoutVerloningsPeriodeInput
 }
 
 export type VerloningsPeriodeUpdateInput = {
@@ -379,11 +412,14 @@ export type VerloningsPeriodeUpdateInput = {
   maand?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   gegenereerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  controleStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  controleDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   gecontroleerdDoorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gecontroleerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   regels?: Prisma.VerloningsRegelUpdateManyWithoutVerloningsPeriodeNestedInput
+  controles?: Prisma.VerloningsControleUpdateManyWithoutVerloningsPeriodeNestedInput
 }
 
 export type VerloningsPeriodeUncheckedUpdateInput = {
@@ -394,11 +430,14 @@ export type VerloningsPeriodeUncheckedUpdateInput = {
   maand?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   gegenereerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  controleStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  controleDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   gecontroleerdDoorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gecontroleerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   regels?: Prisma.VerloningsRegelUncheckedUpdateManyWithoutVerloningsPeriodeNestedInput
+  controles?: Prisma.VerloningsControleUncheckedUpdateManyWithoutVerloningsPeriodeNestedInput
 }
 
 export type VerloningsPeriodeCreateManyInput = {
@@ -409,6 +448,8 @@ export type VerloningsPeriodeCreateManyInput = {
   maand: number
   status?: string
   gegenereerdOp?: Date | string | null
+  controleStart?: Date | string | null
+  controleDeadline?: Date | string | null
   gecontroleerdDoorId?: string | null
   gecontroleerdOp?: Date | string | null
   aangemaaktOp?: Date | string
@@ -423,6 +464,8 @@ export type VerloningsPeriodeUpdateManyMutationInput = {
   maand?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   gegenereerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  controleStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  controleDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   gecontroleerdDoorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gecontroleerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -437,6 +480,8 @@ export type VerloningsPeriodeUncheckedUpdateManyInput = {
   maand?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   gegenereerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  controleStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  controleDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   gecontroleerdDoorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gecontroleerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -456,6 +501,8 @@ export type VerloningsPeriodeCountOrderByAggregateInput = {
   maand?: Prisma.SortOrder
   status?: Prisma.SortOrder
   gegenereerdOp?: Prisma.SortOrder
+  controleStart?: Prisma.SortOrder
+  controleDeadline?: Prisma.SortOrder
   gecontroleerdDoorId?: Prisma.SortOrder
   gecontroleerdOp?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
@@ -475,6 +522,8 @@ export type VerloningsPeriodeMaxOrderByAggregateInput = {
   maand?: Prisma.SortOrder
   status?: Prisma.SortOrder
   gegenereerdOp?: Prisma.SortOrder
+  controleStart?: Prisma.SortOrder
+  controleDeadline?: Prisma.SortOrder
   gecontroleerdDoorId?: Prisma.SortOrder
   gecontroleerdOp?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
@@ -489,6 +538,8 @@ export type VerloningsPeriodeMinOrderByAggregateInput = {
   maand?: Prisma.SortOrder
   status?: Prisma.SortOrder
   gegenereerdOp?: Prisma.SortOrder
+  controleStart?: Prisma.SortOrder
+  controleDeadline?: Prisma.SortOrder
   gecontroleerdDoorId?: Prisma.SortOrder
   gecontroleerdOp?: Prisma.SortOrder
   aangemaaktOp?: Prisma.SortOrder
@@ -505,6 +556,20 @@ export type VerloningsPeriodeScalarRelationFilter = {
   isNot?: Prisma.VerloningsPeriodeWhereInput
 }
 
+export type VerloningsPeriodeCreateNestedOneWithoutControlesInput = {
+  create?: Prisma.XOR<Prisma.VerloningsPeriodeCreateWithoutControlesInput, Prisma.VerloningsPeriodeUncheckedCreateWithoutControlesInput>
+  connectOrCreate?: Prisma.VerloningsPeriodeCreateOrConnectWithoutControlesInput
+  connect?: Prisma.VerloningsPeriodeWhereUniqueInput
+}
+
+export type VerloningsPeriodeUpdateOneRequiredWithoutControlesNestedInput = {
+  create?: Prisma.XOR<Prisma.VerloningsPeriodeCreateWithoutControlesInput, Prisma.VerloningsPeriodeUncheckedCreateWithoutControlesInput>
+  connectOrCreate?: Prisma.VerloningsPeriodeCreateOrConnectWithoutControlesInput
+  upsert?: Prisma.VerloningsPeriodeUpsertWithoutControlesInput
+  connect?: Prisma.VerloningsPeriodeWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.VerloningsPeriodeUpdateToOneWithWhereWithoutControlesInput, Prisma.VerloningsPeriodeUpdateWithoutControlesInput>, Prisma.VerloningsPeriodeUncheckedUpdateWithoutControlesInput>
+}
+
 export type VerloningsPeriodeCreateNestedOneWithoutRegelsInput = {
   create?: Prisma.XOR<Prisma.VerloningsPeriodeCreateWithoutRegelsInput, Prisma.VerloningsPeriodeUncheckedCreateWithoutRegelsInput>
   connectOrCreate?: Prisma.VerloningsPeriodeCreateOrConnectWithoutRegelsInput
@@ -519,6 +584,90 @@ export type VerloningsPeriodeUpdateOneRequiredWithoutRegelsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.VerloningsPeriodeUpdateToOneWithWhereWithoutRegelsInput, Prisma.VerloningsPeriodeUpdateWithoutRegelsInput>, Prisma.VerloningsPeriodeUncheckedUpdateWithoutRegelsInput>
 }
 
+export type VerloningsPeriodeCreateWithoutControlesInput = {
+  id?: string
+  periodeStart: Date | string
+  periodeEinde: Date | string
+  jaar: number
+  maand: number
+  status?: string
+  gegenereerdOp?: Date | string | null
+  controleStart?: Date | string | null
+  controleDeadline?: Date | string | null
+  gecontroleerdDoorId?: string | null
+  gecontroleerdOp?: Date | string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  regels?: Prisma.VerloningsRegelCreateNestedManyWithoutVerloningsPeriodeInput
+}
+
+export type VerloningsPeriodeUncheckedCreateWithoutControlesInput = {
+  id?: string
+  periodeStart: Date | string
+  periodeEinde: Date | string
+  jaar: number
+  maand: number
+  status?: string
+  gegenereerdOp?: Date | string | null
+  controleStart?: Date | string | null
+  controleDeadline?: Date | string | null
+  gecontroleerdDoorId?: string | null
+  gecontroleerdOp?: Date | string | null
+  aangemaaktOp?: Date | string
+  gewijzigdOp?: Date | string
+  regels?: Prisma.VerloningsRegelUncheckedCreateNestedManyWithoutVerloningsPeriodeInput
+}
+
+export type VerloningsPeriodeCreateOrConnectWithoutControlesInput = {
+  where: Prisma.VerloningsPeriodeWhereUniqueInput
+  create: Prisma.XOR<Prisma.VerloningsPeriodeCreateWithoutControlesInput, Prisma.VerloningsPeriodeUncheckedCreateWithoutControlesInput>
+}
+
+export type VerloningsPeriodeUpsertWithoutControlesInput = {
+  update: Prisma.XOR<Prisma.VerloningsPeriodeUpdateWithoutControlesInput, Prisma.VerloningsPeriodeUncheckedUpdateWithoutControlesInput>
+  create: Prisma.XOR<Prisma.VerloningsPeriodeCreateWithoutControlesInput, Prisma.VerloningsPeriodeUncheckedCreateWithoutControlesInput>
+  where?: Prisma.VerloningsPeriodeWhereInput
+}
+
+export type VerloningsPeriodeUpdateToOneWithWhereWithoutControlesInput = {
+  where?: Prisma.VerloningsPeriodeWhereInput
+  data: Prisma.XOR<Prisma.VerloningsPeriodeUpdateWithoutControlesInput, Prisma.VerloningsPeriodeUncheckedUpdateWithoutControlesInput>
+}
+
+export type VerloningsPeriodeUpdateWithoutControlesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  periodeStart?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  periodeEinde?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  jaar?: Prisma.IntFieldUpdateOperationsInput | number
+  maand?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  gegenereerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  controleStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  controleDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gecontroleerdDoorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gecontroleerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  regels?: Prisma.VerloningsRegelUpdateManyWithoutVerloningsPeriodeNestedInput
+}
+
+export type VerloningsPeriodeUncheckedUpdateWithoutControlesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  periodeStart?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  periodeEinde?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  jaar?: Prisma.IntFieldUpdateOperationsInput | number
+  maand?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  gegenereerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  controleStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  controleDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gecontroleerdDoorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gecontroleerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  regels?: Prisma.VerloningsRegelUncheckedUpdateManyWithoutVerloningsPeriodeNestedInput
+}
+
 export type VerloningsPeriodeCreateWithoutRegelsInput = {
   id?: string
   periodeStart: Date | string
@@ -527,10 +676,13 @@ export type VerloningsPeriodeCreateWithoutRegelsInput = {
   maand: number
   status?: string
   gegenereerdOp?: Date | string | null
+  controleStart?: Date | string | null
+  controleDeadline?: Date | string | null
   gecontroleerdDoorId?: string | null
   gecontroleerdOp?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  controles?: Prisma.VerloningsControleCreateNestedManyWithoutVerloningsPeriodeInput
 }
 
 export type VerloningsPeriodeUncheckedCreateWithoutRegelsInput = {
@@ -541,10 +693,13 @@ export type VerloningsPeriodeUncheckedCreateWithoutRegelsInput = {
   maand: number
   status?: string
   gegenereerdOp?: Date | string | null
+  controleStart?: Date | string | null
+  controleDeadline?: Date | string | null
   gecontroleerdDoorId?: string | null
   gecontroleerdOp?: Date | string | null
   aangemaaktOp?: Date | string
   gewijzigdOp?: Date | string
+  controles?: Prisma.VerloningsControleUncheckedCreateNestedManyWithoutVerloningsPeriodeInput
 }
 
 export type VerloningsPeriodeCreateOrConnectWithoutRegelsInput = {
@@ -571,10 +726,13 @@ export type VerloningsPeriodeUpdateWithoutRegelsInput = {
   maand?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   gegenereerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  controleStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  controleDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   gecontroleerdDoorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gecontroleerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  controles?: Prisma.VerloningsControleUpdateManyWithoutVerloningsPeriodeNestedInput
 }
 
 export type VerloningsPeriodeUncheckedUpdateWithoutRegelsInput = {
@@ -585,10 +743,13 @@ export type VerloningsPeriodeUncheckedUpdateWithoutRegelsInput = {
   maand?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   gegenereerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  controleStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  controleDeadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   gecontroleerdDoorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gecontroleerdOp?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aangemaaktOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   gewijzigdOp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  controles?: Prisma.VerloningsControleUncheckedUpdateManyWithoutVerloningsPeriodeNestedInput
 }
 
 
@@ -598,10 +759,12 @@ export type VerloningsPeriodeUncheckedUpdateWithoutRegelsInput = {
 
 export type VerloningsPeriodeCountOutputType = {
   regels: number
+  controles: number
 }
 
 export type VerloningsPeriodeCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   regels?: boolean | VerloningsPeriodeCountOutputTypeCountRegelsArgs
+  controles?: boolean | VerloningsPeriodeCountOutputTypeCountControlesArgs
 }
 
 /**
@@ -621,6 +784,13 @@ export type VerloningsPeriodeCountOutputTypeCountRegelsArgs<ExtArgs extends runt
   where?: Prisma.VerloningsRegelWhereInput
 }
 
+/**
+ * VerloningsPeriodeCountOutputType without action
+ */
+export type VerloningsPeriodeCountOutputTypeCountControlesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.VerloningsControleWhereInput
+}
+
 
 export type VerloningsPeriodeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -630,11 +800,14 @@ export type VerloningsPeriodeSelect<ExtArgs extends runtime.Types.Extensions.Int
   maand?: boolean
   status?: boolean
   gegenereerdOp?: boolean
+  controleStart?: boolean
+  controleDeadline?: boolean
   gecontroleerdDoorId?: boolean
   gecontroleerdOp?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
   regels?: boolean | Prisma.VerloningsPeriode$regelsArgs<ExtArgs>
+  controles?: boolean | Prisma.VerloningsPeriode$controlesArgs<ExtArgs>
   _count?: boolean | Prisma.VerloningsPeriodeCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["verloningsPeriode"]>
 
@@ -646,6 +819,8 @@ export type VerloningsPeriodeSelectCreateManyAndReturn<ExtArgs extends runtime.T
   maand?: boolean
   status?: boolean
   gegenereerdOp?: boolean
+  controleStart?: boolean
+  controleDeadline?: boolean
   gecontroleerdDoorId?: boolean
   gecontroleerdOp?: boolean
   aangemaaktOp?: boolean
@@ -660,6 +835,8 @@ export type VerloningsPeriodeSelectUpdateManyAndReturn<ExtArgs extends runtime.T
   maand?: boolean
   status?: boolean
   gegenereerdOp?: boolean
+  controleStart?: boolean
+  controleDeadline?: boolean
   gecontroleerdDoorId?: boolean
   gecontroleerdOp?: boolean
   aangemaaktOp?: boolean
@@ -674,15 +851,18 @@ export type VerloningsPeriodeSelectScalar = {
   maand?: boolean
   status?: boolean
   gegenereerdOp?: boolean
+  controleStart?: boolean
+  controleDeadline?: boolean
   gecontroleerdDoorId?: boolean
   gecontroleerdOp?: boolean
   aangemaaktOp?: boolean
   gewijzigdOp?: boolean
 }
 
-export type VerloningsPeriodeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "periodeStart" | "periodeEinde" | "jaar" | "maand" | "status" | "gegenereerdOp" | "gecontroleerdDoorId" | "gecontroleerdOp" | "aangemaaktOp" | "gewijzigdOp", ExtArgs["result"]["verloningsPeriode"]>
+export type VerloningsPeriodeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "periodeStart" | "periodeEinde" | "jaar" | "maand" | "status" | "gegenereerdOp" | "controleStart" | "controleDeadline" | "gecontroleerdDoorId" | "gecontroleerdOp" | "aangemaaktOp" | "gewijzigdOp", ExtArgs["result"]["verloningsPeriode"]>
 export type VerloningsPeriodeInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   regels?: boolean | Prisma.VerloningsPeriode$regelsArgs<ExtArgs>
+  controles?: boolean | Prisma.VerloningsPeriode$controlesArgs<ExtArgs>
   _count?: boolean | Prisma.VerloningsPeriodeCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type VerloningsPeriodeIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -691,10 +871,21 @@ export type VerloningsPeriodeIncludeUpdateManyAndReturn<ExtArgs extends runtime.
 export type $VerloningsPeriodePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "VerloningsPeriode"
   objects: {
+    /**
+     * ----------------------------------------------------
+     * RELATIES
+     * ----------------------------------------------------
+     */
     regels: Prisma.$VerloningsRegelPayload<ExtArgs>[]
+    controles: Prisma.$VerloningsControlePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    /**
+     * ----------------------------------------------------
+     * VERLONINGSPERIODE
+     * ----------------------------------------------------
+     */
     periodeStart: Date
     periodeEinde: Date
     jaar: number
@@ -705,9 +896,37 @@ export type $VerloningsPeriodePayload<ExtArgs extends runtime.Types.Extensions.I
      * VERWERKT
      */
     status: string
+    /**
+     * Moment waarop de verloningsperiode is gegenereerd.
+     */
     gegenereerdOp: Date | null
+    /**
+     * Moment waarop medewerkers en eigenaar de
+     * verloningsperiode mogen controleren.
+     */
+    controleStart: Date | null
+    /**
+     * Uiterste moment waarop de controle openstaat.
+     * 
+     * Standaard:
+     * 3e dag van de volgende maand om 23:59:59.
+     */
+    controleDeadline: Date | null
+    /**
+     * Systeemgebruiker die de volledige
+     * verloningsperiode heeft gecontroleerd.
+     */
     gecontroleerdDoorId: string | null
+    /**
+     * Moment waarop de eigenaar de volledige
+     * verloningsperiode heeft gecontroleerd.
+     */
     gecontroleerdOp: Date | null
+    /**
+     * ----------------------------------------------------
+     * AUDIT
+     * ----------------------------------------------------
+     */
     aangemaaktOp: Date
     gewijzigdOp: Date
   }, ExtArgs["result"]["verloningsPeriode"]>
@@ -1105,6 +1324,7 @@ readonly fields: VerloningsPeriodeFieldRefs;
 export interface Prisma__VerloningsPeriodeClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   regels<T extends Prisma.VerloningsPeriode$regelsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.VerloningsPeriode$regelsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VerloningsRegelPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  controles<T extends Prisma.VerloningsPeriode$controlesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.VerloningsPeriode$controlesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VerloningsControlePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1141,6 +1361,8 @@ export interface VerloningsPeriodeFieldRefs {
   readonly maand: Prisma.FieldRef<"VerloningsPeriode", 'Int'>
   readonly status: Prisma.FieldRef<"VerloningsPeriode", 'String'>
   readonly gegenereerdOp: Prisma.FieldRef<"VerloningsPeriode", 'DateTime'>
+  readonly controleStart: Prisma.FieldRef<"VerloningsPeriode", 'DateTime'>
+  readonly controleDeadline: Prisma.FieldRef<"VerloningsPeriode", 'DateTime'>
   readonly gecontroleerdDoorId: Prisma.FieldRef<"VerloningsPeriode", 'String'>
   readonly gecontroleerdOp: Prisma.FieldRef<"VerloningsPeriode", 'DateTime'>
   readonly aangemaaktOp: Prisma.FieldRef<"VerloningsPeriode", 'DateTime'>
@@ -1559,6 +1781,30 @@ export type VerloningsPeriode$regelsArgs<ExtArgs extends runtime.Types.Extension
   take?: number
   skip?: number
   distinct?: Prisma.VerloningsRegelScalarFieldEnum | Prisma.VerloningsRegelScalarFieldEnum[]
+}
+
+/**
+ * VerloningsPeriode.controles
+ */
+export type VerloningsPeriode$controlesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the VerloningsControle
+   */
+  select?: Prisma.VerloningsControleSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the VerloningsControle
+   */
+  omit?: Prisma.VerloningsControleOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VerloningsControleInclude<ExtArgs> | null
+  where?: Prisma.VerloningsControleWhereInput
+  orderBy?: Prisma.VerloningsControleOrderByWithRelationInput | Prisma.VerloningsControleOrderByWithRelationInput[]
+  cursor?: Prisma.VerloningsControleWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.VerloningsControleScalarFieldEnum | Prisma.VerloningsControleScalarFieldEnum[]
 }
 
 /**

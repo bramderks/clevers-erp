@@ -62,7 +62,7 @@ model Vestiging {
   voorraadMutaties VoorraadMutatie[]
   vestigingProducten VestigingProduct[]
 
-urenregistraties UrenRegistratie[]
+  urenregistraties UrenRegistratie[]
   verloningsRegels VerloningsRegel[]
 
   openingstijden OpeningstijdenPeriode[]

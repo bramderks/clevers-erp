@@ -85,6 +85,7 @@ export const ModelName = {
   Status: 'Status',
   Instelling: 'Instelling',
   VerloningsPeriode: 'VerloningsPeriode',
+  VerloningsControle: 'VerloningsControle',
   VerloningsRegel: 'VerloningsRegel'
 } as const
 
@@ -581,6 +582,8 @@ export const VerloningsPeriodeScalarFieldEnum = {
   maand: 'maand',
   status: 'status',
   gegenereerdOp: 'gegenereerdOp',
+  controleStart: 'controleStart',
+  controleDeadline: 'controleDeadline',
   gecontroleerdDoorId: 'gecontroleerdDoorId',
   gecontroleerdOp: 'gecontroleerdOp',
   aangemaaktOp: 'aangemaaktOp',
@@ -588,6 +591,20 @@ export const VerloningsPeriodeScalarFieldEnum = {
 } as const
 
 export type VerloningsPeriodeScalarFieldEnum = (typeof VerloningsPeriodeScalarFieldEnum)[keyof typeof VerloningsPeriodeScalarFieldEnum]
+
+
+export const VerloningsControleScalarFieldEnum = {
+  id: 'id',
+  verloningsPeriodeId: 'verloningsPeriodeId',
+  medewerkerId: 'medewerkerId',
+  status: 'status',
+  gecontroleerdOp: 'gecontroleerdOp',
+  automatischAkkoordOp: 'automatischAkkoordOp',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type VerloningsControleScalarFieldEnum = (typeof VerloningsControleScalarFieldEnum)[keyof typeof VerloningsControleScalarFieldEnum]
 
 
 export const VerloningsRegelScalarFieldEnum = {

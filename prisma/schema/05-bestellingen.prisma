@@ -8,7 +8,6 @@ model Bestelling {
   vestigingId String
 
   besteldatum DateTime
-
   leverdatum DateTime?
 
   statusId String
@@ -20,6 +19,7 @@ model Bestelling {
   status Status @relation(fields: [statusId], references: [id], onDelete: Restrict)
 
   regels BestelRegel[]
+
   leveringen Levering[]
 
   aangemaaktOp DateTime @default(now())
@@ -36,11 +36,11 @@ model BestelRegel {
   bestellingId String
   productId String
 
-  adviesAantal Decimal @db.Decimal(10,2)
+  adviesAantal Decimal @db.Decimal(10, 2)
 
-  besteldAantal Decimal @db.Decimal(10,2)
+  besteldAantal Decimal @db.Decimal(10, 2)
 
-  geleverdAantal Decimal? @db.Decimal(10,2)
+  geleverdAantal Decimal? @db.Decimal(10, 2)
 
   bestelling Bestelling @relation(fields: [bestellingId], references: [id], onDelete: Cascade)
 

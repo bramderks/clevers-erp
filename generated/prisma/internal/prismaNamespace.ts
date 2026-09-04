@@ -431,6 +431,7 @@ export const ModelName = {
   Status: 'Status',
   Instelling: 'Instelling',
   VerloningsPeriode: 'VerloningsPeriode',
+  VerloningsControle: 'VerloningsControle',
   VerloningsRegel: 'VerloningsRegel'
 } as const
 
@@ -447,7 +448,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "organisatie" | "vestiging" | "openingstijdenPeriode" | "organisatieGebruiker" | "systeemGebruiker" | "systeemGebruikerVestiging" | "rol" | "auditLog" | "medewerker" | "medewerkerVestiging" | "medewerkerRol" | "tag" | "medewerkerTag" | "week" | "beschikbaarheid" | "vakantieAanvraag" | "dienst" | "dienstTag" | "dienstBezetting" | "ruilverzoek" | "urenRegistratie" | "productType" | "product" | "vestigingProduct" | "bestelling" | "bestelRegel" | "voorraadTelling" | "voorraadTellingRegel" | "voorraadMutatie" | "levering" | "leveringRegel" | "status" | "instelling" | "verloningsPeriode" | "verloningsRegel"
+    modelProps: "organisatie" | "vestiging" | "openingstijdenPeriode" | "organisatieGebruiker" | "systeemGebruiker" | "systeemGebruikerVestiging" | "rol" | "auditLog" | "medewerker" | "medewerkerVestiging" | "medewerkerRol" | "tag" | "medewerkerTag" | "week" | "beschikbaarheid" | "vakantieAanvraag" | "dienst" | "dienstTag" | "dienstBezetting" | "ruilverzoek" | "urenRegistratie" | "productType" | "product" | "vestigingProduct" | "bestelling" | "bestelRegel" | "voorraadTelling" | "voorraadTellingRegel" | "voorraadMutatie" | "levering" | "leveringRegel" | "status" | "instelling" | "verloningsPeriode" | "verloningsControle" | "verloningsRegel"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2967,6 +2968,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    VerloningsControle: {
+      payload: Prisma.$VerloningsControlePayload<ExtArgs>
+      fields: Prisma.VerloningsControleFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.VerloningsControleFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsControlePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.VerloningsControleFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsControlePayload>
+        }
+        findFirst: {
+          args: Prisma.VerloningsControleFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsControlePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.VerloningsControleFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsControlePayload>
+        }
+        findMany: {
+          args: Prisma.VerloningsControleFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsControlePayload>[]
+        }
+        create: {
+          args: Prisma.VerloningsControleCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsControlePayload>
+        }
+        createMany: {
+          args: Prisma.VerloningsControleCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.VerloningsControleCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsControlePayload>[]
+        }
+        delete: {
+          args: Prisma.VerloningsControleDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsControlePayload>
+        }
+        update: {
+          args: Prisma.VerloningsControleUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsControlePayload>
+        }
+        deleteMany: {
+          args: Prisma.VerloningsControleDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.VerloningsControleUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.VerloningsControleUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsControlePayload>[]
+        }
+        upsert: {
+          args: Prisma.VerloningsControleUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerloningsControlePayload>
+        }
+        aggregate: {
+          args: Prisma.VerloningsControleAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateVerloningsControle>
+        }
+        groupBy: {
+          args: Prisma.VerloningsControleGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VerloningsControleGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.VerloningsControleCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VerloningsControleCountAggregateOutputType> | number
+        }
+      }
+    }
     VerloningsRegel: {
       payload: Prisma.$VerloningsRegelPayload<ExtArgs>
       fields: Prisma.VerloningsRegelFieldRefs
@@ -3557,6 +3632,8 @@ export const VerloningsPeriodeScalarFieldEnum = {
   maand: 'maand',
   status: 'status',
   gegenereerdOp: 'gegenereerdOp',
+  controleStart: 'controleStart',
+  controleDeadline: 'controleDeadline',
   gecontroleerdDoorId: 'gecontroleerdDoorId',
   gecontroleerdOp: 'gecontroleerdOp',
   aangemaaktOp: 'aangemaaktOp',
@@ -3564,6 +3641,20 @@ export const VerloningsPeriodeScalarFieldEnum = {
 } as const
 
 export type VerloningsPeriodeScalarFieldEnum = (typeof VerloningsPeriodeScalarFieldEnum)[keyof typeof VerloningsPeriodeScalarFieldEnum]
+
+
+export const VerloningsControleScalarFieldEnum = {
+  id: 'id',
+  verloningsPeriodeId: 'verloningsPeriodeId',
+  medewerkerId: 'medewerkerId',
+  status: 'status',
+  gecontroleerdOp: 'gecontroleerdOp',
+  automatischAkkoordOp: 'automatischAkkoordOp',
+  aangemaaktOp: 'aangemaaktOp',
+  gewijzigdOp: 'gewijzigdOp'
+} as const
+
+export type VerloningsControleScalarFieldEnum = (typeof VerloningsControleScalarFieldEnum)[keyof typeof VerloningsControleScalarFieldEnum]
 
 
 export const VerloningsRegelScalarFieldEnum = {
@@ -3931,6 +4022,7 @@ export type GlobalOmitConfig = {
   status?: Prisma.StatusOmit
   instelling?: Prisma.InstellingOmit
   verloningsPeriode?: Prisma.VerloningsPeriodeOmit
+  verloningsControle?: Prisma.VerloningsControleOmit
   verloningsRegel?: Prisma.VerloningsRegelOmit
 }
 

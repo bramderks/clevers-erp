@@ -6,7 +6,6 @@ model ProductType {
   id String @id @default(cuid())
 
   code String @unique
-
   naam String
 
   volgorde Int
@@ -26,7 +25,6 @@ model Product {
   id String @id @default(cuid())
 
   code String @unique
-
   naam String
 
   productTypeId String
@@ -36,27 +34,27 @@ model Product {
   volgorde Int
 
   leverancier String?
-
   artikelnummer String?
 
   bestelEenheid String?
-
   voorraadEenheid String?
 
   productType ProductType @relation(fields: [productTypeId], references: [id], onDelete: Restrict)
 
   vestigingen VestigingProduct[]
+
   bestelRegels BestelRegel[]
 
-voorraadTellingen VoorraadTellingRegel[]
+  voorraadTellingen VoorraadTellingRegel[]
 
-voorraadMutaties VoorraadMutatie[]
+  voorraadMutaties VoorraadMutatie[]
 
-leveringen LeveringRegel[]
+  leveringen LeveringRegel[]
 
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt
 
+  @@index([productTypeId])
   @@index([naam])
   @@index([actief])
   @@index([volgorde])
@@ -68,11 +66,11 @@ model VestigingProduct {
   vestigingId String
   productId String
 
-  minimumVoorraad Decimal? @db.Decimal(10,2)
+  minimumVoorraad Decimal? @db.Decimal(10, 2)
 
-  bufferVoorraad Decimal? @db.Decimal(10,2)
+  bufferVoorraad Decimal? @db.Decimal(10, 2)
 
-  standaardBestelling Decimal? @db.Decimal(10,2)
+  standaardBestelling Decimal? @db.Decimal(10, 2)
 
   actief Boolean @default(true)
 
@@ -84,4 +82,5 @@ model VestigingProduct {
 
   @@index([vestigingId])
   @@index([productId])
+  @@index([actief])
 }

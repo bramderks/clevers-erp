@@ -24,20 +24,20 @@ model VoorraadTelling {
 
   @@index([vestigingId])
   @@index([teldatum])
+  @@index([statusId])
 }
 
 model VoorraadTellingRegel {
   id String @id @default(cuid())
 
   tellingId String
-
   productId String
 
-  geteld Decimal @db.Decimal(10,2)
+  geteld Decimal @db.Decimal(10, 2)
 
-  advies Decimal? @db.Decimal(10,2)
+  advies Decimal? @db.Decimal(10, 2)
 
-  bestelling Decimal? @db.Decimal(10,2)
+  bestelling Decimal? @db.Decimal(10, 2)
 
   telling VoorraadTelling @relation(fields: [tellingId], references: [id], onDelete: Cascade)
 
@@ -53,10 +53,9 @@ model VoorraadMutatie {
   id String @id @default(cuid())
 
   vestigingId String
-
   productId String
 
-  aantal Decimal @db.Decimal(10,2)
+  aantal Decimal @db.Decimal(10, 2)
 
   reden String
 
@@ -72,4 +71,5 @@ model VoorraadMutatie {
 
   @@index([vestigingId])
   @@index([productId])
+  @@index([aangemaaktOp])
 }

@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
 
+import {
+  berekenGewerkteUren,
+} from "@/lib/verloning/pauze";
+
 type GenereerVerloningResultaat = {
   periodeId: string;
   jaar: number;
@@ -8,6 +12,14 @@ type GenereerVerloningResultaat = {
   aantalRegels: number;
   totaalDagen: number;
   totaalUren: number;
+};
+
+type VerloningsGroep = {
+  medewerkerId: string;
+  vestigingId: string;
+  medewerkerNaam: string;
+  gewerkteDagen: Set<string>;
+  gewerkteUren: number;
 };
 
 function beginVanMaand(
@@ -62,6 +74,18 @@ function volledigeNaam(
     .join(" ");
 }
 
+function urenZijnGelijk(
+  eersteWaarde: number,
+  tweedeWaarde: number,
+) {
+  return (
+    Math.abs(
+      eersteWaarde -
+        tweedeWaarde,
+    ) < 0.001
+  );
+}
+
 export async function genereerVerloning(
   jaar: number,
   maand: number,
@@ -73,6 +97,16 @@ export async function genereerVerloning(
    */
 
   if (
+    !Number.isInteger(jaar) ||
+    jaar < 2000
+  ) {
+    throw new Error(
+      "Het opgegeven jaar is ongeldig.",
+    );
+  }
+
+  if (
+    !Number.isInteger(maand) ||
     maand < 1 ||
     maand > 12
   ) {
@@ -95,7 +129,7 @@ export async function genereerVerloning(
 
   /*
    * ==========================================================
-   * BESTAANDE PERIODE
+   * BESTAANDE PERIODE CONTROLEREN
    * ==========================================================
    */
 
@@ -108,6 +142,7 @@ export async function genereerVerloning(
             maand,
           },
         },
+
         select: {
           id: true,
           status: true,
@@ -116,8 +151,8 @@ export async function genereerVerloning(
     );
 
   /*
-   * Een reeds verwerkte periode mag nooit automatisch
-   * opnieuw worden opgebouwd.
+   * Een reeds verwerkte periode is definitief en
+   * mag nooit opnieuw worden gegenereerd.
    */
 
   if (
@@ -134,12 +169,10 @@ export async function genereerVerloning(
    * ALLE URENREGISTRATIES CONTROLEREN
    * ==========================================================
    *
-   * Voor een maandrapportage moet iedere urenregistratie
-   * binnen de periode definitief zijn.
-   *
-   * We controleren bewust het totaal en het aantal definitieve
-   * registraties. Hierdoor kan geen enkele andere status
-   * ongemerkt door de controle heen komen.
+   * Een maand kan uitsluitend worden opgenomen in
+   * de verloning wanneer er urenregistraties zijn
+   * én alle urenregistraties definitief zijn.
+   * ==========================================================
    */
 
   const [
@@ -167,7 +200,9 @@ export async function genereerVerloning(
   ]);
 
   /*
-   * Er moeten daadwerkelijk uren zijn geregistreerd.
+   * ==========================================================
+   * GEEN UREN BESCHIKBAAR
+   * ==========================================================
    */
 
   if (
@@ -179,7 +214,9 @@ export async function genereerVerloning(
   }
 
   /*
-   * Niet iedere registratie is definitief.
+   * ==========================================================
+   * ALLE UREN MOETEN DEFINITIEF ZIJN
+   * ==========================================================
    */
 
   if (
@@ -211,16 +248,21 @@ export async function genereerVerloning(
           },
           status: "DEFINITIEF",
         },
+
         select: {
           id: true,
           medewerkerId: true,
           vestigingId: true,
           datum: true,
+
+          werkelijkeBegintijd: true,
+          werkelijkeEindtijd: true,
+
+          pauzeMinuten: true,
           gewerkteUren: true,
 
           medewerker: {
             select: {
-              id: true,
               voornaam: true,
               tussenvoegsel: true,
               achternaam: true,
@@ -248,30 +290,95 @@ export async function genereerVerloning(
 
   /*
    * ==========================================================
-   * GROEPEREN
+   * UREN EN PAUZES CONTROLEREN
    * ==========================================================
    *
-   * Eén medewerker kan meerdere urenregistraties op één dag
-   * hebben.
+   * De centrale berekening in:
    *
-   * Gewerkte dagen worden daarom bepaald op basis van unieke
-   * datums en niet op basis van het aantal registraties.
+   * lib/verloning/pauze.ts
    *
-   * De combinatie medewerker + vestiging blijft bepalend.
+   * is altijd leidend voor de netto gewerkte uren.
+   *
+   * Iedere definitieve urenregistratie wordt daarom
+   * opnieuw gecontroleerd voordat deze in de
+   * verloning terechtkomt.
+   * ==========================================================
    */
 
-  type Groep = {
-    medewerkerId: string;
-    vestigingId: string;
-    medewerkerNaam: string;
-    gewerkteDagen: Set<string>;
-    gewerkteUren: number;
-  };
+  const gecontroleerdeUren =
+    uren.map(
+      (registratie) => {
+        const berekening =
+          berekenGewerkteUren(
+            registratie.werkelijkeBegintijd,
+            registratie.werkelijkeEindtijd,
+          );
+
+        const opgeslagenPauze =
+          registratie.pauzeMinuten;
+
+        const opgeslagenUren =
+          Number(
+            registratie.gewerkteUren,
+          );
+
+        const pauzeKlopt =
+          opgeslagenPauze ===
+          berekening.pauzeMinuten;
+
+        const urenKloppen =
+          urenZijnGelijk(
+            opgeslagenUren,
+            berekening.gewerkteUren,
+          );
+
+        if (
+          !pauzeKlopt ||
+          !urenKloppen
+        ) {
+          throw new Error(
+            [
+              `De urenregistratie van ${volledigeNaam(registratie.medewerker)} op ${datumSleutel(registratie.datum)} komt niet overeen met de centrale pauze- en urenberekening.`,
+              `Verwacht: ${berekening.pauzeMinuten} minuten pauze en ${berekening.gewerkteUren.toFixed(2)} uur.`,
+              `Opgeslagen: ${opgeslagenPauze} minuten pauze en ${opgeslagenUren.toFixed(2)} uur.`,
+            ].join(" "),
+          );
+        }
+
+        return {
+          ...registratie,
+
+          berekendeGewerkteUren:
+            berekening.gewerkteUren,
+        };
+      },
+    );
+
+  /*
+   * ==========================================================
+   * GROEPEREN PER MEDEWERKER EN VESTIGING
+   * ==========================================================
+   *
+   * Eén medewerker kan meerdere diensten op één dag
+   * hebben.
+   *
+   * Gewerkte dagen worden daarom bepaald op basis
+   * van unieke datums.
+   *
+   * Iedere combinatie van medewerker + vestiging
+   * krijgt één verloningsregel.
+   * ==========================================================
+   */
 
   const groepen =
-    new Map<string, Groep>();
+    new Map<
+      string,
+      VerloningsGroep
+    >();
 
-  for (const registratie of uren) {
+  for (
+    const registratie of gecontroleerdeUren
+  ) {
     const sleutel = [
       registratie.medewerkerId,
       registratie.vestigingId,
@@ -312,18 +419,13 @@ export async function genereerVerloning(
     );
 
     groep.gewerkteUren +=
-      Number(
-        registratie.gewerkteUren,
-      );
+      registratie.berekendeGewerkteUren;
   }
 
   /*
    * ==========================================================
    * EXTRA VEILIGHEIDSCONTROLE
    * ==========================================================
-   *
-   * Er moeten daadwerkelijk regels uit de definitieve uren
-   * kunnen worden opgebouwd.
    */
 
   if (groepen.size === 0) {
@@ -334,22 +436,67 @@ export async function genereerVerloning(
 
   /*
    * ==========================================================
-   * RAPPORTAGE AANMAKEN
+   * ALFABETISCH SORTEREN
+   * ==========================================================
+   */
+
+  const gesorteerdeGroepen =
+    Array.from(
+      groepen.values(),
+    ).sort((a, b) =>
+      a.medewerkerNaam.localeCompare(
+        b.medewerkerNaam,
+        "nl",
+      ),
+    );
+
+  /*
+   * ==========================================================
+   * TOTALEN BEREKENEN
+   * ==========================================================
+   */
+
+  const totaalDagen =
+    gesorteerdeGroepen.reduce(
+      (
+        totaal,
+        groep,
+      ) =>
+        totaal +
+        groep.gewerkteDagen.size,
+      0,
+    );
+
+  const totaalUren =
+    gesorteerdeGroepen.reduce(
+      (
+        totaal,
+        groep,
+      ) =>
+        totaal +
+        groep.gewerkteUren,
+      0,
+    );
+
+  /*
+   * ==========================================================
+   * VERLONINGSPERIODE EN REGELS OPSLAAN
    * ==========================================================
    */
 
   const resultaat =
     await prisma.$transaction(
       async (tx) => {
-        let periode =
-          bestaandePeriode;
+        let periodeId =
+          bestaandePeriode?.id;
 
         /*
-         * Nieuwe verloningsperiode aanmaken.
+         * Nieuwe periode aanmaken wanneer deze nog
+         * niet bestaat.
          */
 
-        if (!periode) {
-          periode =
+        if (!periodeId) {
+          const nieuwePeriode =
             await tx.verloningsPeriode.create(
               {
                 data: {
@@ -357,57 +504,36 @@ export async function genereerVerloning(
                   periodeEinde,
                   jaar,
                   maand,
-                  status:
-                    "AANGEMAAKT",
+                  status: "AANGEMAAKT",
                 },
 
                 select: {
                   id: true,
-                  status: true,
                 },
               },
             );
+
+          periodeId =
+            nieuwePeriode.id;
         }
 
         /*
-         * Een bestaande periode die nog niet verwerkt is,
-         * mag opnieuw worden opgebouwd.
-         *
-         * Hierdoor kunnen we een eerdere incomplete poging
-         * veilig vervangen zodra alle uren definitief zijn.
+         * Een bestaande periode die nog niet verwerkt
+         * is, mag opnieuw worden opgebouwd.
          */
 
         await tx.verloningsRegel.deleteMany(
           {
             where: {
               verloningsPeriodeId:
-                periode.id,
+                periodeId,
             },
           },
         );
 
         /*
          * ======================================================
-         * ALFABETISCH SORTEREN
-         * ======================================================
-         *
-         * De rapportage wordt alfabetisch op medewerkernaam
-         * opgebouwd.
-         */
-
-        const gesorteerdeGroepen =
-          Array.from(
-            groepen.values(),
-          ).sort((a, b) =>
-            a.medewerkerNaam.localeCompare(
-              b.medewerkerNaam,
-              "nl",
-            ),
-          );
-
-        /*
-         * ======================================================
-         * REGELS AANMAKEN
+         * VERLONINGSREGELS AANMAKEN
          * ======================================================
          */
 
@@ -417,7 +543,7 @@ export async function genereerVerloning(
               gesorteerdeGroepen.map(
                 (groep) => ({
                   verloningsPeriodeId:
-                    periode!.id,
+                    periodeId,
 
                   medewerkerId:
                     groep.medewerkerId,
@@ -429,9 +555,7 @@ export async function genereerVerloning(
                     groep.medewerkerNaam,
 
                   gewerkteDagen:
-                    groep
-                      .gewerkteDagen
-                      .size,
+                    groep.gewerkteDagen.size,
 
                   gewerkteUren:
                     Number(
@@ -446,48 +570,15 @@ export async function genereerVerloning(
 
         /*
          * ======================================================
-         * TOTALEN
+         * PERIODE KLAARZETTEN
          * ======================================================
-         */
-
-        const totaalDagen =
-          gesorteerdeGroepen.reduce(
-            (
-              totaal,
-              groep,
-            ) =>
-              totaal +
-              groep
-                .gewerkteDagen
-                .size,
-            0,
-          );
-
-        const totaalUren =
-          gesorteerdeGroepen.reduce(
-            (
-              totaal,
-              groep,
-            ) =>
-              totaal +
-              groep.gewerkteUren,
-            0,
-          );
-
-        /*
-         * ======================================================
-         * PERIODE OP KLAAR ZETTEN
-         * ======================================================
-         *
-         * Dit is het moment waarop het dashboard de taak
-         * "Verloning staat klaar" mag tonen.
          */
 
         const bijgewerktePeriode =
           await tx.verloningsPeriode.update(
             {
               where: {
-                id: periode.id,
+                id: periodeId,
               },
 
               data: {
@@ -505,21 +596,6 @@ export async function genereerVerloning(
         return {
           periodeId:
             bijgewerktePeriode.id,
-
-          aantalMedewerkers:
-            new Set(
-              gesorteerdeGroepen.map(
-                (groep) =>
-                  groep.medewerkerId,
-              ),
-            ).size,
-
-          aantalRegels:
-            gesorteerdeGroepen.length,
-
-          totaalDagen,
-
-          totaalUren,
         };
       },
     );
@@ -539,19 +615,21 @@ export async function genereerVerloning(
     maand,
 
     aantalMedewerkers:
-      resultaat.aantalMedewerkers,
+      new Set(
+        gesorteerdeGroepen.map(
+          (groep) =>
+            groep.medewerkerId,
+        ),
+      ).size,
 
     aantalRegels:
-      resultaat.aantalRegels,
+      gesorteerdeGroepen.length,
 
-    totaalDagen:
-      resultaat.totaalDagen,
+    totaalDagen,
 
     totaalUren:
       Number(
-        resultaat.totaalUren.toFixed(
-          2,
-        ),
+        totaalUren.toFixed(2),
       ),
   };
 }
