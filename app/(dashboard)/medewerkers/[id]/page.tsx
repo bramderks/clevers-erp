@@ -286,7 +286,9 @@ function maakMaandOverzicht(
     );
   }
 
-  for (const registratie of urenregistraties) {
+  for (
+    const registratie of urenregistraties
+  ) {
     const datum =
       new Date(registratie.datum);
 
@@ -423,27 +425,28 @@ export default async function MedewerkerPage({
    * ============================================================
    * RECHTEN
    * ============================================================
-   *
-   * Eigenaar:
-   * - volledige beheerrechten
-   *
-   * Teamleider:
-   * - profiel bekijken
-   * - geen beheer van contract, vestigingen,
-   *   verloning of andere beheergegevens
-   *
-   * Medewerker:
-   * - profiel bekijken
-   * - eigen persoonlijke gegevens kunnen via de daarvoor
-   *   bestemde eigen-profiel-flow worden gewijzigd
-   *
-   * Deze pagina geeft geen algemene beheerrechten aan een
-   * Teamleider of medewerker op basis van een brede
-   * medewerkers.update permission.
    */
 
+  /*
+   * ============================================================
+   * EIGEN PROFIEL
+   * ============================================================
+   *
+   * Medewerkers en teamleiders mogen alle tabbladen bekijken.
+   * Zij mogen uitsluitend het tabblad Algemeen van hun eigen
+   * medewerkerprofiel wijzigen.
+   *
+   * De Eigenaar behoudt op alle tabbladen volledige
+   * bewerkingsrechten.
+   */
+
+  const isEigenProfiel =
+    gebruiker?.medewerker?.id ===
+    medewerker.id;
+
   const magAlgemeenBewerken =
-    isEigenaar;
+    isEigenaar ||
+    isEigenProfiel;
 
   const magContractBewerken =
     isEigenaar;
@@ -457,11 +460,14 @@ export default async function MedewerkerPage({
   const magVerloningBewerken =
     isEigenaar;
 
+  const actieveTab: TabId =
+    isTabId(tab)
+      ? tab
+      : "algemeen";
+
   const magTabBewerken =
     getMagTabBewerken(
-      isTabId(tab)
-        ? tab
-        : "algemeen",
+      actieveTab,
       {
         magAlgemeenBewerken,
         magContractBewerken,
@@ -470,11 +476,6 @@ export default async function MedewerkerPage({
         magVerloningBewerken,
       },
     );
-
-  const actieveTab: TabId =
-    isTabId(tab)
-      ? tab
-      : "algemeen";
 
   const editSection =
     getEditSection(
@@ -490,6 +491,43 @@ export default async function MedewerkerPage({
     formatteerNaam(
       medewerker,
     );
+
+  /*
+   * ============================================================
+   * BESCHIKBARE ROLLEN EN TAGS
+   * ============================================================
+   *
+   * Alleen nodig voor de eigenaar, omdat alleen de eigenaar
+   * deze koppelingen kan wijzigen.
+   */
+
+  const beschikbareRollen =
+    isEigenaar
+      ? await prisma.rol.findMany({
+          orderBy: {
+            naam: "asc",
+          },
+
+          select: {
+            id: true,
+            naam: true,
+          },
+        })
+      : [];
+
+  const beschikbareTags =
+    isEigenaar
+      ? await prisma.tag.findMany({
+          orderBy: {
+            naam: "asc",
+          },
+
+          select: {
+            id: true,
+            naam: true,
+          },
+        })
+      : [];
 
   /*
    * ============================================================
@@ -565,6 +603,28 @@ export default async function MedewerkerPage({
         (medewerkerVestiging) =>
           medewerkerVestiging.hoofdvestiging,
       )?.vestiging.id ?? null,
+
+    rollen:
+      medewerker.rollen.map(
+        (medewerkerRol) => ({
+          id:
+            medewerkerRol.rol.id,
+
+          naam:
+            medewerkerRol.rol.naam,
+        }),
+      ),
+
+    tags:
+      medewerker.tags.map(
+        (medewerkerTag) => ({
+          id:
+            medewerkerTag.tag.id,
+
+          naam:
+            medewerkerTag.tag.naam,
+        }),
+      ),
   };
 
   const vestigingen =
@@ -658,56 +718,47 @@ export default async function MedewerkerPage({
    * ============================================================
    * VERLONING
    * ============================================================
-   *
-   * Alleen de Eigenaar mag verloningsgegevens zien.
-   *
-   * Daarom worden de urenregistraties alleen opgehaald wanneer
-   * de gebruiker daadwerkelijk Eigenaar is.
    */
 
   const huidigJaar =
     new Date().getFullYear();
 
   const definitieveUren =
-    isEigenaar
-      ? await prisma.urenRegistratie.findMany(
-          {
-            where: {
-              medewerkerId:
-                medewerker.id,
+    await prisma.urenRegistratie.findMany(
+      {
+        where: {
+          medewerkerId:
+            medewerker.id,
 
-              status: "DEFINITIEF",
+          status: "DEFINITIEF",
 
-              datum: {
-                gte: new Date(
-                  `${huidigJaar}-01-01T00:00:00`,
-                ),
+          datum: {
+            gte: new Date(
+              `${huidigJaar}-01-01T00:00:00`,
+            ),
 
-                lt: new Date(
-                  `${huidigJaar + 1}-01-01T00:00:00`,
-                ),
-              },
-            },
-
-            select: {
-              datum: true,
-              gewerkteUren: true,
-            },
-
-            orderBy: {
-              datum: "asc",
-            },
+            lt: new Date(
+              `${huidigJaar + 1}-01-01T00:00:00`,
+            ),
           },
-        )
-      : [];
+        },
+
+        select: {
+          datum: true,
+          gewerkteUren: true,
+        },
+
+        orderBy: {
+          datum: "asc",
+        },
+      },
+    );
 
   const maandOverzicht =
-    isEigenaar
-      ? maakMaandOverzicht(
-          huidigJaar,
-          definitieveUren,
-        )
-      : [];
+    maakMaandOverzicht(
+      huidigJaar,
+      definitieveUren,
+    );
 
   const totaalDagen =
     maandOverzicht.reduce(
@@ -748,9 +799,7 @@ export default async function MedewerkerPage({
 
                 return (
                   <Link
-                    key={
-                      tabItem.id
-                    }
+                    key={tabItem.id}
                     href={`/medewerkers/${medewerker.id}?tab=${tabItem.id}`}
                     className={`whitespace-nowrap rounded-t-lg border-b-2 px-4 py-3 text-sm font-medium transition ${
                       actief
@@ -758,9 +807,7 @@ export default async function MedewerkerPage({
                         : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
                     }`}
                   >
-                    {
-                      tabItem.label
-                    }
+                    {tabItem.label}
                   </Link>
                 );
               },
@@ -769,6 +816,7 @@ export default async function MedewerkerPage({
         </div>
 
         <div className="p-6">
+
           {/* =====================================================
               ALGEMEEN
               ===================================================== */}
@@ -783,7 +831,7 @@ export default async function MedewerkerPage({
                   </h2>
 
                   <p className="mt-1 text-sm text-slate-500">
-                    Algemene gegevens van de medewerker.
+                    Algemene gegevens, rollen en planningstags van de medewerker.
                   </p>
                 </div>
 
@@ -795,20 +843,32 @@ export default async function MedewerkerPage({
                     }
                   />
                 )}
+
+                {isBewerken && (
+                  <AnnuleerBewerkenKnop
+                    href={`/medewerkers/${medewerker.id}?tab=algemeen`}
+                  />
+                )}
               </div>
 
               {isBewerken &&
               editSection ===
                 "algemeen" ? (
                 <Card
-                  title="Algemene gegevens wijzigen"
-                  description="Wijzig de persoonlijke en contactgegevens van deze medewerker."
+                  title="Medewerker wijzigen"
+                  description="Wijzig de algemene gegevens, rollen en planningstags van deze medewerker."
                 >
                   <MedewerkerTabBewerken
                     medewerker={
                       medewerkerFormData
                     }
                     section="algemeen"
+                    beschikbareRollen={
+                      beschikbareRollen
+                    }
+                    beschikbareTags={
+                      beschikbareTags
+                    }
                   />
                 </Card>
               ) : (
@@ -851,9 +911,7 @@ export default async function MedewerkerPage({
                           />
 
                           <span className="text-sm text-slate-700">
-                            {
-                              medewerker.email
-                            }
+                            {medewerker.email}
                           </span>
                         </div>
 
@@ -864,9 +922,7 @@ export default async function MedewerkerPage({
                           />
 
                           <span className="text-sm text-slate-700">
-                            {
-                              medewerker.telefoon
-                            }
+                            {medewerker.telefoon}
                           </span>
                         </div>
                       </div>
@@ -901,9 +957,7 @@ export default async function MedewerkerPage({
                         </dt>
 
                         <dd className="mt-1 text-sm text-slate-700">
-                          {
-                            medewerker.aanhef
-                          }
+                          {medewerker.aanhef}
                         </dd>
                       </div>
 
@@ -913,9 +967,7 @@ export default async function MedewerkerPage({
                         </dt>
 
                         <dd className="mt-1 text-sm text-slate-700">
-                          {
-                            medewerker.voornaam
-                          }
+                          {medewerker.voornaam}
                         </dd>
                       </div>
 
@@ -936,9 +988,7 @@ export default async function MedewerkerPage({
                         </dt>
 
                         <dd className="mt-1 text-sm text-slate-700">
-                          {
-                            medewerker.achternaam
-                          }
+                          {medewerker.achternaam}
                         </dd>
                       </div>
 
@@ -967,14 +1017,13 @@ export default async function MedewerkerPage({
                     </dl>
                   </Card>
 
-                  {isEigenaar && (
-                    <div className="grid gap-6 lg:grid-cols-2">
+                  <div className="grid gap-6 lg:grid-cols-2">
                       <Card
                         title="Rollen"
-                        description="Rollen van de medewerker."
+                        description="Rollen die aan deze medewerker zijn gekoppeld."
                       >
-                        {medewerker.rollen
-                          .length === 0 ? (
+                        {medewerker.rollen.length ===
+                        0 ? (
                           <p className="text-sm text-slate-500">
                             Nog geen rollen gekoppeld.
                           </p>
@@ -1006,8 +1055,8 @@ export default async function MedewerkerPage({
                         title="Planningstags"
                         description="Tags die deze medewerker kan uitvoeren."
                       >
-                        {medewerker.tags
-                          .length === 0 ? (
+                        {medewerker.tags.length ===
+                        0 ? (
                           <p className="text-sm text-slate-500">
                             Nog geen planningstags gekoppeld.
                           </p>
@@ -1035,7 +1084,6 @@ export default async function MedewerkerPage({
                         )}
                       </Card>
                     </div>
-                  )}
                 </>
               )}
             </div>
@@ -1174,8 +1222,8 @@ export default async function MedewerkerPage({
                 title="Gekoppelde vestigingen"
                 description="Vestigingen waarvoor de medewerker is gekoppeld."
               >
-                {medewerker.vestigingen
-                  .length === 0 ? (
+                {medewerker.vestigingen.length ===
+                0 ? (
                   <p className="text-sm text-slate-500">
                     Nog geen vestiging gekoppeld.
                   </p>
@@ -1315,9 +1363,7 @@ export default async function MedewerkerPage({
                     {vakantieAanvragen.map(
                       (aanvraag) => (
                         <div
-                          key={
-                            aanvraag.id
-                          }
+                          key={aanvraag.id}
                           className="rounded-xl border border-slate-200 bg-white p-4"
                         >
                           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -1488,8 +1534,7 @@ export default async function MedewerkerPage({
                                 </p>
 
                                 <p className="mt-1 text-sm text-slate-600">
-                                  {beginTijd}{" "}
-                                  -{" "}
+                                  {beginTijd} -{" "}
                                   {eindTijd}
                                 </p>
 
@@ -1537,9 +1582,7 @@ export default async function MedewerkerPage({
                                   >
                                     <Button>
                                       <Pencil
-                                        size={
-                                          15
-                                        }
+                                        size={15}
                                       />
                                       Dienst wijzigen
                                     </Button>
@@ -1564,19 +1607,7 @@ export default async function MedewerkerPage({
           {actieveTab ===
             "verloning" && (
             <div className="space-y-6">
-              {!isEigenaar ? (
-                <Card
-                  title="Verloning"
-                  description="Verloningsgegevens zijn alleen beschikbaar voor de eigenaar."
-                >
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-5 py-6">
-                    <p className="text-sm text-slate-600">
-                      Je hebt geen toegang tot de verloningsgegevens van deze medewerker.
-                    </p>
-                  </div>
-                </Card>
-              ) : (
-                <>
+              <>
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <h2 className="text-lg font-semibold text-slate-900">
@@ -1748,7 +1779,6 @@ export default async function MedewerkerPage({
                     </>
                   )}
                 </>
-              )}
             </div>
           )}
         </div>

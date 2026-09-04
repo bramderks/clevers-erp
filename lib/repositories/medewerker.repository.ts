@@ -37,6 +37,20 @@ type FindAllOptions = {
   vestigingIds?: string[];
 };
 
+function uniekeIds(
+  ids: string[],
+) {
+  return Array.from(
+    new Set(
+      ids.filter(
+        (id) =>
+          typeof id === "string" &&
+          id.trim(),
+      ),
+    ),
+  );
+}
+
 export const medewerkerRepository = {
   /*
    * ============================================================
@@ -91,15 +105,7 @@ export const medewerkerRepository = {
       },
 
       include: {
-        /*
-         * STATUS
-         */
-
         status: true,
-
-        /*
-         * VESTIGINGEN
-         */
 
         vestigingen: {
           include: {
@@ -110,10 +116,6 @@ export const medewerkerRepository = {
             hoofdvestiging: "desc",
           },
         },
-
-        /*
-         * ROLLEN
-         */
 
         rollen: {
           include: {
@@ -127,10 +129,6 @@ export const medewerkerRepository = {
           },
         },
 
-        /*
-         * TAGS
-         */
-
         tags: {
           include: {
             tag: true,
@@ -143,10 +141,6 @@ export const medewerkerRepository = {
           },
         },
 
-        /*
-         * BESCHIKBAARHEID
-         */
-
         beschikbaarheden: {
           orderBy: [
             {
@@ -157,10 +151,6 @@ export const medewerkerRepository = {
             },
           ],
         },
-
-        /*
-         * VAKANTIE
-         */
 
         vakantieAanvragen: {
           orderBy: [
@@ -176,10 +166,6 @@ export const medewerkerRepository = {
             vestiging: true,
           },
         },
-
-        /*
-         * PLANNING
-         */
 
         diensten: {
           include: {
@@ -208,10 +194,6 @@ export const medewerkerRepository = {
             },
           },
         },
-
-        /*
-         * VERLONING
-         */
 
         verloningsRegels: {
           include: {
@@ -244,17 +226,15 @@ export const medewerkerRepository = {
    * ============================================================
    */
 
-  async findById(id: string) {
+  async findById(
+    id: string,
+  ) {
     return prisma.medewerker.findUnique({
       where: {
         id,
       },
 
       include: {
-        /*
-         * SYSTEEMGEBRUIKER
-         */
-
         systeemGebruiker: {
           select: {
             id: true,
@@ -265,15 +245,7 @@ export const medewerkerRepository = {
           },
         },
 
-        /*
-         * STATUS
-         */
-
         status: true,
-
-        /*
-         * VESTIGINGEN
-         */
 
         vestigingen: {
           include: {
@@ -284,10 +256,6 @@ export const medewerkerRepository = {
             hoofdvestiging: "desc",
           },
         },
-
-        /*
-         * ROLLEN
-         */
 
         rollen: {
           include: {
@@ -301,10 +269,6 @@ export const medewerkerRepository = {
           },
         },
 
-        /*
-         * TAGS
-         */
-
         tags: {
           include: {
             tag: true,
@@ -317,10 +281,6 @@ export const medewerkerRepository = {
           },
         },
 
-        /*
-         * BESCHIKBAARHEID
-         */
-
         beschikbaarheden: {
           orderBy: [
             {
@@ -331,10 +291,6 @@ export const medewerkerRepository = {
             },
           ],
         },
-
-        /*
-         * VAKANTIE
-         */
 
         vakantieAanvragen: {
           include: {
@@ -350,10 +306,6 @@ export const medewerkerRepository = {
             },
           ],
         },
-
-        /*
-         * PLANNING
-         */
 
         diensten: {
           include: {
@@ -383,10 +335,6 @@ export const medewerkerRepository = {
           },
         },
 
-        /*
-         * VERLONING
-         */
-
         verloningsRegels: {
           include: {
             verloningsPeriode: true,
@@ -407,14 +355,6 @@ export const medewerkerRepository = {
    * ============================================================
    * MEDEWERKER BIJWERKEN
    * ============================================================
-   *
-   * De repository voert alleen de database-update uit.
-   *
-   * Welke velden iemand daadwerkelijk mag wijzigen wordt
-   * bepaald door de service/API-laag.
-   *
-   * Vestigingen, rollen, tags en status hebben afzonderlijke
-   * methodes.
    */
 
   async update(
@@ -472,7 +412,8 @@ export const medewerkerRepository = {
 
         ...(data.telefoon !==
           undefined && {
-          telefoon: data.telefoon,
+          telefoon:
+            data.telefoon,
         }),
 
         ...(data.contractType !==
@@ -571,9 +512,7 @@ export const medewerkerRepository = {
     hoofdvestigingId: string,
   ) {
     const uniekeVestigingIds =
-      Array.from(
-        new Set(vestigingIds),
-      );
+      uniekeIds(vestigingIds);
 
     if (
       uniekeVestigingIds.length ===
@@ -591,30 +530,6 @@ export const medewerkerRepository = {
     ) {
       throw new Error(
         "De hoofdvestiging moet ook aan de medewerker gekoppeld zijn.",
-      );
-    }
-
-    const vestigingen =
-      await prisma.vestiging.findMany({
-        where: {
-          id: {
-            in: uniekeVestigingIds,
-          },
-
-          actief: true,
-        },
-
-        select: {
-          id: true,
-        },
-      });
-
-    if (
-      vestigingen.length !==
-      uniekeVestigingIds.length
-    ) {
-      throw new Error(
-        "Een medewerker kan alleen aan bestaande en actieve vestigingen worden gekoppeld.",
       );
     }
 
@@ -672,9 +587,7 @@ export const medewerkerRepository = {
     rolIds: string[],
   ) {
     const uniekeRolIds =
-      Array.from(
-        new Set(rolIds),
-      );
+      uniekeIds(rolIds);
 
     return prisma.$transaction(
       async (tx) => {
@@ -733,9 +646,7 @@ export const medewerkerRepository = {
     tagIds: string[],
   ) {
     const uniekeTagIds =
-      Array.from(
-        new Set(tagIds),
-      );
+      uniekeIds(tagIds);
 
     return prisma.$transaction(
       async (tx) => {

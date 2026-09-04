@@ -8,7 +8,9 @@ import {
 
 import PlanningOverzicht from "@/components/planning/PlanningOverzicht";
 import PlanningVestigingSelect from "@/components/planning/PlanningVestigingSelect";
-import type { PlanningWeek } from "@/types/planning";
+import type {
+  PlanningWeek,
+} from "@/types/planning";
 
 type Vestiging = {
   id: string;
@@ -28,19 +30,29 @@ export default function PlanningPagina({
   isTeamleider = false,
   isMedewerker = false,
 }: PlanningPaginaProps) {
-  const [vestigingId, setVestigingId] =
-    useState<string>(
-      vestigingen[0]?.id ?? "",
-    );
+  const [
+    vestigingId,
+    setVestigingId,
+  ] = useState<string>(
+    vestigingen[0]?.id ?? "",
+  );
 
-  const [weken, setWeken] =
-    useState<PlanningWeek[]>([]);
+  const [
+    weken,
+    setWeken,
+  ] = useState<PlanningWeek[]>([]);
 
-  const [laden, setLaden] =
-    useState(true);
+  const [
+    laden,
+    setLaden,
+  ] = useState(true);
 
-  const [fout, setFout] =
-    useState<string | null>(null);
+  const [
+    fout,
+    setFout,
+  ] = useState<string | null>(
+    null,
+  );
 
   const laadPlanning =
     useCallback(async () => {
@@ -61,6 +73,7 @@ export default function PlanningPagina({
             )}`,
             {
               method: "GET",
+              credentials: "include",
               cache: "no-store",
             },
           );
@@ -81,7 +94,9 @@ export default function PlanningPagina({
           );
         }
 
-        setWeken(data);
+        setWeken(
+          data as PlanningWeek[],
+        );
       } catch (error) {
         console.error(
           "Fout bij laden planning:",
@@ -101,15 +116,10 @@ export default function PlanningPagina({
     }, [vestigingId]);
 
   useEffect(() => {
-    void laadPlanning();
-  }, [laadPlanning]);
-
-  useEffect(() => {
     const toegestaneVestiging =
       vestigingen.some(
         (vestiging) =>
-          vestiging.id ===
-          vestigingId,
+          vestiging.id === vestigingId,
       );
 
     if (
@@ -127,6 +137,18 @@ export default function PlanningPagina({
     vestigingId,
   ]);
 
+  useEffect(() => {
+    void laadPlanning();
+  }, [laadPlanning]);
+
+  function handleVestigingChange(
+    nieuweVestigingId: string,
+  ) {
+    setVestigingId(
+      nieuweVestigingId,
+    );
+  }
+
   return (
     <main className="space-y-6">
       <div>
@@ -135,7 +157,7 @@ export default function PlanningPagina({
         </h1>
 
         <p className="mt-1 text-sm text-slate-600">
-          Bekijk en beheer de personeelsplanning
+          Bekijk de personeelsplanning
           per vestiging.
         </p>
       </div>
@@ -145,7 +167,9 @@ export default function PlanningPagina({
           <PlanningVestigingSelect
             vestigingen={vestigingen}
             vestigingId={vestigingId}
-            onChange={setVestigingId}
+            onChange={
+              handleVestigingChange
+            }
           />
         </div>
       )}
@@ -161,8 +185,8 @@ export default function PlanningPagina({
       {!vestigingId ? (
         <div className="rounded-xl border border-slate-200 bg-white p-6">
           <p className="text-sm text-slate-600">
-            Er is geen toegankelijke vestiging
-            beschikbaar.
+            Er is geen toegankelijke
+            vestiging beschikbaar.
           </p>
         </div>
       ) : laden ? (

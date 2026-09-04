@@ -31,6 +31,12 @@ type ContractType =
   | "OPROEP"
   | "VAST";
 
+/*
+ * ============================================================
+ * VALIDATIE
+ * ============================================================
+ */
+
 function maakDatum(
   waarde: unknown,
   verplicht: true,
@@ -62,9 +68,23 @@ function maakDatum(
     return null;
   }
 
-  const datum = new Date(
-    String(waarde),
-  );
+  if (
+    typeof waarde !== "string"
+  ) {
+    throw new Error(
+      `${veldnaam} is ongeldig.`,
+    );
+  }
+
+  /*
+   * Datumvelden vanuit de frontend
+   * worden als YYYY-MM-DD verwacht.
+   */
+
+  const datum =
+    new Date(
+      `${waarde}T00:00:00`,
+    );
 
   if (
     Number.isNaN(
@@ -91,9 +111,10 @@ function maakNummer(
     return null;
   }
 
-  const nummer = Number(
-    waarde,
-  );
+  const nummer =
+    typeof waarde === "number"
+      ? waarde
+      : Number(waarde);
 
   if (
     !Number.isFinite(
@@ -301,16 +322,23 @@ function controleerStringArray(
     waarde.map(
       (item) => {
         if (
-          typeof item !==
-            "string" ||
-          !item.trim()
+          typeof item !== "string"
         ) {
           throw new Error(
             `${veldnaam} bevat een ongeldige waarde.`,
           );
         }
 
-        return item.trim();
+        const waarde =
+          item.trim();
+
+        if (!waarde) {
+          throw new Error(
+            `${veldnaam} bevat een ongeldige waarde.`,
+          );
+        }
+
+        return waarde;
       },
     );
 
@@ -319,6 +347,12 @@ function controleerStringArray(
   );
 }
 
+/*
+ * ============================================================
+ * PATCH
+ * ============================================================
+ */
+
 export async function PATCH(
   request: NextRequest,
   { params }: RouteContext,
@@ -326,6 +360,12 @@ export async function PATCH(
   try {
     const { id } =
       await params;
+
+    /*
+     * ==========================================================
+     * GEBRUIKER
+     * ==========================================================
+     */
 
     const gebruiker =
       await getCurrentUser();
@@ -355,9 +395,9 @@ export async function PATCH(
     }
 
     /*
-     * ======================================================
+     * ==========================================================
      * MEDEWERKER
-     * ======================================================
+     * ==========================================================
      */
 
     const medewerker =
@@ -398,9 +438,13 @@ export async function PATCH(
     }
 
     /*
-     * ======================================================
-     * ORGANISATIES VAN MEDEWERKER
-     * ======================================================
+     * ==========================================================
+     * ORGANISATIES
+     * ==========================================================
+     *
+     * De medewerker is gekoppeld aan vestigingen.
+     * Via deze vestigingen bepalen we binnen welke organisatie
+     * deze medewerker momenteel valt.
      */
 
     const organisatieIds =
@@ -434,12 +478,14 @@ export async function PATCH(
     }
 
     /*
-     * ======================================================
-     * EIGENAAR CONTROLEREN
-     * ======================================================
+     * ==========================================================
+     * EIGENAAR
+     * ==========================================================
      *
      * De Eigenaar is organisatiebreed.
-     * Er wordt dus niet naar een specifieke vestiging gekeken.
+     *
+     * Teamleiders en medewerkers krijgen via deze route
+     * geen beheerrechten.
      */
 
     const isEigenaar =
@@ -469,9 +515,9 @@ export async function PATCH(
     }
 
     /*
-     * ======================================================
+     * ==========================================================
      * REQUEST
-     * ======================================================
+     * ==========================================================
      */
 
     const body =
@@ -503,9 +549,8 @@ export async function PATCH(
       );
     }
 
-    const section:
-      Section =
-        sectionValue;
+    const section: Section =
+      sectionValue;
 
     const data =
       controleerObject(
@@ -514,277 +559,272 @@ export async function PATCH(
       );
 
     /*
-     * ======================================================
+     * ==========================================================
      * ALGEMEEN
-     * ======================================================
+     * ==========================================================
      */
 
-    switch (section) {
-      case "algemeen": {
-        const updateData = {
-          personeelsnummer:
-            controleerTekst(
-              data.personeelsnummer,
-              "Personeelsnummer",
-            ),
-
-          aanhef:
-            controleerAanhef(
-              data.aanhef,
-            ),
-
-          voornaam:
-            controleerTekst(
-              data.voornaam,
-              "Voornaam",
-              true,
-            ),
-
-          tussenvoegsel:
-            controleerTekst(
-              data.tussenvoegsel,
-              "Tussenvoegsel",
-            ),
-
-          achternaam:
-            controleerTekst(
-              data.achternaam,
-              "Achternaam",
-              true,
-            ),
-
-          roepnaam:
-            controleerTekst(
-              data.roepnaam,
-              "Roepnaam",
-            ),
-
-          geboortedatum:
-            maakDatum(
-              data.geboortedatum,
-              true,
-              "Geboortedatum",
-            ),
-
-          email:
-            controleerEmail(
-              data.email,
-            ),
-
-          telefoon:
-            controleerTelefoon(
-              data.telefoon,
-            ),
-        };
-
-        const resultaat =
-          await medewerkerService.update(
-            id,
-            updateData,
-          );
-
-        return NextResponse.json({
-          id: resultaat.id,
-          section,
-          melding:
-            "De wijzigingen zijn succesvol opgeslagen.",
-        });
-      }
-
-      /*
-       * ======================================================
-       * CONTRACT
-       * ======================================================
-       */
-
-      case "contract": {
-        const datumInDienst =
-          maakDatum(
-            data.datumInDienst,
-            false,
-            "Datum in dienst",
-          );
-
-        const datumUitDienst =
-          maakDatum(
-            data.datumUitDienst,
-            false,
-            "Datum uit dienst",
-          );
-
-        if (
-          datumInDienst &&
-          datumUitDienst &&
-          datumUitDienst <
-            datumInDienst
-        ) {
-          throw new Error(
-            "Datum uit dienst kan niet vóór datum in dienst liggen.",
-          );
-        }
-
-        const updateData = {
-          contractType:
-            controleerContractType(
-              data.contractType,
-            ),
-
-          contractUren:
-            maakNummer(
-              data.contractUren,
-              "Contracturen",
-            ),
-
-          datumInDienst,
-
-          datumUitDienst,
-        };
-
-        const resultaat =
-          await medewerkerService.update(
-            id,
-            updateData,
-          );
-
-        return NextResponse.json({
-          id: resultaat.id,
-          section,
-          melding:
-            "De wijzigingen zijn succesvol opgeslagen.",
-        });
-      }
-
-      /*
-       * ======================================================
-       * VESTIGINGEN
-       * ======================================================
-       */
-
-      case "vestigingen": {
-        const vestigingIds =
-          controleerStringArray(
-            data.vestigingIds,
-            "Vestigingen",
-          );
-
-        const hoofdvestigingId =
+    if (section === "algemeen") {
+      const updateData = {
+        personeelsnummer:
           controleerTekst(
-            data.hoofdvestigingId,
-            "Hoofdvestiging",
+            data.personeelsnummer,
+            "Personeelsnummer",
+          ),
+
+        aanhef:
+          controleerAanhef(
+            data.aanhef,
+          ),
+
+        voornaam:
+          controleerTekst(
+            data.voornaam,
+            "Voornaam",
             true,
-          );
+          ),
 
-        if (
-          vestigingIds.length === 0
-        ) {
-          throw new Error(
-            "Een medewerker moet aan minimaal één vestiging gekoppeld zijn.",
-          );
-        }
+        tussenvoegsel:
+          controleerTekst(
+            data.tussenvoegsel,
+            "Tussenvoegsel",
+          ),
 
-        if (
-          !vestigingIds.includes(
-            hoofdvestigingId,
-          )
-        ) {
-          throw new Error(
-            "De hoofdvestiging moet ook aan de medewerker gekoppeld zijn.",
-          );
-        }
+        achternaam:
+          controleerTekst(
+            data.achternaam,
+            "Achternaam",
+            true,
+          ),
 
-        const vestigingen =
-          await prisma.vestiging.findMany(
-            {
-              where: {
-                id: {
-                  in: vestigingIds,
-                },
+        roepnaam:
+          controleerTekst(
+            data.roepnaam,
+            "Roepnaam",
+          ),
 
-                actief: true,
+        geboortedatum:
+          maakDatum(
+            data.geboortedatum,
+            true,
+            "Geboortedatum",
+          ),
 
-                organisatieId: {
-                  in: organisatieIds,
-                },
-              },
+        email:
+          controleerEmail(
+            data.email,
+          ),
 
-              select: {
-                id: true,
-              },
-            },
-          );
+        telefoon:
+          controleerTelefoon(
+            data.telefoon,
+          ),
+      };
 
-        if (
-          vestigingen.length !==
-          vestigingIds.length
-        ) {
-          throw new Error(
-            "Een of meer geselecteerde vestigingen bestaan niet of zijn niet actief.",
-          );
-        }
-
-        const resultaat =
-          await medewerkerService.setVestigingen(
-            id,
-            vestigingIds,
-            hoofdvestigingId,
-          );
-
-        return NextResponse.json({
+      const resultaat =
+        await medewerkerService.update(
           id,
-          section,
-          vestigingen:
-            resultaat,
-          melding:
-            "De vestigingen zijn succesvol opgeslagen.",
-        });
-      }
+          updateData,
+        );
 
-      /*
-       * ======================================================
-       * VERLONING
-       * ======================================================
-       */
+      return NextResponse.json({
+        id: resultaat.id,
+        section,
+        melding:
+          "De algemene gegevens zijn succesvol opgeslagen.",
+      });
+    }
 
-      case "verloning": {
-        const updateData = {
-          uurloon:
-            maakNummer(
-              data.uurloon,
-              "Uurloon",
-            ),
-        };
+    /*
+     * ==========================================================
+     * CONTRACT
+     * ==========================================================
+     */
 
-        const resultaat =
-          await medewerkerService.update(
-            id,
-            updateData,
-          );
+    if (section === "contract") {
+      const datumInDienst =
+        maakDatum(
+          data.datumInDienst,
+          false,
+          "Datum in dienst",
+        );
 
-        return NextResponse.json({
-          id: resultaat.id,
-          section,
-          melding:
-            "De wijzigingen zijn succesvol opgeslagen.",
-        });
-      }
+      const datumUitDienst =
+        maakDatum(
+          data.datumUitDienst,
+          false,
+          "Datum uit dienst",
+        );
 
-      default: {
-        const _section:
-          never = section;
-
-        return NextResponse.json(
-          {
-            error:
-              `Onbekende bewerksectie: ${String(
-                _section,
-              )}`,
-          },
-          {
-            status: 400,
-          },
+      if (
+        datumInDienst &&
+        datumUitDienst &&
+        datumUitDienst <
+          datumInDienst
+      ) {
+        throw new Error(
+          "Datum uit dienst kan niet vóór datum in dienst liggen.",
         );
       }
+
+      const updateData = {
+        contractType:
+          controleerContractType(
+            data.contractType,
+          ),
+
+        contractUren:
+          maakNummer(
+            data.contractUren,
+            "Contracturen",
+          ),
+
+        datumInDienst,
+
+        datumUitDienst,
+      };
+
+      const resultaat =
+        await medewerkerService.update(
+          id,
+          updateData,
+        );
+
+      return NextResponse.json({
+        id: resultaat.id,
+        section,
+        melding:
+          "De contractgegevens zijn succesvol opgeslagen.",
+      });
     }
+
+    /*
+     * ==========================================================
+     * VESTIGINGEN
+     * ==========================================================
+     */
+
+    if (section === "vestigingen") {
+      const vestigingIds =
+        controleerStringArray(
+          data.vestigingIds,
+          "Vestigingen",
+        );
+
+      if (
+        vestigingIds.length === 0
+      ) {
+        throw new Error(
+          "Een medewerker moet aan minimaal één vestiging gekoppeld zijn.",
+        );
+      }
+
+      const hoofdvestigingId =
+        controleerTekst(
+          data.hoofdvestigingId,
+          "Hoofdvestiging",
+          true,
+        );
+
+      if (
+        !vestigingIds.includes(
+          hoofdvestigingId,
+        )
+      ) {
+        throw new Error(
+          "De hoofdvestiging moet ook aan de medewerker gekoppeld zijn.",
+        );
+      }
+
+      /*
+       * Alleen actieve vestigingen binnen dezelfde organisatie
+       * mogen gekoppeld worden.
+       */
+
+      const geldigeVestigingen =
+        await prisma.vestiging.findMany(
+          {
+            where: {
+              id: {
+                in: vestigingIds,
+              },
+
+              actief: true,
+
+              organisatieId: {
+                in: organisatieIds,
+              },
+            },
+
+            select: {
+              id: true,
+            },
+          },
+        );
+
+      if (
+        geldigeVestigingen.length !==
+        vestigingIds.length
+      ) {
+        throw new Error(
+          "Een of meer geselecteerde vestigingen bestaan niet, zijn niet actief of behoren niet tot deze organisatie.",
+        );
+      }
+
+      const resultaat =
+        await medewerkerService.setVestigingen(
+          id,
+          vestigingIds,
+          hoofdvestigingId,
+        );
+
+      return NextResponse.json({
+        id,
+        section,
+        vestigingen: resultaat,
+        melding:
+          "De vestigingen zijn succesvol opgeslagen.",
+      });
+    }
+
+    /*
+     * ==========================================================
+     * VERLONING
+     * ==========================================================
+     */
+
+    if (section === "verloning") {
+      const updateData = {
+        uurloon:
+          maakNummer(
+            data.uurloon,
+            "Uurloon",
+          ),
+      };
+
+      const resultaat =
+        await medewerkerService.update(
+          id,
+          updateData,
+        );
+
+      return NextResponse.json({
+        id: resultaat.id,
+        section,
+        melding:
+          "De verloningsgegevens zijn succesvol opgeslagen.",
+      });
+    }
+
+    return NextResponse.json(
+      {
+        error:
+          "Onbekende bewerksectie.",
+      },
+      {
+        status: 400,
+      },
+    );
   } catch (error) {
     console.error(
       "Medewerker bijwerken mislukt:",

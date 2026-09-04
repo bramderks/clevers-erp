@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
 
 type Section =
   | "algemeen"
@@ -13,6 +13,16 @@ type Section =
   | "verloning";
 
 type Vestiging = {
+  id: string;
+  naam: string;
+};
+
+type Rol = {
+  id: string;
+  naam: string;
+};
+
+type Tag = {
   id: string;
   naam: string;
 };
@@ -29,13 +39,19 @@ type Medewerker = {
     | "GEEN_OPGAVE";
 
   voornaam: string;
+
   tussenvoegsel: string | null;
+
   achternaam: string;
+
   roepnaam: string | null;
 
-  geboortedatum: Date | string;
+  geboortedatum:
+    | Date
+    | string;
 
   email: string;
+
   telefoon: string;
 
   contractType:
@@ -66,32 +82,66 @@ type Medewerker = {
   vestigingen: Vestiging[];
 
   hoofdvestigingId: string | null;
+
+  rollen: Rol[];
+
+  tags: Tag[];
 };
 
 type Props = {
   medewerker: Medewerker;
+
   section: Section;
+
+  beschikbareVestigingen?: Vestiging[];
+
+  beschikbareRollen?: Rol[];
+
+  beschikbareTags?: Tag[];
 };
 
 type FormState = {
   personeelsnummer: string;
-  aanhef: Medewerker["aanhef"];
+
+  aanhef:
+    | "DHR"
+    | "MEVR"
+    | "ANDERS"
+    | "GEEN_OPGAVE";
+
   voornaam: string;
+
   tussenvoegsel: string;
+
   achternaam: string;
+
   roepnaam: string;
+
   geboortedatum: string;
+
   email: string;
+
   telefoon: string;
-  contractType: "" | "OPROEP" | "VAST";
+
+  contractType:
+    | ""
+    | "OPROEP"
+    | "VAST";
+
   contractUren: string;
+
   uurloon: string;
+
   datumInDienst: string;
+
   datumUitDienst: string;
 };
 
 function formatDate(
-  value: Date | string | null,
+  value:
+    | Date
+    | string
+    | null,
 ): string {
   if (!value) {
     return "";
@@ -102,11 +152,17 @@ function formatDate(
       ? value
       : new Date(value);
 
-  if (Number.isNaN(date.getTime())) {
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
     return "";
   }
 
-  return date.toISOString().slice(0, 10);
+  return date
+    .toISOString()
+    .slice(0, 10);
 }
 
 function maakFormulier(
@@ -114,72 +170,143 @@ function maakFormulier(
 ): FormState {
   return {
     personeelsnummer:
-      medewerker.personeelsnummer ?? "",
+      medewerker.personeelsnummer ??
+      "",
 
-    aanhef: medewerker.aanhef,
+    aanhef:
+      medewerker.aanhef,
 
-    voornaam: medewerker.voornaam,
+    voornaam:
+      medewerker.voornaam,
 
     tussenvoegsel:
-      medewerker.tussenvoegsel ?? "",
+      medewerker.tussenvoegsel ??
+      "",
 
-    achternaam: medewerker.achternaam,
+    achternaam:
+      medewerker.achternaam,
 
-    roepnaam: medewerker.roepnaam ?? "",
+    roepnaam:
+      medewerker.roepnaam ??
+      "",
 
-    geboortedatum: formatDate(
-      medewerker.geboortedatum,
-    ),
+    geboortedatum:
+      formatDate(
+        medewerker.geboortedatum,
+      ),
 
-    email: medewerker.email,
+    email:
+      medewerker.email,
 
-    telefoon: medewerker.telefoon,
+    telefoon:
+      medewerker.telefoon,
 
     contractType:
-      medewerker.contractType ?? "",
+      medewerker.contractType ??
+      "",
 
     contractUren:
-      medewerker.contractUren != null
-        ? String(medewerker.contractUren)
+      medewerker.contractUren !==
+      null
+        ? String(
+            medewerker.contractUren,
+          )
         : "",
 
     uurloon:
-      medewerker.uurloon != null
-        ? String(medewerker.uurloon)
+      medewerker.uurloon !== null
+        ? String(
+            medewerker.uurloon,
+          )
         : "",
 
-    datumInDienst: formatDate(
-      medewerker.datumInDienst,
-    ),
+    datumInDienst:
+      formatDate(
+        medewerker.datumInDienst,
+      ),
 
-    datumUitDienst: formatDate(
-      medewerker.datumUitDienst,
-    ),
+    datumUitDienst:
+      formatDate(
+        medewerker.datumUitDienst,
+      ),
   };
 }
 
 export default function MedewerkerTabBewerken({
   medewerker,
   section,
+  beschikbareVestigingen,
+  beschikbareRollen,
+  beschikbareTags,
 }: Props) {
-  const router = useRouter();
+  const router =
+    useRouter();
 
   const [form, setForm] =
     useState<FormState>(() =>
-      maakFormulier(medewerker),
-    );
-
-  const [geselecteerdeVestigingen, setGeselecteerdeVestigingen] =
-    useState<string[]>(
-      medewerker.vestigingen.map(
-        (vestiging) => vestiging.id,
+      maakFormulier(
+        medewerker,
       ),
     );
 
-  const [hoofdvestigingId, setHoofdvestigingId] =
-    useState<string | null>(
-      medewerker.hoofdvestigingId,
-    );
+  /*
+   * ============================================================
+   * VESTIGINGEN
+   * ============================================================
+   */
+
+  const alleVestigingen =
+    beschikbareVestigingen &&
+    beschikbareVestigingen.length > 0
+      ? beschikbareVestigingen
+      : medewerker.vestigingen;
+
+  const [
+    geselecteerdeVestigingen,
+    setGeselecteerdeVestigingen,
+  ] = useState<string[]>(
+    medewerker.vestigingen.map(
+      (vestiging) =>
+        vestiging.id,
+    ),
+  );
+
+  const [
+    hoofdvestigingId,
+    setHoofdvestigingId,
+  ] = useState<string | null>(
+    medewerker.hoofdvestigingId,
+  );
+
+  /*
+   * ============================================================
+   * ROLLEN
+   * ============================================================
+   */
+
+  const [
+    geselecteerdeRollen,
+    setGeselecteerdeRollen,
+  ] = useState<string[]>(
+    medewerker.rollen.map(
+      (rol) => rol.id,
+    ),
+  );
+
+  /*
+   * ============================================================
+   * PLANNINGSTAGS
+   * ============================================================
+   */
+
+  const [
+    geselecteerdeTags,
+    setGeselecteerdeTags,
+  ] = useState<string[]>(
+    medewerker.tags.map(
+      (tag) => tag.id,
+    ),
+  );
 
   const [saving, setSaving] =
     useState(false);
@@ -193,39 +320,59 @@ export default function MedewerkerTabBewerken({
     field: K,
     value: FormState[K],
   ) {
-    setForm((current) => ({
-      ...current,
-      [field]: value,
-    }));
+    setForm(
+      (current) => ({
+        ...current,
+        [field]: value,
+      }),
+    );
 
     setError("");
   }
+
+  /*
+   * ============================================================
+   * VESTIGINGEN
+   * ============================================================
+   */
 
   function toggleVestiging(
     vestigingId: string,
   ) {
     setGeselecteerdeVestigingen(
-      (huidigeVestigingen) => {
-        if (
+      (
+        huidigeVestigingen,
+      ) => {
+        const isGeselecteerd =
           huidigeVestigingen.includes(
             vestigingId,
-          )
-        ) {
+          );
+
+        if (isGeselecteerd) {
           const nieuweVestigingen =
             huidigeVestigingen.filter(
               (id) =>
-                id !== vestigingId,
+                id !==
+                vestigingId,
             );
 
-          if (
-            hoofdvestigingId ===
-            vestigingId
-          ) {
-            setHoofdvestigingId(
-              nieuweVestigingen[0] ??
-                null,
-            );
-          }
+          setHoofdvestigingId(
+            (
+              huidigeHoofdvestiging,
+            ) => {
+              if (
+                huidigeHoofdvestiging !==
+                vestigingId
+              ) {
+                return huidigeHoofdvestiging;
+              }
+
+              return (
+                nieuweVestigingen[0] ??
+                null
+              );
+            },
+          );
 
           return nieuweVestigingen;
         }
@@ -233,6 +380,86 @@ export default function MedewerkerTabBewerken({
         return [
           ...huidigeVestigingen,
           vestigingId,
+        ];
+      },
+    );
+
+    setError("");
+  }
+
+  function selecteerHoofdvestiging(
+    vestigingId: string,
+  ) {
+    if (
+      !geselecteerdeVestigingen.includes(
+        vestigingId,
+      )
+    ) {
+      return;
+    }
+
+    setHoofdvestigingId(
+      vestigingId,
+    );
+
+    setError("");
+  }
+
+  /*
+   * ============================================================
+   * ROLLEN
+   * ============================================================
+   */
+
+  function toggleRol(
+    rolId: string,
+  ) {
+    setGeselecteerdeRollen(
+      (huidigeRollen) => {
+        if (
+          huidigeRollen.includes(
+            rolId,
+          )
+        ) {
+          return huidigeRollen.filter(
+            (id) => id !== rolId,
+          );
+        }
+
+        return [
+          ...huidigeRollen,
+          rolId,
+        ];
+      },
+    );
+
+    setError("");
+  }
+
+  /*
+   * ============================================================
+   * TAGS
+   * ============================================================
+   */
+
+  function toggleTag(
+    tagId: string,
+  ) {
+    setGeselecteerdeTags(
+      (huidigeTags) => {
+        if (
+          huidigeTags.includes(
+            tagId,
+          )
+        ) {
+          return huidigeTags.filter(
+            (id) => id !== tagId,
+          );
+        }
+
+        return [
+          ...huidigeTags,
+          tagId,
         ];
       },
     );
@@ -258,6 +485,7 @@ export default function MedewerkerTabBewerken({
     }
 
     setSaving(true);
+
     setError("");
 
     try {
@@ -273,25 +501,33 @@ export default function MedewerkerTabBewerken({
        */
 
       if (section === "algemeen") {
-        if (!form.voornaam.trim()) {
+        if (
+          !form.voornaam.trim()
+        ) {
           throw new Error(
             "Voornaam is verplicht.",
           );
         }
 
-        if (!form.achternaam.trim()) {
+        if (
+          !form.achternaam.trim()
+        ) {
           throw new Error(
             "Achternaam is verplicht.",
           );
         }
 
-        if (!form.geboortedatum) {
+        if (
+          !form.geboortedatum
+        ) {
           throw new Error(
             "Geboortedatum is verplicht.",
           );
         }
 
-        if (!form.email.trim()) {
+        if (
+          !form.email.trim()
+        ) {
           throw new Error(
             "E-mailadres is verplicht.",
           );
@@ -307,7 +543,9 @@ export default function MedewerkerTabBewerken({
           );
         }
 
-        if (!form.telefoon.trim()) {
+        if (
+          !form.telefoon.trim()
+        ) {
           throw new Error(
             "Telefoonnummer is verplicht.",
           );
@@ -317,7 +555,8 @@ export default function MedewerkerTabBewerken({
           form.personeelsnummer.trim() ||
           null;
 
-        data.aanhef = form.aanhef;
+        data.aanhef =
+          form.aanhef;
 
         data.voornaam =
           form.voornaam.trim();
@@ -343,6 +582,24 @@ export default function MedewerkerTabBewerken({
 
         data.telefoon =
           form.telefoon.trim();
+
+        /*
+         * ========================================================
+         * ROLLEN
+         * ========================================================
+         */
+
+        data.rolIds =
+          geselecteerdeRollen;
+
+        /*
+         * ========================================================
+         * PLANNINGSTAGS
+         * ========================================================
+         */
+
+        data.tagIds =
+          geselecteerdeTags;
       }
 
       /*
@@ -356,10 +613,13 @@ export default function MedewerkerTabBewerken({
           | number
           | null = null;
 
-        if (form.contractUren.trim()) {
-          const waarde = Number(
-            form.contractUren,
-          );
+        if (
+          form.contractUren.trim()
+        ) {
+          const waarde =
+            Number(
+              form.contractUren,
+            );
 
           if (
             !Number.isFinite(
@@ -368,16 +628,17 @@ export default function MedewerkerTabBewerken({
             waarde < 0
           ) {
             throw new Error(
-              "Contracturen moeten een geldig positief getal zijn.",
+              "Contracturen moeten een geldig getal zijn.",
             );
           }
 
-          contractUren = waarde;
+          contractUren =
+            waarde;
         }
 
         if (
-          form.datumUitDienst &&
           form.datumInDienst &&
+          form.datumUitDienst &&
           form.datumUitDienst <
             form.datumInDienst
         ) {
@@ -387,16 +648,19 @@ export default function MedewerkerTabBewerken({
         }
 
         data.contractType =
-          form.contractType || null;
+          form.contractType ||
+          null;
 
         data.contractUren =
           contractUren;
 
         data.datumInDienst =
-          form.datumInDienst || null;
+          form.datumInDienst ||
+          null;
 
         data.datumUitDienst =
-          form.datumUitDienst || null;
+          form.datumUitDienst ||
+          null;
       }
 
       /*
@@ -405,7 +669,10 @@ export default function MedewerkerTabBewerken({
        * ==========================================================
        */
 
-      if (section === "vestigingen") {
+      if (
+        section ===
+        "vestigingen"
+      ) {
         if (
           geselecteerdeVestigingen.length ===
           0
@@ -416,13 +683,20 @@ export default function MedewerkerTabBewerken({
         }
 
         if (
-          !hoofdvestigingId ||
+          !hoofdvestigingId
+        ) {
+          throw new Error(
+            "Selecteer een hoofdvestiging.",
+          );
+        }
+
+        if (
           !geselecteerdeVestigingen.includes(
             hoofdvestigingId,
           )
         ) {
           throw new Error(
-            "Selecteer een hoofdvestiging.",
+            "De hoofdvestiging moet een geselecteerde vestiging zijn.",
           );
         }
 
@@ -439,15 +713,21 @@ export default function MedewerkerTabBewerken({
        * ==========================================================
        */
 
-      if (section === "verloning") {
+      if (
+        section ===
+        "verloning"
+      ) {
         let uurloon:
           | number
           | null = null;
 
-        if (form.uurloon.trim()) {
-          const waarde = Number(
-            form.uurloon,
-          );
+        if (
+          form.uurloon.trim()
+        ) {
+          const waarde =
+            Number(
+              form.uurloon,
+            );
 
           if (
             !Number.isFinite(
@@ -456,14 +736,16 @@ export default function MedewerkerTabBewerken({
             waarde < 0
           ) {
             throw new Error(
-              "Uurloon moet een geldig positief bedrag zijn.",
+              "Uurloon moet een geldig bedrag zijn.",
             );
           }
 
-          uurloon = waarde;
+          uurloon =
+            waarde;
         }
 
-        data.uurloon = uurloon;
+        data.uurloon =
+          uurloon;
       }
 
       /*
@@ -506,7 +788,9 @@ export default function MedewerkerTabBewerken({
         resultaat = null;
       }
 
-      if (!response.ok) {
+      if (
+        !response.ok
+      ) {
         throw new Error(
           resultaat?.error ??
             "Opslaan is mislukt.",
@@ -534,7 +818,7 @@ export default function MedewerkerTabBewerken({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-6"
+      className="space-y-8"
     >
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -542,12 +826,13 @@ export default function MedewerkerTabBewerken({
         </div>
       )}
 
-      {/* ==========================================================
+      {/* ========================================================
           ALGEMEEN
-          ========================================================== */}
+          ======================================================== */}
 
-      {section === "algemeen" && (
-        <div className="space-y-6">
+      {section ===
+        "algemeen" && (
+        <>
           <div className="grid gap-6 lg:grid-cols-2">
             <Input
               label="Personeelsnummer"
@@ -574,14 +859,18 @@ export default function MedewerkerTabBewerken({
               <select
                 id="aanhef"
                 name="aanhef"
-                value={form.aanhef}
+                value={
+                  form.aanhef
+                }
                 onChange={(event) =>
                   updateField(
                     "aanhef",
-                    event.target.value as Medewerker["aanhef"],
+                    event.target
+                      .value as FormState["aanhef"],
                   )
                 }
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 transition focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+                disabled={saving}
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 transition focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200 disabled:cursor-not-allowed disabled:bg-slate-100"
               >
                 <option value="DHR">
                   Dhr.
@@ -646,7 +935,9 @@ export default function MedewerkerTabBewerken({
             <Input
               label="Roepnaam"
               name="roepnaam"
-              value={form.roepnaam}
+              value={
+                form.roepnaam
+              }
               onChange={(event) =>
                 updateField(
                   "roepnaam",
@@ -689,7 +980,9 @@ export default function MedewerkerTabBewerken({
               label="Telefoonnummer"
               name="telefoon"
               type="tel"
-              value={form.telefoon}
+              value={
+                form.telefoon
+              }
               onChange={(event) =>
                 updateField(
                   "telefoon",
@@ -699,14 +992,149 @@ export default function MedewerkerTabBewerken({
               required
             />
           </div>
-        </div>
+
+          {/* ====================================================
+              ROLLEN
+              ==================================================== */}
+
+          <div className="border-t border-slate-200 pt-8">
+            <div>
+              <h3 className="text-base font-semibold text-slate-900">
+                Rollen
+              </h3>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Selecteer de rollen die aan deze medewerker zijn gekoppeld.
+              </p>
+            </div>
+
+            {!beschikbareRollen ||
+            beschikbareRollen.length ===
+              0 ? (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                Er zijn geen rollen beschikbaar.
+              </div>
+            ) : (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {beschikbareRollen.map(
+                  (rol) => {
+                    const geselecteerd =
+                      geselecteerdeRollen.includes(
+                        rol.id,
+                      );
+
+                    return (
+                      <label
+                        key={rol.id}
+                        className={[
+                          "flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition",
+                          geselecteerd
+                            ? "border-cyan-300 bg-cyan-50"
+                            : "border-slate-200 bg-white hover:bg-slate-50",
+                        ].join(" ")}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={
+                            geselecteerd
+                          }
+                          onChange={() =>
+                            toggleRol(
+                              rol.id,
+                            )
+                          }
+                          disabled={
+                            saving
+                          }
+                          className="h-4 w-4 rounded border-slate-300"
+                        />
+
+                        <span className="text-sm font-medium text-slate-800">
+                          {rol.naam}
+                        </span>
+                      </label>
+                    );
+                  },
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ====================================================
+              PLANNINGSTAGS
+              ==================================================== */}
+
+          <div className="border-t border-slate-200 pt-8">
+            <div>
+              <h3 className="text-base font-semibold text-slate-900">
+                Planningstags
+              </h3>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Selecteer welke planningstags deze medewerker kan uitvoeren.
+              </p>
+            </div>
+
+            {!beschikbareTags ||
+            beschikbareTags.length ===
+              0 ? (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                Er zijn geen planningstags beschikbaar.
+              </div>
+            ) : (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {beschikbareTags.map(
+                  (tag) => {
+                    const geselecteerd =
+                      geselecteerdeTags.includes(
+                        tag.id,
+                      );
+
+                    return (
+                      <label
+                        key={tag.id}
+                        className={[
+                          "flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition",
+                          geselecteerd
+                            ? "border-cyan-300 bg-cyan-50"
+                            : "border-slate-200 bg-white hover:bg-slate-50",
+                        ].join(" ")}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={
+                            geselecteerd
+                          }
+                          onChange={() =>
+                            toggleTag(
+                              tag.id,
+                            )
+                          }
+                          disabled={
+                            saving
+                          }
+                          className="h-4 w-4 rounded border-slate-300"
+                        />
+
+                        <span className="text-sm font-medium text-slate-800">
+                          {tag.naam}
+                        </span>
+                      </label>
+                    );
+                  },
+                )}
+              </div>
+            )}
+          </div>
+        </>
       )}
 
-      {/* ==========================================================
+      {/* ========================================================
           CONTRACT
-          ========================================================== */}
+          ======================================================== */}
 
-      {section === "contract" && (
+      {section ===
+        "contract" && (
         <div className="grid gap-6 lg:grid-cols-2">
           <div>
             <label
@@ -725,10 +1153,12 @@ export default function MedewerkerTabBewerken({
               onChange={(event) =>
                 updateField(
                   "contractType",
-                  event.target.value as FormState["contractType"],
+                  event.target
+                    .value as FormState["contractType"],
                 )
               }
-              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 transition focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+              disabled={saving}
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 transition focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200 disabled:cursor-not-allowed disabled:bg-slate-100"
             >
               <option value="">
                 Nog niet ingevuld
@@ -793,11 +1223,12 @@ export default function MedewerkerTabBewerken({
         </div>
       )}
 
-      {/* ==========================================================
+      {/* ========================================================
           VESTIGINGEN
-          ========================================================== */}
+          ======================================================== */}
 
-      {section === "vestigingen" && (
+      {section ===
+        "vestigingen" && (
         <div className="space-y-6">
           <div>
             <h3 className="text-base font-semibold text-slate-900">
@@ -806,22 +1237,21 @@ export default function MedewerkerTabBewerken({
 
             <p className="mt-1 text-sm text-slate-500">
               Selecteer de vestigingen
-              waar deze medewerker
-              werkt en kies één
+              waar deze medewerker werkt.
+              Kies vervolgens één
               hoofdvestiging.
             </p>
           </div>
 
-          {medewerker.vestigingen
-            .length === 0 ? (
+          {alleVestigingen.length ===
+          0 ? (
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              Er zijn geen
-              vestigingen beschikbaar
-              om te koppelen.
+              Er zijn geen actieve
+              vestigingen beschikbaar.
             </div>
           ) : (
             <div className="space-y-3">
-              {medewerker.vestigingen.map(
+              {alleVestigingen.map(
                 (vestiging) => {
                   const geselecteerd =
                     geselecteerdeVestigingen.includes(
@@ -834,9 +1264,7 @@ export default function MedewerkerTabBewerken({
 
                   return (
                     <div
-                      key={
-                        vestiging.id
-                      }
+                      key={vestiging.id}
                       className={[
                         "rounded-xl border p-4 transition",
                         geselecteerd
@@ -844,7 +1272,7 @@ export default function MedewerkerTabBewerken({
                           : "border-slate-200 bg-white",
                       ].join(" ")}
                     >
-                      <div className="flex items-center justify-between gap-4">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <label className="flex cursor-pointer items-center gap-3">
                           <input
                             type="checkbox"
@@ -881,7 +1309,7 @@ export default function MedewerkerTabBewerken({
                                 isHoofdvestiging
                               }
                               onChange={() =>
-                                setHoofdvestigingId(
+                                selecteerHoofdvestiging(
                                   vestiging.id,
                                 )
                               }
@@ -891,7 +1319,9 @@ export default function MedewerkerTabBewerken({
                               className="h-4 w-4 border-slate-300"
                             />
 
-                            Hoofdvestiging
+                            <span>
+                              Hoofdvestiging
+                            </span>
                           </label>
                         )}
                       </div>
@@ -905,20 +1335,21 @@ export default function MedewerkerTabBewerken({
           {geselecteerdeVestigingen.length >
             0 &&
             !hoofdvestigingId && (
-              <p className="text-sm text-amber-600">
-                Kies een
-                hoofdvestiging voordat
-                je opslaat.
-              </p>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                Kies een hoofdvestiging
+                voordat je de wijzigingen
+                opslaat.
+              </div>
             )}
         </div>
       )}
 
-      {/* ==========================================================
+      {/* ========================================================
           VERLONING
-          ========================================================== */}
+          ======================================================== */}
 
-      {section === "verloning" && (
+      {section ===
+        "verloning" && (
         <div className="max-w-md">
           <Input
             label="Uurloon"
@@ -937,18 +1368,18 @@ export default function MedewerkerTabBewerken({
         </div>
       )}
 
-      {/* ==========================================================
+      {/* ========================================================
           ACTIES
-          ========================================================== */}
+          ======================================================== */}
 
       <div className="flex justify-end gap-3 border-t border-slate-200 pt-6">
         <Button
           type="button"
+          variant="secondary"
           onClick={
             terugNaarTabblad
           }
           disabled={saving}
-          variant="secondary"
         >
           Annuleren
         </Button>

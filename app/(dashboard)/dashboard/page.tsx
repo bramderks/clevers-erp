@@ -18,7 +18,9 @@ type DashboardTaak = {
   variant: "urgent" | "warning" | "info";
 };
 
-function beginVanVorigeMaand(datum: Date) {
+function beginVanVorigeMaand(
+  datum: Date,
+) {
   return new Date(
     datum.getFullYear(),
     datum.getMonth() - 1,
@@ -130,6 +132,37 @@ function taakVariantKlassen(
   }
 }
 
+function isDienstBinnenSeizoen(
+  dienstDatum: Date,
+  seizoenEinde: Date | null,
+) {
+  if (!seizoenEinde) {
+    return true;
+  }
+
+  const datum =
+    new Date(dienstDatum);
+
+  datum.setHours(
+    0,
+    0,
+    0,
+    0,
+  );
+
+  const einde =
+    new Date(seizoenEinde);
+
+  einde.setHours(
+    23,
+    59,
+    59,
+    999,
+  );
+
+  return datum <= einde;
+}
+
 export default async function DashboardPage() {
   await vereisPermission(
     permissions.dashboard.view,
@@ -155,7 +188,8 @@ export default async function DashboardPage() {
     const medewerkerId =
       gebruiker.medewerker!.id;
 
-    const vandaag = new Date();
+    const vandaag =
+      new Date();
 
     const vandaagBegin =
       new Date(
@@ -164,19 +198,9 @@ export default async function DashboardPage() {
         vandaag.getDate(),
       );
 
-    const overVeertienDagen =
-      new Date(
-        vandaagBegin,
-      );
-
-    overVeertienDagen.setDate(
-      overVeertienDagen.getDate() +
-        14,
-    );
-
     const [
-      aankomendeDiensten,
-      beschikbaarheden,
+      toekomstigeDienstenResultaat,
+      beschikbaarheidWeken,
     ] = await Promise.all([
       prisma.dienstBezetting.findMany({
         where: {
@@ -190,7 +214,6 @@ export default async function DashboardPage() {
           dienst: {
             datum: {
               gte: vandaagBegin,
-              lte: overVeertienDagen,
             },
           },
         },
@@ -210,6 +233,14 @@ export default async function DashboardPage() {
                 select: {
                   jaar: true,
                   weeknummer: true,
+
+                  vestiging: {
+                    select: {
+                      id: true,
+                      naam: true,
+                      seizoenEinde: true,
+                    },
+                  },
                 },
               },
             },
@@ -221,34 +252,94 @@ export default async function DashboardPage() {
             datum: "asc",
           },
         },
-
-        take: 5,
       }),
 
-      prisma.beschikbaarheid.findMany({
+      prisma.week.findMany({
         where: {
-          medewerkerId,
+          beschikbaarheidDeadline: {
+            gt: vandaag,
+          },
+
+          vestiging: {
+            medewerkers: {
+              some: {
+                medewerkerId,
+              },
+            },
+
+            OR: [
+              {
+                seizoenEinde: null,
+              },
+              {
+                seizoenEinde: {
+                  gte: vandaagBegin,
+                },
+              },
+            ],
+          },
         },
 
         select: {
-          datum: true,
-          weekId: true,
-          status: true,
+          id: true,
+          jaar: true,
+          weeknummer: true,
+          beschikbaarheidDeadline: true,
 
-          week: {
+          vestiging: {
             select: {
               id: true,
-              jaar: true,
-              weeknummer: true,
+              naam: true,
+              seizoenEinde: true,
+            },
+          },
+
+          beschikbaarheden: {
+            where: {
+              medewerkerId,
+            },
+
+            select: {
+              datum: true,
             },
           },
         },
 
-        orderBy: {
-          datum: "asc",
-        },
+        orderBy: [
+          {
+            jaar: "asc",
+          },
+          {
+            weeknummer: "asc",
+          },
+        ],
       }),
     ]);
+
+    /*
+     * ============================================================
+     * TOEKOMSTIGE DIENSTEN
+     * ============================================================
+     *
+     * Toon alle toekomstige diensten van de medewerker
+     * tot en met het einde van het seizoen van de
+     * betreffende vestiging.
+     *
+     * Een medewerker kan aan meerdere vestigingen
+     * gekoppeld zijn. Daarom wordt het seizoen per
+     * dienst/vestiging gecontroleerd.
+     * ============================================================
+     */
+
+    const aankomendeDiensten =
+      toekomstigeDienstenResultaat.filter(
+        (bezetting) =>
+          isDienstBinnenSeizoen(
+            bezetting.dienst.datum,
+            bezetting.dienst.week
+              .vestiging.seizoenEinde,
+          ),
+      );
 
     const taken: DashboardTaak[] =
       [];
@@ -258,58 +349,65 @@ export default async function DashboardPage() {
      * BESCHIKBAARHEID
      * ============================================================
      *
-     * Toon de komende zes weken waarvoor nog niet
-     * voor alle zeven dagen een beschikbaarheidsrecord
-     * aanwezig is.
+     * Toon alle relevante planningweken van de
+     * vestigingen waaraan de medewerker gekoppeld is.
      *
-     * De medewerker kan vanuit de taak rechtstreeks
-     * naar de betreffende week springen.
+     * Een week verschijnt alleen als:
+     *
+     * - de beschikbaarheidsdeadline nog open is;
+     * - de week binnen het seizoen valt;
+     * - de medewerker nog niet voor alle zeven dagen
+     *   beschikbaarheid heeft doorgegeven.
+     *
+     * Hierdoor loopt de takenlijst automatisch door
+     * tot het einde van het seizoen.
+     * ============================================================
      */
 
-    const komendeWeken = Array.from(
-      { length: 6 },
-      (_, index) => {
-        const datum = new Date(
-          vandaagBegin,
+    for (
+      const week of beschikbaarheidWeken
+    ) {
+      const maandag =
+        maandagVanWeek(
+          week.jaar,
+          week.weeknummer,
         );
 
-        datum.setDate(
-          datum.getDate() +
-            index * 7,
-        );
+      const zondag =
+        new Date(maandag);
 
-        return isoWeekVanDatum(
-          datum,
-        );
-      },
-    );
-
-    const uniekeWeken =
-      Array.from(
-        new Map(
-          komendeWeken.map(
-            (week) => [
-              `${week.jaar}-${week.weeknummer}`,
-              week,
-            ],
-          ),
-        ).values(),
+      zondag.setDate(
+        zondag.getDate() + 6,
       );
 
-    for (const week of uniekeWeken) {
-      const weekBeschikbaarheden =
-        beschikbaarheden.filter(
-          (beschikbaarheid) =>
-            beschikbaarheid.week.jaar ===
-              week.jaar &&
-            beschikbaarheid.week
-              .weeknummer ===
-              week.weeknummer,
-        );
+      /*
+       * Een week die volledig vóór vandaag ligt,
+       * hoeft niet meer als toekomstige taak te
+       * verschijnen.
+       */
+
+      if (zondag < vandaagBegin) {
+        continue;
+      }
+
+      /*
+       * Controleer per vestiging of de planningweek
+       * daadwerkelijk binnen het seizoen valt.
+       */
+
+      if (
+        week.vestiging.seizoenEinde &&
+        maandag >
+          new Date(
+            week.vestiging.seizoenEinde,
+          )
+      ) {
+        continue;
+      }
 
       const dagen =
         new Set(
-          weekBeschikbaarheden.map(
+          week.beschikbaarheden.map(
             (beschikbaarheid) =>
               datumVoorApi(
                 new Date(
@@ -319,15 +417,14 @@ export default async function DashboardPage() {
           ),
         );
 
+      /*
+       * Volledig doorgegeven:
+       * geen openstaande taak meer.
+       */
+
       if (dagen.size >= 7) {
         continue;
       }
-
-      const maandag =
-        maandagVanWeek(
-          week.jaar,
-          week.weeknummer,
-        );
 
       const datumParameter =
         datumVoorApi(
@@ -335,70 +432,11 @@ export default async function DashboardPage() {
         );
 
       taken.push({
-        id: `beschikbaarheid-${week.jaar}-${week.weeknummer}`,
+        id: `beschikbaarheid-${week.id}`,
         titel: `Beschikbaarheid doorgeven week ${week.weeknummer}`,
-        omschrijving:
-          "Geef je beschikbaarheid voor deze week door.",
+        omschrijving: `${week.vestiging.naam} · Geef je beschikbaarheid voor deze week door.`,
         href: `/profiel/beschikbaarheid?week=${week.jaar}-${week.weeknummer}&datum=${datumParameter}`,
         variant: "warning",
-      });
-    }
-
-    /*
-     * ============================================================
-     * AANKOMENDE DIENSTEN
-     * ============================================================
-     */
-
-    for (const bezetting of aankomendeDiensten) {
-      const datum =
-        new Intl.DateTimeFormat(
-          "nl-NL",
-          {
-            weekday: "short",
-            day: "numeric",
-            month: "short",
-          },
-        ).format(
-          new Date(
-            bezetting.dienst.datum,
-          ),
-        );
-
-      const begintijd =
-        new Intl.DateTimeFormat(
-          "nl-NL",
-          {
-            hour: "2-digit",
-            minute: "2-digit",
-          },
-        ).format(
-          new Date(
-            bezetting.dienst
-              .begintijd,
-          ),
-        );
-
-      const eindtijd =
-        new Intl.DateTimeFormat(
-          "nl-NL",
-          {
-            hour: "2-digit",
-            minute: "2-digit",
-          },
-        ).format(
-          new Date(
-            bezetting.dienst
-              .eindtijd,
-          ),
-        );
-
-      taken.push({
-        id: `dienst-${bezetting.id}`,
-        titel: `Aankomende dienst · ${datum}`,
-        omschrijving: `${begintijd} - ${eindtijd}`,
-        href: `/planning/dienst/${bezetting.dienst.id}`,
-        variant: "info",
       });
     }
 
@@ -429,9 +467,7 @@ export default async function DashboardPage() {
                   (taak) => (
                     <a
                       key={taak.id}
-                      href={
-                        taak.href
-                      }
+                      href={taak.href}
                       className="group flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0"
                     >
                       <div className="flex min-w-0 items-center gap-4">
@@ -447,9 +483,7 @@ export default async function DashboardPage() {
                           </p>
 
                           <p className="mt-1 text-sm text-slate-500">
-                            {
-                              taak.omschrijving
-                            }
+                            {taak.omschrijving}
                           </p>
                         </div>
                       </div>
@@ -457,9 +491,7 @@ export default async function DashboardPage() {
                       {typeof taak.aantal ===
                         "number" && (
                         <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">
-                          {
-                            taak.aantal
-                          }
+                          {taak.aantal}
                         </span>
                       )}
 
@@ -477,7 +509,7 @@ export default async function DashboardPage() {
         <section>
           <Card
             title="Mijn aankomende diensten"
-            description="Je eerstvolgende ingeplande diensten"
+            description="Al je toekomstige ingeplande diensten tot het einde van het seizoen"
           >
             {aankomendeDiensten.length ===
             0 ? (
@@ -550,6 +582,13 @@ export default async function DashboardPage() {
                             ),
                           )}
                         </p>
+
+                        <p className="mt-1 text-sm text-slate-400">
+                          {
+                            bezetting.dienst.week
+                              .vestiging.naam
+                          }
+                        </p>
                       </div>
 
                       <span className="text-slate-400 transition-transform group-hover:translate-x-1">
@@ -616,6 +655,7 @@ export default async function DashboardPage() {
           maand: vorigeMaandNummer,
         },
       },
+
       select: {
         id: true,
         status: true,
@@ -705,9 +745,7 @@ export default async function DashboardPage() {
                 (taak) => (
                   <a
                     key={taak.id}
-                    href={
-                      taak.href
-                    }
+                    href={taak.href}
                     className="group flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0"
                   >
                     <div className="flex min-w-0 items-center gap-4">
@@ -719,15 +757,11 @@ export default async function DashboardPage() {
 
                       <div className="min-w-0">
                         <p className="font-medium text-slate-900 transition-colors group-hover:text-slate-700">
-                          {
-                            taak.titel
-                          }
+                          {taak.titel}
                         </p>
 
                         <p className="mt-1 text-sm text-slate-500">
-                          {
-                            taak.omschrijving
-                          }
+                          {taak.omschrijving}
                         </p>
                       </div>
                     </div>
@@ -735,9 +769,7 @@ export default async function DashboardPage() {
                     {typeof taak.aantal ===
                       "number" && (
                       <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">
-                        {
-                          taak.aantal
-                        }
+                        {taak.aantal}
                       </span>
                     )}
 
@@ -751,7 +783,6 @@ export default async function DashboardPage() {
           )}
         </Card>
       </section>
-
     </main>
   );
 }

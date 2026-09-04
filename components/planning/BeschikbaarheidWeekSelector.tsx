@@ -865,14 +865,16 @@ export default function BeschikbaarheidWeekSelector({
   }, [onSelected]);
 
   /*
-   * Alleen de Eigenaar krijgt via de pagina
-   * daadwerkelijke bewerkrechten.
+   * Medewerkers mogen hun eigen beschikbaarheid
+   * doorgeven zolang de deadline niet verstreken is.
    *
-   * bewerkmodus bepaalt vervolgens of de
-   * eigenaar daadwerkelijk aan het wijzigen is.
+   * Voor beheerders blijft de bestaande expliciete
+   * bewerkmodus bepalend.
    */
   const magBewerken =
-    isBeheerder && bewerkmodus;
+    isBeheerder
+      ? bewerkmodus
+      : true;
 
   const geselecteerdeWeek =
     useMemo<SelectorWeek | null>(() => {
@@ -899,13 +901,19 @@ export default function BeschikbaarheidWeekSelector({
       : false;
 
   /*
-   * De eigenaar mag ook na de deadline
-   * aanpassen. Andere gebruikers niet.
+   * Medewerker:
+   * - mag wijzigen tot de deadline.
+   *
+   * Beheerder:
+   * - alleen in expliciete bewerkmodus.
+   * - mag ook na de deadline wijzigen.
    */
   const wijzigingToegestaan =
     magBewerken &&
-    (!deadlineVerstreken ||
-      isBeheerder);
+    (
+      !deadlineVerstreken ||
+      isBeheerder
+    );
 
   const weekDagen = useMemo(
     () =>
@@ -1651,10 +1659,6 @@ export default function BeschikbaarheidWeekSelector({
 
   return (
     <section className="space-y-6">
-      {/* ======================================================
-          SELECTIE
-          ====================================================== */}
-
       <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
           <div>
@@ -1741,10 +1745,6 @@ export default function BeschikbaarheidWeekSelector({
           </div>
         </div>
 
-        {/* ====================================================
-            UITLEG BEWERKRECHTEN
-            ==================================================== */}
-
         {!magBewerken && (
           <div className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
             <p className="text-xs font-medium text-slate-500">
@@ -1754,10 +1754,6 @@ export default function BeschikbaarheidWeekSelector({
           </div>
         )}
       </div>
-
-      {/* ======================================================
-          WEEKOVERZICHT
-          ====================================================== */}
 
       {weken.length > 0 && (
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -1881,10 +1877,6 @@ export default function BeschikbaarheidWeekSelector({
           </div>
         </div>
       )}
-
-      {/* ======================================================
-          WEEKPLANBORD
-          ====================================================== */}
 
       {geselecteerdeWeek && (
         <div
@@ -2020,8 +2012,6 @@ export default function BeschikbaarheidWeekSelector({
                               " ",
                             )}
                           >
-                            {/* DAGKOP */}
-
                             <div className="border-b border-slate-200 pb-3">
                               <div className="flex items-start justify-between gap-2">
                                 <div>
@@ -2050,8 +2040,6 @@ export default function BeschikbaarheidWeekSelector({
                               </div>
                             </div>
 
-                            {/* STATUS */}
-
                             <div className="mt-4">
                               {beschikbaar ? (
                                 <div className="rounded-xl border border-green-200 bg-green-50 p-3">
@@ -2077,8 +2065,6 @@ export default function BeschikbaarheidWeekSelector({
                                 </div>
                               )}
                             </div>
-
-                            {/* BESCHIKBAARHEID AAN/UIT */}
 
                             {magBewerken && (
                               <div className="mt-3">
@@ -2117,8 +2103,6 @@ export default function BeschikbaarheidWeekSelector({
                                 )}
                               </div>
                             )}
-
-                            {/* TIJDEN */}
 
                             {beschikbaar && (
                               <div className="mt-4 space-y-3">
@@ -2273,8 +2257,6 @@ export default function BeschikbaarheidWeekSelector({
                               </div>
                             )}
 
-                            {/* NIET BESCHIKBAAR */}
-
                             {!beschikbaar && (
                               <div className="mt-5 rounded-xl border border-dashed border-slate-200 bg-white p-3">
                                 <p className="text-xs leading-5 text-slate-500">
@@ -2284,8 +2266,6 @@ export default function BeschikbaarheidWeekSelector({
                               </div>
                             )}
 
-                            {/* FOUT */}
-
                             {fout && (
                               <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-2.5">
                                 <p className="text-xs font-medium leading-4 text-red-700">
@@ -2293,8 +2273,6 @@ export default function BeschikbaarheidWeekSelector({
                                 </p>
                               </div>
                             )}
-
-                            {/* OPSLAAN */}
 
                             {magBewerken && (
                               <button
@@ -2333,40 +2311,36 @@ export default function BeschikbaarheidWeekSelector({
               </div>
             )}
 
-            {/* LEGENDA */}
+            <div className="mt-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="h-3 w-3 rounded-full bg-green-500" />
 
-              <div className="mt-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-wrap items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="h-3 w-3 rounded-full bg-green-500" />
-
-                    <span className="text-xs font-medium text-slate-600">
-                      Beschikbaar
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="h-3 w-3 rounded-full bg-slate-300" />
-
-                    <span className="text-xs font-medium text-slate-600">
-                      Niet beschikbaar
-                    </span>
-                  </div>
+                  <span className="text-xs font-medium text-slate-600">
+                    Beschikbaar
+                  </span>
                 </div>
 
-                <p className="text-xs text-slate-400">
-                  {magBewerken
-                    ? "Wijzig per dag je beschikbaarheid en sla de dag op."
-                    : "Beschikbaarheid wordt alleen bekeken."}
-                </p>
+                <div className="flex items-center gap-2">
+                  <span className="h-3 w-3 rounded-full bg-slate-300" />
+
+                  <span className="text-xs font-medium text-slate-600">
+                    Niet beschikbaar
+                  </span>
+                </div>
               </div>
+
+              <p className="text-xs text-slate-400">
+                {magBewerken
+                  ? wijzigingToegestaan
+                    ? "Wijzig per dag je beschikbaarheid en sla de dag op."
+                    : "De deadline voor deze week is verstreken."
+                  : "Beschikbaarheid wordt alleen bekeken."}
+              </p>
             </div>
           </div>
+        </div>
       )}
-
-      {/* ======================================================
-          FOUTMELDING
-          ====================================================== */}
 
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3">

@@ -20,13 +20,13 @@ model Organisatie {
   actief Boolean @default(true)
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   vestigingen Vestiging[]
-  gebruikers OrganisatieGebruiker[]
+  gebruikers  OrganisatieGebruiker[]
 
   aangemaaktDoor String?
-  gewijzigdDoor String?
+  gewijzigdDoor  String?
 
   @@index([actief])
 }
@@ -35,7 +35,7 @@ model Vestiging {
   id String @id @default(cuid())
 
   organisatieId String
-  organisatie Organisatie @relation(fields: [organisatieId], references: [id], onDelete: Cascade)
+  organisatie   Organisatie @relation(fields: [organisatieId], references: [id], onDelete: Cascade)
 
   vakantieAanvragen VakantieAanvraag[]
 
@@ -61,24 +61,24 @@ model Vestiging {
   seizoenEinde DateTime?
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   medewerkers MedewerkerVestiging[]
 
-  weken Week[]
-  bestellingen Bestelling[]
-  voorraadTellingen VoorraadTelling[]
-  voorraadMutaties VoorraadMutatie[]
+  weken              Week[]
+  bestellingen       Bestelling[]
+  voorraadTellingen  VoorraadTelling[]
+  voorraadMutaties   VoorraadMutatie[]
   vestigingProducten VestigingProduct[]
 
-urenregistraties UrenRegistratie[]
+  urenregistraties UrenRegistratie[]
   verloningsRegels VerloningsRegel[]
 
-  openingstijden OpeningstijdenPeriode[]
+  openingstijden   OpeningstijdenPeriode[]
   vestigingToegang SysteemGebruikerVestiging[]
 
   aangemaaktDoor String?
-  gewijzigdDoor String?
+  gewijzigdDoor  String?
 
   @@unique([organisatieId, code])
   @@unique([organisatieId, naam])
@@ -92,16 +92,16 @@ model OpeningstijdenPeriode {
   id String @id @default(cuid())
 
   vestigingId String
-  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+  vestiging   Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
 
   startDatum DateTime
-  eindDatum DateTime
+  eindDatum  DateTime
 
-  openingstijd String
+  openingstijd  String
   sluitingstijd String
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   @@index([vestigingId])
   @@index([vestigingId, startDatum, eindDatum])
@@ -111,18 +111,18 @@ model OrganisatieGebruiker {
   id String @id @default(cuid())
 
   organisatieId String
-  organisatie Organisatie @relation(fields: [organisatieId], references: [id], onDelete: Cascade)
+  organisatie   Organisatie @relation(fields: [organisatieId], references: [id], onDelete: Cascade)
 
   systeemGebruikerId String
-  systeemGebruiker SysteemGebruiker @relation(fields: [systeemGebruikerId], references: [id], onDelete: Cascade)
+  systeemGebruiker   SysteemGebruiker @relation(fields: [systeemGebruikerId], references: [id], onDelete: Cascade)
 
   rolId String
-  rol Rol @relation(fields: [rolId], references: [id], onDelete: Restrict)
+  rol   Rol    @relation(fields: [rolId], references: [id], onDelete: Restrict)
 
   actief Boolean @default(true)
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   @@unique([organisatieId, systeemGebruikerId])
   @@index([systeemGebruikerId])
@@ -134,21 +134,21 @@ model OrganisatieGebruiker {
 model SysteemGebruiker {
   id String @id @default(cuid())
 
-  naam String
-  email String @unique
+  naam           String
+  email          String @unique
   wachtwoordHash String
 
-  actief Boolean @default(true)
+  actief         Boolean   @default(true)
   laatsteLoginOp DateTime?
 
   medewerker Medewerker?
 
-  organisaties OrganisatieGebruiker[]
+  organisaties     OrganisatieGebruiker[]
   vestigingToegang SysteemGebruikerVestiging[]
-  auditLogs AuditLog[]
+  auditLogs        AuditLog[]
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   @@index([actief])
 }
@@ -157,15 +157,15 @@ model SysteemGebruikerVestiging {
   id String @id @default(cuid())
 
   systeemGebruikerId String
-  vestigingId String
+  vestigingId        String
 
   systeemGebruiker SysteemGebruiker @relation(fields: [systeemGebruikerId], references: [id], onDelete: Cascade)
-  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+  vestiging        Vestiging        @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
 
   actief Boolean @default(true)
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   @@unique([systeemGebruikerId, vestigingId])
   @@index([systeemGebruikerId])
@@ -176,14 +176,14 @@ model SysteemGebruikerVestiging {
 model Rol {
   id String @id @default(cuid())
 
-  naam String @unique
+  naam         String  @unique
   omschrijving String?
 
   organisatieGebruikers OrganisatieGebruiker[]
-  medewerkerRollen MedewerkerRol[]
+  medewerkerRollen      MedewerkerRol[]
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 }
 
 model AuditLog {
@@ -193,10 +193,10 @@ model AuditLog {
 
   systeemGebruiker SysteemGebruiker? @relation(fields: [systeemGebruikerId], references: [id], onDelete: SetNull)
 
-  module String
-  actie String
+  module   String
+  actie    String
   recordId String?
-  details Json?
+  details  Json?
 
   aangemaaktOp DateTime @default(now())
 
@@ -227,57 +227,57 @@ enum ContractType {
 model Medewerker {
   id String @id @default(cuid())
 
-  systeemGebruikerId String? @unique
-  systeemGebruiker SysteemGebruiker? @relation(fields: [systeemGebruikerId], references: [id], onDelete: SetNull)
+  systeemGebruikerId String?           @unique
+  systeemGebruiker   SysteemGebruiker? @relation(fields: [systeemGebruikerId], references: [id], onDelete: SetNull)
 
   personeelsnummer String? @unique
 
   aanhef Aanhef
 
-  voornaam String
+  voornaam      String
   tussenvoegsel String?
-  achternaam String
-  roepnaam String?
+  achternaam    String
+  roepnaam      String?
 
   geboortedatum DateTime
 
-  email String @unique
+  email    String @unique
   telefoon String
 
   statusId String
-  status Status @relation(fields: [statusId], references: [id], onDelete: Restrict)
+  status   Status @relation(fields: [statusId], references: [id], onDelete: Restrict)
 
   aanmeldingOp DateTime @default(now())
 
-  geactiveerdOp DateTime?
+  geactiveerdOp   DateTime?
   geactiveerdDoor String?
 
   actief Boolean @default(false)
 
   contractType ContractType?
-  contractUren Decimal? @db.Decimal(5, 2)
-  uurloon Decimal? @db.Decimal(8, 2)
+  contractUren Decimal?      @db.Decimal(5, 2)
+  uurloon      Decimal?      @db.Decimal(8, 2)
 
-  datumInDienst DateTime?
+  datumInDienst  DateTime?
   datumUitDienst DateTime?
 
-  vestigingen MedewerkerVestiging[]
+  vestigingen       MedewerkerVestiging[]
   vakantieAanvragen VakantieAanvraag[]
 
   rollen MedewerkerRol[]
-  tags MedewerkerTag[]
+  tags   MedewerkerTag[]
 
   beschikbaarheden Beschikbaarheid[]
-  diensten DienstBezetting[]
+  diensten         DienstBezetting[]
   urenregistraties UrenRegistratie[]
 
   verloningsRegels VerloningsRegel[]
 
   ruilverzoekenAangevraagd Ruilverzoek[] @relation("RuilverzoekenAangevraagd")
-  ruilverzoekenOntvangen Ruilverzoek[] @relation("RuilverzoekenOntvangen")
+  ruilverzoekenOntvangen   Ruilverzoek[] @relation("RuilverzoekenOntvangen")
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   @@index([statusId])
   @@index([actief])
@@ -289,12 +289,12 @@ model MedewerkerVestiging {
   id String @id @default(cuid())
 
   medewerkerId String
-  vestigingId String
+  vestigingId  String
 
   hoofdvestiging Boolean @default(false)
 
   medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
-  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+  vestiging  Vestiging  @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
 
   aangemaaktOp DateTime @default(now())
 
@@ -307,10 +307,10 @@ model MedewerkerRol {
   id String @id @default(cuid())
 
   medewerkerId String
-  rolId String
+  rolId        String
 
   medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
-  rol Rol @relation(fields: [rolId], references: [id], onDelete: Cascade)
+  rol        Rol        @relation(fields: [rolId], references: [id], onDelete: Cascade)
 
   aangemaaktOp DateTime @default(now())
 
@@ -337,10 +337,10 @@ model Tag {
   actief Boolean @default(true)
 
   medewerkers MedewerkerTag[]
-  diensten DienstTag[]
+  diensten    DienstTag[]
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   @@index([volgorde])
   @@index([actief])
@@ -354,13 +354,12 @@ model MedewerkerTag {
   id String @id @default(cuid())
 
   medewerkerId String
-  tagId String
+  tagId        String
 
   medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
-  tag Tag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tag        Tag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@unique([medewerkerId, tagId])
-
   @@index([medewerkerId])
   @@index([tagId])
 }
@@ -374,7 +373,7 @@ model Week {
 
   vestigingId String
 
-  jaar Int
+  jaar       Int
   weeknummer Int
 
   /// -----------------------------------------------------
@@ -403,14 +402,13 @@ model Week {
 
   vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
 
-  diensten Dienst[]
+  diensten         Dienst[]
   beschikbaarheden Beschikbaarheid[]
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   @@unique([vestigingId, jaar, weeknummer])
-
   @@index([vestigingId])
   @@index([jaar, weeknummer])
   @@index([status])
@@ -430,13 +428,13 @@ model Week {
 model Beschikbaarheid {
   id String @id @default(cuid())
 
-  weekId String
+  weekId       String
   medewerkerId String
 
   datum DateTime
 
-begintijd DateTime?
-eindtijd DateTime?
+  begintijd DateTime?
+  eindtijd  DateTime?
 
   /// -----------------------------------------------------
   /// Beschikbaarheidsstatus
@@ -450,18 +448,17 @@ eindtijd DateTime?
 
   opmerking String?
 
-  week Week @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  week       Week       @relation(fields: [weekId], references: [id], onDelete: Cascade)
   medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
+  @@unique([weekId, medewerkerId, datum])
   @@index([weekId])
   @@index([medewerkerId])
   @@index([datum])
   @@index([status])
-
-  @@unique([weekId, medewerkerId, datum])
 }
 
 /// ======================================================
@@ -499,10 +496,10 @@ model VakantieAanvraag {
   id String @id @default(cuid())
 
   medewerkerId String
-  vestigingId String
+  vestigingId  String
 
   startDatum DateTime
-  eindDatum DateTime
+  eindDatum  DateTime
 
   /// -----------------------------------------------------
   /// Type afwezigheid
@@ -531,17 +528,17 @@ model VakantieAanvraag {
   /// -----------------------------------------------------
 
   beoordeeldDoorId String?
-  beoordeeldOp DateTime?
+  beoordeeldOp     DateTime?
 
   redenAfwijzing String?
 
   aangevraagdOp DateTime @default(now())
 
   medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
-  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Restrict)
+  vestiging  Vestiging  @relation(fields: [vestigingId], references: [id], onDelete: Restrict)
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   @@index([medewerkerId])
   @@index([vestigingId])
@@ -563,17 +560,17 @@ model Dienst {
   datum DateTime
 
   begintijd DateTime
-  eindtijd DateTime
+  eindtijd  DateTime
 
   opmerkingen String?
 
   week Week @relation(fields: [weekId], references: [id], onDelete: Cascade)
 
-  tags DienstTag[]
+  tags      DienstTag[]
   bezetting DienstBezetting[]
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   @@index([weekId])
   @@index([datum])
@@ -587,15 +584,14 @@ model DienstTag {
   id String @id @default(cuid())
 
   dienstId String
-  tagId String
+  tagId    String
 
   aantal Int @default(1)
 
   dienst Dienst @relation(fields: [dienstId], references: [id], onDelete: Cascade)
-  tag Tag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@unique([dienstId, tagId])
-
   @@index([dienstId])
   @@index([tagId])
 }
@@ -626,7 +622,7 @@ model DienstBezetting {
 
   status String @default("OPEN")
 
-  dienst Dienst @relation(fields: [dienstId], references: [id], onDelete: Cascade)
+  dienst     Dienst      @relation(fields: [dienstId], references: [id], onDelete: Cascade)
   medewerker Medewerker? @relation(fields: [medewerkerId], references: [id], onDelete: SetNull)
 
   urenregistratie UrenRegistratie?
@@ -634,13 +630,12 @@ model DienstBezetting {
   ruilverzoeken Ruilverzoek[]
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
+  @@unique([dienstId, medewerkerId])
   @@index([dienstId])
   @@index([medewerkerId])
   @@index([status])
-
-  @@unique([dienstId, medewerkerId])
 }
 
 /// ======================================================
@@ -711,7 +706,7 @@ model Ruilverzoek {
   ruilMedewerker Medewerker @relation("RuilverzoekenOntvangen", fields: [ruilMedewerkerId], references: [id], onDelete: Cascade)
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   @@index([dienstBezettingId])
   @@index([aanvragerId])
@@ -747,7 +742,7 @@ model UrenRegistratie {
   id String @id @default(cuid())
 
   dienstBezettingId String
-  medewerkerId String
+  medewerkerId      String
 
   /// Vestiging wordt bewust als ID opgeslagen zodat de
   /// definitieve registratie altijd aan de betreffende
@@ -761,7 +756,7 @@ model UrenRegistratie {
 
   /// Werkelijke gewerkte tijden.
   werkelijkeBegintijd DateTime
-  werkelijkeEindtijd DateTime
+  werkelijkeEindtijd  DateTime
 
   /// Pauze in minuten.
   pauzeMinuten Int @default(0)
@@ -793,10 +788,9 @@ model UrenRegistratie {
   vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Restrict)
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   @@unique([dienstBezettingId])
-
   @@index([medewerkerId])
   @@index([vestigingId])
   @@index([datum])
@@ -822,7 +816,7 @@ model ProductType {
   producten Product[]
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   @@index([volgorde])
   @@index([actief])
@@ -851,17 +845,17 @@ model Product {
 
   productType ProductType @relation(fields: [productTypeId], references: [id], onDelete: Restrict)
 
-  vestigingen VestigingProduct[]
+  vestigingen  VestigingProduct[]
   bestelRegels BestelRegel[]
 
-voorraadTellingen VoorraadTellingRegel[]
+  voorraadTellingen VoorraadTellingRegel[]
 
-voorraadMutaties VoorraadMutatie[]
+  voorraadMutaties VoorraadMutatie[]
 
-leveringen LeveringRegel[]
+  leveringen LeveringRegel[]
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   @@index([naam])
   @@index([actief])
@@ -872,13 +866,13 @@ model VestigingProduct {
   id String @id @default(cuid())
 
   vestigingId String
-  productId String
+  productId   String
 
-  minimumVoorraad Decimal? @db.Decimal(10,2)
+  minimumVoorraad Decimal? @db.Decimal(10, 2)
 
-  bufferVoorraad Decimal? @db.Decimal(10,2)
+  bufferVoorraad Decimal? @db.Decimal(10, 2)
 
-  standaardBestelling Decimal? @db.Decimal(10,2)
+  standaardBestelling Decimal? @db.Decimal(10, 2)
 
   actief Boolean @default(true)
 
@@ -887,7 +881,6 @@ model VestigingProduct {
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([vestigingId, productId])
-
   @@index([vestigingId])
   @@index([productId])
 }
@@ -913,11 +906,11 @@ model Bestelling {
 
   status Status @relation(fields: [statusId], references: [id], onDelete: Restrict)
 
-  regels BestelRegel[]
+  regels     BestelRegel[]
   leveringen Levering[]
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   @@index([vestigingId])
   @@index([besteldatum])
@@ -928,20 +921,19 @@ model BestelRegel {
   id String @id @default(cuid())
 
   bestellingId String
-  productId String
+  productId    String
 
-  adviesAantal Decimal @db.Decimal(10,2)
+  adviesAantal Decimal @db.Decimal(10, 2)
 
-  besteldAantal Decimal @db.Decimal(10,2)
+  besteldAantal Decimal @db.Decimal(10, 2)
 
-  geleverdAantal Decimal? @db.Decimal(10,2)
+  geleverdAantal Decimal? @db.Decimal(10, 2)
 
   bestelling Bestelling @relation(fields: [bestellingId], references: [id], onDelete: Cascade)
 
   product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
 
   @@unique([bestellingId, productId])
-
   @@index([bestellingId])
   @@index([productId])
 }
@@ -968,7 +960,7 @@ model VoorraadTelling {
   regels VoorraadTellingRegel[]
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   @@index([vestigingId])
   @@index([teldatum])
@@ -981,18 +973,17 @@ model VoorraadTellingRegel {
 
   productId String
 
-  geteld Decimal @db.Decimal(10,2)
+  geteld Decimal @db.Decimal(10, 2)
 
-  advies Decimal? @db.Decimal(10,2)
+  advies Decimal? @db.Decimal(10, 2)
 
-  bestelling Decimal? @db.Decimal(10,2)
+  bestelling Decimal? @db.Decimal(10, 2)
 
   telling VoorraadTelling @relation(fields: [tellingId], references: [id], onDelete: Cascade)
 
   product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
 
   @@unique([tellingId, productId])
-
   @@index([tellingId])
   @@index([productId])
 }
@@ -1004,7 +995,7 @@ model VoorraadMutatie {
 
   productId String
 
-  aantal Decimal @db.Decimal(10,2)
+  aantal Decimal @db.Decimal(10, 2)
 
   reden String
 
@@ -1042,7 +1033,7 @@ model Levering {
   regels LeveringRegel[]
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   @@index([leverdatum])
 }
@@ -1051,18 +1042,17 @@ model LeveringRegel {
   id String @id @default(cuid())
 
   leveringId String
-  productId String
+  productId  String
 
-  besteld Decimal @db.Decimal(10,2)
+  besteld Decimal @db.Decimal(10, 2)
 
-  geleverd Decimal @db.Decimal(10,2)
+  geleverd Decimal @db.Decimal(10, 2)
 
   levering Levering @relation(fields: [leveringId], references: [id], onDelete: Cascade)
 
   product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
 
   @@unique([leveringId, productId])
-
   @@index([leveringId])
   @@index([productId])
 }
@@ -1115,10 +1105,9 @@ model Status {
   /// =====================================================
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   @@unique([module, code])
-
   @@index([module])
   @@index([actief])
   @@index([volgorde])
@@ -1136,7 +1125,7 @@ model Instelling {
   categorie String?
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   @@index([categorie])
 }
@@ -1155,7 +1144,7 @@ model VerloningsPeriode {
   periodeStart DateTime
   periodeEinde DateTime
 
-  jaar Int
+  jaar  Int
   maand Int
 
   /// AANGEMAAKT
@@ -1166,12 +1155,12 @@ model VerloningsPeriode {
   gegenereerdOp DateTime?
 
   gecontroleerdDoorId String?
-  gecontroleerdOp DateTime?
+  gecontroleerdOp     DateTime?
 
   regels VerloningsRegel[]
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   @@unique([jaar, maand])
   @@index([jaar, maand])
@@ -1190,7 +1179,7 @@ model VerloningsRegel {
   verloningsPeriodeId String
 
   medewerkerId String
-  vestigingId String
+  vestigingId  String
 
   /// Snapshot van de naam op het moment waarop
   /// de maandrapportage wordt gegenereerd.
@@ -1207,7 +1196,7 @@ model VerloningsRegel {
   vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Restrict)
 
   aangemaaktOp DateTime @default(now())
-  gewijzigdOp DateTime @updatedAt
+  gewijzigdOp  DateTime @updatedAt
 
   @@unique([verloningsPeriodeId, medewerkerId, vestigingId])
   @@index([verloningsPeriodeId])
@@ -1215,4 +1204,3 @@ model VerloningsRegel {
   @@index([vestigingId])
   @@index([vestigingId, medewerkerNaam])
 }
-

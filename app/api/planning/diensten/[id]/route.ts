@@ -19,8 +19,37 @@ type PlanningTagInput = {
   aantal: number;
 };
 
+/*
+ * ============================================================
+ * TIJDINSTELLINGEN
+ * ============================================================
+ *
+ * Diensten kunnen worden gepland:
+ *
+ * - vanaf 09:00
+ * - tot maximaal 23:00
+ * - uitsluitend per 30 minuten
+ *
+ * Geldige voorbeelden:
+ *
+ * 09:00
+ * 09:30
+ * 10:00
+ * 10:30
+ * ...
+ * 22:30
+ * 23:00
+ */
+
 const START_MINUTEN = 9 * 60;
 const EINDE_MINUTEN = 23 * 60;
+const TIJD_INTERVAL = 30;
+
+/*
+ * ============================================================
+ * ORGANISATIE OPHALEN
+ * ============================================================
+ */
 
 async function haalOrganisatieIdOp(
   vestigingId: string,
@@ -44,6 +73,12 @@ async function haalOrganisatieIdOp(
   return vestiging.organisatieId;
 }
 
+/*
+ * ============================================================
+ * DIENST OPHALEN
+ * ============================================================
+ */
+
 async function haalDienstOp(id: string) {
   return prisma.dienst.findUnique({
     where: {
@@ -51,6 +86,7 @@ async function haalDienstOp(id: string) {
     },
     select: {
       id: true,
+
       week: {
         select: {
           id: true,
@@ -60,6 +96,12 @@ async function haalDienstOp(id: string) {
     },
   });
 }
+
+/*
+ * ============================================================
+ * VOLLEDIGE DIENST OPHALEN
+ * ============================================================
+ */
 
 async function haalDienstVolledigOp(
   id: string,
@@ -118,6 +160,12 @@ async function haalDienstVolledigOp(
   });
 }
 
+/*
+ * ============================================================
+ * TAGS VERWERKEN
+ * ============================================================
+ */
+
 function verwerkTags(
   tags: unknown,
 ): PlanningTagInput[] {
@@ -131,6 +179,10 @@ function verwerkTags(
   >();
 
   for (const tag of tags) {
+    /*
+     * Ondersteuning voor alleen een tag-ID.
+     */
+
     if (typeof tag === "string") {
       uniekeTags.set(tag, {
         tagId: tag,
@@ -139,6 +191,15 @@ function verwerkTags(
 
       continue;
     }
+
+    /*
+     * Ondersteuning voor:
+     *
+     * {
+     *   tagId: "...",
+     *   aantal: 2
+     * }
+     */
 
     if (
       typeof tag === "object" &&
@@ -166,11 +227,61 @@ function verwerkTags(
   );
 }
 
+/*
+ * ============================================================
+ * DATUM VERWERKEN
+ * ============================================================
+ */
+
 function datumUitWaarde(
   waarde: unknown,
 ): Date | null {
   if (typeof waarde !== "string") {
     return null;
+  }
+
+  /*
+   * HTML date input:
+   *
+   * YYYY-MM-DD
+   *
+   * Wordt bewust lokaal opgebouwd zodat
+   * timezoneverschuivingen worden voorkomen.
+   */
+
+  const datumMatch =
+    /^(\d{4})-(\d{2})-(\d{2})$/.exec(
+      waarde,
+    );
+
+  if (datumMatch) {
+    const jaar = Number(datumMatch[1]);
+    const maand = Number(datumMatch[2]);
+    const dag = Number(datumMatch[3]);
+
+    const datum = new Date(
+      jaar,
+      maand - 1,
+      dag,
+      0,
+      0,
+      0,
+      0,
+    );
+
+    /*
+     * Controleer of de datum daadwerkelijk bestaat.
+     */
+
+    if (
+      datum.getFullYear() !== jaar ||
+      datum.getMonth() !== maand - 1 ||
+      datum.getDate() !== dag
+    ) {
+      return null;
+    }
+
+    return datum;
   }
 
   const datum = new Date(waarde);
@@ -182,6 +293,73 @@ function datumUitWaarde(
   return datum;
 }
 
+/*
+ * ============================================================
+ * TIJD VERWERKEN
+ * ============================================================
+ *
+ * Ondersteunt:
+ *
+ * 09:00
+ * 09:30
+ * 10:00
+ *
+ * en eventueel bestaande ISO-datums.
+ */
+
+function tijdUitWaarde(
+  waarde: unknown,
+): Date | null {
+  if (typeof waarde !== "string") {
+    return null;
+  }
+
+  const tijdMatch =
+    /^(\d{1,2}):(\d{2})$/.exec(
+      waarde,
+    );
+
+  if (tijdMatch) {
+    const uren = Number(tijdMatch[1]);
+    const minuten = Number(tijdMatch[2]);
+
+    if (
+      Number.isNaN(uren) ||
+      Number.isNaN(minuten) ||
+      uren < 0 ||
+      uren > 23 ||
+      minuten < 0 ||
+      minuten > 59
+    ) {
+      return null;
+    }
+
+    return new Date(
+      2000,
+      0,
+      1,
+      uren,
+      minuten,
+      0,
+      0,
+    );
+  }
+
+  const datum = new Date(waarde);
+
+  if (Number.isNaN(datum.getTime())) {
+    return null;
+  }
+
+  return datum;
+}
+
+/*
+ * ============================================================
+ * TIJD NAAR MINUTEN
+ * ============================================================
+ */
+
 function tijdNaarMinuten(
   datum: Date,
 ): number {
@@ -191,11 +369,37 @@ function tijdNaarMinuten(
   );
 }
 
-function isGeldigeKwartierTijd(
+/*
+ * ============================================================
+ * CONTROLEREN OP 30 MINUTEN
+ * ============================================================
+ *
+ * Geldig:
+ *
+ * XX:00
+ * XX:30
+ *
+ * Ongeldig:
+ *
+ * XX:15
+ * XX:45
+ */
+
+function isGeldigTijdsinterval(
   datum: Date,
 ): boolean {
-  return datum.getMinutes() % 15 === 0;
+  return (
+    datum.getMinutes() %
+      TIJD_INTERVAL ===
+    0
+  );
 }
+
+/*
+ * ============================================================
+ * DATUM EN TIJD COMBINEREN
+ * ============================================================
+ */
 
 function maakDatumMetTijd(
   datum: Date,
@@ -211,6 +415,12 @@ function maakDatumMetTijd(
     0,
   );
 }
+
+/*
+ * ============================================================
+ * GET
+ * ============================================================
+ */
 
 export async function GET(
   _request: Request,
@@ -316,6 +526,14 @@ export async function GET(
   }
 }
 
+/*
+ * ============================================================
+ * PATCH
+ * ============================================================
+ *
+ * Alleen de Eigenaar mag een dienst wijzigen.
+ */
+
 export async function PATCH(
   request: Request,
   context: RouteContext,
@@ -388,15 +606,15 @@ export async function PATCH(
      * RECHTEN
      * ============================================================
      *
-     * Alleen de Eigenaar mag diensten wijzigen.
+     * Alleen de Eigenaar mag wijzigen.
      *
      * Teamleider:
-     * - volledige inzage
-     * - geen wijzigingen
+     * - bekijken
+     * - niet wijzigen
      *
      * Medewerker:
-     * - relevante inzage
-     * - geen wijzigingen
+     * - relevante informatie bekijken
+     * - niet wijzigen
      */
 
     const organisatieId =
@@ -438,6 +656,12 @@ export async function PATCH(
         },
       );
     }
+
+    /*
+     * ============================================================
+     * BODY
+     * ============================================================
+     */
 
     const body: unknown =
       await request.json();
@@ -494,21 +718,31 @@ export async function PATCH(
 
     /*
      * ============================================================
-     * TIJDEN
+     * BEGIN- EN EINDTIJD
      * ============================================================
      */
 
     let nieuweBegintijd =
-      bestaandeDienst.begintijd;
+      maakDatumMetTijd(
+        nieuweDatum,
+        bestaandeDienst.begintijd,
+      );
 
     let nieuweEindtijd =
-      bestaandeDienst.eindtijd;
+      maakDatumMetTijd(
+        nieuweDatum,
+        bestaandeDienst.eindtijd,
+      );
+
+    /*
+     * BEGINTIJD
+     */
 
     if (
       invoer.begintijd !== undefined
     ) {
       const begintijd =
-        datumUitWaarde(
+        tijdUitWaarde(
           invoer.begintijd,
         );
 
@@ -529,19 +763,17 @@ export async function PATCH(
           nieuweDatum,
           begintijd,
         );
-    } else {
-      nieuweBegintijd =
-        maakDatumMetTijd(
-          nieuweDatum,
-          bestaandeDienst.begintijd,
-        );
     }
+
+    /*
+     * EINDTIJD
+     */
 
     if (
       invoer.eindtijd !== undefined
     ) {
       const eindtijd =
-        datumUitWaarde(
+        tijdUitWaarde(
           invoer.eindtijd,
         );
 
@@ -562,13 +794,13 @@ export async function PATCH(
           nieuweDatum,
           eindtijd,
         );
-    } else {
-      nieuweEindtijd =
-        maakDatumMetTijd(
-          nieuweDatum,
-          bestaandeDienst.eindtijd,
-        );
     }
+
+    /*
+     * ============================================================
+     * TIJDVALIDATIE
+     * ============================================================
+     */
 
     const beginMinuten =
       tijdNaarMinuten(
@@ -579,6 +811,10 @@ export async function PATCH(
       tijdNaarMinuten(
         nieuweEindtijd,
       );
+
+    /*
+     * Eindtijd moet na begintijd liggen.
+     */
 
     if (
       eindeMinuten <= beginMinuten
@@ -594,24 +830,32 @@ export async function PATCH(
       );
     }
 
+    /*
+     * Alleen 30-minutenintervallen.
+     */
+
     if (
-      !isGeldigeKwartierTijd(
+      !isGeldigTijdsinterval(
         nieuweBegintijd,
       ) ||
-      !isGeldigeKwartierTijd(
+      !isGeldigTijdsinterval(
         nieuweEindtijd,
       )
     ) {
       return NextResponse.json(
         {
           fout:
-            "Diensten kunnen alleen per 15 minuten worden gepland.",
+            "Diensten kunnen alleen per 30 minuten worden gepland.",
         },
         {
           status: 400,
         },
       );
     }
+
+    /*
+     * Niet vóór 09:00.
+     */
 
     if (
       beginMinuten < START_MINUTEN
@@ -626,6 +870,10 @@ export async function PATCH(
         },
       );
     }
+
+    /*
+     * Niet na 23:00.
+     */
 
     if (
       eindeMinuten > EINDE_MINUTEN
@@ -774,28 +1022,29 @@ export async function PATCH(
           },
         });
 
+        /*
+         * Tags volledig vervangen wanneer
+         * nieuwe tags zijn meegestuurd.
+         */
+
         if (
           geldigeTags !== undefined
         ) {
-          await tx.dienstTag.deleteMany(
-            {
-              where: {
-                dienstId: id,
-              },
+          await tx.dienstTag.deleteMany({
+            where: {
+              dienstId: id,
             },
-          );
+          });
 
-          await tx.dienstTag.createMany(
-            {
-              data: geldigeTags.map(
-                (tag) => ({
-                  dienstId: id,
-                  tagId: tag.tagId,
-                  aantal: tag.aantal,
-                }),
-              ),
-            },
-          );
+          await tx.dienstTag.createMany({
+            data: geldigeTags.map(
+              (tag) => ({
+                dienstId: id,
+                tagId: tag.tagId,
+                aantal: tag.aantal,
+              }),
+            ),
+          });
         }
       },
     );
@@ -823,6 +1072,14 @@ export async function PATCH(
     );
   }
 }
+
+/*
+ * ============================================================
+ * DELETE
+ * ============================================================
+ *
+ * Alleen de Eigenaar mag een dienst verwijderen.
+ */
 
 export async function DELETE(
   _request: Request,
@@ -878,8 +1135,6 @@ export async function DELETE(
      * ============================================================
      * RECHTEN
      * ============================================================
-     *
-     * Alleen de Eigenaar mag een dienst verwijderen.
      */
 
     const organisatieId =
@@ -921,6 +1176,12 @@ export async function DELETE(
         },
       );
     }
+
+    /*
+     * ============================================================
+     * DIENST VERWIJDEREN
+     * ============================================================
+     */
 
     await prisma.dienst.delete({
       where: {

@@ -73,6 +73,25 @@ function trimNullable(
   return value.trim() || null;
 }
 
+function uniekeIds(
+  ids: string[],
+) {
+  return Array.from(
+    new Set(
+      ids
+        .filter(
+          (id) =>
+            typeof id === "string" &&
+            id.trim(),
+        )
+        .map(
+          (id) =>
+            id.trim(),
+        ),
+    ),
+  );
+}
+
 /*
  * ============================================================
  * STATUS
@@ -397,7 +416,9 @@ export const medewerkerService = {
    * ==========================================================
    */
 
-  async getById(id: string) {
+  async getById(
+    id: string,
+  ) {
     if (!id?.trim()) {
       throw new Error(
         "Medewerker-ID ontbreekt.",
@@ -422,14 +443,6 @@ export const medewerkerService = {
    * ==========================================================
    * MEDEWERKER BIJWERKEN
    * ==========================================================
-   *
-   * Dit is de beheerfunctie.
-   *
-   * Deze methode is bedoeld voor gegevens die door een
-   * bevoegde beheerder/eigenaar mogen worden gewijzigd.
-   *
-   * Vestigingen, rollen, tags en status worden bewust via
-   * afzonderlijke methodes verwerkt.
    */
 
   async update(
@@ -545,21 +558,6 @@ export const medewerkerService = {
    * ==========================================================
    * EIGEN GEGEVENS BIJWERKEN
    * ==========================================================
-   *
-   * Alleen persoonlijke/contactgegevens.
-   *
-   * Beheergegevens zoals:
-   * - personeelsnummer
-   * - geboortedatum
-   * - contract
-   * - uurloon
-   * - in/uit dienst
-   * - vestigingen
-   * - rollen
-   * - tags
-   * - status
-   *
-   * vallen hier bewust buiten.
    */
 
   async updateEigenGegevens(
@@ -643,11 +641,7 @@ export const medewerkerService = {
       await this.getById(id);
 
     const uniekeVestigingIds =
-      Array.from(
-        new Set(
-          vestigingIds.filter(Boolean),
-        ),
-      );
+      uniekeIds(vestigingIds);
 
     if (
       uniekeVestigingIds.length ===
@@ -659,7 +653,7 @@ export const medewerkerService = {
     }
 
     if (
-      !hoofdvestigingId ||
+      !hoofdvestigingId?.trim() ||
       !uniekeVestigingIds.includes(
         hoofdvestigingId,
       )
@@ -669,24 +663,13 @@ export const medewerkerService = {
       );
     }
 
-    /*
-     * De vestigingen moeten allemaal binnen dezelfde
-     * organisatie(s) vallen als de medewerker.
-     *
-     * De medewerker kan dus niet per ongeluk aan een
-     * vestiging uit een andere organisatie worden gekoppeld.
-     */
-
     const medewerkerOrganisatieIds =
       Array.from(
         new Set(
           medewerker.vestigingen
             .map(
-              (
-                medewerkerVestiging,
-              ) =>
-                medewerkerVestiging
-                  .vestiging
+              (relatie) =>
+                relatie.vestiging
                   .organisatieId,
             )
             .filter(Boolean),
@@ -719,7 +702,6 @@ export const medewerkerService = {
 
         select: {
           id: true,
-          organisatieId: true,
         },
       });
 
@@ -741,7 +723,7 @@ export const medewerkerService = {
 
   /*
    * ==========================================================
-   * ROLLEN
+   * ROLLEN INSTELLEN
    * ==========================================================
    */
 
@@ -752,11 +734,34 @@ export const medewerkerService = {
     await this.getById(id);
 
     const uniekeRolIds =
-      Array.from(
-        new Set(
-          rolIds.filter(Boolean),
-        ),
-      );
+      uniekeIds(rolIds);
+
+    if (
+      uniekeRolIds.length > 0
+    ) {
+      const rollen =
+        await prisma.rol.findMany({
+          where: {
+            id: {
+              in:
+                uniekeRolIds,
+            },
+          },
+
+          select: {
+            id: true,
+          },
+        });
+
+      if (
+        rollen.length !==
+        uniekeRolIds.length
+      ) {
+        throw new Error(
+          "Een of meer geselecteerde rollen bestaan niet.",
+        );
+      }
+    }
 
     return medewerkerRepository.setRollen(
       id,
@@ -766,7 +771,7 @@ export const medewerkerService = {
 
   /*
    * ==========================================================
-   * TAGS
+   * TAGS INSTELLEN
    * ==========================================================
    */
 
@@ -777,11 +782,36 @@ export const medewerkerService = {
     await this.getById(id);
 
     const uniekeTagIds =
-      Array.from(
-        new Set(
-          tagIds.filter(Boolean),
-        ),
-      );
+      uniekeIds(tagIds);
+
+    if (
+      uniekeTagIds.length > 0
+    ) {
+      const tags =
+        await prisma.tag.findMany({
+          where: {
+            id: {
+              in:
+                uniekeTagIds,
+            },
+
+            actief: true,
+          },
+
+          select: {
+            id: true,
+          },
+        });
+
+      if (
+        tags.length !==
+        uniekeTagIds.length
+      ) {
+        throw new Error(
+          "Een of meer geselecteerde tags bestaan niet of zijn niet actief.",
+        );
+      }
+    }
 
     return medewerkerRepository.setTags(
       id,
