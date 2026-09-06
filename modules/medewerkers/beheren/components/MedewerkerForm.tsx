@@ -53,14 +53,9 @@ function formatDate(value: Date | string | null) {
   return date.toISOString().slice(0, 10);
 }
 
-export default function MedewerkerForm({
-  medewerker,
-  vestigingId,
-}: MedewerkerFormProps) {
+export default function MedewerkerForm({ medewerker, vestigingId }: MedewerkerFormProps) {
   const [tags, setTags] = useState<PlanningTag[]>([]);
-  const [geselecteerdeTags, setGeselecteerdeTags] = useState<string[]>(
-    medewerker.tags.map((tag) => tag.id),
-  );
+  const [geselecteerdeTags, setGeselecteerdeTags] = useState<string[]>(medewerker.tags.map((tag) => tag.id));
   const [ladenTags, setLadenTags] = useState(false);
   const [form, setForm] = useState({
     personeelsnummer: medewerker.personeelsnummer ?? "",
@@ -84,15 +79,11 @@ export default function MedewerkerForm({
 
   useEffect(() => {
     if (!vestigingId) return;
-
     let actief = true;
 
     async function laadTags() {
       try {
-        if (actief) {
-          setLadenTags(true);
-          setError("");
-        }
+        if (actief) setLadenTags(true);
 
         const response = await fetch(
           `/api/planning/tags?vestigingId=${encodeURIComponent(vestigingId)}`,
@@ -102,16 +93,12 @@ export default function MedewerkerForm({
 
         if (!response.ok) {
           throw new Error(
-            data?.fout ??
-              data?.error ??
-              "De planningstags konden niet worden opgehaald.",
+            data?.fout ?? data?.error ?? "De planningstags konden niet worden opgehaald.",
           );
         }
 
         if (!Array.isArray(data)) {
-          throw new Error(
-            "De planningstags hebben een ongeldig formaat.",
-          );
+          throw new Error("De planningstags hebben een ongeldig formaat.");
         }
 
         if (actief) setTags(data);
@@ -191,9 +178,7 @@ export default function MedewerkerForm({
       }
       setSuccess("De gegevens zijn succesvol opgeslagen.");
     } catch (error) {
-      setError(
-        error instanceof Error ? error.message : "Opslaan is mislukt.",
-      );
+      setError(error instanceof Error ? error.message : "Opslaan is mislukt.");
     } finally {
       setSaving(false);
     }
