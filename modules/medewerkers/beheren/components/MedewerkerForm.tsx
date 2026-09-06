@@ -41,10 +41,7 @@ type Medewerker = {
 
   contractType:
     | "OPROEP"
-    | "TIJDELIJK"
     | "VAST"
-    | "STAGIAIR"
-    | "VAKANTIEKRACHT"
     | null;
 
   contractUren: number | string | null;
@@ -154,14 +151,17 @@ export default function MedewerkerForm({
 
   useEffect(() => {
     if (!vestigingId) {
-      setTags([]);
       return;
     }
 
+    let actief = true;
+
     async function laadTags() {
       try {
-        setLadenTags(true);
-        setError("");
+        if (actief) {
+          setLadenTags(true);
+          setError("");
+        }
 
         const response = await fetch(
           `/api/planning/tags?vestigingId=${encodeURIComponent(
@@ -189,19 +189,29 @@ export default function MedewerkerForm({
           );
         }
 
-        setTags(data);
+        if (actief) {
+          setTags(data);
+        }
       } catch (error) {
-        setError(
-          error instanceof Error
-            ? error.message
-            : "De planningstags konden niet worden opgehaald.",
-        );
+        if (actief) {
+          setError(
+            error instanceof Error
+              ? error.message
+              : "De planningstags konden niet worden opgehaald.",
+          );
+        }
       } finally {
-        setLadenTags(false);
+        if (actief) {
+          setLadenTags(false);
+        }
       }
     }
 
     void laadTags();
+
+    return () => {
+      actief = false;
+    };
   }, [vestigingId]);
 
   function updateField(
@@ -570,20 +580,8 @@ export default function MedewerkerForm({
                 Oproep
               </option>
 
-              <option value="TIJDELIJK">
-                Tijdelijk
-              </option>
-
               <option value="VAST">
                 Vast
-              </option>
-
-              <option value="STAGIAIR">
-                Stagiair
-              </option>
-
-              <option value="VAKANTIEKRACHT">
-                Vakantiekracht
               </option>
             </select>
           </div>
@@ -658,8 +656,8 @@ export default function MedewerkerForm({
         </h2>
 
         <p className="mt-1 text-sm text-slate-500">
-          Selecteer welke taken deze
-          medewerker kan uitvoeren.
+          Selecteer de planningstags die op
+          deze medewerker van toepassing zijn.
         </p>
 
         {ladenTags ? (
@@ -668,11 +666,10 @@ export default function MedewerkerForm({
           </p>
         ) : tags.length === 0 ? (
           <p className="mt-4 text-sm text-slate-500">
-            Er zijn nog geen actieve
-            planningstags.
+            Geen planningstags beschikbaar.
           </p>
         ) : (
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
             {tags.map((tag) => {
               const geselecteerd =
                 geselecteerdeTags.includes(
@@ -680,30 +677,21 @@ export default function MedewerkerForm({
                 );
 
               return (
-                <label
+                <button
                   key={tag.id}
+                  type="button"
+                  onClick={() =>
+                    toggleTag(tag.id)
+                  }
                   className={[
-                    "flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition",
+                    "rounded-xl border px-4 py-3 text-left text-sm font-medium transition",
                     geselecteerd
-                      ? "border-cyan-400 bg-cyan-50"
-                      : "border-slate-200 bg-white hover:bg-slate-50",
+                      ? "border-cyan-500 bg-cyan-50 text-cyan-800"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50",
                   ].join(" ")}
                 >
-                  <input
-                    type="checkbox"
-                    checked={
-                      geselecteerd
-                    }
-                    onChange={() =>
-                      toggleTag(tag.id)
-                    }
-                    className="h-4 w-4 rounded border-slate-300"
-                  />
-
-                  <span className="text-sm font-medium text-slate-800">
-                    {tag.naam}
-                  </span>
-                </label>
+                  {tag.naam}
+                </button>
               );
             })}
           </div>
@@ -717,7 +705,7 @@ export default function MedewerkerForm({
         >
           {saving
             ? "Opslaan..."
-            : "Wijzigingen opslaan"}
+            : "Opslaan"}
         </Button>
       </div>
     </Form>
