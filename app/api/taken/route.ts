@@ -83,6 +83,98 @@ export async function GET() {
 
     /*
      * ======================================================
+     * VERLONING
+     * ======================================================
+     */
+
+    const eigenaarRelatiesVoorVerloning =
+      gebruiker.organisaties.filter(
+        (relatie) =>
+          relatie.actief &&
+          relatie.organisatie.actief &&
+          relatie.rol.naam
+            .trim()
+            .toLowerCase() === "eigenaar",
+      );
+
+    if (eigenaarRelatiesVoorVerloning.length > 0) {
+      const organisatieIds =
+        eigenaarRelatiesVoorVerloning.map(
+          (relatie) => relatie.organisatieId,
+        );
+
+      const periode =
+        await prisma.verloningsPeriode.findFirst({
+          where: {
+            status: "KLAAR",
+            regels: {
+              some: {
+                vestiging: {
+                  organisatieId: {
+                    in: organisatieIds,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: [
+            { jaar: "desc" },
+            { maand: "desc" },
+          ],
+          select: {
+            id: true,
+            jaar: true,
+            maand: true,
+            periodeStart: true,
+            regels: {
+              where: {
+                vestiging: {
+                  organisatieId: {
+                    in: organisatieIds,
+                  },
+                },
+              },
+              select: {
+                gewerkteDagen: true,
+                gewerkteUren: true,
+              },
+            },
+          },
+        });
+
+      if (periode) {
+        const gewerkteDagen =
+          periode.regels.reduce(
+            (totaal, regel) =>
+              totaal + regel.gewerkteDagen,
+            0,
+          );
+
+        const gewerkteUren =
+          periode.regels.reduce(
+            (totaal, regel) =>
+              totaal + Number(regel.gewerkteUren),
+            0,
+          );
+
+        taken.push({
+          id: `verloning-${periode.id}`,
+          type: "VERLONING_CONTROLEREN",
+          categorie: "Verloning",
+          titel: "Verloning staat klaar",
+          omschrijving:
+            `${new Intl.DateTimeFormat("nl-NL", { month: "long", year: "numeric" }).format(periode.periodeStart)} · ${gewerkteDagen} gewerkte dagen · ${gewerkteUren.toFixed(2).replace(".", ",")} gewerkte uren.`,
+          aangemaaktOp: periode.periodeStart,
+          actie: "VERLONING_CONTROLEREN",
+          gegevens: {
+            periodeId: periode.id,
+          },
+        });
+      }
+    }
+
+    /*
+     * ======================================================
      * RUILVERZOEKEN
      * ======================================================
      *
