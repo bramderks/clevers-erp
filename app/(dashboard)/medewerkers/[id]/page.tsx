@@ -574,6 +574,7 @@ export default async function MedewerkerPage({
           orderBy: {
             naam: "asc",
           },
+
           select: {
             id: true,
             naam: true,
@@ -587,6 +588,7 @@ export default async function MedewerkerPage({
           orderBy: {
             naam: "asc",
           },
+
           select: {
             id: true,
             naam: true,
@@ -596,39 +598,54 @@ export default async function MedewerkerPage({
 
   const medewerkerFormData = {
     id: medewerker.id,
+
     personeelsnummer:
       medewerker.personeelsnummer,
+
     aanhef:
       medewerker.aanhef,
+
     voornaam:
       medewerker.voornaam,
+
     tussenvoegsel:
       medewerker.tussenvoegsel,
+
     achternaam:
       medewerker.achternaam,
+
     roepnaam:
       medewerker.roepnaam,
+
     geboortedatum:
       medewerker.geboortedatum,
+
     email:
       medewerker.email,
+
     telefoon:
       medewerker.telefoon,
+
     contractType:
       medewerker.contractType ??
       null,
+
     contractUren:
       medewerker.contractUren != null
         ? medewerker.contractUren.toString()
         : null,
+
     uurloon:
       medewerker.uurloon != null
         ? medewerker.uurloon.toString()
         : null,
+
     datumInDienst:
       medewerker.datumInDienst,
+
     datumUitDienst:
       medewerker.datumUitDienst,
+
     vestigingen:
       medewerker.vestigingen.map(
         (
@@ -642,6 +659,7 @@ export default async function MedewerkerPage({
               .vestiging.naam,
         }),
       ),
+
     hoofdvestigingId:
       medewerker.vestigingen.find(
         (
@@ -649,6 +667,7 @@ export default async function MedewerkerPage({
         ) =>
           medewerkerVestiging.hoofdvestiging,
       )?.vestiging.id ?? null,
+
     rollen:
       medewerker.rollen.map(
         (
@@ -660,6 +679,7 @@ export default async function MedewerkerPage({
             medewerkerRol.rol.naam,
         }),
       ),
+
     tags:
       medewerker.tags.map(
         (
@@ -679,11 +699,9 @@ export default async function MedewerkerPage({
         medewerkerVestiging,
       ) => ({
         id:
-          medewerkerVestiging
-            .vestiging.id,
+          medewerkerVestiging.vestiging.id,
         naam:
-          medewerkerVestiging
-            .vestiging.naam,
+          medewerkerVestiging.vestiging.naam,
       }),
     );
 
@@ -694,6 +712,7 @@ export default async function MedewerkerPage({
           medewerkerId:
             medewerker.id,
         },
+
         orderBy: [
           {
             startDatum: "asc",
@@ -702,6 +721,7 @@ export default async function MedewerkerPage({
             aangevraagdOp: "desc",
           },
         ],
+
         select: {
           id: true,
           startDatum: true,
@@ -761,14 +781,17 @@ export default async function MedewerkerPage({
         where: {
           medewerkerId:
             medewerker.id,
+
           status:
             "DEFINITIEF",
+
           datum: {
             gte: new Date(
               huidigJaar,
               0,
               1,
             ),
+
             lt: new Date(
               huidigJaar + 1,
               0,
@@ -776,10 +799,12 @@ export default async function MedewerkerPage({
             ),
           },
         },
+
         select: {
           datum: true,
           gewerkteUren: true,
         },
+
         orderBy: {
           datum: "asc",
         },
@@ -866,15 +891,20 @@ export default async function MedewerkerPage({
                   <h2 className="text-lg font-semibold text-slate-900">
                     Algemeen
                   </h2>
+
                   <p className="mt-1 text-sm text-slate-500">
-                    Algemene gegevens, rollen en planningstags van de medewerker.
+                    Algemene gegevens,
+                    rollen en planningstags
+                    van de medewerker.
                   </p>
                 </div>
 
                 {!isBewerken && (
                   <WijzigenKnop
                     href={`/medewerkers/${medewerker.id}?tab=algemeen&edit=1`}
-                    disabled={!magAlgemeenBewerken}
+                    disabled={
+                      !magAlgemeenBewerken
+                    }
                   />
                 )}
 
@@ -929,6 +959,7 @@ export default async function MedewerkerPage({
                             Niet actief
                           </Badge>
                         )}
+
                         <span className="text-sm text-slate-500">
                           {medewerker.status.naam}
                         </span>
@@ -945,15 +976,18 @@ export default async function MedewerkerPage({
                             size={18}
                             className="text-slate-400"
                           />
+
                           <span className="text-sm text-slate-700">
                             {medewerker.email}
                           </span>
                         </div>
+
                         <div className="flex items-center gap-3">
                           <Phone
                             size={18}
                             className="text-slate-400"
                           />
+
                           <span className="text-sm text-slate-700">
                             {medewerker.telefoon ?? "—"}
                           </span>
@@ -970,6 +1004,7 @@ export default async function MedewerkerPage({
                           size={18}
                           className="text-slate-400"
                         />
+
                         <span className="text-sm font-medium text-slate-700">
                           {medewerker.personeelsnummer ??
                             "Nog niet toegewezen"}
@@ -987,50 +1022,59 @@ export default async function MedewerkerPage({
                         <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
                           Aanhef
                         </dt>
+
                         <dd className="mt-1 text-sm text-slate-700">
                           {medewerker.aanhef ?? "—"}
                         </dd>
                       </div>
+
                       <div>
                         <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
                           Voornaam
                         </dt>
+
                         <dd className="mt-1 text-sm text-slate-700">
                           {medewerker.voornaam}
                         </dd>
                       </div>
+
                       <div>
                         <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
                           Tussenvoegsel
                         </dt>
+
                         <dd className="mt-1 text-sm text-slate-700">
                           {medewerker.tussenvoegsel || "—"}
                         </dd>
                       </div>
+
                       <div>
                         <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
                           Achternaam
                         </dt>
+
                         <dd className="mt-1 text-sm text-slate-700">
                           {medewerker.achternaam}
                         </dd>
                       </div>
+
                       <div>
                         <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
                           Roepnaam
                         </dt>
+
                         <dd className="mt-1 text-sm text-slate-700">
                           {medewerker.roepnaam || "—"}
                         </dd>
                       </div>
+
                       <div>
                         <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
                           Geboortedatum
                         </dt>
+
                         <dd className="mt-1 text-sm text-slate-700">
-                          {formatteerDatum(
-                            medewerker.geboortedatum,
-                          )}
+                          {formatteerDatum(medewerker.geboortedatum)}
                         </dd>
                       </div>
                     </dl>
@@ -1097,16 +1141,19 @@ export default async function MedewerkerPage({
                   <h2 className="text-lg font-semibold text-slate-900">
                     Contract
                   </h2>
+
                   <p className="mt-1 text-sm text-slate-500">
                     Gegevens over het dienstverband.
                   </p>
                 </div>
+
                 {!isBewerken && (
                   <WijzigenKnop
                     href={`/medewerkers/${medewerker.id}?tab=contract&edit=1`}
                     disabled={!magContractBewerken}
                   />
                 )}
+
                 {isBewerken && (
                   <AnnuleerBewerkenKnop
                     href={`/medewerkers/${medewerker.id}?tab=contract`}
@@ -1122,9 +1169,6 @@ export default async function MedewerkerPage({
                   <MedewerkerTabBewerken
                     medewerker={medewerkerFormData}
                     section="contract"
-                    beschikbareRollen={beschikbareRollen}
-                    beschikbareTags={beschikbareTags}
-                    beschikbareVestigingen={vestigingen}
                   />
                 </Card>
               ) : (
@@ -1137,39 +1181,41 @@ export default async function MedewerkerPage({
                       <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
                         Contracttype
                       </dt>
+
                       <dd className="mt-1 text-sm text-slate-700">
-                        {medewerker.contractType ??
-                          "Nog niet ingevuld"}
+                        {medewerker.contractType ?? "Nog niet ingevuld"}
                       </dd>
                     </div>
+
                     <div>
                       <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
                         Contracturen
                       </dt>
+
                       <dd className="mt-1 text-sm text-slate-700">
                         {medewerker.contractUren != null
                           ? `${medewerker.contractUren} uur`
                           : "Nog niet ingevuld"}
                       </dd>
                     </div>
+
                     <div>
                       <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
                         In dienst
                       </dt>
+
                       <dd className="mt-1 text-sm text-slate-700">
-                        {formatteerDatum(
-                          medewerker.datumInDienst,
-                        )}
+                        {formatteerDatum(medewerker.datumInDienst)}
                       </dd>
                     </div>
+
                     <div>
                       <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
                         Uit dienst
                       </dt>
+
                       <dd className="mt-1 text-sm text-slate-700">
-                        {formatteerDatum(
-                          medewerker.datumUitDienst,
-                        )}
+                        {formatteerDatum(medewerker.datumUitDienst)}
                       </dd>
                     </div>
                   </dl>
@@ -1185,16 +1231,19 @@ export default async function MedewerkerPage({
                   <h2 className="text-lg font-semibold text-slate-900">
                     Vestigingen
                   </h2>
+
                   <p className="mt-1 text-sm text-slate-500">
                     Vestigingen waar deze medewerker werkt.
                   </p>
                 </div>
+
                 {!isBewerken && (
                   <WijzigenKnop
                     href={`/medewerkers/${medewerker.id}?tab=vestigingen&edit=1`}
                     disabled={!magVestigingenBewerken}
                   />
                 )}
+
                 {isBewerken && (
                   <AnnuleerBewerkenKnop
                     href={`/medewerkers/${medewerker.id}?tab=vestigingen`}
@@ -1210,9 +1259,6 @@ export default async function MedewerkerPage({
                   <MedewerkerTabBewerken
                     medewerker={medewerkerFormData}
                     section="vestigingen"
-                    beschikbareRollen={beschikbareRollen}
-                    beschikbareTags={beschikbareTags}
-                    beschikbareVestigingen={vestigingen}
                   />
                 </Card>
               ) : (
@@ -1235,6 +1281,7 @@ export default async function MedewerkerPage({
                             <span className="text-sm font-medium text-slate-700">
                               {medewerkerVestiging.vestiging.naam}
                             </span>
+
                             {medewerkerVestiging.hoofdvestiging && (
                               <Badge variant="success">
                                 Hoofdvestiging
@@ -1257,16 +1304,19 @@ export default async function MedewerkerPage({
                   <h2 className="text-lg font-semibold text-slate-900">
                     Beschikbaarheid
                   </h2>
+
                   <p className="mt-1 text-sm text-slate-500">
                     Alleen de huidige en toekomstige weken worden getoond.
                   </p>
                 </div>
+
                 {!isBewerken &&
                   magBeschikbaarheidBewerken && (
                     <WijzigenKnop
                       href={`/medewerkers/${medewerker.id}?tab=beschikbaarheid&edit=1`}
                     />
                   )}
+
                 {isBewerken && (
                   <AnnuleerBewerkenKnop
                     href={`/medewerkers/${medewerker.id}?tab=beschikbaarheid`}
@@ -1289,6 +1339,7 @@ export default async function MedewerkerPage({
                 <h2 className="text-lg font-semibold text-slate-900">
                   Vakantie
                 </h2>
+
                 <p className="mt-1 text-sm text-slate-500">
                   Vakantie en andere geplande afwezigheid van deze medewerker.
                 </p>
@@ -1303,6 +1354,7 @@ export default async function MedewerkerPage({
                     <p className="text-sm font-semibold text-slate-700">
                       Geen vakantieaanvragen
                     </p>
+
                     <p className="mt-1 text-sm text-slate-500">
                       Er zijn nog geen vakantie- of afwezigheidsaanvragen geregistreerd.
                     </p>
@@ -1318,14 +1370,11 @@ export default async function MedewerkerPage({
                           <div>
                             <div className="flex flex-wrap items-center gap-2">
                               <p className="font-semibold text-slate-900">
-                                {formatteerDatum(aanvraag.startDatum)}{" "}
-                                t/m{" "}
-                                {formatteerDatum(aanvraag.eindDatum)}
+                                {formatteerDatum(aanvraag.startDatum)} t/m {formatteerDatum(aanvraag.eindDatum)}
                               </p>
+
                               <Badge variant="default">
-                                {aanvraag.type === "VAKANTIE"
-                                  ? "Vakantie"
-                                  : "Overig"}
+                                {aanvraag.type === "VAKANTIE" ? "Vakantie" : "Overig"}
                               </Badge>
                             </div>
 
@@ -1335,31 +1384,20 @@ export default async function MedewerkerPage({
                               </p>
                             )}
 
-                            {aanvraag.status === "AFGEWEZEN" &&
-                              aanvraag.redenAfwijzing && (
-                                <div className="mt-3 rounded-lg bg-red-50 px-3 py-2">
-                                  <p className="text-xs font-medium text-red-700">
-                                    Reden afwijzing
-                                  </p>
-                                  <p className="mt-1 text-sm text-red-800">
-                                    {aanvraag.redenAfwijzing}
-                                  </p>
-                                </div>
-                              )}
+                            {aanvraag.status === "AFGEWEZEN" && aanvraag.redenAfwijzing && (
+                              <div className="mt-3 rounded-lg bg-red-50 px-3 py-2">
+                                <p className="text-xs font-medium text-red-700">Reden afwijzing</p>
+                                <p className="mt-1 text-sm text-red-800">{aanvraag.redenAfwijzing}</p>
+                              </div>
+                            )}
 
                             <p className="mt-3 text-xs text-slate-400">
                               Aangevraagd op {formatteerDatum(aanvraag.aangevraagdOp)}
                             </p>
                           </div>
 
-                          <Badge
-                            variant={vakantieStatusVariant(
-                              aanvraag.status,
-                            )}
-                          >
-                            {vakantieStatusLabel(
-                              aanvraag.status,
-                            )}
+                          <Badge variant={vakantieStatusVariant(aanvraag.status)}>
+                            {vakantieStatusLabel(aanvraag.status)}
                           </Badge>
                         </div>
                       </div>
@@ -1377,10 +1415,12 @@ export default async function MedewerkerPage({
                   <h2 className="text-lg font-semibold text-slate-900">
                     Planning
                   </h2>
+
                   <p className="mt-1 text-sm text-slate-500">
                     Alleen huidige en toekomstige diensten van deze medewerker.
                   </p>
                 </div>
+
                 <Link href="/planning">
                   <Button>Naar planning</Button>
                 </Link>
@@ -1395,6 +1435,7 @@ export default async function MedewerkerPage({
                     <p className="text-sm font-semibold text-slate-700">
                       Geen aankomende diensten
                     </p>
+
                     <p className="mt-1 text-sm text-slate-500">
                       Deze medewerker staat momenteel niet op een toekomstige dienst.
                     </p>
@@ -1404,16 +1445,14 @@ export default async function MedewerkerPage({
                     {aankomendeDiensten.map((bezetting) => {
                       const dienst = bezetting.dienst;
                       const datum = new Date(dienst.datum);
-                      const beginTijd =
-                        new Intl.DateTimeFormat("nl-NL", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }).format(new Date(dienst.begintijd));
-                      const eindTijd =
-                        new Intl.DateTimeFormat("nl-NL", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }).format(new Date(dienst.eindtijd));
+                      const beginTijd = new Intl.DateTimeFormat("nl-NL", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }).format(new Date(dienst.begintijd));
+                      const eindTijd = new Intl.DateTimeFormat("nl-NL", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }).format(new Date(dienst.eindtijd));
 
                       return (
                         <div
@@ -1429,22 +1468,12 @@ export default async function MedewerkerPage({
                                 {beginTijd} - {eindTijd}
                               </p>
                               <p className="mt-1 text-sm text-slate-600">
-                                {dienst.tags
-                                  ?.map(
-                                    (dienstTag) =>
-                                      dienstTag.tag.naam,
-                                  )
-                                  .join(" · ") ||
-                                  "Geen planningstag"}
+                                {dienst.tags?.map((dienstTag) => dienstTag.tag.naam).join(" · ") || "Geen planningstag"}
                               </p>
                               {dienst.opmerkingen && (
                                 <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2">
-                                  <p className="text-xs font-medium text-slate-500">
-                                    Opmerking
-                                  </p>
-                                  <p className="mt-1 text-sm text-slate-700">
-                                    {dienst.opmerkingen}
-                                  </p>
+                                  <p className="text-xs font-medium text-slate-500">Opmerking</p>
+                                  <p className="mt-1 text-sm text-slate-700">{dienst.opmerkingen}</p>
                                 </div>
                               )}
                             </div>
@@ -1453,10 +1482,9 @@ export default async function MedewerkerPage({
                               <span className="rounded-lg bg-green-50 px-3 py-2 text-xs font-semibold text-green-700">
                                 {bezetting.status}
                               </span>
+
                               {isEigenaar && (
-                                <Link
-                                  href={`/planning?dienstId=${dienst.id}`}
-                                >
+                                <Link href={`/planning?dienstId=${dienst.id}`}>
                                   <Button>
                                     <Pencil size={15} />
                                     Dienst wijzigen
@@ -1481,6 +1509,7 @@ export default async function MedewerkerPage({
                   <h2 className="text-lg font-semibold text-slate-900">
                     Verloning
                   </h2>
+
                   <p className="mt-1 text-sm text-slate-500">
                     Verloningsgegevens en definitief geregistreerde gewerkte uren.
                   </p>
@@ -1508,9 +1537,6 @@ export default async function MedewerkerPage({
                   <MedewerkerTabBewerken
                     medewerker={medewerkerFormData}
                     section="verloning"
-                    beschikbareRollen={beschikbareRollen}
-                    beschikbareTags={beschikbareTags}
-                    beschikbareVestigingen={vestigingen}
                   />
                 </Card>
               ) : (
@@ -1524,21 +1550,22 @@ export default async function MedewerkerPage({
                         <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
                           Uurloon
                         </dt>
+
                         <dd className="mt-1 text-sm font-medium text-slate-700">
                           {medewerker.uurloon != null
                             ? new Intl.NumberFormat("nl-NL", {
                                 style: "currency",
                                 currency: "EUR",
-                              }).format(
-                                Number(medewerker.uurloon),
-                              )
+                              }).format(Number(medewerker.uurloon))
                             : "Nog niet ingevuld"}
                         </dd>
                       </div>
+
                       <div>
                         <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
                           Contracturen
                         </dt>
+
                         <dd className="mt-1 text-sm text-slate-700">
                           {medewerker.contractUren != null
                             ? `${medewerker.contractUren} uur`
@@ -1558,26 +1585,20 @@ export default async function MedewerkerPage({
                           key={maand.maand}
                           className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
                         >
-                          <p className="text-sm font-semibold text-slate-900">
-                            {maand.naam}
-                          </p>
+                          <p className="text-sm font-semibold text-slate-900">{maand.naam}</p>
+
                           <div className="mt-4">
-                            <p className="text-2xl font-semibold text-slate-900">
-                              {maand.dagen}
-                            </p>
+                            <p className="text-2xl font-semibold text-slate-900">{maand.dagen}</p>
                             <p className="text-xs text-slate-500">
-                              {maand.dagen === 1
-                                ? "gewerkte dag"
-                                : "gewerkte dagen"}
+                              {maand.dagen === 1 ? "gewerkte dag" : "gewerkte dagen"}
                             </p>
                           </div>
+
                           <div className="mt-3 border-t border-slate-200 pt-3">
                             <p className="text-lg font-semibold text-slate-900">
                               {formatteerUren(maand.uren)}
                             </p>
-                            <p className="text-xs text-slate-500">
-                              definitief geregistreerd
-                            </p>
+                            <p className="text-xs text-slate-500">definitief geregistreerd</p>
                           </div>
                         </div>
                       ))}
@@ -1593,14 +1614,13 @@ export default async function MedewerkerPage({
                             {totaalDagen} {totaalDagen === 1 ? "dag" : "dagen"}
                           </p>
                         </div>
+
                         <div className="sm:text-right">
                           <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                             Goedgekeurde uren
                           </p>
                           <p className="mt-1 text-2xl font-semibold text-slate-900">
-                            {formatteerUren(
-                              Math.round(totaalUren * 100) / 100,
-                            )}
+                            {formatteerUren(Math.round(totaalUren * 100) / 100)}
                           </p>
                         </div>
                       </div>
