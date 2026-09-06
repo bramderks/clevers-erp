@@ -178,6 +178,12 @@ export default async function DashboardPage() {
   const isMedewerker =
     gebruiker.medewerker?.id != null;
 
+  /*
+   * ============================================================
+   * MEDEWERKER DASHBOARD
+   * ============================================================
+   */
+
   if (isMedewerker) {
     const medewerkerId =
       gebruiker.medewerker!.id;
@@ -211,19 +217,23 @@ export default async function DashboardPage() {
             },
           },
         },
+
         select: {
           id: true,
           status: true,
+
           dienst: {
             select: {
               id: true,
               datum: true,
               begintijd: true,
               eindtijd: true,
+
               week: {
                 select: {
                   jaar: true,
                   weeknummer: true,
+
                   vestiging: {
                     select: {
                       id: true,
@@ -236,6 +246,7 @@ export default async function DashboardPage() {
             },
           },
         },
+
         orderBy: {
           dienst: {
             datum: "asc",
@@ -248,12 +259,14 @@ export default async function DashboardPage() {
           beschikbaarheidDeadline: {
             gt: vandaag,
           },
+
           vestiging: {
             medewerkers: {
               some: {
                 medewerkerId,
               },
             },
+
             OR: [
               {
                 seizoenEinde: null,
@@ -266,11 +279,13 @@ export default async function DashboardPage() {
             ],
           },
         },
+
         select: {
           id: true,
           jaar: true,
           weeknummer: true,
           beschikbaarheidDeadline: true,
+
           vestiging: {
             select: {
               id: true,
@@ -278,15 +293,18 @@ export default async function DashboardPage() {
               seizoenEinde: true,
             },
           },
+
           beschikbaarheden: {
             where: {
               medewerkerId,
             },
+
             select: {
               datum: true,
             },
           },
         },
+
         orderBy: [
           {
             jaar: "asc",
@@ -297,6 +315,21 @@ export default async function DashboardPage() {
         ],
       }),
     ]);
+
+    /*
+     * ============================================================
+     * TOEKOMSTIGE DIENSTEN
+     * ============================================================
+     *
+     * Toon alle toekomstige diensten van de medewerker
+     * tot en met het einde van het seizoen van de
+     * betreffende vestiging.
+     *
+     * Een medewerker kan aan meerdere vestigingen
+     * gekoppeld zijn. Daarom wordt het seizoen per
+     * dienst/vestiging gecontroleerd.
+     * ============================================================
+     */
 
     const aankomendeDiensten =
       toekomstigeDienstenResultaat.filter(
@@ -310,6 +343,26 @@ export default async function DashboardPage() {
 
     const taken: DashboardTaak[] =
       [];
+
+    /*
+     * ============================================================
+     * BESCHIKBAARHEID
+     * ============================================================
+     *
+     * Toon alle relevante planningweken van de
+     * vestigingen waaraan de medewerker gekoppeld is.
+     *
+     * Een week verschijnt alleen als:
+     *
+     * - de beschikbaarheidsdeadline nog open is;
+     * - de week binnen het seizoen valt;
+     * - de medewerker nog niet voor alle zeven dagen
+     *   beschikbaarheid heeft doorgegeven.
+     *
+     * Hierdoor loopt de takenlijst automatisch door
+     * tot het einde van het seizoen.
+     * ============================================================
+     */
 
     for (
       const week of beschikbaarheidWeken
@@ -327,9 +380,20 @@ export default async function DashboardPage() {
         zondag.getDate() + 6,
       );
 
+      /*
+       * Een week die volledig vóór vandaag ligt,
+       * hoeft niet meer als toekomstige taak te
+       * verschijnen.
+       */
+
       if (zondag < vandaagBegin) {
         continue;
       }
+
+      /*
+       * Controleer per vestiging of de planningweek
+       * daadwerkelijk binnen het seizoen valt.
+       */
 
       if (
         week.vestiging.seizoenEinde &&
@@ -352,6 +416,11 @@ export default async function DashboardPage() {
               ),
           ),
         );
+
+      /*
+       * Volledig doorgegeven:
+       * geen openstaande taak meer.
+       */
 
       if (dagen.size >= 7) {
         continue;
@@ -457,9 +526,13 @@ export default async function DashboardPage() {
             ) : (
               <div className="divide-y divide-slate-100">
                 {aankomendeDiensten.map(
-                  (bezetting) => (
+                  (
+                    bezetting,
+                  ) => (
                     <a
-                      key={bezetting.id}
+                      key={
+                        bezetting.id
+                      }
                       href={`/planning/dienst/${bezetting.dienst.id}`}
                       className="group flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0"
                     >
@@ -532,158 +605,116 @@ export default async function DashboardPage() {
     );
   }
 
-  const vandaag =
-    new Date();
+  /*
+   * ============================================================
+   * BEHEERDERS DASHBOARD
+   * ============================================================
+   */
 
-  const vorigeMaand =
-    beginVanVorigeMaand(vandaag);
+  const vandaag = new Date();
 
-  const organisatieIds =
-    gebruiker.organisaties
-      .filter(
-        (relatie) =>
-          relatie.actief &&
-          relatie.organisatie.actief,
-      )
-      .map(
-        (relatie) =>
-          relatie.organisatieId,
-      );
+  const beginVorigeMaand =
+    beginVanVorigeMaand(
+      vandaag,
+    );
 
-  if (organisatieIds.length === 0) {
-    redirect("/login");
-  }
+  const vorigeMaandJaar =
+    beginVorigeMaand.getFullYear();
+
+  const vorigeMaandNummer =
+    beginVorigeMaand.getMonth() + 1;
 
   const [
-    openstaandeTaken,
-    medewerkersAantal,
-    vestigingenAantal,
-    verloningVorigeMaand,
-    actueleWeken,
+    openDienstplekken,
+    openRuilverzoeken,
+    teControlerenUren,
+    verloningsPeriode,
   ] = await Promise.all([
-    prisma.taak.count({
+    prisma.dienstBezetting.count({
       where: {
-        organisatieId: {
-          in: organisatieIds,
-        },
-        afgerondOp: null,
+        status: "OPEN",
       },
     }),
 
-    prisma.medewerker.count({
+    prisma.ruilverzoek.count({
       where: {
-        actief: true,
-        vestigingen: {
-          some: {
-            vestiging: {
-              organisatieId: {
-                in: organisatieIds,
-              },
-              actief: true,
-            },
-          },
-        },
+        status: "WACHT_OP_EIGENAAR",
       },
     }),
 
-    prisma.vestiging.count({
+    prisma.urenRegistratie.count({
       where: {
-        organisatieId: {
-          in: organisatieIds,
-        },
-        actief: true,
+        status: "TE_CONTROLEREN",
       },
     }),
 
     prisma.verloningsPeriode.findUnique({
       where: {
         jaar_maand: {
-          jaar:
-            vorigeMaand.getFullYear(),
-          maand:
-            vorigeMaand.getMonth() +
-            1,
+          jaar: vorigeMaandJaar,
+          maand: vorigeMaandNummer,
         },
       },
-      select: {
-        id: true,
-        status: true,
-        gecontroleerdOp: true,
-        controleStart: true,
-        controleDeadline: true,
-      },
-    }),
 
-    prisma.week.findMany({
-      where: {
-        jaar:
-          isoWeekVanDatum(
-            vandaag,
-          ).jaar,
-        weeknummer:
-          isoWeekVanDatum(
-            vandaag,
-          ).weeknummer,
-        vestiging: {
-          organisatieId: {
-            in: organisatieIds,
-          },
-          actief: true,
-        },
-      },
       select: {
         id: true,
         status: true,
+        jaar: true,
+        maand: true,
       },
     }),
   ]);
 
-  const beheerdersTaken: DashboardTaak[] =
+  const taken: DashboardTaak[] =
     [];
 
-  if (
-    isEigenaarOfTeamleider(
-      gebruiker.organisaties,
-    ) &&
-    verloningVorigeMaand?.status ===
-      "KLAAR"
-  ) {
-    beheerdersTaken.push({
-      id: "verloning-vorige-maand",
-      titel:
-        "Verloning staat klaar",
+  if (openDienstplekken > 0) {
+    taken.push({
+      id: "diensten-open",
+      titel: "Diensten nog te vullen",
       omschrijving:
-        "De verloning van de vorige maand staat klaar voor controle.",
-      href: `/verloning/${verloningVorigeMaand.id}`,
-      variant: "info",
+        "Er zijn nog open dienstplekken in de planning.",
+      aantal: openDienstplekken,
+      href: "/planning",
+      variant: "urgent",
     });
   }
 
-  if (openstaandeTaken > 0) {
-    beheerdersTaken.push({
-      id: "openstaande-taken",
-      titel:
-        "Openstaande taken",
+  if (openRuilverzoeken > 0) {
+    taken.push({
+      id: "ruilverzoeken",
+      titel: "Ruilverzoeken beoordelen",
       omschrijving:
-        "Er staan nog taken open die aandacht nodig hebben.",
-      aantal:
-        openstaandeTaken,
-      href: "/",
-      variant: "warning",
-    });
-  }
-
-  if (
-    actueleWeken.length === 0
-  ) {
-    beheerdersTaken.push({
-      id: "geen-actuele-week",
-      titel:
-        "Planning controleren",
-      omschrijving:
-        "Er is geen actieve planningweek voor de huidige week gevonden.",
+        "Ruilverzoeken wachten op goedkeuring van de eigenaar.",
+      aantal: openRuilverzoeken,
       href: "/planning",
       variant: "warning",
+    });
+  }
+
+  if (teControlerenUren > 0) {
+    taken.push({
+      id: "uren-controleren",
+      titel: "Uren goedkeuren",
+      omschrijving:
+        "Er zijn urenregistraties die nog gecontroleerd moeten worden.",
+      aantal: teControlerenUren,
+      href: "/planning",
+      variant: "warning",
+    });
+  }
+
+  if (
+    verloningsPeriode?.status ===
+    "KLAAR"
+  ) {
+    taken.push({
+      id: "verloning",
+      titel: "Verloning staat klaar",
+      omschrijving:
+        "De verloning van de vorige maand is gegenereerd en kan worden gecontroleerd.",
+      href: `/verloning/${verloningsPeriode.id}`,
+      variant: "info",
     });
   }
 
@@ -691,46 +722,18 @@ export default async function DashboardPage() {
     <main className="space-y-8">
       <PageHeader title="Dashboard" />
 
-      <section className="grid gap-4 md:grid-cols-3">
-        <Card title="Medewerkers">
-          <p className="text-3xl font-bold text-slate-900">
-            {medewerkersAantal}
-          </p>
-          <p className="mt-1 text-sm text-slate-500">
-            Actieve medewerkers
-          </p>
-        </Card>
-
-        <Card title="Vestigingen">
-          <p className="text-3xl font-bold text-slate-900">
-            {vestigingenAantal}
-          </p>
-          <p className="mt-1 text-sm text-slate-500">
-            Actieve vestigingen
-          </p>
-        </Card>
-
-        <Card title="Openstaande taken">
-          <p className="text-3xl font-bold text-slate-900">
-            {openstaandeTaken}
-          </p>
-          <p className="mt-1 text-sm text-slate-500">
-            Taken die nog aandacht vragen
-          </p>
-        </Card>
-      </section>
-
       <section>
         <Card
-          title="Actiepunten"
-          description="Belangrijke acties binnen Clevers ERP"
+          title="Openstaande taken"
+          description="Acties die nog aandacht nodig hebben"
         >
-          {beheerdersTaken.length === 0 ? (
+          {taken.length === 0 ? (
             <div className="flex min-h-32 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50">
               <div className="text-center">
                 <p className="font-medium text-slate-900">
-                  Geen nieuwe actiepunten
+                  Geen openstaande taken
                 </p>
+
                 <p className="mt-1 text-sm text-slate-500">
                   Alles is bijgewerkt.
                 </p>
@@ -738,7 +741,7 @@ export default async function DashboardPage() {
             </div>
           ) : (
             <div className="divide-y divide-slate-100">
-              {beheerdersTaken.map(
+              {taken.map(
                 (taak) => (
                   <a
                     key={taak.id}
@@ -781,38 +784,5 @@ export default async function DashboardPage() {
         </Card>
       </section>
     </main>
-  );
-}
-
-function isEigenaarOfTeamleider(
-  relaties: Array<{
-    actief: boolean;
-    rol: {
-      naam: string;
-    };
-    organisatie: {
-      actief: boolean;
-    };
-  }>,
-) {
-  return relaties.some(
-    (relatie) => {
-      if (
-        !relatie.actief ||
-        !relatie.organisatie.actief
-      ) {
-        return false;
-      }
-
-      const rol =
-        relatie.rol.naam
-          .trim()
-          .toLowerCase();
-
-      return (
-        rol === "eigenaar" ||
-        rol === "teamleider"
-      );
-    },
   );
 }
