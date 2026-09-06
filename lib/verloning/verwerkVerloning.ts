@@ -15,19 +15,6 @@ export type VerwerkVerloningResultaat = {
  *
  * Centrale bedrijfslogica voor het definitief verwerken
  * van een verloningsperiode.
- *
- * Verwerking mag uitsluitend:
- *
- * - door de Eigenaar;
- * - met actieve toegang tot de betrokken organisaties;
- * - wanneer de periode bestaat;
- * - wanneer de periode status KLAAR heeft;
- * - wanneer de controledeadline is verstreken;
- * - wanneer de eigenaar de volledige periode heeft gecontroleerd.
- *
- * Medewerkers die vóór de deadline niet zelf akkoord geven,
- * worden door de applicatie als AUTOMATISCH_AKKOORD behandeld
- * zodra de deadline is verstreken.
  * ============================================================
  */
 
@@ -96,6 +83,7 @@ export async function verwerkVerloning(
           regels: {
             select: {
               id: true,
+              medewerkerId: true,
 
               vestiging: {
                 select: {
@@ -185,51 +173,62 @@ export async function verwerkVerloning(
     );
   }
 
-  const uniekeMedewerkerIds =
-    new Set(
-      periode.regels.map(
-        (regel) =>
-          regel.id,
-      ),
-    );
-
   /*
-   * Eén controle-record hoort bij iedere medewerker die in
-   * de periode voorkomt. Als een oud of handmatig gemanipuleerd
-   * record ontbreekt, mag de periode niet definitief worden.
+   * ------------------------------------------------------------
+   * VERWACHTE MEDEWERKERS
+   * ------------------------------------------------------------
+   *
+   * Meerdere regels kunnen bij dezelfde medewerker horen wanneer
+   * deze in meerdere vestigingen heeft gewerkt. De controle geldt
+   * per unieke medewerker en niet per regel.
+   * ------------------------------------------------------------
    */
 
-  const verwachteControleAantal =
+  const verwachteMedewerkerIds =
     new Set(
       periode.regels.map(
         (regel) =>
-          regel.id,
-      ),
-    ).size;
-
-  const feitelijkeMedewerkerIds =
-    new Set(
-      periode.controles.map(
-        (controle) =>
-          controle.medewerkerId,
+          regel.medewerkerId,
       ),
     );
 
-  const ontbrekendeControles =
-    verwachteControleAantal !==
-    feitelijkeMedewerkerIds.size;
+  const controlePerMedewerker =
+    new Map(
+      periode.controles.map(
+        (controle) => [
+          controle.medewerkerId,
+          controle.status,
+        ],
+      ),
+    );
 
-  if (ontbrekendeControles) {
+  if (
+    controlePerMedewerker.size !==
+    verwachteMedewerkerIds.size
+  ) {
     throw new Error(
-      "Niet voor iedere medewerker in deze verloningsperiode is een controle-record aanwezig.",
+      "Niet voor iedere medewerker in deze verloningsperiode is precies één controle-record aanwezig.",
     );
   }
 
-  /*
-   * Na de deadline wordt een nog OPEN controle automatisch
-   * akkoord gezet. Dit gebeurt direct vóór definitieve
-   * verwerking en blijft volledig zichtbaar in de administratie.
-   */
+  for (
+    const medewerkerId of verwachteMedewerkerIds
+  ) {
+    const status =
+      controlePerMedewerker.get(
+        medewerkerId,
+      );
+
+    if (
+      status !== "AKKOORD" &&
+      status !==
+        "AUTOMATISCH_AKKOORD"
+    ) {
+      throw new Error(
+        "Niet alle medewerkercontroles zijn afgerond.",
+      );
+    }
+  }
 
   const openControles =
     periode.controles.filter(
@@ -238,6 +237,12 @@ export async function verwerkVerloning(
         "OPEN",
     );
 
+  /*
+   * Een OPEN controle kan formeel niet meer voorkomen nadat de
+   * deadline is verstreken zonder dat deze automatisch akkoord
+   * is gezet. Toch vangen we dit defensief af, zodat een periode
+   * nooit wordt verwerkt op basis van een onvolledige controle.
+   */
   if (openControles.length > 0) {
     await prisma.verloningsControle.updateMany(
       {
@@ -254,55 +259,24 @@ export async function verwerkVerloning(
         },
       },
     );
-  }
 
-  /*
-   * Alle controles opnieuw ophalen zodat de definitieve
-   * statuscontrole gebaseerd is op de daadwerkelijk opgeslagen
-   * database-statussen.
-   */
-
-  const controlesNaAutomatischAkkoord =
-    await prisma.verloningsControle.findMany(
-      {
-        where: {
-          verloningsPeriodeId:
-            periode.id,
+    const resterendeOpenControles =
+      await prisma.verloningsControle.count(
+        {
+          where: {
+            verloningsPeriodeId:
+              periode.id,
+            status: "OPEN",
+          },
         },
+      );
 
-        select: {
-          medewerkerId: true,
-          status: true,
-        },
-      },
-    );
-
-  const medewerkerIds =
-    new Set(
-      periode.regels.map(
-        (regel) =>
-          regel.id,
-      ),
-    );
-
-  const controlesNietAkkoord =
-    controlesNaAutomatischAkkoord.some(
-      (controle) =>
-        controle.status !==
-          "AKKOORD" &&
-        controle.status !==
-          "AUTOMATISCH_AKKOORD",
-    );
-
-  if (controlesNietAkkoord) {
-    throw new Error(
-      "Niet alle medewerkercontroles zijn afgerond.",
-    );
+    if (resterendeOpenControles > 0) {
+      throw new Error(
+        "Niet alle open medewerkercontroles konden automatisch worden afgerond.",
+      );
+    }
   }
-
-  /*
-   * Definitief verwerken.
-   */
 
   const verwerktePeriode =
     await prisma.verloningsPeriode.update(
