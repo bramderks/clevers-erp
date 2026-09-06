@@ -30,35 +30,23 @@ export default function PlanningPagina({
   isTeamleider = false,
   isMedewerker = false,
 }: PlanningPaginaProps) {
-  const [
-    vestigingId,
-    setVestigingId,
-  ] = useState<string>(
-    vestigingen[0]?.id ?? "",
-  );
+  const [vestigingId, setVestigingId] =
+    useState<string>(
+      vestigingen[0]?.id ?? "",
+    );
 
-  const [
-    weken,
-    setWeken,
-  ] = useState<PlanningWeek[]>([]);
+  const [weken, setWeken] =
+    useState<PlanningWeek[]>([]);
 
-  const [
-    laden,
-    setLaden,
-  ] = useState(true);
+  const [laden, setLaden] =
+    useState(true);
 
-  const [
-    fout,
-    setFout,
-  ] = useState<string | null>(
-    null,
-  );
+  const [fout, setFout] =
+    useState<string | null>(null);
 
   const laadPlanning =
     useCallback(async () => {
       if (!vestigingId) {
-        setWeken([]);
-        setLaden(false);
         return;
       }
 
@@ -128,18 +116,17 @@ export default function PlanningPagina({
     ) {
       return;
     }
-
-    setVestigingId(
-      vestigingen[0]?.id ?? "",
-    );
-  }, [
-    vestigingen,
-    vestigingId,
-  ]);
+  }, [vestigingen, vestigingId]);
 
   useEffect(() => {
+    if (!vestigingId) {
+      setWeken([]);
+      setLaden(false);
+      return;
+    }
+
     void laadPlanning();
-  }, [laadPlanning]);
+  }, [vestigingId, laadPlanning]);
 
   function handleVestigingChange(
     nieuweVestigingId: string,
