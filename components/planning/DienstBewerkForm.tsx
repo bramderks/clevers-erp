@@ -28,7 +28,6 @@ type PlanningDienst = {
   datum: string;
   begintijd: string | null;
   eindtijd: string | null;
-
   tags?: {
     tag: {
       id: string;
@@ -40,26 +39,21 @@ type PlanningDienst = {
 type PlanningMedewerker = {
   id: string;
   personeelsnummer: string | null;
-
   aanhef:
     | "DHR"
     | "MEVR"
     | "ANDERS"
     | "GEEN_OPGAVE";
-
   voornaam: string;
   tussenvoegsel: string | null;
   achternaam: string;
-
   tags?: {
     id: string;
     naam: string;
     volgorde: number;
     actief: boolean;
   }[];
-
   beschikbaarheden?: PlanningBeschikbaarheid[];
-
   diensten?: {
     id: string;
     dienstId: string;
@@ -83,18 +77,6 @@ type DienstBewerkFormProps = {
   onGewijzigd?: () => void;
 };
 
-/*
- * ============================================================
- * TIJDINSTELLINGEN
- * ============================================================
- *
- * Alle diensten binnen Clevers ERP:
- *
- * - starten vanaf 09:00
- * - eindigen uiterlijk om 23:00
- * - gebruiken intervallen van 30 minuten
- */
-
 const START_MINUTEN = 9 * 60;
 const EINDE_MINUTEN = 23 * 60;
 const TIJD_INTERVAL = 30;
@@ -105,7 +87,6 @@ function minutenNaarTijd(
   const uren = Math.floor(
     minuten / 60,
   );
-
   const minutenDeel =
     minuten % 60;
 
@@ -169,7 +150,6 @@ function tijdNaarMinuten(
   const uren = Number(
     directeTijd[1],
   );
-
   const minuten = Number(
     directeTijd[2],
   );
@@ -268,10 +248,7 @@ function tijdNaarInput(
 function volledigeNaam(
   medewerker: {
     voornaam: string;
-    tussenvoegsel:
-      | string
-      | null
-      | undefined;
+    tussenvoegsel: string | null;
     achternaam: string;
   },
 ): string {
@@ -296,19 +273,14 @@ function statusLabel(
   switch (status) {
     case "OPEN":
       return "Open";
-
     case "GEPLAND":
       return "Gepland";
-
     case "BEVESTIGD":
       return "Bevestigd";
-
     case "AFGEZEGD":
       return "Afgezegd";
-
     case "GEWERKT":
       return "Gewerkt";
-
     default:
       return status;
   }
@@ -321,26 +293,16 @@ function statusKlassen(
     case "BEVESTIGD":
     case "GEWERKT":
       return "border-emerald-200 bg-emerald-50 text-emerald-800";
-
     case "GEPLAND":
       return "border-amber-300 bg-amber-100 text-amber-800";
-
     case "AFGEZEGD":
       return "border-slate-200 bg-slate-100 text-slate-500";
-
     case "OPEN":
       return "border-blue-200 bg-blue-50 text-blue-700";
-
     default:
       return "border-slate-200 bg-slate-100 text-slate-600";
   }
 }
-
-/*
- * ============================================================
- * BESCHIKBAARHEID
- * ============================================================
- */
 
 type BeschikbaarheidWeergave =
   | "BESCHIKBAAR"
@@ -355,19 +317,14 @@ function beschikbaarheidLabel(
   switch (status) {
     case "BESCHIKBAAR":
       return "Beschikbaar";
-
     case "VOORKEUR":
       return "Voorkeur";
-
     case "NIET_BESCHIKBAAR":
       return "Niet beschikbaar";
-
     case "ANDERE_DIENST":
       return "Al ingepland";
-
     case "GEEN_OPGAVE":
       return "Geen beschikbaarheid";
-
     default:
       return status;
   }
@@ -379,19 +336,14 @@ function beschikbaarheidKlassen(
   switch (status) {
     case "BESCHIKBAAR":
       return "border-emerald-300 bg-emerald-50";
-
     case "VOORKEUR":
       return "border-amber-300 bg-amber-50";
-
     case "NIET_BESCHIKBAAR":
       return "border-red-300 bg-red-50";
-
     case "ANDERE_DIENST":
       return "border-red-300 bg-red-50";
-
     case "GEEN_OPGAVE":
       return "border-slate-200 bg-slate-50";
-
     default:
       return "border-slate-200 bg-slate-50";
   }
@@ -403,19 +355,14 @@ function beschikbaarheidBadgeKlassen(
   switch (status) {
     case "BESCHIKBAAR":
       return "bg-emerald-100 text-emerald-800";
-
     case "VOORKEUR":
       return "bg-amber-100 text-amber-800";
-
     case "NIET_BESCHIKBAAR":
       return "bg-red-100 text-red-800";
-
     case "ANDERE_DIENST":
       return "bg-red-100 text-red-800";
-
     case "GEEN_OPGAVE":
       return "bg-slate-200 text-slate-700";
-
     default:
       return "bg-slate-100 text-slate-600";
   }
@@ -441,7 +388,6 @@ function bepaalBeschikbaarheid(
 ): BeschikbaarheidWeergave {
   const dienstBegin =
     tijdNaarMinuten(begintijd);
-
   const dienstEinde =
     tijdNaarMinuten(eindtijd);
 
@@ -452,25 +398,12 @@ function bepaalBeschikbaarheid(
     return "GEEN_OPGAVE";
   }
 
-  /*
-   * ----------------------------------------------------------
-   * EERST CONTROLEREN OF MEDEWERKER AL OP EEN ANDERE DIENST
-   * STAAT DIE OVERLAPT
-   * ----------------------------------------------------------
-   */
-
   const heeftOverlappendeDienst =
     medewerker.diensten?.some(
       (bezetting) => {
         if (
-          bezetting.dienstId === dienstId
-        ) {
-          return false;
-        }
-
-        if (
-          bezetting.status ===
-            "AFGEZEGD"
+          bezetting.dienstId === dienstId ||
+          bezetting.status === "AFGEZEGD"
         ) {
           return false;
         }
@@ -479,7 +412,6 @@ function bepaalBeschikbaarheid(
           tijdNaarMinuten(
             bezetting.dienst.begintijd,
           );
-
         const andereEinde =
           tijdNaarMinuten(
             bezetting.dienst.eindtijd,
@@ -505,12 +437,6 @@ function bepaalBeschikbaarheid(
     return "ANDERE_DIENST";
   }
 
-  /*
-   * ----------------------------------------------------------
-   * GEEN BESCHIKBAARHEID OPGEGEVEN
-   * ----------------------------------------------------------
-   */
-
   const beschikbaarheden =
     medewerker.beschikbaarheden ?? [];
 
@@ -519,12 +445,6 @@ function bepaalBeschikbaarheid(
   ) {
     return "GEEN_OPGAVE";
   }
-
-  /*
-   * ----------------------------------------------------------
-   * NIET BESCHIKBAAR HEEFT VOORRANG
-   * ----------------------------------------------------------
-   */
 
   for (
     const beschikbaarheid of beschikbaarheden
@@ -538,18 +458,16 @@ function bepaalBeschikbaarheid(
 
     const begin =
       tijdNaarMinuten(
-        beschikbaarheid.begintijd,
+        tijdNaarInput(
+          beschikbaarheid.begintijd,
+        ),
       );
-
     const einde =
       tijdNaarMinuten(
-        beschikbaarheid.eindtijd,
+        tijdNaarInput(
+          beschikbaarheid.eindtijd,
+        ),
       );
-
-    /*
-     * Geen tijden betekent:
-     * de volledige dag niet beschikbaar.
-     */
 
     if (
       begin === null ||
@@ -570,12 +488,6 @@ function bepaalBeschikbaarheid(
     }
   }
 
-  /*
-   * ----------------------------------------------------------
-   * BESCHIKBAAR
-   * ----------------------------------------------------------
-   */
-
   const isBeschikbaar =
     beschikbaarheden.some(
       (beschikbaarheid) => {
@@ -588,18 +500,16 @@ function bepaalBeschikbaarheid(
 
         const begin =
           tijdNaarMinuten(
-            beschikbaarheid.begintijd,
+            tijdNaarInput(
+              beschikbaarheid.begintijd,
+            ),
           );
-
         const einde =
           tijdNaarMinuten(
-            beschikbaarheid.eindtijd,
+            tijdNaarInput(
+              beschikbaarheid.eindtijd,
+            ),
           );
-
-        /*
-         * Geen tijden betekent:
-         * de volledige dag beschikbaar.
-         */
 
         if (
           begin === null ||
@@ -619,83 +529,7 @@ function bepaalBeschikbaarheid(
     return "BESCHIKBAAR";
   }
 
-  /*
-   * ----------------------------------------------------------
-   * VOORKEUR
-   * ----------------------------------------------------------
-   */
-
-  const heeftVoorkeur =
-    beschikbaarheden.some(
-      (beschikbaarheid) => {
-        if (
-          beschikbaarheid.status !==
-          "VOORKEUR"
-        ) {
-          return false;
-        }
-
-        const begin =
-          tijdNaarMinuten(
-            beschikbaarheid.begintijd,
-          );
-
-        const einde =
-          tijdNaarMinuten(
-            beschikbaarheid.eindtijd,
-          );
-
-        if (
-          begin === null ||
-          einde === null
-        ) {
-          return true;
-        }
-
-        return (
-          begin <= dienstBegin &&
-          einde >= dienstEinde
-        );
-      },
-    );
-
-  if (heeftVoorkeur) {
-    return "VOORKEUR";
-  }
-
-  return "GEEN_OPGAVE";
-}
-
-function bezettingMedewerkerId(
-  bezetting: Dienst["bezetting"][number],
-): string | null {
-  return (
-    bezetting.medewerkerId ??
-    bezetting.medewerker?.id ??
-    null
-  );
-}
-
-function foutmeldingUitResponse(
-  data: unknown,
-  standaardFout: string,
-): string {
-  if (
-    data &&
-    typeof data === "object" &&
-    "fout" in data &&
-    typeof (
-      data as ApiFoutResponse
-    ).fout === "string"
-  ) {
-    return (
-      (
-        data as ApiFoutResponse
-      ).fout ?? standaardFout
-    );
-  }
-
-  return standaardFout;
+  return "VOORKEUR";
 }
 
 export default function DienstBewerkForm({
@@ -705,45 +539,46 @@ export default function DienstBewerkForm({
 }: DienstBewerkFormProps) {
   const [datum, setDatum] =
     useState(
-      datumNaarInput(
-        dienst.datum,
-      ),
+      datumNaarInput(dienst.datum),
     );
 
-  const [
-    begintijd,
-    setBegintijd,
-  ] = useState(
-    tijdNaarInput(
-      dienst.begintijd,
-    ),
-  );
+  const [begintijd, setBegintijd] =
+    useState(
+      tijdNaarInput(dienst.begintijd),
+    );
 
-  const [
-    eindtijd,
-    setEindtijd,
-  ] = useState(
-    tijdNaarInput(
-      dienst.eindtijd,
-    ),
-  );
+  const [eindtijd, setEindtijd] =
+    useState(
+      tijdNaarInput(dienst.eindtijd),
+    );
 
-  const [
-    opmerkingen,
-    setOpmerkingen,
-  ] = useState(
-    dienst.opmerkingen ?? "",
-  );
-
-  const [tags, setTags] =
-    useState<PlanningTag[]>([]);
+  const [opmerkingen, setOpmerkingen] =
+    useState(dienst.opmerkingen ?? "");
 
   const [
     geselecteerdeTags,
     setGeselecteerdeTags,
   ] = useState<Record<string, number>>(
-    {},
+    () => {
+      const resultaat: Record<
+        string,
+        number
+      > = {};
+
+      for (
+        const dienstTag of dienst.tags ?? []
+      ) {
+        resultaat[dienstTag.tagId] =
+          dienstTag.aantal;
+      }
+
+      return resultaat;
+    },
   );
+
+  const [tags, setTags] = useState<
+    PlanningTag[]
+  >([]);
 
   const [
     medewerkers,
@@ -780,12 +615,6 @@ export default function DienstBewerkForm({
   const [succes, setSucces] =
     useState<string | null>(null);
 
-  /*
-   * ============================================================
-   * BEGINTIJDEN
-   * ============================================================
-   */
-
   const startTijden = useMemo(
     () =>
       maakTijden(
@@ -796,17 +625,9 @@ export default function DienstBewerkForm({
     [],
   );
 
-  /*
-   * ============================================================
-   * EINDTIJDEN
-   * ============================================================
-   */
-
   const eindTijden = useMemo(() => {
     const startMinuten =
-      tijdNaarMinuten(
-        begintijd,
-      );
+      tijdNaarMinuten(begintijd);
 
     if (startMinuten === null) {
       return maakTijden(
@@ -823,66 +644,6 @@ export default function DienstBewerkForm({
     );
   }, [begintijd]);
 
-  /*
-   * ============================================================
-   * BESTAANDE DIENSTGEGEVENS
-   * ============================================================
-   */
-
-  useEffect(() => {
-    setDatum(
-      datumNaarInput(
-        dienst.datum,
-      ),
-    );
-
-    setBegintijd(
-      tijdNaarInput(
-        dienst.begintijd,
-      ),
-    );
-
-    setEindtijd(
-      tijdNaarInput(
-        dienst.eindtijd,
-      ),
-    );
-
-    setOpmerkingen(
-      dienst.opmerkingen ?? "",
-    );
-
-    const bestaandeTags: Record<
-      string,
-      number
-    > = {};
-
-    for (
-      const dienstTag of dienst.tags
-    ) {
-      bestaandeTags[
-        dienstTag.tagId
-      ] = dienstTag.aantal;
-    }
-
-    setGeselecteerdeTags(
-      bestaandeTags,
-    );
-  }, [
-    dienst.id,
-    dienst.datum,
-    dienst.begintijd,
-    dienst.eindtijd,
-    dienst.opmerkingen,
-    dienst.tags,
-  ]);
-
-  /*
-   * ============================================================
-   * PLANNINGTAGS LADEN
-   * ============================================================
-   */
-
   useEffect(() => {
     let actief = true;
 
@@ -897,8 +658,8 @@ export default function DienstBewerkForm({
             )}`,
             {
               method: "GET",
-              cache: "no-store",
               credentials: "include",
+              cache: "no-store",
             },
           );
 
@@ -933,7 +694,6 @@ export default function DienstBewerkForm({
 
         if (actief) {
           setTags([]);
-
           setFout(
             error instanceof Error
               ? error.message
@@ -954,17 +714,8 @@ export default function DienstBewerkForm({
     };
   }, [vestigingId]);
 
-  /*
-   * ============================================================
-   * MEDEWERKERS LADEN
-   * ============================================================
-   */
-
   useEffect(() => {
-    if (!datum) {
-      setMedewerkers([]);
-      setLadenMedewerkers(false);
-
+    if (!datum || !vestigingId) {
       return;
     }
 
@@ -983,8 +734,8 @@ export default function DienstBewerkForm({
             )}`,
             {
               method: "GET",
-              cache: "no-store",
               credentials: "include",
+              cache: "no-store",
             },
           );
 
@@ -1003,21 +754,11 @@ export default function DienstBewerkForm({
         if (
           !data ||
           typeof data !== "object" ||
-          !("medewerkers" in data)
-        ) {
-          throw new Error(
-            "De medewerkers hebben een ongeldig formaat.",
-          );
-        }
-
-        const medewerkersData =
-          (
-            data as MedewerkersResponse
-          ).medewerkers;
-
-        if (
+          !("medewerkers" in data) ||
           !Array.isArray(
-            medewerkersData,
+            (
+              data as MedewerkersResponse
+            ).medewerkers,
           )
         ) {
           throw new Error(
@@ -1027,7 +768,9 @@ export default function DienstBewerkForm({
 
         if (actief) {
           setMedewerkers(
-            medewerkersData,
+            (
+              data as MedewerkersResponse
+            ).medewerkers,
           );
         }
       } catch (error) {
@@ -1038,7 +781,6 @@ export default function DienstBewerkForm({
 
         if (actief) {
           setMedewerkers([]);
-
           setFout(
             error instanceof Error
               ? error.message
@@ -1057,16 +799,7 @@ export default function DienstBewerkForm({
     return () => {
       actief = false;
     };
-  }, [
-    vestigingId,
-    datum,
-  ]);
-
-  /*
-   * ============================================================
-   * TAGS
-   * ============================================================
-   */
+  }, [vestigingId, datum]);
 
   function toggleTag(
     tagId: string,
@@ -1095,8 +828,7 @@ export default function DienstBewerkForm({
     tagId: string,
     waarde: string,
   ) {
-    const aantal =
-      Number(waarde);
+    const aantal = Number(waarde);
 
     if (
       !Number.isInteger(aantal) ||
@@ -1112,12 +844,6 @@ export default function DienstBewerkForm({
       }),
     );
   }
-
-  /*
-   * ============================================================
-   * DIENST OPSLAAN
-   * ============================================================
-   */
 
   async function opslaanDienst(
     event: FormEvent<HTMLFormElement>,
@@ -1135,19 +861,13 @@ export default function DienstBewerkForm({
       setFout(
         "Datum, begintijd en eindtijd zijn verplicht.",
       );
-
       return;
     }
 
     const startMinuten =
-      tijdNaarMinuten(
-        begintijd,
-      );
-
+      tijdNaarMinuten(begintijd);
     const eindeMinuten =
-      tijdNaarMinuten(
-        eindtijd,
-      );
+      tijdNaarMinuten(eindtijd);
 
     if (
       startMinuten === null ||
@@ -1156,7 +876,6 @@ export default function DienstBewerkForm({
       setFout(
         "Vul geldige begin- en eindtijden in.",
       );
-
       return;
     }
 
@@ -1166,7 +885,6 @@ export default function DienstBewerkForm({
       setFout(
         "Een dienst kan niet vóór 09:00 starten.",
       );
-
       return;
     }
 
@@ -1176,74 +894,52 @@ export default function DienstBewerkForm({
       setFout(
         "Een dienst kan niet na 23:00 eindigen.",
       );
-
       return;
     }
 
     if (
-      startMinuten %
-        TIJD_INTERVAL !==
-        0 ||
-      eindeMinuten %
-        TIJD_INTERVAL !==
-        0
+      startMinuten % TIJD_INTERVAL !==
+      0 ||
+      eindeMinuten % TIJD_INTERVAL !==
+      0
     ) {
       setFout(
-        "Diensten kunnen alleen per 30 minuten worden gepland.",
+        "Begin- en eindtijden moeten op halve uren vallen.",
       );
-
       return;
     }
 
     if (
-      eindeMinuten -
-        startMinuten <
-      TIJD_INTERVAL
+      eindeMinuten <= startMinuten
     ) {
       setFout(
-        "Een dienst moet minimaal 30 minuten duren.",
+        "De eindtijd moet na de begintijd liggen.",
       );
-
       return;
     }
 
-    if (
-      Object.keys(
-        geselecteerdeTags,
-      ).length === 0
-    ) {
-      setFout(
-        "Selecteer minimaal één planningstag.",
-      );
-
-      return;
-    }
+    setOpslaanBezig(true);
 
     try {
-      setOpslaanBezig(true);
-
       const response =
         await fetch(
-          `/api/planning/diensten/${dienst.id}`,
+          `/api/planning/diensten/${encodeURIComponent(
+            dienst.id,
+          )}`,
           {
             method: "PATCH",
-
             headers: {
               "Content-Type":
                 "application/json",
             },
-
             credentials: "include",
-
             body: JSON.stringify({
-              datum,
-              begintijd,
-              eindtijd,
-
+              datum: `${datum}T00:00:00`,
+              begintijd: `${datum}T${begintijd}:00`,
+              eindtijd: `${datum}T${eindtijd}:00`,
               opmerkingen:
                 opmerkingen.trim() ||
                 null,
-
               tags: Object.entries(
                 geselecteerdeTags,
               ).map(
@@ -1263,88 +959,60 @@ export default function DienstBewerkForm({
         throw new Error(
           foutmeldingUitResponse(
             data,
-            "De dienst kon niet worden opgeslagen.",
+            "De dienst kon niet worden gewijzigd.",
           ),
         );
       }
 
       setSucces(
-        "Dienst succesvol opgeslagen.",
+        "De dienst is succesvol gewijzigd.",
       );
 
       onGewijzigd?.();
     } catch (error) {
       console.error(
-        "Fout bij opslaan dienst:",
+        "Dienst wijzigen mislukt:",
         error,
       );
 
       setFout(
         error instanceof Error
           ? error.message
-          : "De dienst kon niet worden opgeslagen.",
+          : "De dienst kon niet worden gewijzigd.",
       );
     } finally {
       setOpslaanBezig(false);
     }
   }
 
-  /*
-   * ============================================================
-   * MEDEWERKER TOEVOEGEN
-   * ============================================================
-   */
-
-  async function voegMedewerkerToe(
+  async function wisselMedewerker(
     medewerkerId: string,
   ) {
-    if (!medewerkerId) {
+    if (bezettingBezig) {
       return;
     }
 
-    const bestaatAl =
-      dienst.bezetting.some(
-        (bezetting) =>
-          bezettingMedewerkerId(
-            bezetting,
-          ) === medewerkerId &&
-          bezetting.status !==
-            "AFGEZEGD",
-      );
-
-    if (bestaatAl) {
-      setFout(
-        "Deze medewerker staat al op deze dienst.",
-      );
-
-      return;
-    }
+    setBezettingBezig(
+      medewerkerId,
+    );
+    setFout(null);
+    setSucces(null);
 
     try {
-      setBezettingBezig(
-        medewerkerId,
-      );
-
-      setFout(null);
-      setSucces(null);
-
       const response =
         await fetch(
-          "/api/planning/bezetting",
+          `/api/planning/diensten/${encodeURIComponent(
+            dienst.id,
+          )}`,
           {
-            method: "POST",
-
+            method: "PATCH",
             headers: {
               "Content-Type":
                 "application/json",
             },
-
             credentials: "include",
-
             body: JSON.stringify({
-              dienstId: dienst.id,
               medewerkerId,
-              status: "BEVESTIGD",
             }),
           },
         );
@@ -1362,344 +1030,190 @@ export default function DienstBewerkForm({
       }
 
       setSucces(
-        "Medewerker direct bevestigd aan de dienst.",
+        "De medewerker is succesvol gewijzigd.",
       );
 
       onGewijzigd?.();
     } catch (error) {
       console.error(
-        "Fout bij toevoegen medewerker:",
+        "Medewerker koppelen mislukt:",
         error,
       );
 
       setFout(
         error instanceof Error
           ? error.message
-          : "De medewerker kon niet aan de dienst worden gekoppeld.",
+          : "De medewerker kon niet worden gekoppeld.",
       );
     } finally {
       setBezettingBezig(null);
     }
   }
 
-  /*
-   * ============================================================
-   * BEZETTING VERWIJDEREN
-   * ============================================================
-   */
-
-  async function verwijderBezetting(
-    bezettingId: string,
-  ) {
-    if (
-      !window.confirm(
-        "Deze medewerker van de dienst verwijderen?",
-      )
-    ) {
-      return;
-    }
-
-    try {
-      setBezettingBezig(
-        bezettingId,
-      );
-
-      setFout(null);
-      setSucces(null);
-
-      const response =
-        await fetch(
-          `/api/planning/bezetting/${bezettingId}`,
-          {
-            method: "DELETE",
-            credentials: "include",
-          },
-        );
-
-      const data: unknown =
-        await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          foutmeldingUitResponse(
-            data,
-            "De medewerker kon niet van de dienst worden verwijderd.",
-          ),
-        );
-      }
-
-      setSucces(
-        "Medewerker van de dienst verwijderd.",
-      );
-
-      onGewijzigd?.();
-    } catch (error) {
-      console.error(
-        "Fout bij verwijderen bezetting:",
-        error,
-      );
-
-      setFout(
-        error instanceof Error
-          ? error.message
-          : "De medewerker kon niet van de dienst worden verwijderd.",
-      );
-    } finally {
-      setBezettingBezig(null);
-    }
-  }
-
-  /*
-   * ============================================================
-   * BESCHIKBARE MEDEWERKERS
-   * ============================================================
-   */
-
-  const gekoppeldeMedewerkerIds =
-    new Set(
-      dienst.bezetting
-        .filter(
-          (bezetting) =>
-            bezetting.status !==
-            "AFGEZEGD",
-        )
-        .map(
-          (bezetting) =>
-            bezettingMedewerkerId(
-              bezetting,
-            ),
-        )
-        .filter(
-          (
-            medewerkerId,
-          ): medewerkerId is string =>
-            medewerkerId !== null,
-        ),
-    );
-
-  const beschikbareMedewerkers =
-    medewerkers
+  const geselecteerdeTagNamen =
+    tags
       .filter(
-        (medewerker) =>
-          !gekoppeldeMedewerkerIds.has(
-            medewerker.id,
-          ),
+        (tag) =>
+          geselecteerdeTags[
+            tag.id
+          ] !== undefined,
       )
-      .map((medewerker) => ({
-        medewerker,
+      .map(
+        (tag) => tag.naam,
+      );
 
-        beschikbaarheid:
-          bepaalBeschikbaarheid(
-            medewerker,
-            dienst.id,
-            begintijd,
-            eindtijd,
-          ),
-      }))
-      .sort((a, b) => {
-        const volgorde: Record<
-          BeschikbaarheidWeergave,
-          number
-        > = {
-          BESCHIKBAAR: 1,
-          VOORKEUR: 2,
-          GEEN_OPGAVE: 3,
-          NIET_BESCHIKBAAR: 4,
-          ANDERE_DIENST: 5,
-        };
-
-        const verschil =
-          volgorde[a.beschikbaarheid] -
-          volgorde[b.beschikbaarheid];
-
-        if (verschil !== 0) {
-          return verschil;
-        }
-
-        return volledigeNaam(
-          a.medewerker,
-        ).localeCompare(
-          volledigeNaam(
-            b.medewerker,
-          ),
-          "nl",
-        );
-      });
-
-  const aantalActieveBezetting =
-    dienst.bezetting.filter(
-      (bezetting) =>
-        bezetting.status !==
-        "AFGEZEGD",
-    ).length;
+  const tonenMedewerkers =
+    medewerkers.filter(
+      (medewerker) =>
+        medewerker.tags?.some(
+          (tag) =>
+            geselecteerdeTagNamen.some(
+              (naam) =>
+                naam.trim().toLowerCase() ===
+                tag.naam.trim().toLowerCase(),
+            ),
+        ) ?? false,
+    );
 
   return (
     <form
       onSubmit={opslaanDienst}
       className="space-y-6"
     >
-      {/* ======================================================
-          DIENST BEWERKEN
-          ====================================================== */}
-
-      <section className="rounded-xl border bg-white p-6 shadow-sm">
-        <div className="mb-5">
-          <h2 className="text-lg font-semibold text-slate-900">
-            Dienst bewerken
-          </h2>
-
-          <p className="mt-1 text-sm text-slate-500">
-            Wijzig hier de datum, tijden,
-            planningtags en opmerkingen van
-            deze dienst.
-          </p>
+      {fout && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {fout}
         </div>
+      )}
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <div>
-            <label
-              htmlFor="dienst-datum"
-              className="mb-1.5 block text-sm font-medium text-slate-700"
-            >
-              Datum
-            </label>
-
-            <input
-              id="dienst-datum"
-              type="date"
-              value={datum}
-              onChange={(event) =>
-                setDatum(
-                  event.target.value,
-                )
-              }
-              disabled={opslaanBezig}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-50"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="dienst-begintijd"
-              className="mb-1.5 block text-sm font-medium text-slate-700"
-            >
-              Begintijd
-            </label>
-
-            <select
-              id="dienst-begintijd"
-              value={begintijd}
-              onChange={(event) =>
-                setBegintijd(
-                  event.target.value,
-                )
-              }
-              disabled={opslaanBezig}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-50"
-            >
-              <option value="">
-                Kies begintijd...
-              </option>
-
-              {startTijden.map(
-                (tijd) => (
-                  <option
-                    key={tijd}
-                    value={tijd}
-                  >
-                    {tijd}
-                  </option>
-                ),
-              )}
-            </select>
-          </div>
-
-          <div>
-            <label
-              htmlFor="dienst-eindtijd"
-              className="mb-1.5 block text-sm font-medium text-slate-700"
-            >
-              Eindtijd
-            </label>
-
-            <select
-              id="dienst-eindtijd"
-              value={eindtijd}
-              onChange={(event) =>
-                setEindtijd(
-                  event.target.value,
-                )
-              }
-              disabled={opslaanBezig}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-50"
-            >
-              <option value="">
-                Kies eindtijd...
-              </option>
-
-              {eindTijden.map(
-                (tijd) => (
-                  <option
-                    key={tijd}
-                    value={tijd}
-                  >
-                    {tijd}
-                  </option>
-                ),
-              )}
-            </select>
-          </div>
+      {succes && (
+        <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          {succes}
         </div>
+      )}
 
-        <div className="mt-4">
+      <div className="grid gap-4 md:grid-cols-3">
+        <div>
           <label
-            htmlFor="dienst-opmerkingen"
-            className="mb-1.5 block text-sm font-medium text-slate-700"
+            htmlFor="dienst-datum-bewerken"
+            className="mb-2 block text-sm font-medium text-slate-700"
           >
-            Opmerkingen
+            Datum
           </label>
 
-          <textarea
-            id="dienst-opmerkingen"
-            value={opmerkingen}
+          <input
+            id="dienst-datum-bewerken"
+            type="date"
+            value={datum}
             onChange={(event) =>
-              setOpmerkingen(
+              setDatum(
                 event.target.value,
               )
             }
-            rows={4}
             disabled={opslaanBezig}
-            placeholder="Eventuele opmerkingen bij deze dienst..."
-            className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-50"
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 disabled:bg-slate-50"
           />
         </div>
-      </section>
 
-      {/* ======================================================
-          PLANNINGTAGS
-          ====================================================== */}
+        <div>
+          <label
+            htmlFor="dienst-begintijd-bewerken"
+            className="mb-2 block text-sm font-medium text-slate-700"
+          >
+            Begintijd
+          </label>
 
-      <section className="rounded-xl border bg-white p-6 shadow-sm">
-        <div className="mb-5">
-          <h2 className="text-lg font-semibold text-slate-900">
-            Planningtags
-          </h2>
-
-          <p className="mt-1 text-sm text-slate-500">
-            Bepaal welke planningtags bij
-            deze dienst horen en hoeveel
-            medewerkers daarvoor nodig zijn.
-          </p>
+          <select
+            id="dienst-begintijd-bewerken"
+            value={begintijd}
+            onChange={(event) =>
+              setBegintijd(
+                event.target.value,
+              )
+            }
+            disabled={opslaanBezig}
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 disabled:bg-slate-50"
+          >
+            {startTijden.map(
+              (tijd) => (
+                <option
+                  key={tijd}
+                  value={tijd}
+                >
+                  {tijd}
+                </option>
+              ),
+            )}
+          </select>
         </div>
+
+        <div>
+          <label
+            htmlFor="dienst-eindtijd-bewerken"
+            className="mb-2 block text-sm font-medium text-slate-700"
+          >
+            Eindtijd
+          </label>
+
+          <select
+            id="dienst-eindtijd-bewerken"
+            value={eindtijd}
+            onChange={(event) =>
+              setEindtijd(
+                event.target.value,
+              )
+            }
+            disabled={opslaanBezig}
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 disabled:bg-slate-50"
+          >
+            {eindTijden.map(
+              (tijd) => (
+                <option
+                  key={tijd}
+                  value={tijd}
+                >
+                  {tijd}
+                </option>
+              ),
+            )}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label
+          htmlFor="dienst-opmerkingen-bewerken"
+          className="mb-2 block text-sm font-medium text-slate-700"
+        >
+          Opmerkingen
+        </label>
+
+        <textarea
+          id="dienst-opmerkingen-bewerken"
+          value={opmerkingen}
+          onChange={(event) =>
+            setOpmerkingen(
+              event.target.value,
+            )
+          }
+          disabled={opslaanBezig}
+          rows={4}
+          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 disabled:bg-slate-50"
+        />
+      </div>
+
+      <div>
+        <p className="mb-2 text-sm font-medium text-slate-700">
+          Functies
+        </p>
 
         {ladenTags ? (
           <p className="text-sm text-slate-500">
-            Planningtags laden...
+            Functies laden...
           </p>
         ) : tags.length === 0 ? (
           <p className="text-sm text-slate-500">
-            Er zijn geen actieve planningtags
-            beschikbaar.
+            Geen functies beschikbaar.
           </p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -1712,341 +1226,224 @@ export default function DienstBewerkForm({
               return (
                 <div
                   key={tag.id}
-                  className={`rounded-xl border p-3 transition ${
-                    geselecteerd
-                      ? "border-emerald-300 bg-emerald-50"
-                      : "border-slate-200 bg-slate-50"
-                  }`}
+                  className="rounded-xl border border-slate-200 bg-white p-4"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <label className="flex cursor-pointer items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={
-                          geselecteerd
-                        }
-                        onChange={() =>
-                          toggleTag(
-                            tag.id,
-                          )
-                        }
-                        disabled={
-                          opslaanBezig
-                        }
-                        className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                      />
+                  <label className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={
+                        geselecteerd
+                      }
+                      onChange={() =>
+                        toggleTag(
+                          tag.id,
+                        )
+                      }
+                      disabled={
+                        opslaanBezig
+                      }
+                      className="h-4 w-4 rounded border-slate-300"
+                    />
 
-                      <span className="text-sm font-medium text-slate-800">
-                        {tag.naam}
-                      </span>
-                    </label>
+                    <span className="text-sm font-medium text-slate-800">
+                      {tag.naam}
+                    </span>
+                  </label>
 
-                    {geselecteerd && (
+                  {geselecteerd && (
+                    <div className="mt-3">
+                      <label
+                        htmlFor={`aantal-bewerken-${tag.id}`}
+                        className="mb-1 block text-xs text-slate-500"
+                      >
+                        Aantal
+                      </label>
+
                       <input
+                        id={`aantal-bewerken-${tag.id}`}
                         type="number"
-                        min={1}
+                        min="1"
+                        step="1"
                         value={
                           geselecteerdeTags[
                             tag.id
                           ] ?? 1
                         }
-                        onChange={(
-                          event,
-                        ) =>
+                        onChange={(event) =>
                           wijzigAantal(
                             tag.id,
-                            event.target
-                              .value,
+                            event.target.value,
                           )
                         }
                         disabled={
                           opslaanBezig
                         }
-                        className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-center text-sm text-slate-800 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 disabled:bg-slate-50"
                       />
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
         )}
-      </section>
+      </div>
 
-      {/* ======================================================
-          BEZETTING
-          ====================================================== */}
-
-      <section className="rounded-xl border bg-white p-6 shadow-sm">
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">
-              Bezetting
-            </h2>
+            <h3 className="text-base font-semibold text-slate-900">
+              Medewerkerbezetting
+            </h3>
 
             <p className="mt-1 text-sm text-slate-500">
-              Medewerkers die aan deze dienst
-              gekoppeld zijn.
+              Kies de medewerker voor deze dienst.
             </p>
           </div>
 
-          <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
-            {aantalActieveBezetting}{" "}
-            {aantalActieveBezetting ===
-            1
-              ? "persoon"
-              : "personen"}
-          </span>
+          {ladenMedewerkers && (
+            <span className="text-xs text-slate-500">
+              Laden...
+            </span>
+          )}
         </div>
 
-        <div className="space-y-3">
-          {dienst.bezetting.length ===
+        <div className="mt-4 space-y-3">
+          {tonenMedewerkers.length ===
           0 ? (
-            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500">
-              Er is nog geen medewerker
-              gekoppeld.
+            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
+              <p className="text-sm font-medium text-slate-700">
+                Geen passende medewerkers gevonden.
+              </p>
             </div>
           ) : (
-            dienst.bezetting.map(
-              (bezetting) => {
-                const medewerker =
-                  bezetting.medewerker;
+            tonenMedewerkers.map(
+              (medewerker) => {
+                const niveau =
+                  bepaalBeschikbaarheid(
+                    medewerker,
+                    dienst.id,
+                    begintijd,
+                    eindtijd,
+                  );
+
+                const isHuidigeMedewerker =
+                  dienst.medewerkers?.some(
+                    (relatie) =>
+                      relatie.medewerkerId ===
+                      medewerker.id,
+                  ) ?? false;
 
                 return (
                   <div
-                    key={bezetting.id}
-                    className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between"
+                    key={
+                      medewerker.id
+                    }
+                    className={`rounded-xl border p-4 ${beschikbaarheidKlassen(
+                      niveau,
+                    )}`}
                   >
-                    <div>
-                      <div className="font-medium text-slate-900">
-                        {medewerker
-                          ? volledigeNaam(
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-semibold text-slate-900">
+                            {volledigeNaam(
                               medewerker,
-                            )
-                          : "Open positie"}
+                            )}
+                          </p>
+
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${beschikbaarheidBadgeKlassen(
+                              niveau,
+                            )}`}
+                          >
+                            {
+                              beschikbaarheidLabel(
+                                niveau,
+                              )
+                            }
+                          </span>
+                        </div>
+
+                        {medewerker.personeelsnummer && (
+                          <p className="mt-1 text-xs text-slate-500">
+                            {medewerker.personeelsnummer}
+                          </p>
+                        )}
                       </div>
 
-                      {medewerker?.personeelsnummer && (
-                        <div className="mt-0.5 text-xs text-slate-500">
-                          Personeelsnummer:{" "}
-                          {
-                            medewerker.personeelsnummer
-                          }
-                        </div>
-                      )}
-
-                      <span
-                        className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${statusKlassen(
-                          bezetting.status,
-                        )}`}
-                      >
-                        {statusLabel(
-                          bezetting.status,
-                        )}
-                      </span>
-                    </div>
-
-                    {bezetting.status !==
-                      "GEWERKT" &&
-                    bezetting.status !==
-                      "AFGEZEGD" && (
                       <button
                         type="button"
+                        disabled={
+                          opslaanBezig ||
+                          bezettingBezig !==
+                            null ||
+                          niveau ===
+                            "NIET_BESCHIKBAAR" ||
+                          niveau ===
+                            "ANDERE_DIENST"
+                        }
                         onClick={() =>
-                          void verwijderBezetting(
-                            bezetting.id,
+                          void wisselMedewerker(
+                            medewerker.id,
                           )
                         }
-                        disabled={
-                          bezettingBezig ===
-                          bezetting.id
+                        className={
+                          isHuidigeMedewerker
+                            ? "rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700"
+                            : "rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                         }
-                        className="rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        title="Medewerker verwijderen"
                       >
                         {bezettingBezig ===
-                        bezetting.id
+                        medewerker.id
                           ? "Bezig..."
-                          : "✕ Verwijderen"}
+                          : isHuidigeMedewerker
+                            ? "Huidige medewerker"
+                            : "Deze medewerker kiezen"}
                       </button>
-                    )}
+                    </div>
                   </div>
                 );
               },
             )
           )}
         </div>
+      </div>
 
-        {/* ==================================================
-            MEDEWERKER TOEVOEGEN
-            ================================================== */}
-
-        <div className="mt-5 border-t border-slate-200 pt-5">
-          <h3 className="text-sm font-semibold text-slate-900">
-            Medewerker toevoegen
-          </h3>
-
-          <p className="mt-1 text-xs text-slate-500">
-            Beschikbaarheid wordt gecontroleerd
-            op basis van de datum en tijden
-            van deze dienst.
-          </p>
-
-          {/* LEGENDA */}
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-800">
-              Beschikbaar
-            </span>
-
-            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
-              Voorkeur
-            </span>
-
-            <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800">
-              Niet beschikbaar / al ingepland
-            </span>
-
-            <span className="rounded-full bg-slate-200 px-3 py-1 text-xs font-medium text-slate-700">
-              Geen beschikbaarheid opgegeven
-            </span>
-          </div>
-
-          {ladenMedewerkers ? (
-            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-              Medewerkers laden...
-            </div>
-          ) : beschikbareMedewerkers.length ===
-            0 ? (
-            <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500">
-              Geen medewerkers beschikbaar
-              om toe te voegen.
-            </div>
-          ) : (
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              {beschikbareMedewerkers.map(
-                ({
-                  medewerker,
-                  beschikbaarheid,
-                }) => {
-                  const kanToevoegen =
-                    beschikbaarheid !==
-                      "NIET_BESCHIKBAAR" &&
-                    beschikbaarheid !==
-                      "ANDERE_DIENST";
-
-                  return (
-                    <button
-                      key={medewerker.id}
-                      type="button"
-                      disabled={
-                        !kanToevoegen ||
-                        bezettingBezig !==
-                          null
-                      }
-                      onClick={() =>
-                        void voegMedewerkerToe(
-                          medewerker.id,
-                        )
-                      }
-                      className={`flex w-full items-center justify-between gap-4 rounded-xl border p-4 text-left transition ${
-                        beschikbaarheidKlassen(
-                          beschikbaarheid,
-                        )
-                      } ${
-                        kanToevoegen
-                          ? "hover:shadow-sm"
-                          : "cursor-not-allowed opacity-70"
-                      }`}
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-slate-900">
-                          {volledigeNaam(
-                            medewerker,
-                          )}
-                        </p>
-
-                        {medewerker.personeelsnummer && (
-                          <p className="mt-1 text-xs text-slate-500">
-                            Personeelsnummer:{" "}
-                            {
-                              medewerker.personeelsnummer
-                            }
-                          </p>
-                        )}
-
-                        {medewerker.tags &&
-                          medewerker.tags.length >
-                            0 && (
-                            <div className="mt-2 flex flex-wrap gap-1">
-                              {medewerker.tags.map(
-                                (tag) => (
-                                  <span
-                                    key={tag.id}
-                                    className="rounded-md bg-white/70 px-2 py-0.5 text-xs text-slate-600"
-                                  >
-                                    {tag.naam}
-                                  </span>
-                                ),
-                              )}
-                            </div>
-                          )}
-                      </div>
-
-                      <div className="flex shrink-0 flex-col items-end gap-2">
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-semibold ${beschikbaarheidBadgeKlassen(
-                            beschikbaarheid,
-                          )}`}
-                        >
-                          {beschikbaarheidLabel(
-                            beschikbaarheid,
-                          )}
-                        </span>
-
-                        {bezettingBezig ===
-                        medewerker.id ? (
-                          <span className="text-xs font-medium text-slate-500">
-                            Toevoegen...
-                          </span>
-                        ) : kanToevoegen ? (
-                          <span className="text-xs font-semibold text-slate-600">
-                            + Toevoegen
-                          </span>
-                        ) : null}
-                      </div>
-                    </button>
-                  );
-                },
-              )}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {fout && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {fout}
-        </div>
-      )}
-
-      {succes && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {succes}
-        </div>
-      )}
-
-      <div className="flex justify-end">
+      <div className="flex justify-end border-t border-slate-200 pt-5">
         <button
           type="submit"
           disabled={opslaanBezig}
-          className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {opslaanBezig
             ? "Opslaan..."
-            : "Dienst opslaan"}
+            : "Wijzigingen opslaan"}
         </button>
       </div>
     </form>
+  );
+}
+
+function foutmeldingUitResponse(
+  data: unknown,
+  standaard: string,
+): string {
+  if (
+    !data ||
+    typeof data !== "object"
+  ) {
+    return standaard;
+  }
+
+  const waarde =
+    data as ApiFoutResponse;
+
+  return (
+    typeof waarde.fout ===
+      "string" &&
+    waarde.fout.trim()
+      ? waarde.fout
+      : standaard
   );
 }
