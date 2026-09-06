@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 type LogoProps = {
@@ -14,7 +15,7 @@ export default function Logo({
         aria-label="Clevers ERP"
         className="flex h-16 w-16 items-center justify-center transition-opacity hover:opacity-90"
       >
-        <img
+        <Image
           src="/ijs-logo-transparent.png"
           alt="Clevers"
           width={96}
@@ -32,7 +33,7 @@ export default function Logo({
       className="flex h-14 w-full items-center justify-start transition-opacity hover:opacity-90"
     >
       <div className="flex h-14 w-[190px] items-center justify-center overflow-hidden rounded-2xl bg-white">
-        <img
+        <Image
           src="/logo.png"
           alt="Clevers ERP"
           width={180}
