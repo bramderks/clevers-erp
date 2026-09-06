@@ -1,7 +1,5 @@
 import type { ReactNode } from "react";
 
-import Button from "./Button";
-
 type Props = {
   title: string;
   description: string;
