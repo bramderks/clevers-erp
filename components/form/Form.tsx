@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 import {
   FormProvider,
-  type DefaultValues,
   type FieldValues,
   type SubmitHandler,
   type UseFormReturn,
@@ -16,7 +15,9 @@ type Props<TFieldValues extends FieldValues> = {
   className?: string;
 };
 
-export default function Form<TFieldValues extends FieldValues>({
+export default function Form<
+  TFieldValues extends FieldValues
+>({
   form,
   onSubmit,
   children,
