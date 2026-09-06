@@ -1,33 +1,46 @@
 import Link from "next/link";
-import {
-  revalidatePath,
-} from "next/cache";
-import {
-  redirect,
-} from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { controleerVerloning } from "@/lib/verloning/controleerVerloning";
+import { verwerkVerloning } from "@/lib/verloning/verwerkVerloning";
 
 import VerwerkVerloningButton from "./VerwerkVerloningButton";
 
-function formatUren(
-  uren: number,
-) {
+type VerloningDetailPageProps = {
+  params: Promise<{
+    periodeId: string;
+  }>;
+};
+
+function formatUren(uren: number) {
   return uren
     .toFixed(2)
     .replace(".", ",");
 }
 
-function formatDatum(
-  datum: Date,
-) {
+function formatDatum(datum: Date) {
   return new Intl.DateTimeFormat(
     "nl-NL",
     {
       day: "2-digit",
       month: "long",
       year: "numeric",
+    },
+  ).format(datum);
+}
+
+function formatDatumTijd(datum: Date) {
+  return new Intl.DateTimeFormat(
+    "nl-NL",
+    {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     },
   ).format(datum);
 }
@@ -48,15 +61,12 @@ function formatNaam(
     .join(" ");
 }
 
-function statusGegevens(
-  status: string,
-) {
+function statusGegevens(status: string) {
   switch (status) {
     case "KLAAR":
       return {
         tekst: "Klaar",
-        klasse:
-          "bg-blue-50 text-blue-700",
+        klasse: "bg-blue-50 text-blue-700",
       };
 
     case "VERWERKT":
@@ -75,56 +85,12 @@ function statusGegevens(
   }
 }
 
-async function controleerEigenaar() {
-  const gebruiker =
-    await getCurrentUser();
-
-  if (!gebruiker) {
-    throw new Error(
-      "Je bent niet ingelogd.",
-    );
-  }
-
-  const organisaties =
-    gebruiker.organisaties.filter(
-      (relatie) =>
-        relatie.actief &&
-        relatie.organisatie.actief,
-    );
-
-  const isEigenaar =
-    organisaties.some(
-      (relatie) =>
-        relatie.rol.naam.toLowerCase() ===
-        "eigenaar",
-    );
-
-  if (!isEigenaar) {
-    throw new Error(
-      "Alleen de eigenaar kan een verloningsperiode verwerken.",
-    );
-  }
-
-  return {
-    gebruiker,
-    organisaties,
-  };
-}
-
-type VerloningDetailPageProps = {
-  params: Promise<{
-    periodeId: string;
-  }>;
-};
-
 export default async function VerloningDetailPage({
   params,
 }: VerloningDetailPageProps) {
-  const { periodeId } =
-    await params;
+  const { periodeId } = await params;
 
-  const gebruiker =
-    await getCurrentUser();
+  const gebruiker = await getCurrentUser();
 
   if (!gebruiker) {
     redirect("/login");
@@ -141,198 +107,99 @@ export default async function VerloningDetailPage({
     redirect("/dashboard");
   }
 
-  const isEigenaar =
-    organisaties.some(
-      (relatie) =>
-        relatie.rol.naam.toLowerCase() ===
-        "eigenaar",
-    );
+  const isEigenaar = organisaties.some(
+    (relatie) =>
+      relatie.rol.naam
+        .trim()
+        .toLowerCase() ===
+      "eigenaar",
+  );
 
   if (!isEigenaar) {
     redirect("/dashboard");
   }
 
+  const organisatieIds = organisaties.map(
+    (relatie) => relatie.organisatieId,
+  );
+
   const periode =
-    await prisma.verloningsPeriode.findUnique(
-      {
-        where: {
-          id: periodeId,
-        },
+    await prisma.verloningsPeriode.findUnique({
+      where: {
+        id: periodeId,
+      },
 
-        include: {
-          regels: {
-            include: {
-              medewerker: {
-                select: {
-                  id: true,
-                  voornaam: true,
-                  tussenvoegsel: true,
-                  achternaam: true,
-                  personeelsnummer: true,
-                  actief: true,
-                },
+      include: {
+        regels: {
+          where: {
+            vestiging: {
+              organisatieId: {
+                in: organisatieIds,
               },
+            },
+          },
 
-              vestiging: {
-                select: {
-                  id: true,
-                  naam: true,
-                  organisatieId: true,
-                },
+          include: {
+            medewerker: {
+              select: {
+                id: true,
+                voornaam: true,
+                tussenvoegsel: true,
+                achternaam: true,
+                personeelsnummer: true,
+                actief: true,
               },
             },
 
-            orderBy: [
-              {
-                medewerkerNaam: "asc",
+            vestiging: {
+              select: {
+                id: true,
+                naam: true,
+                organisatieId: true,
               },
-              {
-                vestiging: {
-                  naam: "asc",
-                },
-              },
-            ],
+            },
           },
+
+          orderBy: [
+            {
+              medewerkerNaam: "asc",
+            },
+            {
+              vestiging: {
+                naam: "asc",
+              },
+            },
+          ],
         },
-      },
-    );
 
-  if (!periode) {
-    redirect("/verloning");
-  }
-
-  const organisatieIds =
-    organisaties.map(
-      (relatie) =>
-        relatie.organisatieId,
-    );
-
-  const heeftToegang =
-    periode.regels.every(
-      (regel) =>
-        organisatieIds.includes(
-          regel.vestiging.organisatieId,
-        ),
-    );
-
-  if (!heeftToegang) {
-    redirect("/verloning");
-  }
-
-  async function verwerkVerloning() {
-    "use server";
-
-    const {
-      gebruiker: huidigeGebruiker,
-      organisaties: huidigeOrganisaties,
-    } = await controleerEigenaar();
-
-    const huidigeOrganisatieIds =
-      huidigeOrganisaties.map(
-        (relatie) =>
-          relatie.organisatieId,
-      );
-
-    const huidigePeriode =
-      await prisma.verloningsPeriode.findUnique(
-        {
-          where: {
-            id: periodeId,
+        controles: {
+          orderBy: {
+            medewerkerId: "asc",
           },
 
           select: {
             id: true,
+            medewerkerId: true,
             status: true,
-
-            regels: {
-              select: {
-                vestiging: {
-                  select: {
-                    organisatieId: true,
-                  },
-                },
-              },
-            },
+            gecontroleerdOp: true,
+            automatischAkkoordOp: true,
           },
         },
-      );
-
-    if (!huidigePeriode) {
-      throw new Error(
-        "De verloningsperiode bestaat niet.",
-      );
-    }
-
-    const heeftToegangTotPeriode =
-      huidigePeriode.regels.every(
-        (regel) =>
-          huidigeOrganisatieIds.includes(
-            regel.vestiging.organisatieId,
-          ),
-      );
-
-    if (!heeftToegangTotPeriode) {
-      throw new Error(
-        "Je hebt geen toegang tot deze verloningsperiode.",
-      );
-    }
-
-    if (
-      huidigePeriode.status ===
-      "VERWERKT"
-    ) {
-      throw new Error(
-        "Deze verloningsperiode is al verwerkt.",
-      );
-    }
-
-    if (
-      huidigePeriode.status !==
-      "KLAAR"
-    ) {
-      throw new Error(
-        "Alleen een verloningsperiode met status KLAAR kan worden verwerkt.",
-      );
-    }
-
-    await prisma.verloningsPeriode.update(
-      {
-        where: {
-          id: huidigePeriode.id,
-        },
-
-        data: {
-          status: "VERWERKT",
-
-          gecontroleerdDoorId:
-            huidigeGebruiker.id,
-
-          gecontroleerdOp:
-            new Date(),
-        },
       },
-    );
+    });
 
-    revalidatePath("/verloning");
-
-    revalidatePath(
-      `/verloning/${periodeId}`,
-    );
-
-    revalidatePath("/dashboard");
+  if (!periode || periode.regels.length === 0) {
+    redirect("/verloning");
   }
 
-  const maandFormatter =
+  const periodeNaam =
     new Intl.DateTimeFormat(
       "nl-NL",
       {
         month: "long",
         year: "numeric",
       },
-    );
-
-  const periodeNaam =
-    maandFormatter.format(
+    ).format(
       new Date(
         periode.jaar,
         periode.maand - 1,
@@ -340,39 +207,98 @@ export default async function VerloningDetailPage({
       ),
     );
 
-  const status =
-    statusGegevens(
-      periode.status,
-    );
+  const status = statusGegevens(
+    periode.status,
+  );
 
   const totaalMedewerkers =
     new Set(
       periode.regels.map(
-        (regel) =>
-          regel.medewerkerId,
+        (regel) => regel.medewerkerId,
       ),
     ).size;
 
-  const totaalRegels =
-    periode.regels.length;
+  const totaalRegels = periode.regels.length;
 
   const totaalDagen =
     periode.regels.reduce(
       (totaal, regel) =>
-        totaal +
-        regel.gewerkteDagen,
+        totaal + regel.gewerkteDagen,
       0,
     );
 
   const totaalUren =
     periode.regels.reduce(
       (totaal, regel) =>
-        totaal +
-        Number(
-          regel.gewerkteUren,
-        ),
+        totaal + Number(regel.gewerkteUren),
       0,
     );
+
+  const controlePerMedewerker =
+    new Map(
+      periode.controles.map((controle) => [
+        controle.medewerkerId,
+        controle,
+      ]),
+    );
+
+  const nu = new Date();
+
+  const controleGestart =
+    periode.controleStart !== null &&
+    nu >= periode.controleStart;
+
+  const controleVerlopen =
+    periode.controleDeadline !== null &&
+    nu > periode.controleDeadline;
+
+  const eigenaarGecontroleerd =
+    periode.gecontroleerdDoorId !== null &&
+    periode.gecontroleerdOp !== null;
+
+  const controleAantal = periode.controles.length;
+
+  const akkoordAantal =
+    periode.controles.filter(
+      (controle) =>
+        controle.status === "AKKOORD" ||
+        controle.status ===
+          "AUTOMATISCH_AKKOORD",
+    ).length;
+
+  const openAantal =
+    periode.controles.filter(
+      (controle) =>
+        controle.status === "OPEN",
+    ).length;
+
+  async function controleerPeriode() {
+    "use server";
+
+    await controleerVerloning(
+      periodeId,
+    );
+
+    revalidatePath(
+      `/verloning/${periodeId}`,
+    );
+    revalidatePath("/verloning");
+    revalidatePath("/dashboard");
+  }
+
+  async function verwerkPeriode() {
+    "use server";
+
+    await verwerkVerloning(
+      periodeId,
+    );
+
+    revalidatePath(
+      `/verloning/${periodeId}`,
+    );
+    revalidatePath("/verloning");
+    revalidatePath("/dashboard");
+  }
 
   return (
     <main className="space-y-8">
@@ -402,8 +328,8 @@ export default async function VerloningDetailPage({
 
           <p className="mt-2 text-sm text-slate-600">
             Overzicht van de definitief
-            geregistreerde gewerkte uren
-            voor deze verloningsperiode.
+            geregistreerde gewerkte uren voor
+            deze verloningsperiode.
           </p>
         </div>
 
@@ -414,15 +340,11 @@ export default async function VerloningDetailPage({
 
           <p className="mt-1 text-sm font-semibold text-slate-900">
             {formatDatum(
-              new Date(
-                periode.periodeStart,
-              ),
+              new Date(periode.periodeStart),
             )}{" "}
             t/m{" "}
             {formatDatum(
-              new Date(
-                periode.periodeEinde,
-              ),
+              new Date(periode.periodeEinde),
             )}
           </p>
         </div>
@@ -433,7 +355,6 @@ export default async function VerloningDetailPage({
           <p className="text-sm text-slate-500">
             Medewerkers
           </p>
-
           <p className="mt-2 text-3xl font-bold text-slate-900">
             {totaalMedewerkers}
           </p>
@@ -443,7 +364,6 @@ export default async function VerloningDetailPage({
           <p className="text-sm text-slate-500">
             Verloningsregels
           </p>
-
           <p className="mt-2 text-3xl font-bold text-slate-900">
             {totaalRegels}
           </p>
@@ -453,7 +373,6 @@ export default async function VerloningDetailPage({
           <p className="text-sm text-slate-500">
             Gewerkte dagen
           </p>
-
           <p className="mt-2 text-3xl font-bold text-slate-900">
             {totaalDagen}
           </p>
@@ -463,13 +382,134 @@ export default async function VerloningDetailPage({
           <p className="text-sm text-slate-500">
             Gewerkte uren
           </p>
-
           <p className="mt-2 text-3xl font-bold text-slate-900">
-            {formatUren(
-              totaalUren,
-            )}
+            {formatUren(totaalUren)}
           </p>
         </div>
+      </section>
+
+      <section className="rounded-xl border bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h2 className="font-semibold text-slate-900">
+              Controleperiode
+            </h2>
+
+            {periode.controleStart &&
+              periode.controleDeadline ? (
+              <p className="mt-1 text-sm text-slate-500">
+                {formatDatumTijd(
+                  new Date(
+                    periode.controleStart,
+                  ),
+                )}{" "}
+                t/m{" "}
+                {formatDatumTijd(
+                  new Date(
+                    periode.controleDeadline,
+                  ),
+                )}
+              </p>
+            ) : (
+              <p className="mt-1 text-sm text-red-600">
+                Voor deze periode is geen
+                controleperiode ingesteld.
+              </p>
+            )}
+          </div>
+
+          <div className="text-sm text-slate-600">
+            <span className="font-semibold text-slate-900">
+              {akkoordAantal}
+            </span>{" "}
+            van {controleAantal} akkoord
+            {openAantal > 0 && (
+              <span className="ml-2 text-amber-700">
+                · {openAantal} open
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-3">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-xs text-slate-500">
+              Controle gestart
+            </p>
+            <p className="mt-1 font-semibold text-slate-900">
+              {controleGestart
+                ? "Ja"
+                : "Nog niet"}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-xs text-slate-500">
+              Deadline
+            </p>
+            <p className="mt-1 font-semibold text-slate-900">
+              {controleVerlopen
+                ? "Verlopen"
+                : "Open"}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-xs text-slate-500">
+              Eigenaarcontrole
+            </p>
+            <p className="mt-1 font-semibold text-slate-900">
+              {eigenaarGecontroleerd
+                ? "Gecontroleerd"
+                : "Nog niet gecontroleerd"}
+            </p>
+          </div>
+        </div>
+
+        {periode.status === "KLAAR" &&
+          !controleVerlopen &&
+          !eigenaarGecontroleerd && (
+          <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4">
+            <p className="font-medium text-blue-900">
+              Controle door eigenaar
+            </p>
+            <p className="mt-1 text-sm text-blue-800">
+              Controleer de volledige
+              verloningsperiode tijdens het
+              controlevenster. Daarna wordt de
+              periode pas definitief verwerkt.
+            </p>
+
+            <form
+              action={controleerPeriode}
+              className="mt-4"
+            >
+              <button
+                type="submit"
+                className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+              >
+                Verloning controleren
+              </button>
+            </form>
+          </div>
+        )}
+
+        {eigenaarGecontroleerd && (
+          <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+            <p className="font-medium text-emerald-900">
+              Volledige verloningsperiode
+              gecontroleerd.
+            </p>
+            <p className="mt-1 text-sm text-emerald-800">
+              Gecontroleerd op{" "}
+              {formatDatumTijd(
+                new Date(
+                  periode.gecontroleerdOp!,
+                ),
+              )}
+            </p>
+          </div>
+        )}
       </section>
 
       <section className="overflow-hidden rounded-xl border bg-white shadow-sm">
@@ -478,14 +518,12 @@ export default async function VerloningDetailPage({
             <h2 className="font-semibold text-slate-900">
               Medewerkers
             </h2>
-
             <p className="mt-1 text-sm text-slate-500">
-              Overzicht van alle medewerkers
-              en vestigingen binnen deze
+              Overzicht van alle medewerkers en
+              vestigingen binnen deze
               verloningsperiode.
             </p>
           </div>
-
           <span className="text-sm text-slate-500">
             {totaalRegels}{" "}
             {totaalRegels === 1
@@ -494,94 +532,133 @@ export default async function VerloningDetailPage({
           </span>
         </div>
 
-        {periode.regels.length === 0 ? (
-          <div className="px-6 py-12 text-center">
-            <p className="font-medium text-slate-900">
-              Geen verloningsregels
-            </p>
+        <div className="divide-y divide-slate-100">
+          {periode.regels.map((regel) => {
+            const controle =
+              controlePerMedewerker.get(
+                regel.medewerkerId,
+              );
 
-            <p className="mt-1 text-sm text-slate-500">
-              Voor deze periode zijn nog geen
-              medewerkers opgenomen.
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {periode.regels.map(
-              (regel) => (
-                <div
-                  key={regel.id}
-                  className="px-6 py-5"
-                >
-                  <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="font-semibold text-slate-900">
-                          {regel.medewerkerNaam ||
-                            formatNaam(
-                              regel.medewerker,
-                            )}
-                        </h3>
+            const controleStatus =
+              controle?.status ??
+              "OPEN";
 
-                        {regel.medewerker
-                          .personeelsnummer && (
-                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                            {
-                              regel.medewerker
-                                .personeelsnummer
-                            }
-                          </span>
-                        )}
+            const controleTekst =
+              controleStatus === "AKKOORD"
+                ? "Akkoord"
+                : controleStatus ===
+                    "AUTOMATISCH_AKKOORD"
+                  ? "Automatisch akkoord"
+                  : "Open – controleren";
 
-                        {!regel.medewerker
-                          .actief && (
-                          <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
-                            Niet actief
-                          </span>
-                        )}
-                      </div>
+            const controleKlasse =
+              controleStatus === "AKKOORD"
+                ? "bg-emerald-50 text-emerald-700"
+                : controleStatus ===
+                    "AUTOMATISCH_AKKOORD"
+                  ? "bg-blue-50 text-blue-700"
+                  : "bg-amber-50 text-amber-700";
 
-                      <p className="mt-2 text-sm text-slate-500">
-                        {
-                          regel.vestiging
-                            .naam
-                        }
+            return (
+              <div
+                key={regel.id}
+                className="px-6 py-5"
+              >
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h3 className="font-semibold text-slate-900">
+                        {regel.medewerkerNaam ||
+                          formatNaam(
+                            regel.medewerker,
+                          )}
+                      </h3>
+
+                      {regel.medewerker
+                        .personeelsnummer && (
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                          {
+                            regel.medewerker
+                              .personeelsnummer
+                          }
+                        </span>
+                      )}
+
+                      {!regel.medewerker
+                        .actief && (
+                        <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+                          Niet actief
+                        </span>
+                      )}
+
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-medium ${controleKlasse}`}
+                      >
+                        {controleTekst}
+                      </span>
+                    </div>
+
+                    <p className="mt-2 text-sm text-slate-500">
+                      {regel.vestiging.naam}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-8 text-sm sm:min-w-[280px]">
+                    <div>
+                      <p className="text-xs text-slate-500">
+                        Gewerkte dagen
+                      </p>
+                      <p className="mt-1 text-lg font-semibold text-slate-900">
+                        {regel.gewerkteDagen}
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-8 text-sm sm:min-w-[280px]">
-                      <div>
-                        <p className="text-xs text-slate-500">
-                          Gewerkte dagen
-                        </p>
-
-                        <p className="mt-1 text-lg font-semibold text-slate-900">
-                          {
-                            regel.gewerkteDagen
-                          }
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-xs text-slate-500">
-                          Gewerkte uren
-                        </p>
-
-                        <p className="mt-1 text-lg font-semibold text-slate-900">
-                          {formatUren(
-                            Number(
-                              regel.gewerkteUren,
-                            ),
-                          )}
-                        </p>
-                      </div>
+                    <div>
+                      <p className="text-xs text-slate-500">
+                        Gewerkte uren
+                      </p>
+                      <p className="mt-1 text-lg font-semibold text-slate-900">
+                        {formatUren(
+                          Number(
+                            regel.gewerkteUren,
+                          ),
+                        )}
+                      </p>
                     </div>
                   </div>
                 </div>
-              ),
-            )}
-          </div>
-        )}
+
+                {controle &&
+                  controleStatus ===
+                    "AKKOORD" &&
+                  controle.gecontroleerdOp && (
+                  <p className="mt-3 text-xs text-emerald-700">
+                    Medewerker akkoord op{" "}
+                    {formatDatumTijd(
+                      new Date(
+                        controle.gecontroleerdOp,
+                      ),
+                    )}
+                  </p>
+                )}
+
+                {controle &&
+                  controleStatus ===
+                    "AUTOMATISCH_AKKOORD" &&
+                  controle.automatischAkkoordOp && (
+                  <p className="mt-3 text-xs text-blue-700">
+                    Automatisch akkoord op{" "}
+                    {formatDatumTijd(
+                      new Date(
+                        controle.automatischAkkoordOp,
+                      ),
+                    )}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
 
         <div className="border-t bg-slate-50 px-6 py-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -589,7 +666,6 @@ export default async function VerloningDetailPage({
               <p className="text-sm font-semibold text-slate-900">
                 Totaal verloningsperiode
               </p>
-
               <p className="mt-1 text-sm text-slate-500">
                 Totaal van alle definitief
                 geregistreerde uren.
@@ -601,7 +677,6 @@ export default async function VerloningDetailPage({
                 <p className="text-xs text-slate-500">
                   Dagen
                 </p>
-
                 <p className="mt-1 font-semibold text-slate-900">
                   {totaalDagen}
                 </p>
@@ -611,11 +686,8 @@ export default async function VerloningDetailPage({
                 <p className="text-xs text-slate-500">
                   Uren
                 </p>
-
                 <p className="mt-1 font-semibold text-slate-900">
-                  {formatUren(
-                    totaalUren,
-                  )}
+                  {formatUren(totaalUren)}
                 </p>
               </div>
             </div>
@@ -628,8 +700,7 @@ export default async function VerloningDetailPage({
           Verwerking
         </h2>
 
-        {periode.status ===
-        "VERWERKT" ? (
+        {periode.status === "VERWERKT" ? (
           <div className="mt-4 rounded-lg bg-emerald-50 px-4 py-4">
             <p className="font-medium text-emerald-800">
               Deze verloningsperiode is verwerkt.
@@ -638,7 +709,7 @@ export default async function VerloningDetailPage({
             {periode.gecontroleerdOp && (
               <p className="mt-1 text-sm text-emerald-700">
                 Verwerkt op{" "}
-                {formatDatum(
+                {formatDatumTijd(
                   new Date(
                     periode.gecontroleerdOp,
                   ),
@@ -646,34 +717,47 @@ export default async function VerloningDetailPage({
               </p>
             )}
           </div>
-        ) : periode.status ===
-          "KLAAR" ? (
+        ) : periode.status === "KLAAR" ? (
           <div className="mt-4">
-            <div className="rounded-lg bg-blue-50 px-4 py-4">
-              <p className="font-medium text-blue-800">
-                Deze verloningsperiode is klaar
-                voor verwerking.
-              </p>
+            {controleVerlopen &&
+            eigenaarGecontroleerd ? (
+              <>
+                <div className="rounded-lg bg-blue-50 px-4 py-4">
+                  <p className="font-medium text-blue-800">
+                    De controleperiode is verlopen.
+                  </p>
+                  <p className="mt-1 text-sm text-blue-700">
+                    De verloning kan nu definitief
+                    worden verwerkt.
+                  </p>
+                </div>
 
-              <p className="mt-1 text-sm text-blue-700">
-                Controleer het overzicht voordat
-                de periode definitief wordt
-                verwerkt.
-              </p>
-            </div>
-
-            <VerwerkVerloningButton
-              verwerkAction={
-                verwerkVerloning
-              }
-            />
+                <VerwerkVerloningButton
+                  verwerkAction={
+                    verwerkPeriode
+                  }
+                />
+              </>
+            ) : (
+              <div className="rounded-lg bg-slate-50 px-4 py-4">
+                <p className="font-medium text-slate-800">
+                  Deze periode kan nog niet
+                  definitief worden verwerkt.
+                </p>
+                <p className="mt-1 text-sm text-slate-600">
+                  Eerst moet de controleperiode
+                  verlopen en de eigenaar moet de
+                  volledige periode hebben
+                  gecontroleerd.
+                </p>
+              </div>
+            )}
           </div>
         ) : (
           <div className="mt-4 rounded-lg bg-slate-50 px-4 py-4">
             <p className="font-medium text-slate-800">
               Deze periode wordt nog opgebouwd.
             </p>
-
             <p className="mt-1 text-sm text-slate-600">
               Zodra alle gegevens volledig zijn,
               kan de periode worden verwerkt.
