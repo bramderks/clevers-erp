@@ -211,25 +211,12 @@ export async function verwerkVerloning(
     );
   }
 
-  for (
-    const medewerkerId of verwachteMedewerkerIds
-  ) {
-    const status =
-      controlePerMedewerker.get(
-        medewerkerId,
-      );
-
-    if (
-      status !== "AKKOORD" &&
-      status !==
-        "AUTOMATISCH_AKKOORD"
-    ) {
-      throw new Error(
-        "Niet alle medewerkercontroles zijn afgerond.",
-      );
-    }
-  }
-
+  /*
+   * Na de deadline worden nog openstaande medewerkercontroles
+   * automatisch akkoord gezet. Dit gebeurt vóór de definitieve
+   * validatie, zodat medewerkers die niet reageren de verwerking
+   * van de volledige periode niet blokkeren.
+   */
   const openControles =
     periode.controles.filter(
       (controle) =>
@@ -237,12 +224,6 @@ export async function verwerkVerloning(
         "OPEN",
     );
 
-  /*
-   * Een OPEN controle kan formeel niet meer voorkomen nadat de
-   * deadline is verstreken zonder dat deze automatisch akkoord
-   * is gezet. Toch vangen we dit defensief af, zodat een periode
-   * nooit wordt verwerkt op basis van een onvolledige controle.
-   */
   if (openControles.length > 0) {
     await prisma.verloningsControle.updateMany(
       {
@@ -259,21 +240,57 @@ export async function verwerkVerloning(
         },
       },
     );
+  }
 
-    const resterendeOpenControles =
-      await prisma.verloningsControle.count(
-        {
-          where: {
-            verloningsPeriodeId:
-              periode.id,
-            status: "OPEN",
-          },
+  const actueleControles =
+    await prisma.verloningsControle.findMany(
+      {
+        where: {
+          verloningsPeriodeId:
+            periode.id,
         },
+
+        select: {
+          medewerkerId: true,
+          status: true,
+        },
+      },
+    );
+
+  const actueleControlePerMedewerker =
+    new Map(
+      actueleControles.map(
+        (controle) => [
+          controle.medewerkerId,
+          controle.status,
+        ],
+      ),
+    );
+
+  if (
+    actueleControlePerMedewerker.size !==
+    verwachteMedewerkerIds.size
+  ) {
+    throw new Error(
+      "Niet voor iedere medewerker in deze verloningsperiode is precies één controle-record aanwezig.",
+    );
+  }
+
+  for (
+    const medewerkerId of verwachteMedewerkerIds
+  ) {
+    const status =
+      actueleControlePerMedewerker.get(
+        medewerkerId,
       );
 
-    if (resterendeOpenControles > 0) {
+    if (
+      status !== "AKKOORD" &&
+      status !==
+        "AUTOMATISCH_AKKOORD"
+    ) {
       throw new Error(
-        "Niet alle open medewerkercontroles konden automatisch worden afgerond.",
+        "Niet alle medewerkercontroles zijn afgerond.",
       );
     }
   }

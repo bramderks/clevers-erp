@@ -59,6 +59,13 @@ export const navigation = [
         icon: WalletCards,
         medewerkerOnly: true,
       },
+
+      {
+        title: "Verloning",
+        href: "/verloning",
+        icon: WalletCards,
+        ownerOnly: true,
+      },
     ],
   },
 
