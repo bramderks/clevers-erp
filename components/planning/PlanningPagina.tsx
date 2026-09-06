@@ -104,24 +104,23 @@ export default function PlanningPagina({
     }, [vestigingId]);
 
   useEffect(() => {
-    const toegestaneVestiging =
+    if (
+      vestigingId &&
       vestigingen.some(
         (vestiging) =>
           vestiging.id === vestigingId,
-      );
-
-    if (
-      vestigingId &&
-      toegestaneVestiging
+      )
     ) {
       return;
     }
+
+    setVestigingId(
+      vestigingen[0]?.id ?? "",
+    );
   }, [vestigingen, vestigingId]);
 
   useEffect(() => {
     if (!vestigingId) {
-      setWeken([]);
-      setLaden(false);
       return;
     }
 
