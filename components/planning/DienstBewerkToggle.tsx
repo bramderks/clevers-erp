@@ -4,8 +4,10 @@ import { useState } from "react";
 
 import DienstBewerkForm from "@/components/planning/DienstBewerkForm";
 
+import type { Dienst } from "@/types/planning";
+
 type DienstBewerkToggleProps = {
-  dienst: any;
+  dienst: Dienst;
   vestigingId: string;
 };
 
@@ -21,7 +23,9 @@ export default function DienstBewerkToggle({
       <div className="flex justify-end">
         <button
           type="button"
-          onClick={() => setBewerken(true)}
+          onClick={() =>
+            setBewerken(true)
+          }
           className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
         >
           Dienst wijzigen
@@ -45,7 +49,9 @@ export default function DienstBewerkToggle({
 
         <button
           type="button"
-          onClick={() => setBewerken(false)}
+          onClick={() =>
+            setBewerken(false)
+          }
           className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
         >
           Annuleren
