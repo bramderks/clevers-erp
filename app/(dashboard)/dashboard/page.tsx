@@ -453,6 +453,36 @@ export default async function DashboardPage() {
         },
       });
 
+    const laatsteEigenVerloning =
+      await prisma.verloningsPeriode.findFirst({
+        where: {
+          regels: {
+            some: {
+              medewerkerId,
+            },
+          },
+        },
+        orderBy: [
+          { jaar: "desc" },
+          { maand: "desc" },
+        ],
+        select: {
+          id: true,
+          jaar: true,
+          maand: true,
+          status: true,
+          regels: {
+            where: {
+              medewerkerId,
+            },
+            select: {
+              gewerkteDagen: true,
+              gewerkteUren: true,
+            },
+          },
+        },
+      });
+
     if (openVerloningsControles > 0) {
       taken.unshift({
         id: "verloning-controleren",
@@ -464,9 +494,70 @@ export default async function DashboardPage() {
       });
     }
 
+    const eigenVerloningDagen =
+      laatsteEigenVerloning?.regels.reduce(
+        (totaal, regel) =>
+          totaal + regel.gewerkteDagen,
+        0,
+      ) ?? 0;
+
+    const eigenVerloningUren =
+      laatsteEigenVerloning?.regels.reduce(
+        (totaal, regel) =>
+          totaal + Number(regel.gewerkteUren),
+        0,
+      ) ?? 0;
+
     return (
       <main className="space-y-8">
         <PageHeader title="Dashboard" />
+
+        {laatsteEigenVerloning && (
+          <section>
+            <Card
+              title="Mijn verloning"
+              description="Overzicht van jouw meest recente gewerkte dagen en uren"
+            >
+              <a
+                href="/mijn-verloning"
+                className="grid gap-4 rounded-xl border border-slate-200 bg-slate-50 p-5 transition hover:bg-slate-100 sm:grid-cols-3"
+              >
+                <div>
+                  <p className="text-xs text-slate-500">
+                    Gewerkte dagen
+                  </p>
+                  <p className="mt-1 font-semibold text-slate-900">
+                    {eigenVerloningDagen}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-slate-500">
+                    Gewerkte uren
+                  </p>
+                  <p className="mt-1 font-semibold text-slate-900">
+                    {eigenVerloningUren
+                      .toFixed(2)
+                      .replace(".", ",")}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-slate-500">
+                    Status
+                  </p>
+                  <p className="mt-1 font-semibold text-slate-900">
+                    {laatsteEigenVerloning.status === "VERWERKT"
+                      ? "Verwerkt"
+                      : laatsteEigenVerloning.status === "KLAAR"
+                        ? "Klaar voor controle"
+                        : "In opbouw"}
+                  </p>
+                </div>
+              </a>
+            </Card>
+          </section>
+        )}
 
         <section>
           <Card
