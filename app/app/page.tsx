@@ -45,9 +45,6 @@ export default async function MedewerkerAppPage() {
     prisma.dienstBezetting.findMany({
       where: {
         medewerkerId,
-        status: {
-          in: ["GEPLAND", "BEVESTIGD"],
-        },
         dienst: {
           datum: {
             gte: vandaag,
