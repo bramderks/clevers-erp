@@ -3,6 +3,7 @@ import {
   Users,
   CalendarDays,
   ClipboardClock,
+  WalletCards,
   Package,
   Boxes,
   ShoppingCart,
@@ -49,6 +50,13 @@ export const navigation = [
         href: "/profiel/beschikbaarheid",
         icon: ClipboardClock,
         permission: permissions.planning.view,
+        medewerkerOnly: true,
+      },
+
+      {
+        title: "Mijn verloning",
+        href: "/mijn-verloning",
+        icon: WalletCards,
         medewerkerOnly: true,
       },
     ],
