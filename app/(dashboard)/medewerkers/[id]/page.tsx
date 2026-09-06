@@ -11,11 +11,16 @@ import {
 
 import { prisma } from "@/lib/prisma";
 
-import { getCurrentUser } from "@/lib/auth";
+import {
+  getCurrentUser,
+} from "@/lib/auth";
+
 import { permissions } from "@/lib/permissions";
 import { vereisPermission } from "@/lib/requirePermission";
 
-import { medewerkerService } from "@/lib/services/medewerker.service";
+import {
+  medewerkerService,
+} from "@/lib/services/medewerker.service";
 
 import PageLayout from "@/components/ui/PageLayout";
 import PageToolbar from "@/components/ui/PageToolbar";
@@ -24,24 +29,66 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 
 import MedewerkerTabBewerken from "@/components/medewerkers/MedewerkerTabBewerken";
+
 import BeschikbaarheidPanel from "@/components/medewerkers/beschikbaarheid/components/BeschikbaarheidPanel";
 
+/*
+ * ============================================================
+ * TYPES
+ * ============================================================
+ */
+
 type PageProps = {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string; edit?: string }>;
+  params: Promise<{
+    id: string;
+  }>;
+
+  searchParams: Promise<{
+    tab?: string;
+    edit?: string;
+  }>;
 };
 
+/*
+ * ============================================================
+ * TABBLADEN
+ * ============================================================
+ */
+
 const TABS = [
-  { id: "algemeen", label: "Algemeen" },
-  { id: "contract", label: "Contract" },
-  { id: "vestigingen", label: "Vestigingen" },
-  { id: "beschikbaarheid", label: "Beschikbaarheid" },
-  { id: "vakantie", label: "Vakantie" },
-  { id: "planning", label: "Planning" },
-  { id: "verloning", label: "Verloning" },
+  {
+    id: "algemeen",
+    label: "Algemeen",
+  },
+  {
+    id: "contract",
+    label: "Contract",
+  },
+  {
+    id: "vestigingen",
+    label: "Vestigingen",
+  },
+  {
+    id: "beschikbaarheid",
+    label: "Beschikbaarheid",
+  },
+  {
+    id: "vakantie",
+    label: "Vakantie",
+  },
+  {
+    id: "planning",
+    label: "Planning",
+  },
+  {
+    id: "verloning",
+    label: "Verloning",
+  },
 ] as const;
 
-type TabId = (typeof TABS)[number]["id"];
+type TabId =
+  (typeof TABS)[number]["id"];
+
 type EditSection =
   | "algemeen"
   | "contract"
@@ -56,24 +103,48 @@ type MaandOverzicht = {
   uren: number;
 };
 
-function isTabId(value: string | undefined): value is TabId {
-  return value !== undefined && TABS.some((tab) => tab.id === value);
+/*
+ * ============================================================
+ * HELPERS
+ * ============================================================
+ */
+
+function isTabId(
+  value: string | undefined,
+): value is TabId {
+  return (
+    value !== undefined &&
+    TABS.some(
+      (tab) =>
+        tab.id === value,
+    )
+  );
 }
 
-function getEditSection(tab: TabId): EditSection | null {
+function getEditSection(
+  tab: TabId,
+): EditSection | null {
   switch (tab) {
     case "algemeen":
       return "algemeen";
+
     case "contract":
       return "contract";
+
     case "vestigingen":
       return "vestigingen";
+
     case "beschikbaarheid":
       return "beschikbaarheid";
+
     case "verloning":
       return "verloning";
+
     case "vakantie":
     case "planning":
+      return null;
+
+    default:
       return null;
   }
 }
@@ -91,84 +162,101 @@ function getMagTabBewerken(
   switch (tab) {
     case "algemeen":
       return rechten.magAlgemeenBewerken;
+
     case "contract":
       return rechten.magContractBewerken;
+
     case "vestigingen":
       return rechten.magVestigingenBewerken;
+
     case "beschikbaarheid":
       return rechten.magBeschikbaarheidBewerken;
+
     case "verloning":
       return rechten.magVerloningBewerken;
+
     case "vakantie":
     case "planning":
+      return false;
+
+    default:
       return false;
   }
 }
 
-function formatteerDatum(datum: Date | null | undefined) {
-  if (!datum) return "—";
-  return new Intl.DateTimeFormat("nl-NL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(new Date(datum));
+function formatteerDatum(
+  datum: Date | null | undefined,
+) {
+  if (!datum) {
+    return "—";
+  }
+
+  return new Intl.DateTimeFormat(
+    "nl-NL",
+    {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    },
+  ).format(
+    new Date(datum),
+  );
 }
 
-function formatteerDatumTijd(datum: Date | null | undefined) {
-  if (!datum) return "—";
-  return new Intl.DateTimeFormat("nl-NL", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(datum));
+function formatteerDatumTijd(
+  datum: Date | null | undefined,
+) {
+  if (!datum) {
+    return "—";
+  }
+
+  return new Intl.DateTimeFormat(
+    "nl-NL",
+    {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+  ).format(
+    new Date(datum),
+  );
 }
 
-function formatteerNaam(medewerker: {
-  voornaam: string;
-  tussenvoegsel: string | null;
-  achternaam: string;
-}) {
-  return [medewerker.voornaam, medewerker.tussenvoegsel, medewerker.achternaam]
+function formatteerNaam(
+  medewerker: {
+    voornaam: string;
+    tussenvoegsel: string | null;
+    achternaam: string;
+  },
+) {
+  return [
+    medewerker.voornaam,
+    medewerker.tussenvoegsel,
+    medewerker.achternaam,
+  ]
     .filter(Boolean)
     .join(" ");
 }
 
-function formatteerUren(uren: number) {
-  return Number.isInteger(uren)
-    ? `${uren} uur`
-    : `${uren.toFixed(2).replace(".", ",")} uur`;
+function formatteerUren(
+  uren: number,
+) {
+  if (Number.isInteger(uren)) {
+    return `${uren} uur`;
+  }
+
+  return `${uren
+    .toFixed(2)
+    .replace(".", ",")} uur`;
 }
 
-function vakantieStatusVariant(status: string) {
-  switch (status) {
-    case "GOEDGEKEURD":
-      return "success" as const;
-    case "AFGEWEZEN":
-      return "danger" as const;
-    case "GEANNULEERD":
-      return "default" as const;
-    case "AANGEVRAAGD":
-    default:
-      return "warning" as const;
-  }
-}
-
-function vakantieStatusLabel(status: string) {
-  switch (status) {
-    case "GOEDGEKEURD":
-      return "Goedgekeurd";
-    case "AFGEWEZEN":
-      return "Afgewezen";
-    case "GEANNULEERD":
-      return "Geannuleerd";
-    case "AANGEVRAAGD":
-      return "Aangevraagd";
-    default:
-      return status;
-  }
-}
+/*
+ * ============================================================
+ * KNOPPEN
+ * ============================================================
+ */
 
 function WijzigenKnop({
   href,
@@ -177,7 +265,10 @@ function WijzigenKnop({
   href: string;
   disabled?: boolean;
 }) {
-  if (disabled) return null;
+  if (disabled) {
+    return null;
+  }
+
   return (
     <Link href={href}>
       <Button>
@@ -188,222 +279,540 @@ function WijzigenKnop({
   );
 }
 
-function AnnuleerBewerkenKnop({ href }: { href: string }) {
+function AnnuleerBewerkenKnop({
+  href,
+}: {
+  href: string;
+}) {
   return (
     <Link href={href}>
-      <Button variant="secondary">Annuleren</Button>
+      <Button variant="secondary">
+        Annuleren
+      </Button>
     </Link>
   );
 }
+
+/*
+ * ============================================================
+ * VERLONING
+ * ============================================================
+ */
+
+function maakMaandOverzicht(
+  jaar: number,
+  urenregistraties: {
+    datum: Date;
+    gewerkteUren: unknown;
+  }[],
+): MaandOverzicht[] {
+  const maanden = [
+    "Januari",
+    "Februari",
+    "Maart",
+    "April",
+    "Mei",
+    "Juni",
+    "Juli",
+    "Augustus",
+    "September",
+    "Oktober",
+    "November",
+    "December",
+  ];
+
+  const overzicht =
+    maanden.map(
+      (
+        naam,
+        index,
+      ) => ({
+        maand: index + 1,
+        naam,
+        dagen: 0,
+        uren: 0,
+      }),
+    );
+
+  const gewerkteDagenPerMaand =
+    new Map<
+      number,
+      Set<string>
+    >();
+
+  for (
+    let maand = 1;
+    maand <= 12;
+    maand++
+  ) {
+    gewerkteDagenPerMaand.set(
+      maand,
+      new Set<string>(),
+    );
+  }
+
+  for (
+    const registratie of urenregistraties
+  ) {
+    const datum =
+      new Date(
+        registratie.datum,
+      );
+
+    if (
+      datum.getFullYear() !== jaar
+    ) {
+      continue;
+    }
+
+    const maand =
+      datum.getMonth() + 1;
+
+    const datumKey =
+      new Intl.DateTimeFormat(
+        "sv-SE",
+      ).format(
+        datum,
+      );
+
+    gewerkteDagenPerMaand
+      .get(maand)
+      ?.add(
+        datumKey,
+      );
+
+    const uren =
+      Number(
+        registratie.gewerkteUren,
+      );
+
+    if (
+      Number.isFinite(uren)
+    ) {
+      overzicht[
+        maand - 1
+      ].uren += uren;
+    }
+  }
+
+  for (
+    const item of overzicht
+  ) {
+    item.dagen =
+      gewerkteDagenPerMaand
+        .get(
+          item.maand,
+        )
+        ?.size ?? 0;
+
+    item.uren =
+      Math.round(
+        item.uren * 100,
+      ) / 100;
+  }
+
+  return overzicht;
+}
+
+/*
+ * ============================================================
+ * VAKANTIE
+ * ============================================================
+ */
+
+function vakantieStatusVariant(
+  status: string,
+) {
+  switch (status) {
+    case "GOEDGEKEURD":
+      return "success" as const;
+
+    case "AFGEWEZEN":
+      return "danger" as const;
+
+    case "GEANNULEERD":
+      return "default" as const;
+
+    case "AANGEVRAAGD":
+    default:
+      return "warning" as const;
+  }
+}
+
+function vakantieStatusLabel(
+  status: string,
+) {
+  switch (status) {
+    case "GOEDGEKEURD":
+      return "Goedgekeurd";
+
+    case "AFGEWEZEN":
+      return "Afgewezen";
+
+    case "GEANNULEERD":
+      return "Geannuleerd";
+
+    case "AANGEVRAAGD":
+      return "Aangevraagd";
+
+    default:
+      return status;
+  }
+}
+
+/*
+ * ============================================================
+ * PAGINA
+ * ============================================================
+ */
 
 export default async function MedewerkerPage({
   params,
   searchParams,
 }: PageProps) {
-  const { id } = await params;
-  const { tab, edit } = await searchParams;
+  const {
+    id,
+  } = await params;
 
-  const gebruiker = await getCurrentUser();
-  if (!gebruiker) redirect("/login");
+  const {
+    tab,
+    edit,
+  } = await searchParams;
 
-  const medewerker = await medewerkerService.getById(id);
+  const gebruiker =
+    await getCurrentUser();
 
-  const actieveRelaties = gebruiker.organisaties.filter(
-    (relatie) => relatie.actief && relatie.organisatie.actief,
-  );
-
-  const isEigenaar = actieveRelaties.some(
-    (relatie) => relatie.rol.naam.trim().toLowerCase() === "eigenaar",
-  );
-
-  const isEigenProfiel = gebruiker.medewerker?.id === medewerker.id;
-
-  if (!isEigenaar && !isEigenProfiel) {
-    await vereisPermission(permissions.medewerkers.view);
+  if (!gebruiker) {
+    redirect("/login");
   }
 
-  const actieveTab: TabId = isTabId(tab) ? tab : "algemeen";
+  const medewerker =
+    await medewerkerService.getById(
+      id,
+    );
 
-  const magAlgemeenBewerken = isEigenaar || isEigenProfiel;
-  const magContractBewerken = isEigenaar;
-  const magVestigingenBewerken = isEigenaar;
-  const magBeschikbaarheidBewerken = isEigenaar;
-  const magVerloningBewerken = isEigenaar;
+  const actieveRelaties =
+    gebruiker.organisaties.filter(
+      (relatie) =>
+        relatie.actief &&
+        relatie.organisatie.actief,
+    );
 
-  const magTabBewerken = getMagTabBewerken(actieveTab, {
-    magAlgemeenBewerken,
-    magContractBewerken,
-    magVestigingenBewerken,
-    magBeschikbaarheidBewerken,
-    magVerloningBewerken,
-  });
+  const isEigenaar =
+    actieveRelaties.some(
+      (relatie) =>
+        relatie.rol.naam
+          .trim()
+          .toLowerCase() ===
+        "eigenaar",
+    );
 
-  const editSection = getEditSection(actieveTab);
-  const isBewerken = edit === "1" && magTabBewerken && editSection !== null;
-  const volledigeNaam = formatteerNaam(medewerker);
+  const isEigenProfiel =
+    gebruiker.medewerker?.id ===
+    medewerker.id;
 
-  const beschikbareRollen = isEigenaar
-    ? await prisma.rol.findMany({
-        orderBy: { naam: "asc" },
-        select: { id: true, naam: true },
-      })
-    : [];
+  if (
+    !isEigenaar &&
+    !isEigenProfiel
+  ) {
+    await vereisPermission(
+      permissions.medewerkers.view,
+    );
+  }
 
-  const beschikbareTags = isEigenaar
-    ? await prisma.tag.findMany({
-        orderBy: { naam: "asc" },
-        select: { id: true, naam: true },
-      })
-    : [];
+  const actieveTab: TabId =
+    isTabId(tab)
+      ? tab
+      : "algemeen";
+
+  const magAlgemeenBewerken =
+    isEigenaar ||
+    isEigenProfiel;
+
+  const magContractBewerken =
+    isEigenaar;
+
+  const magVestigingenBewerken =
+    isEigenaar;
+
+  const magBeschikbaarheidBewerken =
+    isEigenaar;
+
+  const magVerloningBewerken =
+    isEigenaar;
+
+  const magTabBewerken =
+    getMagTabBewerken(
+      actieveTab,
+      {
+        magAlgemeenBewerken,
+        magContractBewerken,
+        magVestigingenBewerken,
+        magBeschikbaarheidBewerken,
+        magVerloningBewerken,
+      },
+    );
+
+  const editSection =
+    getEditSection(
+      actieveTab,
+    );
+
+  const isBewerken =
+    edit === "1" &&
+    magTabBewerken &&
+    editSection !== null;
+
+  const volledigeNaam =
+    formatteerNaam(
+      medewerker,
+    );
+
+  const beschikbareRollen =
+    isEigenaar
+      ? await prisma.rol.findMany({
+          orderBy: {
+            naam: "asc",
+          },
+          select: {
+            id: true,
+            naam: true,
+          },
+        })
+      : [];
+
+  const beschikbareTags =
+    isEigenaar
+      ? await prisma.tag.findMany({
+          orderBy: {
+            naam: "asc",
+          },
+          select: {
+            id: true,
+            naam: true,
+          },
+        })
+      : [];
 
   const medewerkerFormData = {
     id: medewerker.id,
-    personeelsnummer: medewerker.personeelsnummer,
-    aanhef: medewerker.aanhef,
-    voornaam: medewerker.voornaam,
-    tussenvoegsel: medewerker.tussenvoegsel,
-    achternaam: medewerker.achternaam,
-    roepnaam: medewerker.roepnaam,
-    geboortedatum: medewerker.geboortedatum,
-    email: medewerker.email,
-    telefoon: medewerker.telefoon,
-    contractType: medewerker.contractType ?? null,
-    contractUren: medewerker.contractUren != null ? medewerker.contractUren.toString() : null,
-    uurloon: medewerker.uurloon != null ? medewerker.uurloon.toString() : null,
-    datumInDienst: medewerker.datumInDienst,
-    datumUitDienst: medewerker.datumUitDienst,
-    vestigingen: medewerker.vestigingen.map((relatie) => ({
-      id: relatie.vestiging.id,
-      naam: relatie.vestiging.naam,
-    })),
-    hoofdvestigingId: medewerker.vestigingen.find((relatie) => relatie.hoofdvestiging)?.vestiging.id ?? null,
-    rollen: medewerker.rollen.map((relatie) => ({
-      id: relatie.rol.id,
-      naam: relatie.rol.naam,
-    })),
-    tags: medewerker.tags.map((relatie) => ({
-      id: relatie.tag.id,
-      naam: relatie.tag.naam,
-    })),
+    personeelsnummer:
+      medewerker.personeelsnummer,
+    aanhef:
+      medewerker.aanhef,
+    voornaam:
+      medewerker.voornaam,
+    tussenvoegsel:
+      medewerker.tussenvoegsel,
+    achternaam:
+      medewerker.achternaam,
+    roepnaam:
+      medewerker.roepnaam,
+    geboortedatum:
+      medewerker.geboortedatum,
+    email:
+      medewerker.email,
+    telefoon:
+      medewerker.telefoon,
+    contractType:
+      medewerker.contractType ??
+      null,
+    contractUren:
+      medewerker.contractUren != null
+        ? medewerker.contractUren.toString()
+        : null,
+    uurloon:
+      medewerker.uurloon != null
+        ? medewerker.uurloon.toString()
+        : null,
+    datumInDienst:
+      medewerker.datumInDienst,
+    datumUitDienst:
+      medewerker.datumUitDienst,
+    vestigingen:
+      medewerker.vestigingen.map(
+        (
+          medewerkerVestiging,
+        ) => ({
+          id:
+            medewerkerVestiging
+              .vestiging.id,
+          naam:
+            medewerkerVestiging
+              .vestiging.naam,
+        }),
+      ),
+    hoofdvestigingId:
+      medewerker.vestigingen.find(
+        (
+          medewerkerVestiging,
+        ) =>
+          medewerkerVestiging.hoofdvestiging,
+      )?.vestiging.id ?? null,
+    rollen:
+      medewerker.rollen.map(
+        (
+          medewerkerRol,
+        ) => ({
+          id:
+            medewerkerRol.rol.id,
+          naam:
+            medewerkerRol.rol.naam,
+        }),
+      ),
+    tags:
+      medewerker.tags.map(
+        (
+          medewerkerTag,
+        ) => ({
+          id:
+            medewerkerTag.tag.id,
+          naam:
+            medewerkerTag.tag.naam,
+        }),
+      ),
   };
 
-  const vestigingen = medewerker.vestigingen.map((relatie) => ({
-    id: relatie.vestiging.id,
-    naam: relatie.vestiging.naam,
-  }));
+  const vestigingen =
+    medewerker.vestigingen.map(
+      (
+        medewerkerVestiging,
+      ) => ({
+        id:
+          medewerkerVestiging
+            .vestiging.id,
+        naam:
+          medewerkerVestiging
+            .vestiging.naam,
+      }),
+    );
 
-  const vakantieAanvragen = await prisma.vakantieAanvraag.findMany({
-    where: { medewerkerId: medewerker.id },
-    orderBy: [{ startDatum: "asc" }, { aangevraagdOp: "desc" }],
-    select: {
-      id: true,
-      startDatum: true,
-      eindDatum: true,
-      type: true,
-      opmerking: true,
-      status: true,
-      redenAfwijzing: true,
-      aangevraagdOp: true,
-      beoordeeldOp: true,
-    },
-  });
-
-  const vandaag = new Date();
-  vandaag.setHours(0, 0, 0, 0);
-
-  const aankomendeDiensten = medewerker.diensten
-    .filter((bezetting) => {
-      const datum = new Date(bezetting.dienst.datum);
-      datum.setHours(0, 0, 0, 0);
-      return datum >= vandaag;
-    })
-    .slice(0, 50);
-
-  const verloningsPeriodes = await prisma.verloningsPeriode.findMany({
-    where: {
-      regels: {
-        some: { medewerkerId: medewerker.id },
-      },
-    },
-    orderBy: [{ jaar: "desc" }, { maand: "desc" }],
-    include: {
-      regels: {
-        where: { medewerkerId: medewerker.id },
+  const vakantieAanvragen =
+    await prisma.vakantieAanvraag.findMany(
+      {
+        where: {
+          medewerkerId:
+            medewerker.id,
+        },
+        orderBy: [
+          {
+            startDatum: "asc",
+          },
+          {
+            aangevraagdOp: "desc",
+          },
+        ],
         select: {
-          gewerkteDagen: true,
+          id: true,
+          startDatum: true,
+          eindDatum: true,
+          type: true,
+          opmerking: true,
+          status: true,
+          redenAfwijzing: true,
+          aangevraagdOp: true,
+          beoordeeldOp: true,
+        },
+      },
+    );
+
+  const vandaag =
+    new Date();
+
+  vandaag.setHours(
+    0,
+    0,
+    0,
+    0,
+  );
+
+  const aankomendeDiensten =
+    medewerker.diensten
+      .filter(
+        (
+          bezetting,
+        ) => {
+          const datum =
+            new Date(
+              bezetting.dienst.datum,
+            );
+
+          datum.setHours(
+            0,
+            0,
+            0,
+            0,
+          );
+
+          return datum >= vandaag;
+        },
+      )
+      .slice(
+        0,
+        50,
+      );
+
+  const huidigJaar =
+    new Date().getFullYear();
+
+  const definitieveUren =
+    await prisma.urenRegistratie.findMany(
+      {
+        where: {
+          medewerkerId:
+            medewerker.id,
+          status:
+            "DEFINITIEF",
+          datum: {
+            gte: new Date(
+              huidigJaar,
+              0,
+              1,
+            ),
+            lt: new Date(
+              huidigJaar + 1,
+              0,
+              1,
+            ),
+          },
+        },
+        select: {
+          datum: true,
           gewerkteUren: true,
         },
-      },
-      controles: {
-        where: { medewerkerId: medewerker.id },
-        select: {
-          status: true,
-          gecontroleerdOp: true,
-          automatischAkkoordOp: true,
+        orderBy: {
+          datum: "asc",
         },
-        take: 1,
       },
-    },
-  });
-
-  const verloningsJaren = Array.from(
-    new Set(verloningsPeriodes.map((periode) => periode.jaar)),
-  ).sort((a, b) => b - a);
-
-  const verloningsJaar = verloningsJaren[0] ?? new Date().getFullYear();
-
-  const maandOverzicht: Array<
-    MaandOverzicht & {
-      status: string;
-      statusTekst: string;
-    }
-  > = Array.from({ length: 12 }, (_, index) => {
-    const maand = index + 1;
-    const periode = verloningsPeriodes.find(
-      (item) => item.jaar === verloningsJaar && item.maand === maand,
     );
-    const regel = periode?.regels[0];
-    const controle = periode?.controles[0];
 
-    return {
-      maand,
-      naam: new Intl.DateTimeFormat("nl-NL", { month: "long" }).format(
-        new Date(verloningsJaar, maand - 1, 1),
-      ),
-      dagen: regel?.gewerkteDagen ?? 0,
-      uren: regel ? Number(regel.gewerkteUren) : 0,
-      status: controle?.status ?? (periode ? "OPEN" : "ONTBREEKT"),
-      statusTekst:
-        controle?.status === "AKKOORD"
-          ? "Goedgekeurd"
-          : controle?.status === "AUTOMATISCH_AKKOORD"
-            ? "Automatisch akkoord"
-            : controle?.status === "OPEN"
-              ? "Open – controleren"
-              : "Nog niet aangemaakt",
-    };
-  });
-
-  const totaalDagen = maandOverzicht.reduce((totaal, maand) => totaal + maand.dagen, 0);
-  const totaalUren = maandOverzicht.reduce((totaal, maand) => totaal + maand.uren, 0);
-
-  function MedewerkerBewerken({
-    section,
-  }: {
-    section: "algemeen" | "contract" | "vestigingen" | "verloning";
-  }) {
-    return (
-      <div className="mt-6 border-t border-slate-200 pt-6">
-        <MedewerkerTabBewerken
-          medewerker={medewerkerFormData}
-          beschikbareRollen={beschikbareRollen}
-          beschikbareTags={beschikbareTags}
-          beschikbareVestigingen={vestigingen}
-          section={section}
-        />
-      </div>
+  const maandOverzicht =
+    maakMaandOverzicht(
+      huidigJaar,
+      definitieveUren,
     );
-  }
+
+  const totaalDagen =
+    maandOverzicht.reduce(
+      (
+        totaal,
+        maand,
+      ) =>
+        totaal +
+        maand.dagen,
+      0,
+    );
+
+  const totaalUren =
+    maandOverzicht.reduce(
+      (
+        totaal,
+        maand,
+      ) =>
+        totaal +
+        maand.uren,
+      0,
+    );
 
   return (
     <PageLayout>
@@ -419,327 +828,800 @@ export default async function MedewerkerPage({
         }
       />
 
-      <div className="space-y-6">
-        <div className="flex flex-wrap gap-2 border-b border-slate-200">
-          {TABS.map((item) => (
-            <Link
-              key={item.id}
-              href={`/medewerkers/${medewerker.id}?tab=${item.id}`}
-              className={[
-                "-mb-px border-b-2 px-3 py-2 text-sm font-medium transition",
-                actieveTab === item.id
-                  ? "border-slate-900 text-slate-900"
-                  : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800",
-              ].join(" ")}
-            >
-              {item.label}
-            </Link>
-          ))}
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-200 px-4 pt-4">
+          <div className="flex gap-1 overflow-x-auto">
+            {TABS.map(
+              (
+                tabItem,
+              ) => {
+                const actief =
+                  actieveTab ===
+                  tabItem.id;
+
+                return (
+                  <Link
+                    key={tabItem.id}
+                    href={`/medewerkers/${medewerker.id}?tab=${tabItem.id}`}
+                    className={`whitespace-nowrap rounded-t-lg border-b-2 px-4 py-3 text-sm font-medium transition ${
+                      actief
+                        ? "border-slate-900 text-slate-900"
+                        : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
+                    }`}
+                  >
+                    {tabItem.label}
+                  </Link>
+                );
+              },
+            )}
+          </div>
         </div>
 
-        {actieveTab === "algemeen" && (
-          <Card>
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-              <div className="grid flex-1 gap-6 md:grid-cols-2">
+        <div className="p-6">
+          {actieveTab ===
+            "algemeen" && (
+            <div className="space-y-6">
+              <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Naam</p>
-                  <p className="mt-1 font-medium text-slate-900">{volledigeNaam}</p>
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    Algemeen
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Algemene gegevens, rollen en planningstags van de medewerker.
+                  </p>
                 </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Personeelsnummer</p>
-                  <p className="mt-1 text-slate-900">{medewerker.personeelsnummer || "—"}</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <User size={18} className="mt-0.5 text-slate-400" />
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Status</p>
-                    <div className="mt-1"><Badge>{medewerker.status.naam}</Badge></div>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Mail size={18} className="mt-0.5 text-slate-400" />
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">E-mail</p>
-                    <p className="mt-1 text-slate-900">{medewerker.email}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Phone size={18} className="mt-0.5 text-slate-400" />
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Telefoon</p>
-                    <p className="mt-1 text-slate-900">{medewerker.telefoon || "—"}</p>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Geboortedatum</p>
-                  <p className="mt-1 text-slate-900">{formatteerDatum(medewerker.geboortedatum)}</p>
-                </div>
+
+                {!isBewerken && (
+                  <WijzigenKnop
+                    href={`/medewerkers/${medewerker.id}?tab=algemeen&edit=1`}
+                    disabled={!magAlgemeenBewerken}
+                  />
+                )}
+
+                {isBewerken && (
+                  <AnnuleerBewerkenKnop
+                    href={`/medewerkers/${medewerker.id}?tab=algemeen`}
+                  />
+                )}
               </div>
 
-              {isBewerken ? (
-                <AnnuleerBewerkenKnop href={`/medewerkers/${medewerker.id}?tab=${actieveTab}`} />
+              {isBewerken &&
+              editSection ===
+                "algemeen" ? (
+                <Card
+                  title="Medewerker wijzigen"
+                  description={
+                    isEigenaar
+                      ? "Wijzig de algemene gegevens, rollen en planningstags van deze medewerker."
+                      : "Wijzig je algemene persoonlijke gegevens."
+                  }
+                >
+                  <MedewerkerTabBewerken
+                    medewerker={
+                      medewerkerFormData
+                    }
+                    section="algemeen"
+                    beschikbareRollen={
+                      beschikbareRollen
+                    }
+                    beschikbareTags={
+                      beschikbareTags
+                    }
+                    beschikbareVestigingen={
+                      vestigingen
+                    }
+                  />
+                </Card>
               ) : (
-                <WijzigenKnop
-                  href={`/medewerkers/${medewerker.id}?tab=${actieveTab}&edit=1`}
-                  disabled={!magTabBewerken}
-                />
-              )}
-            </div>
+                <>
+                  <div className="grid gap-6 lg:grid-cols-3">
+                    <Card
+                      title="Status"
+                      description="Huidige status van de medewerker."
+                    >
+                      <div className="flex items-center gap-3">
+                        {medewerker.actief ? (
+                          <Badge variant="success">
+                            Actief
+                          </Badge>
+                        ) : (
+                          <Badge variant="danger">
+                            Niet actief
+                          </Badge>
+                        )}
+                        <span className="text-sm text-slate-500">
+                          {medewerker.status.naam}
+                        </span>
+                      </div>
+                    </Card>
 
-            {isBewerken && editSection === "algemeen" && (
-              <MedewerkerBewerken section="algemeen" />
-            )}
-          </Card>
-        )}
-
-        {actieveTab === "contract" && (
-          <Card>
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-              <div className="grid flex-1 gap-6 md:grid-cols-2">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Contracttype</p>
-                  <p className="mt-1 font-medium text-slate-900">{medewerker.contractType || "—"}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Contracturen</p>
-                  <p className="mt-1 text-slate-900">{medewerker.contractUren != null ? `${medewerker.contractUren.toString().replace(".", ",")} uur` : "—"}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Uurloon</p>
-                  <p className="mt-1 text-slate-900">{medewerker.uurloon != null ? `€ ${medewerker.uurloon.toString().replace(".", ",")}` : "—"}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Datum in dienst</p>
-                  <p className="mt-1 text-slate-900">{formatteerDatum(medewerker.datumInDienst)}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Datum uit dienst</p>
-                  <p className="mt-1 text-slate-900">{formatteerDatum(medewerker.datumUitDienst)}</p>
-                </div>
-              </div>
-              {isBewerken ? (
-                <AnnuleerBewerkenKnop href={`/medewerkers/${medewerker.id}?tab=${actieveTab}`} />
-              ) : (
-                <WijzigenKnop
-                  href={`/medewerkers/${medewerker.id}?tab=${actieveTab}&edit=1`}
-                  disabled={!magTabBewerken}
-                />
-              )}
-            </div>
-
-            {isBewerken && editSection === "contract" && (
-              <MedewerkerBewerken section="contract" />
-            )}
-          </Card>
-        )}
-
-        {actieveTab === "vestigingen" && (
-          <Card>
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-              <div className="flex-1">
-                <h2 className="font-semibold text-slate-900">Vestigingen</h2>
-                <div className="mt-4 space-y-3">
-                  {medewerker.vestigingen.length === 0 ? (
-                    <p className="text-sm text-slate-500">Geen vestigingen gekoppeld.</p>
-                  ) : (
-                    medewerker.vestigingen.map((relatie) => (
-                      <div key={relatie.id} className="flex items-center justify-between rounded-lg border border-slate-200 px-4 py-3">
-                        <div>
-                          <p className="font-medium text-slate-900">{relatie.vestiging.naam}</p>
-                          <p className="text-xs text-slate-500">{relatie.vestiging.code}</p>
+                    <Card
+                      title="Contact"
+                      description="Contactgegevens van de medewerker."
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <Mail
+                            size={18}
+                            className="text-slate-400"
+                          />
+                          <span className="text-sm text-slate-700">
+                            {medewerker.email}
+                          </span>
                         </div>
-                        {relatie.hoofdvestiging && <Badge variant="success">Hoofdvestiging</Badge>}
+                        <div className="flex items-center gap-3">
+                          <Phone
+                            size={18}
+                            className="text-slate-400"
+                          />
+                          <span className="text-sm text-slate-700">
+                            {medewerker.telefoon ?? "—"}
+                          </span>
+                        </div>
                       </div>
-                    ))
-                  )}
-                </div>
-              </div>
-              {isBewerken ? (
-                <AnnuleerBewerkenKnop href={`/medewerkers/${medewerker.id}?tab=${actieveTab}`} />
-              ) : (
-                <WijzigenKnop
-                  href={`/medewerkers/${medewerker.id}?tab=${actieveTab}&edit=1`}
-                  disabled={!magTabBewerken}
-                />
-              )}
-            </div>
-            {isBewerken && editSection === "vestigingen" && (
-              <MedewerkerBewerken section="vestigingen" />
-            )}
-          </Card>
-        )}
+                    </Card>
 
-        {actieveTab === "beschikbaarheid" && (
-          <Card>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="font-semibold text-slate-900">Beschikbaarheid</h2>
-                <p className="mt-1 text-sm text-slate-500">Alle geregistreerde beschikbaarheid van deze medewerker.</p>
-              </div>
-              {isBewerken ? (
-                <AnnuleerBewerkenKnop href={`/medewerkers/${medewerker.id}?tab=${actieveTab}`} />
-              ) : (
-                <WijzigenKnop
-                  href={`/medewerkers/${medewerker.id}?tab=${actieveTab}&edit=1`}
-                  disabled={!magTabBewerken}
-                />
-              )}
-            </div>
-            <div className="mt-6">
-              <BeschikbaarheidPanel medewerkerId={medewerker.id} bewerkbaar={isEigenaar} />
-            </div>
-          </Card>
-        )}
-
-        {actieveTab === "vakantie" && (
-          <Card>
-            <div>
-              <h2 className="font-semibold text-slate-900">Vakantie</h2>
-              <p className="mt-1 text-sm text-slate-500">Overzicht van vakantie- en afwezigheidsaanvragen.</p>
-            </div>
-            <div className="mt-6 overflow-x-auto">
-              {vakantieAanvragen.length === 0 ? (
-                <p className="text-sm text-slate-500">Geen vakantieaanvragen gevonden.</p>
-              ) : (
-                <table className="w-full min-w-[760px] text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-200 text-slate-500">
-                      <th className="pb-3 pr-4 font-medium">Periode</th>
-                      <th className="pb-3 pr-4 font-medium">Type</th>
-                      <th className="pb-3 pr-4 font-medium">Status</th>
-                      <th className="pb-3 pr-4 font-medium">Aangevraagd</th>
-                      <th className="pb-3 font-medium">Opmerking</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {vakantieAanvragen.map((aanvraag) => (
-                      <tr key={aanvraag.id} className="border-b border-slate-100 last:border-0">
-                        <td className="py-4 pr-4 text-slate-900">{formatteerDatum(aanvraag.startDatum)}{" "}t/m{" "}{formatteerDatum(aanvraag.eindDatum)}</td>
-                        <td className="py-4 pr-4 text-slate-700">{aanvraag.type}</td>
-                        <td className="py-4 pr-4">
-                          <Badge variant={vakantieStatusVariant(aanvraag.status)}>{vakantieStatusLabel(aanvraag.status)}</Badge>
-                        </td>
-                        <td className="py-4 pr-4 text-slate-700">{formatteerDatumTijd(aanvraag.aangevraagdOp)}</td>
-                        <td className="py-4 text-slate-600">{aanvraag.opmerking || "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </Card>
-        )}
-
-        {actieveTab === "planning" && (
-          <Card>
-            <div>
-              <h2 className="font-semibold text-slate-900">Planning</h2>
-              <p className="mt-1 text-sm text-slate-500">Aankomende ingeplande diensten.</p>
-            </div>
-            <div className="mt-6 space-y-3">
-              {aankomendeDiensten.length === 0 ? (
-                <p className="text-sm text-slate-500">Geen aankomende diensten.</p>
-              ) : (
-                aankomendeDiensten.map((bezetting) => (
-                  <div key={bezetting.id} className="rounded-lg border border-slate-200 px-4 py-4">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="font-medium text-slate-900">{formatteerDatumTijd(bezetting.dienst.datum)}</p>
-                        <p className="mt-1 text-sm text-slate-500">{bezetting.dienst.begintijd}{" "}t/m{" "}{bezetting.dienst.eindtijd || "—"}</p>
+                    <Card
+                      title="Personeelsnummer"
+                      description="Interne identificatie."
+                    >
+                      <div className="flex items-center gap-3">
+                        <User
+                          size={18}
+                          className="text-slate-400"
+                        />
+                        <span className="text-sm font-medium text-slate-700">
+                          {medewerker.personeelsnummer ??
+                            "Nog niet toegewezen"}
+                        </span>
                       </div>
-                      <Badge>{bezetting.status}</Badge>
-                    </div>
+                    </Card>
                   </div>
-                ))
+
+                  <Card
+                    title="Persoonsgegevens"
+                    description="Persoonlijke gegevens van de medewerker."
+                  >
+                    <dl className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                      <div>
+                        <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                          Aanhef
+                        </dt>
+                        <dd className="mt-1 text-sm text-slate-700">
+                          {medewerker.aanhef ?? "—"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                          Voornaam
+                        </dt>
+                        <dd className="mt-1 text-sm text-slate-700">
+                          {medewerker.voornaam}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                          Tussenvoegsel
+                        </dt>
+                        <dd className="mt-1 text-sm text-slate-700">
+                          {medewerker.tussenvoegsel || "—"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                          Achternaam
+                        </dt>
+                        <dd className="mt-1 text-sm text-slate-700">
+                          {medewerker.achternaam}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                          Roepnaam
+                        </dt>
+                        <dd className="mt-1 text-sm text-slate-700">
+                          {medewerker.roepnaam || "—"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                          Geboortedatum
+                        </dt>
+                        <dd className="mt-1 text-sm text-slate-700">
+                          {formatteerDatum(
+                            medewerker.geboortedatum,
+                          )}
+                        </dd>
+                      </div>
+                    </dl>
+                  </Card>
+
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    <Card
+                      title="Rollen"
+                      description="Rollen die aan deze medewerker zijn gekoppeld."
+                    >
+                      {medewerker.rollen.length === 0 ? (
+                        <p className="text-sm text-slate-500">
+                          Nog geen rollen gekoppeld.
+                        </p>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {medewerker.rollen.map(
+                            (medewerkerRol) => (
+                              <Badge
+                                key={medewerkerRol.id}
+                                variant="default"
+                              >
+                                {medewerkerRol.rol.naam}
+                              </Badge>
+                            ),
+                          )}
+                        </div>
+                      )}
+                    </Card>
+
+                    <Card
+                      title="Planningstags"
+                      description="Tags die deze medewerker kan uitvoeren."
+                    >
+                      {medewerker.tags.length === 0 ? (
+                        <p className="text-sm text-slate-500">
+                          Nog geen planningstags gekoppeld.
+                        </p>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {medewerker.tags.map(
+                            (medewerkerTag) => (
+                              <Badge
+                                key={medewerkerTag.id}
+                                variant="default"
+                              >
+                                {medewerkerTag.tag.naam}
+                              </Badge>
+                            ),
+                          )}
+                        </div>
+                      )}
+                    </Card>
+                  </div>
+                </>
               )}
             </div>
-          </Card>
-        )}
+          )}
 
-        {actieveTab === "verloning" && (
-          <Card>
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <h2 className="font-semibold text-slate-900">Verloning</h2>
-                <p className="mt-1 text-sm text-slate-500">Gewerkte dagen en uren per maand op basis van definitief geregistreerde uren en de centrale verloningscontrole.</p>
-              </div>
-              {isBewerken ? (
-                <AnnuleerBewerkenKnop href={`/medewerkers/${medewerker.id}?tab=${actieveTab}`} />
-              ) : (
-                <WijzigenKnop
-                  href={`/medewerkers/${medewerker.id}?tab=${actieveTab}&edit=1`}
-                  disabled={!magTabBewerken}
-                />
-              )}
-            </div>
-
-            <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          {actieveTab === "contract" && (
+            <div className="space-y-6">
+              <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Jaar</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-900">{verloningsJaar}</p>
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    Contract
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Gegevens over het dienstverband.
+                  </p>
                 </div>
-                <p className="text-sm text-slate-500">
-                  {verloningsJaren.length > 0
-                    ? `${verloningsJaren.length} jaar beschikbaar`
-                    : "Nog geen aangemaakte verloningsperiodes"}
+                {!isBewerken && (
+                  <WijzigenKnop
+                    href={`/medewerkers/${medewerker.id}?tab=contract&edit=1`}
+                    disabled={!magContractBewerken}
+                  />
+                )}
+                {isBewerken && (
+                  <AnnuleerBewerkenKnop
+                    href={`/medewerkers/${medewerker.id}?tab=contract`}
+                  />
+                )}
+              </div>
+
+              {isBewerken && editSection === "contract" ? (
+                <Card
+                  title="Contractgegevens wijzigen"
+                  description="Wijzig de gegevens van het dienstverband."
+                >
+                  <MedewerkerTabBewerken
+                    medewerker={medewerkerFormData}
+                    section="contract"
+                    beschikbareRollen={beschikbareRollen}
+                    beschikbareTags={beschikbareTags}
+                    beschikbareVestigingen={vestigingen}
+                  />
+                </Card>
+              ) : (
+                <Card
+                  title="Dienstverband"
+                  description="Gegevens van het huidige dienstverband."
+                >
+                  <dl className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                      <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                        Contracttype
+                      </dt>
+                      <dd className="mt-1 text-sm text-slate-700">
+                        {medewerker.contractType ??
+                          "Nog niet ingevuld"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                        Contracturen
+                      </dt>
+                      <dd className="mt-1 text-sm text-slate-700">
+                        {medewerker.contractUren != null
+                          ? `${medewerker.contractUren} uur`
+                          : "Nog niet ingevuld"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                        In dienst
+                      </dt>
+                      <dd className="mt-1 text-sm text-slate-700">
+                        {formatteerDatum(
+                          medewerker.datumInDienst,
+                        )}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                        Uit dienst
+                      </dt>
+                      <dd className="mt-1 text-sm text-slate-700">
+                        {formatteerDatum(
+                          medewerker.datumUitDienst,
+                        )}
+                      </dd>
+                    </div>
+                  </dl>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {actieveTab === "vestigingen" && (
+            <div className="space-y-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    Vestigingen
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Vestigingen waar deze medewerker werkt.
+                  </p>
+                </div>
+                {!isBewerken && (
+                  <WijzigenKnop
+                    href={`/medewerkers/${medewerker.id}?tab=vestigingen&edit=1`}
+                    disabled={!magVestigingenBewerken}
+                  />
+                )}
+                {isBewerken && (
+                  <AnnuleerBewerkenKnop
+                    href={`/medewerkers/${medewerker.id}?tab=vestigingen`}
+                  />
+                )}
+              </div>
+
+              {isBewerken && editSection === "vestigingen" ? (
+                <Card
+                  title="Vestigingen wijzigen"
+                  description="Wijzig de vestigingen waar deze medewerker werkt en stel de hoofdvestiging in."
+                >
+                  <MedewerkerTabBewerken
+                    medewerker={medewerkerFormData}
+                    section="vestigingen"
+                    beschikbareRollen={beschikbareRollen}
+                    beschikbareTags={beschikbareTags}
+                    beschikbareVestigingen={vestigingen}
+                  />
+                </Card>
+              ) : (
+                <Card
+                  title="Gekoppelde vestigingen"
+                  description="Vestigingen waarvoor de medewerker is gekoppeld."
+                >
+                  {medewerker.vestigingen.length === 0 ? (
+                    <p className="text-sm text-slate-500">
+                      Nog geen vestiging gekoppeld.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {medewerker.vestigingen.map(
+                        (medewerkerVestiging) => (
+                          <div
+                            key={medewerkerVestiging.id}
+                            className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
+                          >
+                            <span className="text-sm font-medium text-slate-700">
+                              {medewerkerVestiging.vestiging.naam}
+                            </span>
+                            {medewerkerVestiging.hoofdvestiging && (
+                              <Badge variant="success">
+                                Hoofdvestiging
+                              </Badge>
+                            )}
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  )}
+                </Card>
+              )}
+            </div>
+          )}
+
+          {actieveTab === "beschikbaarheid" && (
+            <div className="space-y-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    Beschikbaarheid
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Alleen de huidige en toekomstige weken worden getoond.
+                  </p>
+                </div>
+                {!isBewerken &&
+                  magBeschikbaarheidBewerken && (
+                    <WijzigenKnop
+                      href={`/medewerkers/${medewerker.id}?tab=beschikbaarheid&edit=1`}
+                    />
+                  )}
+                {isBewerken && (
+                  <AnnuleerBewerkenKnop
+                    href={`/medewerkers/${medewerker.id}?tab=beschikbaarheid`}
+                  />
+                )}
+              </div>
+
+              <BeschikbaarheidPanel
+                medewerkerId={medewerker.id}
+                vestigingen={vestigingen}
+                isBeheerder={magBeschikbaarheidBewerken}
+                bewerkmodus={isBewerken}
+              />
+            </div>
+          )}
+
+          {actieveTab === "vakantie" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Vakantie
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Vakantie en andere geplande afwezigheid van deze medewerker.
                 </p>
               </div>
+
+              <Card
+                title="Vakantieaanvragen"
+                description="Aanvragen worden door de eigenaar beoordeeld. De status van iedere aanvraag blijft zichtbaar."
+              >
+                {vakantieAanvragen.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-6 text-center">
+                    <p className="text-sm font-semibold text-slate-700">
+                      Geen vakantieaanvragen
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Er zijn nog geen vakantie- of afwezigheidsaanvragen geregistreerd.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {vakantieAanvragen.map((aanvraag) => (
+                      <div
+                        key={aanvraag.id}
+                        className="rounded-xl border border-slate-200 bg-white p-4"
+                      >
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="font-semibold text-slate-900">
+                                {formatteerDatum(aanvraag.startDatum)}{" "}
+                                t/m{" "}
+                                {formatteerDatum(aanvraag.eindDatum)}
+                              </p>
+                              <Badge variant="default">
+                                {aanvraag.type === "VAKANTIE"
+                                  ? "Vakantie"
+                                  : "Overig"}
+                              </Badge>
+                            </div>
+
+                            {aanvraag.opmerking && (
+                              <p className="mt-2 text-sm text-slate-600">
+                                {aanvraag.opmerking}
+                              </p>
+                            )}
+
+                            {aanvraag.status === "AFGEWEZEN" &&
+                              aanvraag.redenAfwijzing && (
+                                <div className="mt-3 rounded-lg bg-red-50 px-3 py-2">
+                                  <p className="text-xs font-medium text-red-700">
+                                    Reden afwijzing
+                                  </p>
+                                  <p className="mt-1 text-sm text-red-800">
+                                    {aanvraag.redenAfwijzing}
+                                  </p>
+                                </div>
+                              )}
+
+                            <p className="mt-3 text-xs text-slate-400">
+                              Aangevraagd op {formatteerDatum(aanvraag.aangevraagdOp)}
+                            </p>
+                          </div>
+
+                          <Badge
+                            variant={vakantieStatusVariant(
+                              aanvraag.status,
+                            )}
+                          >
+                            {vakantieStatusLabel(
+                              aanvraag.status,
+                            )}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
             </div>
+          )}
 
-            <div className="mt-6 overflow-x-auto">
-              <table className="w-full min-w-[920px] text-left text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-500">
-                    <th className="pb-3 pr-4 font-medium">Maand</th>
-                    <th className="pb-3 pr-4 font-medium">Gewerkte dagen</th>
-                    <th className="pb-3 pr-4 font-medium">Gewerkte uren</th>
-                    <th className="pb-3 pr-4 font-medium">Status</th>
-                    <th className="pb-3 font-medium">Periode</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {maandOverzicht.map((maand) => {
-                    const periode = verloningsPeriodes.find(
-                      (item) =>
-                        item.jaar === verloningsJaar &&
-                        item.maand === maand.maand,
-                    );
-                    const statusVariant =
-                      maand.status === "AKKOORD"
-                        ? "success"
-                        : maand.status === "OPEN"
-                          ? "warning"
-                          : "default";
+          {actieveTab === "planning" && (
+            <div className="space-y-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    Planning
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Alleen huidige en toekomstige diensten van deze medewerker.
+                  </p>
+                </div>
+                <Link href="/planning">
+                  <Button>Naar planning</Button>
+                </Link>
+              </div>
 
-                    return (
-                      <tr key={maand.maand} className="border-b border-slate-100 last:border-0">
-                        <td className="py-4 pr-4 font-medium capitalize text-slate-900">{maand.naam}</td>
-                        <td className="py-4 pr-4 text-slate-700">{maand.dagen}</td>
-                        <td className="py-4 pr-4 text-slate-700">{formatteerUren(maand.uren)}</td>
-                        <td className="py-4 pr-4"><Badge variant={statusVariant}>{maand.statusTekst}</Badge></td>
-                        <td className="py-4 text-slate-500">{periode ? formatteerDatum(periode.periodeStart) : "—"}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t border-slate-200 bg-slate-50 font-semibold text-slate-900">
-                    <td className="py-4 pr-4">Totaal</td>
-                    <td className="py-4 pr-4">{totaalDagen}</td>
-                    <td className="py-4 pr-4">{formatteerUren(totaalUren)}</td>
-                    <td className="py-4 pr-4">—</td>
-                    <td className="py-4">{verloningsJaar}</td>
-                  </tr>
-                </tfoot>
-              </table>
+              <Card
+                title="Aankomende diensten"
+                description="Alle nog plaats te vinden diensten waarop deze medewerker staat ingepland."
+              >
+                {aankomendeDiensten.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-6 text-center">
+                    <p className="text-sm font-semibold text-slate-700">
+                      Geen aankomende diensten
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Deze medewerker staat momenteel niet op een toekomstige dienst.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {aankomendeDiensten.map((bezetting) => {
+                      const dienst = bezetting.dienst;
+                      const datum = new Date(dienst.datum);
+                      const beginTijd =
+                        new Intl.DateTimeFormat("nl-NL", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }).format(new Date(dienst.begintijd));
+                      const eindTijd =
+                        new Intl.DateTimeFormat("nl-NL", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }).format(new Date(dienst.eindtijd));
+
+                      return (
+                        <div
+                          key={bezetting.id}
+                          className="rounded-xl border border-slate-200 bg-white p-4"
+                        >
+                          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                            <div>
+                              <p className="text-sm font-semibold capitalize text-slate-900">
+                                {formatteerDatumTijd(datum)}
+                              </p>
+                              <p className="mt-1 text-sm text-slate-600">
+                                {beginTijd} - {eindTijd}
+                              </p>
+                              <p className="mt-1 text-sm text-slate-600">
+                                {dienst.tags
+                                  ?.map(
+                                    (dienstTag) =>
+                                      dienstTag.tag.naam,
+                                  )
+                                  .join(" · ") ||
+                                  "Geen planningstag"}
+                              </p>
+                              {dienst.opmerkingen && (
+                                <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2">
+                                  <p className="text-xs font-medium text-slate-500">
+                                    Opmerking
+                                  </p>
+                                  <p className="mt-1 text-sm text-slate-700">
+                                    {dienst.opmerkingen}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <span className="rounded-lg bg-green-50 px-3 py-2 text-xs font-semibold text-green-700">
+                                {bezetting.status}
+                              </span>
+                              {isEigenaar && (
+                                <Link
+                                  href={`/planning?dienstId=${dienst.id}`}
+                                >
+                                  <Button>
+                                    <Pencil size={15} />
+                                    Dienst wijzigen
+                                  </Button>
+                                </Link>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </Card>
             </div>
+          )}
 
-            {isBewerken && editSection === "verloning" && (
-              <MedewerkerBewerken section="verloning" />
-            )}
-          </Card>
-        )}
+          {actieveTab === "verloning" && (
+            <div className="space-y-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    Verloning
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Verloningsgegevens en definitief geregistreerde gewerkte uren.
+                  </p>
+                </div>
+
+                {!isBewerken && (
+                  <WijzigenKnop
+                    href={`/medewerkers/${medewerker.id}?tab=verloning&edit=1`}
+                    disabled={!magVerloningBewerken}
+                  />
+                )}
+
+                {isBewerken && (
+                  <AnnuleerBewerkenKnop
+                    href={`/medewerkers/${medewerker.id}?tab=verloning`}
+                  />
+                )}
+              </div>
+
+              {isBewerken && editSection === "verloning" ? (
+                <Card
+                  title="Verloningsgegevens wijzigen"
+                  description="Wijzig het uurloon van deze medewerker."
+                >
+                  <MedewerkerTabBewerken
+                    medewerker={medewerkerFormData}
+                    section="verloning"
+                    beschikbareRollen={beschikbareRollen}
+                    beschikbareTags={beschikbareTags}
+                    beschikbareVestigingen={vestigingen}
+                  />
+                </Card>
+              ) : (
+                <>
+                  <Card
+                    title="Verloningsgegevens"
+                    description="Gegevens die relevant zijn voor de verloning."
+                  >
+                    <dl className="grid gap-5 sm:grid-cols-2">
+                      <div>
+                        <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                          Uurloon
+                        </dt>
+                        <dd className="mt-1 text-sm font-medium text-slate-700">
+                          {medewerker.uurloon != null
+                            ? new Intl.NumberFormat("nl-NL", {
+                                style: "currency",
+                                currency: "EUR",
+                              }).format(
+                                Number(medewerker.uurloon),
+                              )
+                            : "Nog niet ingevuld"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                          Contracturen
+                        </dt>
+                        <dd className="mt-1 text-sm text-slate-700">
+                          {medewerker.contractUren != null
+                            ? `${medewerker.contractUren} uur`
+                            : "Nog niet ingevuld"}
+                        </dd>
+                      </div>
+                    </dl>
+                  </Card>
+
+                  <Card
+                    title={`Goedgekeurde uren ${huidigJaar}`}
+                    description="Alleen definitief gecontroleerde gewerkte uren worden meegenomen."
+                  >
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                      {maandOverzicht.map((maand) => (
+                        <div
+                          key={maand.maand}
+                          className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                        >
+                          <p className="text-sm font-semibold text-slate-900">
+                            {maand.naam}
+                          </p>
+                          <div className="mt-4">
+                            <p className="text-2xl font-semibold text-slate-900">
+                              {maand.dagen}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {maand.dagen === 1
+                                ? "gewerkte dag"
+                                : "gewerkte dagen"}
+                            </p>
+                          </div>
+                          <div className="mt-3 border-t border-slate-200 pt-3">
+                            <p className="text-lg font-semibold text-slate-900">
+                              {formatteerUren(maand.uren)}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              definitief geregistreerd
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                            Totaal {huidigJaar}
+                          </p>
+                          <p className="mt-1 text-lg font-semibold text-slate-900">
+                            {totaalDagen} {totaalDagen === 1 ? "dag" : "dagen"}
+                          </p>
+                        </div>
+                        <div className="sm:text-right">
+                          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                            Goedgekeurde uren
+                          </p>
+                          <p className="mt-1 text-2xl font-semibold text-slate-900">
+                            {formatteerUren(
+                              Math.round(totaalUren * 100) / 100,
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {definitieveUren.length === 0 && (
+                      <div className="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-6 text-center">
+                        <p className="text-sm font-semibold text-slate-700">
+                          Nog geen goedgekeurde uren
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          Er zijn dit jaar nog geen definitieve urenregistraties voor deze medewerker.
+                        </p>
+                      </div>
+                    )}
+                  </Card>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </PageLayout>
   );
