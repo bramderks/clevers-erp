@@ -757,7 +757,7 @@ export async function POST(
      * ========================================================
      */
 
-    let week =
+    const week =
       weekId
         ? await haalWeekMetVestigingOp(
             weekId,
