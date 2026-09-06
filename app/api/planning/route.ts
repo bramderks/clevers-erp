@@ -205,7 +205,7 @@ function genereerSeizoenWeken(
 
   const weken: ISOWeek[] = [];
 
-  let huidige =
+  const huidige =
     beginVanISOWeek(
       eersteWeek.jaar,
       eersteWeek.weeknummer,
