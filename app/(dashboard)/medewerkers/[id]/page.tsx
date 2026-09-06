@@ -1341,7 +1341,7 @@ export default async function MedewerkerPage({
                 <p className="mt-1 text-sm text-slate-500">Vakantieplanning voor juni, juli en augustus. De medewerker levert deze uiterlijk 30 april in en de eigenaar beoordeelt de aanvraag.</p>
               </div>
               <Card title="Zomervakantie" description="Maximaal 14 dagen in totaal en maximaal 14 dagen aaneengesloten.">
-                <VakantiePlanningPanel medewerkerId={medewerker.id} isEigenaar={isEigenaar} />
+                <VakantiePlanningPanel medewerkerId={medewerker.id} isEigenaar={isEigenaar} magIndienen={isEigenProfiel} />
               </Card>
             </div>
           )}
