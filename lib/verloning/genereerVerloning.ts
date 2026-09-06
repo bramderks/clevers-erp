@@ -44,6 +44,36 @@ function beginVanVolgendeMaand(
   );
 }
 
+function beginVanControleperiode(
+  jaar: number,
+  maand: number,
+) {
+  return new Date(
+    jaar,
+    maand,
+    1,
+    0,
+    0,
+    0,
+    0,
+  );
+}
+
+function eindeVanControleperiode(
+  jaar: number,
+  maand: number,
+) {
+  return new Date(
+    jaar,
+    maand,
+    3,
+    23,
+    59,
+    59,
+    999,
+  );
+}
+
 function datumSleutel(
   datum: Date,
 ) {
@@ -127,6 +157,18 @@ export async function genereerVerloning(
       maand,
     );
 
+  const controleStart =
+    beginVanControleperiode(
+      jaar,
+      maand,
+    );
+
+  const controleDeadline =
+    eindeVanControleperiode(
+      jaar,
+      maand,
+    );
+
   /*
    * ==========================================================
    * BESTAANDE PERIODE CONTROLEREN
@@ -150,11 +192,6 @@ export async function genereerVerloning(
       },
     );
 
-  /*
-   * Een reeds verwerkte periode is definitief en
-   * mag nooit opnieuw worden gegenereerd.
-   */
-
   if (
     bestaandePeriode?.status ===
     "VERWERKT"
@@ -167,11 +204,6 @@ export async function genereerVerloning(
   /*
    * ==========================================================
    * ALLE URENREGISTRATIES CONTROLEREN
-   * ==========================================================
-   *
-   * Een maand kan uitsluitend worden opgenomen in
-   * de verloning wanneer er urenregistraties zijn
-   * én alle urenregistraties definitief zijn.
    * ==========================================================
    */
 
@@ -199,12 +231,6 @@ export async function genereerVerloning(
     }),
   ]);
 
-  /*
-   * ==========================================================
-   * GEEN UREN BESCHIKBAAR
-   * ==========================================================
-   */
-
   if (
     totaalUrenregistraties === 0
   ) {
@@ -212,12 +238,6 @@ export async function genereerVerloning(
       `De verloning van ${maand}-${jaar} kan nog niet worden gegenereerd omdat er geen urenregistraties zijn.`,
     );
   }
-
-  /*
-   * ==========================================================
-   * ALLE UREN MOETEN DEFINITIEF ZIJN
-   * ==========================================================
-   */
 
   if (
     totaalUrenregistraties !==
@@ -292,17 +312,6 @@ export async function genereerVerloning(
    * ==========================================================
    * UREN EN PAUZES CONTROLEREN
    * ==========================================================
-   *
-   * De centrale berekening in:
-   *
-   * lib/verloning/pauze.ts
-   *
-   * is altijd leidend voor de netto gewerkte uren.
-   *
-   * Iedere definitieve urenregistratie wordt daarom
-   * opnieuw gecontroleerd voordat deze in de
-   * verloning terechtkomt.
-   * ==========================================================
    */
 
   const gecontroleerdeUren =
@@ -358,16 +367,6 @@ export async function genereerVerloning(
    * ==========================================================
    * GROEPEREN PER MEDEWERKER EN VESTIGING
    * ==========================================================
-   *
-   * Eén medewerker kan meerdere diensten op één dag
-   * hebben.
-   *
-   * Gewerkte dagen worden daarom bepaald op basis
-   * van unieke datums.
-   *
-   * Iedere combinatie van medewerker + vestiging
-   * krijgt één verloningsregel.
-   * ==========================================================
    */
 
   const groepen =
@@ -421,12 +420,6 @@ export async function genereerVerloning(
     groep.gewerkteUren +=
       registratie.berekendeGewerkteUren;
   }
-
-  /*
-   * ==========================================================
-   * EXTRA VEILIGHEIDSCONTROLE
-   * ==========================================================
-   */
 
   if (groepen.size === 0) {
     throw new Error(
@@ -490,11 +483,6 @@ export async function genereerVerloning(
         let periodeId =
           bestaandePeriode?.id;
 
-        /*
-         * Nieuwe periode aanmaken wanneer deze nog
-         * niet bestaat.
-         */
-
         if (!periodeId) {
           const nieuwePeriode =
             await tx.verloningsPeriode.create(
@@ -518,8 +506,11 @@ export async function genereerVerloning(
         }
 
         /*
-         * Een bestaande periode die nog niet verwerkt
-         * is, mag opnieuw worden opgebouwd.
+         * ------------------------------------------------------
+         * Oude regels en controles verwijderen.
+         * Een regeneratie maakt altijd een volledig nieuwe
+         * controlecyclus noodzakelijk.
+         * ------------------------------------------------------
          */
 
         await tx.verloningsRegel.deleteMany(
@@ -527,6 +518,35 @@ export async function genereerVerloning(
             where: {
               verloningsPeriodeId:
                 periodeId,
+            },
+          },
+        );
+
+        await tx.verloningsControle.deleteMany(
+          {
+            where: {
+              verloningsPeriodeId:
+                periodeId,
+            },
+          },
+        );
+
+        /*
+         * Een eerdere eigenaarcontrole vervalt wanneer de
+         * verloningsregels opnieuw worden samengesteld.
+         */
+
+        await tx.verloningsPeriode.update(
+          {
+            where: {
+              id: periodeId,
+            },
+
+            data: {
+              controleStart,
+              controleDeadline,
+              gecontroleerdDoorId: null,
+              gecontroleerdOp: null,
             },
           },
         );
@@ -570,9 +590,46 @@ export async function genereerVerloning(
 
         /*
          * ======================================================
+         * MEDEWERKERCONTROLES AANMAKEN
+         * ======================================================
+         *
+         * Eén OPEN controle per unieke medewerker.
+         */
+
+        const uniekeMedewerkerIds =
+          Array.from(
+            new Set(
+              gesorteerdeGroepen.map(
+                (groep) =>
+                  groep.medewerkerId,
+              ),
+            ),
+          );
+
+        await tx.verloningsControle.createMany(
+          {
+            data:
+              uniekeMedewerkerIds.map(
+                (medewerkerId) => ({
+                  verloningsPeriodeId:
+                    periodeId,
+                  medewerkerId,
+                  status: "OPEN",
+                  gecontroleerdOp: null,
+                  automatischAkkoordOp: null,
+                }),
+              ),
+          },
+        );
+
+        /*
+         * ======================================================
          * PERIODE KLAARZETTEN
          * ======================================================
          */
+
+        const gegenereerdOp =
+          new Date();
 
         const bijgewerktePeriode =
           await tx.verloningsPeriode.update(
@@ -583,8 +640,12 @@ export async function genereerVerloning(
 
               data: {
                 status: "KLAAR",
-                gegenereerdOp:
-                  new Date(),
+                gegenereerdOp,
+                controleStart,
+                controleDeadline,
+                gecontroleerdDoorId:
+                  null,
+                gecontroleerdOp: null,
               },
 
               select: {
