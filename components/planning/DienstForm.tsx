@@ -275,37 +275,11 @@ function beschikbaarheidsNiveau(
 
   const volledigeBeschikbaarheid =
     beschikbaarheden.some(
-      (beschikbaarheid) => {
-        const beschikbaarStart =
-          tijdNaarMinuten(
-            tijdUitDatum(
-              beschikbaarheid.begintijd,
-            ) ?? "",
-          );
-
-        const beschikbaarEinde =
-          tijdNaarMinuten(
-            tijdUitDatum(
-              beschikbaarheid.eindtijd,
-            ) ?? "",
-          );
-
-        if (
-          beschikbaarStart ===
-            null ||
-          beschikbaarEinde ===
-            null
-        ) {
-          return false;
-        }
-
-        return (
-          dienstStart >=
-            beschikbaarStart &&
-          dienstEinde <=
-            beschikbaarEinde
-        );
-      },
+      (beschikbaarheid) =>
+        beschikbaarheid.begintijd ===
+          null &&
+        beschikbaarheid.eindtijd ===
+          null,
     );
 
   if (
@@ -314,17 +288,17 @@ function beschikbaarheidsNiveau(
     return "groen" as const;
   }
 
-  const gedeeltelijkeBeschikbaarheid =
+  const passend =
     beschikbaarheden.some(
       (beschikbaarheid) => {
-        const beschikbaarStart =
+        const begin =
           tijdNaarMinuten(
             tijdUitDatum(
               beschikbaarheid.begintijd,
             ) ?? "",
           );
 
-        const beschikbaarEinde =
+        const einde =
           tijdNaarMinuten(
             tijdUitDatum(
               beschikbaarheid.eindtijd,
@@ -332,135 +306,129 @@ function beschikbaarheidsNiveau(
           );
 
         if (
-          beschikbaarStart ===
-            null ||
-          beschikbaarEinde ===
-            null
+          begin === null ||
+          einde === null
         ) {
           return false;
         }
 
         return (
-          dienstStart <
-            beschikbaarEinde &&
-          dienstEinde >
-            beschikbaarStart
+          begin <= dienstStart &&
+          einde >= dienstEinde
         );
       },
     );
 
-  if (
-    gedeeltelijkeBeschikbaarheid
-  ) {
-    return "geel" as const;
+  return passend
+    ? "groen"
+    : "oranje";
+}
+
+function tijdVoorWeergave(
+  waarde: string | null,
+) {
+  if (!waarde) {
+    return "";
   }
 
-  return "rood" as const;
+  const tijd =
+    tijdUitDatum(waarde);
+
+  return tijd ?? "";
 }
 
-function medewerkerHeeftTag(
-  medewerker: PlanningMedewerker,
-  tagNamen: string[],
+function datumNaarInput(
+  waarde: string | null | undefined,
 ) {
-  return medewerker.tags.some(
-    (tag) =>
-      tagNamen.some(
-        (tagNaam) =>
-          tagNaam
-            .trim()
-            .toLowerCase() ===
-          tag.naam
-            .trim()
-            .toLowerCase(),
-      ),
-  );
+  if (!waarde) {
+    return "";
+  }
+
+  if (
+    /^\d{4}-\d{2}-\d{2}$/.test(
+      waarde,
+    )
+  ) {
+    return waarde;
+  }
+
+  return new Date(waarde)
+    .toISOString()
+    .slice(0, 10);
 }
 
-function medewerkerIsBhv(
-  medewerker: PlanningMedewerker,
+function foutUitResponse(
+  data: unknown,
+  standaard: string,
 ) {
-  return medewerkerHeeftTag(
-    medewerker,
-    ["BHV"],
-  );
+  if (
+    data &&
+    typeof data === "object"
+  ) {
+    const fout =
+      (data as {
+        fout?: unknown;
+        error?: unknown;
+      }).fout ??
+      (data as {
+        error?: unknown;
+      }).error;
+
+    if (
+      typeof fout === "string" &&
+      fout.trim()
+    ) {
+      return fout;
+    }
+  }
+
+  return standaard;
 }
 
-function medewerkerHeeftDienstOverlap(
-  medewerker: PlanningMedewerker,
-  datum: string,
-  begintijd: string,
-  eindtijd: string | null,
-) {
-  return medewerker.diensten.some(
-    (bezetting) => {
-      if (
-        bezetting.status ===
-        "AFGEZEGD"
-      ) {
-        return false;
-      }
+function isMedewerkersResponse(
+  data: unknown,
+): data is MedewerkersResponse {
+  if (
+    !data ||
+    typeof data !== "object"
+  ) {
+    return false;
+  }
 
-      const bestaandeStart =
-        new Date(
-          bezetting.dienst.begintijd,
-        ).getTime();
+  const waarde =
+    data as {
+      huidigeMedewerkerId?: unknown;
+      medewerkers?: unknown;
+    };
 
-      const bestaandeEinde =
-        new Date(
-          bezetting.dienst.eindtijd ??
-            `${datum}T23:00:00`,
-        ).getTime();
-
-      const nieuweStart =
-        new Date(
-          `${datum}T${begintijd}`,
-        ).getTime();
-
-      const nieuweEinde =
-        new Date(
-          `${datum}T${
-            eindtijd ?? "23:00"
-          }`,
-        ).getTime();
-
-      if (
-        Number.isNaN(
-          bestaandeStart,
-        ) ||
-        Number.isNaN(
-          bestaandeEinde,
-        ) ||
-        Number.isNaN(
-          nieuweStart,
-        ) ||
-        Number.isNaN(
-          nieuweEinde,
-        )
-      ) {
-        return false;
-      }
-
-      return (
-        nieuweStart <
-          bestaandeEinde &&
-        nieuweEinde >
-          bestaandeStart
-      );
-    },
+  return (
+    (
+      waarde.huidigeMedewerkerId ===
+        null ||
+      typeof waarde.huidigeMedewerkerId ===
+        "string"
+    ) &&
+    Array.isArray(
+      waarde.medewerkers,
+    )
   );
 }
 
 function dienstHeeftTag(
   dienst: Dienst,
-  tagNamen: string[],
+  gekozenTagNamen: string[],
 ) {
+  if (
+    gekozenTagNamen.length === 0
+  ) {
+    return false;
+  }
+
   return dienst.tags.some(
     (dienstTag) =>
-      tagNamen.some(
-        (tagNaam) =>
-          tagNaam
-            .trim()
-            .toLowerCase() ===
+      gekozenTagNamen.some(
+        (naam) =>
+          naam.trim().toLowerCase() ===
           dienstTag.tag.naam
             .trim()
             .toLowerCase(),
@@ -469,153 +437,63 @@ function dienstHeeftTag(
 }
 
 function formatteerDienstTijd(
-  datum: string | null,
+  waarde: string | null,
 ) {
-  if (!datum) {
-    return "geen eindtijd";
+  if (!waarde) {
+    return "23:00";
   }
 
-  return new Intl.DateTimeFormat(
-    "nl-NL",
-    {
-      hour: "2-digit",
-      minute: "2-digit",
-    },
-  ).format(
-    new Date(datum),
-  );
-}
+  const tijd =
+    tijdUitDatum(waarde);
 
-function isMedewerkersResponse(
-  waarde: unknown,
-): waarde is MedewerkersResponse {
-  if (
-    waarde === null ||
-    typeof waarde !== "object" ||
-    Array.isArray(waarde)
-  ) {
-    return false;
-  }
-
-  const record =
-    waarde as Record<
-      string,
-      unknown
-    >;
-
-  return (
-    Array.isArray(
-      record.medewerkers,
-    ) &&
-    (
-      record.huidigeMedewerkerId ===
-        null ||
-      typeof record.huidigeMedewerkerId ===
-        "string"
-    )
-  );
-}
-
-function isDienstAangemaaktResponse(
-  waarde: unknown,
-): waarde is DienstAangemaaktResponse {
-  return (
-    waarde !== null &&
-    typeof waarde === "object" &&
-    !Array.isArray(waarde) &&
-    "id" in waarde &&
-    typeof waarde.id === "string"
-  );
-}
-
-function foutUitResponse(
-  waarde: unknown,
-  standaard: string,
-) {
-  if (
-    waarde !== null &&
-    typeof waarde === "object" &&
-    !Array.isArray(waarde)
-  ) {
-    const record =
-      waarde as Record<
-        string,
-        unknown
-      >;
-
-    if (
-      typeof record.fout ===
-      "string"
-    ) {
-      return record.fout;
-    }
-
-    if (
-      typeof record.error ===
-      "string"
-    ) {
-      return record.error;
-    }
-  }
-
-  return standaard;
+  return tijd ?? "23:00";
 }
 
 export default function DienstForm({
   weekId,
   vestigingId,
-  initialDatum = "",
-  initialTagNaam = null,
+  initialDatum,
+  initialTagNaam,
   onAangemaakt,
 }: DienstFormProps) {
-  const [datum, setDatum] =
-    useState(initialDatum);
+  const [
+    datum,
+    setDatum,
+  ] = useState(
+    initialDatum ?? "",
+  );
 
   const [begintijd, setBegintijd] =
-    useState("");
+    useState("09:00");
 
   const [eindtijd, setEindtijd] =
-    useState("");
-
-  const [
-    totSluit,
-    setTotSluit,
-  ] = useState(false);
-
-  const [
-    opmerkingen,
-    setOpmerkingen,
-  ] = useState("");
-
-  const [tags, setTags] =
-    useState<PlanningTag[]>([]);
+    useState("23:00");
 
   const [
     geselecteerdeTags,
     setGeselecteerdeTags,
-  ] = useState<
-    Record<string, number>
-  >({});
+  ] = useState<Record<string, number>>(
+    {},
+  );
+
+  const [tags, setTags] = useState<
+    PlanningTag[]
+  >([]);
 
   const [
     medewerkers,
     setMedewerkers,
-  ] = useState<
-    PlanningMedewerker[]
-  >([]);
+  ] = useState<PlanningMedewerker[]>(
+    [],
+  );
 
   const [diensten, setDiensten] =
     useState<Dienst[]>([]);
 
   const [
-    geselecteerdeMedewerkers,
-    setGeselecteerdeMedewerkers,
-  ] = useState<
-    Record<string, boolean>
-  >({});
-
-  const [ladenTags, setLadenTags] =
-    useState(true);
+    ladenTags,
+    setLadenTags,
+  ] = useState(true);
 
   const [
     ladenMedewerkers,
@@ -639,19 +517,14 @@ export default function DienstForm({
   ] = useState<string[]>([]);
 
   useEffect(() => {
-    setDatum(initialDatum);
+    setDatum(
+      initialDatum ?? "",
+    );
   }, [initialDatum]);
 
-  /*
-   * ======================================================
-   * PLANNINGTAGS
-   * ======================================================
-   *
-   * BHV komt vanaf nu niet meer als functie in het formulier.
-   * De API hoort alleen echte selecteerbare functies terug te geven.
-   */
-
   useEffect(() => {
+    let actief = true;
+
     async function laadTags() {
       try {
         setLadenTags(true);
@@ -688,39 +561,43 @@ export default function DienstForm({
           );
         }
 
-        setTags(
-          (data as PlanningTag[]).filter(
-            (tag) =>
-              tag.naam
-                .trim()
-                .toLowerCase() !==
-              "bhv",
-          ),
-        );
+        if (actief) {
+          setTags(
+            (data as PlanningTag[]).filter(
+              (tag) =>
+                tag.naam
+                  .trim()
+                  .toLowerCase() !==
+                "bhv",
+            ),
+          );
+        }
       } catch (error) {
         console.error(
           "Fout bij laden planningtags:",
           error,
         );
 
-        setFout(
-          error instanceof Error
-            ? error.message
-            : "De planningtags konden niet worden opgehaald.",
-        );
+        if (actief) {
+          setFout(
+            error instanceof Error
+              ? error.message
+              : "De planningtags konden niet worden opgehaald.",
+          );
+        }
       } finally {
-        setLadenTags(false);
+        if (actief) {
+          setLadenTags(false);
+        }
       }
     }
 
     void laadTags();
-  }, [vestigingId]);
 
-  /*
-   * ======================================================
-   * INITIËLE TAG
-   * ======================================================
-   */
+    return () => {
+      actief = false;
+    };
+  }, [vestigingId]);
 
   useEffect(() => {
     if (
@@ -754,28 +631,42 @@ export default function DienstForm({
     }
 
     setGeselecteerdeTags(
-      (huidig) => ({
-        ...huidig,
-        [tag.id]:
-          huidig[tag.id] ?? 1,
-      }),
+      (huidig) => {
+        if (huidig[tag.id]) {
+          return huidig;
+        }
+
+        return {
+          ...huidig,
+          [tag.id]: 1,
+        };
+      },
     );
   }, [
     initialTagNaam,
     tags,
   ]);
 
-  /*
-   * ======================================================
-   * MEDEWERKERS
-   * ======================================================
-   */
+  const geselecteerdeTagIds =
+    useMemo(
+      () =>
+        Object.keys(
+          geselecteerdeTags,
+        ),
+      [geselecteerdeTags],
+    );
 
   useEffect(() => {
-    if (!datum) {
-      setMedewerkers([]);
+    if (
+      !datum ||
+      !vestigingId ||
+      geselecteerdeTagIds.length ===
+        0
+    ) {
       return;
     }
+
+    let actief = true;
 
     async function laadMedewerkers() {
       try {
@@ -817,44 +708,50 @@ export default function DienstForm({
           );
         }
 
-        setMedewerkers(
-          data.medewerkers,
-        );
+        if (actief) {
+          setMedewerkers(
+            data.medewerkers,
+          );
+        }
       } catch (error) {
         console.error(
           "Fout bij laden medewerkers planning:",
           error,
         );
 
-        setMedewerkers([]);
+        if (actief) {
+          setMedewerkers([]);
 
-        setFout(
-          error instanceof Error
-            ? error.message
-            : "De medewerkers konden niet worden opgehaald.",
-        );
+          setFout(
+            error instanceof Error
+              ? error.message
+              : "De medewerkers konden niet worden opgehaald.",
+          );
+        }
       } finally {
-        setLadenMedewerkers(false);
+        if (actief) {
+          setLadenMedewerkers(false);
+        }
       }
     }
 
     void laadMedewerkers();
+
+    return () => {
+      actief = false;
+    };
   }, [
     vestigingId,
     datum,
+    geselecteerdeTagIds,
   ]);
 
-  /*
-   * ======================================================
-   * BESTAANDE DIENSTEN
-   * ======================================================
-   */
-
   useEffect(() => {
-    if (!datum) {
-      setDiensten([]);
+    if (!datum || !vestigingId) {
       return;
     }
+
+    let actief = true;
 
     async function laadDiensten() {
       try {
@@ -891,38 +788,39 @@ export default function DienstForm({
           );
         }
 
-        setDiensten(
-          data as Dienst[],
-        );
+        if (actief) {
+          setDiensten(
+            data as Dienst[],
+          );
+        }
       } catch (error) {
         console.error(
           "Fout bij laden diensten:",
           error,
         );
 
-        setDiensten([]);
+        if (actief) {
+          setDiensten([]);
 
-        setFout(
-          error instanceof Error
-            ? error.message
-            : "De bestaande diensten konden niet worden opgehaald.",
-        );
+          setFout(
+            error instanceof Error
+              ? error.message
+              : "De bestaande diensten konden niet worden opgehaald.",
+          );
+        }
       } finally {
-        setLadenDiensten(false);
+        if (actief) {
+          setLadenDiensten(false);
+        }
       }
     }
 
     void laadDiensten();
-  }, [
-    weekId,
-    datum,
-  ]);
 
-  /*
-   * ======================================================
-   * TAG-OVERLAP WAARSCHUWINGEN
-   * ======================================================
-   */
+    return () => {
+      actief = false;
+    };
+  }, [weekId, datum, vestigingId]);
 
   useEffect(() => {
     if (
@@ -932,7 +830,6 @@ export default function DienstForm({
         geselecteerdeTags,
       ).length === 0
     ) {
-      setWaarschuwingen([]);
       return;
     }
 
@@ -1012,17 +909,6 @@ export default function DienstForm({
     tags,
   ]);
 
-  /*
-   * ======================================================
-   * PASSENDE MEDEWERKERS
-   * ======================================================
-   *
-   * Alleen de gekozen functies bepalen welke medewerkers
-   * in de lijst komen.
-   *
-   * BHV is hier bewust geen filter.
-   */
-
   const passendeMedewerkers =
     useMemo(() => {
       if (
@@ -1047,125 +933,64 @@ export default function DienstForm({
             (tag) => tag.naam,
           );
 
-      return medewerkers
-        .filter(
-          (medewerker) =>
-            gekozenTagNamen.length ===
-              0 ||
-            medewerkerHeeftTag(
-              medewerker,
-              gekozenTagNamen,
-            ),
-        )
-        .sort((a, b) =>
-          volledigeNaam(
-            a,
-          ).localeCompare(
-            volledigeNaam(b),
-            "nl",
+      return medewerkers.filter(
+        (medewerker) =>
+          medewerker.tags.some(
+            (medewerkerTag) =>
+              gekozenTagNamen.some(
+                (naam) =>
+                  naam
+                    .trim()
+                    .toLowerCase() ===
+                  medewerkerTag.naam
+                    .trim()
+                    .toLowerCase(),
+              ),
           ),
-        );
+      );
     }, [
-      medewerkers,
       datum,
       begintijd,
       geselecteerdeTags,
+      medewerkers,
       tags,
     ]);
 
-  /*
-   * ======================================================
-   * AUTOMATISCHE BHV-CONTROLE
-   * ======================================================
-   */
+  const startTijden = useMemo(
+    () =>
+      maakTijden(
+        START_MINUTEN,
+        EINDE_MINUTEN - 15,
+      ),
+    [],
+  );
 
-  const geselecteerdeMedewerkerLijst =
-    useMemo(
-      () =>
-        medewerkers.filter(
-          (medewerker) =>
-            geselecteerdeMedewerkers[
-              medewerker.id
-            ] === true,
-        ),
-      [
-        medewerkers,
-        geselecteerdeMedewerkers,
-      ],
-    );
+  const eindTijden = useMemo(
+    () => {
+      const startMinuten =
+        tijdNaarMinuten(
+          begintijd,
+        );
 
-  const aantalGeselecteerdeBhv =
-    useMemo(
-      () =>
-        geselecteerdeMedewerkerLijst.filter(
-          medewerker =>
-            medewerkerIsBhv(
-              medewerker,
-            ),
-        ).length,
-      [
-        geselecteerdeMedewerkerLijst,
-      ],
-    );
-
-  const bhvGedekt =
-    aantalGeselecteerdeBhv > 0;
-
-  /*
-   * ======================================================
-   * TIJDEN
-   * ======================================================
-   */
-
-  const startTijden =
-    useMemo(
-      () =>
-        maakTijden(
-          START_MINUTEN,
-          EINDE_MINUTEN - 15,
-        ),
-      [],
-    );
-
-  const eindTijden =
-    useMemo(() => {
-      if (!begintijd) {
+      if (startMinuten === null) {
         return maakTijden(
           START_MINUTEN + 15,
           EINDE_MINUTEN,
         );
       }
 
-      const start =
-        tijdNaarMinuten(
-          begintijd,
-        );
-
-      if (start === null) {
-        return [];
-      }
-
       return maakTijden(
-        start + 15,
+        startMinuten + 15,
         EINDE_MINUTEN,
       );
     }, [begintijd]);
-
-  /*
-   * ======================================================
-   * TAGS
-   * ======================================================
-   */
 
   function toggleTag(
     tagId: string,
   ) {
     setGeselecteerdeTags(
       (huidig) => {
-        if (
-          huidig[tagId] !==
-          undefined
-        ) {
+        if (tagId in huidig) {
           const nieuw = {
             ...huidig,
           };
@@ -1185,16 +1010,14 @@ export default function DienstForm({
 
   function wijzigAantal(
     tagId: string,
-    aantal: string,
+    waarde: string,
   ) {
-    const waarde =
-      Number(aantal);
+    const aantal =
+      Number(waarde);
 
     if (
-      !Number.isInteger(
-        waarde,
-      ) ||
-      waarde < 1
+      !Number.isInteger(aantal) ||
+      aantal < 1
     ) {
       return;
     }
@@ -1202,120 +1025,29 @@ export default function DienstForm({
     setGeselecteerdeTags(
       (huidig) => ({
         ...huidig,
-        [tagId]: waarde,
+        [tagId]: aantal,
       }),
     );
   }
 
-  /*
-   * ======================================================
-   * MEDEWERKERS
-   * ======================================================
-   */
-
-  function toggleMedewerker(
-    medewerkerId: string,
-  ) {
-    setGeselecteerdeMedewerkers(
-      (huidig) => ({
-        ...huidig,
-        [medewerkerId]:
-          !huidig[medewerkerId],
-      }),
-    );
-  }
-
-  async function planMedewerkers(
-    dienstId: string,
-  ) {
-    const geselecteerd =
-      Object.entries(
-        geselecteerdeMedewerkers,
-      )
-        .filter(
-          ([, waarde]) =>
-            waarde,
-        )
-        .map(
-          ([medewerkerId]) =>
-            medewerkerId,
-        );
-
-    for (
-      const medewerkerId of geselecteerd
-    ) {
-      const medewerker =
-        medewerkers.find(
-          (item) =>
-            item.id ===
-            medewerkerId,
-        );
-
-      const niveau =
-        medewerker
-          ? beschikbaarheidsNiveau(
-              medewerker,
-              datum,
-              begintijd,
-              eindtijd,
-            )
-          : "rood";
-
-      const response =
-        await fetch(
-          "/api/planning/bezetting",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-            body: JSON.stringify({
-              dienstId,
-              medewerkerId,
-              status:
-                niveau === "groen"
-                  ? "BEVESTIGD"
-                  : "GEPLAND",
-            }),
-          },
-        );
-
-      const data: unknown =
-        await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          foutUitResponse(
-            data,
-            "Een medewerker kon niet worden ingepland.",
-          ),
-        );
-      }
+  async function maakDienst() {
+    if (laden) {
+      return;
     }
-  }
-
-  /*
-   * ======================================================
-   * DIENST AANMAKEN
-   * ======================================================
-   */
-
-  async function handleSubmit(
-    event: FormEvent<HTMLFormElement>,
-  ) {
-    event.preventDefault();
 
     setFout(null);
 
-    if (
-      !datum ||
-      !begintijd
-    ) {
+    if (!datum) {
       setFout(
-        "Datum en begintijd zijn verplicht.",
+        "Selecteer eerst een datum.",
       );
+      return;
+    }
 
+    if (!begintijd || !eindtijd) {
+      setFout(
+        "Vul geldige begin- en eindtijden in.",
+      );
       return;
     }
 
@@ -1325,106 +1057,59 @@ export default function DienstForm({
       );
 
     const eindeMinuten =
-      eindtijd
-        ? tijdNaarMinuten(
-            eindtijd,
-          )
-        : null;
-
-    if (
-      startMinuten === null
-    ) {
-      setFout(
-        "Vul een geldige begintijd in.",
+      tijdNaarMinuten(
+        eindtijd,
       );
 
-      return;
-    }
-
     if (
-      eindtijd &&
+      startMinuten === null ||
       eindeMinuten === null
     ) {
       setFout(
-        "Vul een geldige eindtijd in.",
+        "Vul geldige begin- en eindtijden in.",
       );
-
       return;
     }
 
     if (
-      eindeMinuten !== null &&
-      eindeMinuten <=
-        startMinuten
-    ) {
-      setFout(
-        "Eindtijd moet na de begintijd liggen.",
-      );
-
-      return;
-    }
-
-    if (
-      startMinuten % 15 !== 0 ||
-      (
-        eindeMinuten !== null &&
-        eindeMinuten % 15 !== 0
-      )
-    ) {
-      setFout(
-        "Diensten kunnen alleen per 15 minuten worden gepland.",
-      );
-
-      return;
-    }
-
-    if (
-      startMinuten <
-      START_MINUTEN
+      startMinuten < START_MINUTEN
     ) {
       setFout(
         "Een dienst kan niet vóór 09:00 starten.",
       );
-
       return;
     }
 
     if (
-      eindeMinuten !== null &&
-      eindeMinuten >
-        EINDE_MINUTEN
+      eindeMinuten > EINDE_MINUTEN
     ) {
       setFout(
         "Een dienst kan niet na 23:00 eindigen.",
       );
-
       return;
     }
 
     if (
-      Object.keys(
-        geselecteerdeTags,
-      ).length === 0
+      eindeMinuten <= startMinuten
     ) {
       setFout(
-        "Selecteer minimaal één planningstag.",
+        "De eindtijd moet na de begintijd liggen.",
       );
-
       return;
     }
 
+    setLaden(true);
+
     try {
-      setLaden(true);
-
-      const start = new Date(
-        `${datum}T${begintijd}`,
-      );
-
-      const einde = eindtijd
-        ? new Date(
-            `${datum}T${eindtijd}`,
-          )
-        : null;
+      const tagsPayload =
+        Object.entries(
+          geselecteerdeTags,
+        ).map(
+          ([tagId, aantal]) => ({
+            tagId,
+            aantal,
+          }),
+        );
 
       const response =
         await fetch(
@@ -1435,37 +1120,14 @@ export default function DienstForm({
               "Content-Type":
                 "application/json",
             },
+            credentials: "include",
             body: JSON.stringify({
               weekId,
-
-              datum:
-                new Date(
-                  `${datum}T00:00`,
-                ).toISOString(),
-
-              begintijd:
-                start.toISOString(),
-
-              eindtijd:
-                einde
-                  ? einde.toISOString()
-                  : null,
-
-              opmerkingen:
-                opmerkingen.trim() ||
-                null,
-
-              tags: Object.entries(
-                geselecteerdeTags,
-              ).map(
-                ([
-                  tagId,
-                  aantal,
-                ]) => ({
-                  tagId,
-                  aantal,
-                }),
-              ),
+              vestigingId,
+              datum: `${datum}T00:00:00`,
+              begintijd: `${datum}T${begintijd}:00`,
+              eindtijd: `${datum}T${eindtijd}:00`,
+              tags: tagsPayload,
             }),
           },
         );
@@ -1482,29 +1144,13 @@ export default function DienstForm({
         );
       }
 
-      if (
-        !isDienstAangemaaktResponse(
-          data,
-        )
-      ) {
-        throw new Error(
-          "De dienst is aangemaakt, maar de server gaf geen geldig dienst-ID terug.",
-        );
-      }
+      const aangemaakteDienst =
+        data as DienstAangemaaktResponse;
 
-      await planMedewerkers(
-        data.id,
-      );
-
-      setBegintijd("");
-      setEindtijd("");
-      setTotSluit(false);
-      setOpmerkingen("");
-      setGeselecteerdeTags({});
-      setGeselecteerdeMedewerkers(
-        {},
-      );
-      setWaarschuwingen([]);
+      setDiensten((huidig) => [
+        ...huidig,
+        aangemaakteDienst,
+      ]);
 
       onAangemaakt?.();
     } catch (error) {
@@ -1523,45 +1169,13 @@ export default function DienstForm({
     }
   }
 
-  /*
-   * ======================================================
-   * RENDER
-   * ======================================================
-   */
-
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-6"
-    >
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900">
-          Dienst toevoegen
-        </h3>
-
-        <p className="mt-1 text-sm text-gray-600">
-          Maak de dienst aan en
-          plan medewerkers
-          direct in.
-        </p>
-
-        {initialTagNaam &&
-          initialTagNaam
-            .trim()
-            .toLowerCase() !==
-            "bhv" && (
-            <p className="mt-2 text-sm font-medium text-cyan-700">
-              Taak:{" "}
-              {initialTagNaam}
-            </p>
-          )}
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-3">
+    <div className="space-y-5">
+      <div className="grid gap-4 md:grid-cols-3">
         <div>
           <label
             htmlFor="dienst-datum"
-            className="block text-sm font-medium text-gray-900"
+            className="mb-2 block text-sm font-medium text-slate-700"
           >
             Datum
           </label>
@@ -1569,21 +1183,20 @@ export default function DienstForm({
           <input
             id="dienst-datum"
             type="date"
-            value={datum}
+            value={datumNaarInput(datum)}
             onChange={(event) =>
               setDatum(
                 event.target.value,
               )
             }
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
-            required
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
           />
         </div>
 
         <div>
           <label
             htmlFor="dienst-begintijd"
-            className="block text-sm font-medium text-gray-900"
+            className="mb-2 block text-sm font-medium text-slate-700"
           >
             Begintijd
           </label>
@@ -1591,20 +1204,13 @@ export default function DienstForm({
           <select
             id="dienst-begintijd"
             value={begintijd}
-            onChange={(event) => {
+            onChange={(event) =>
               setBegintijd(
                 event.target.value,
-              );
-
-              setEindtijd("");
-            }}
-            className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-900"
-            required
+              )
+            }
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
           >
-            <option value="">
-              Kies tijd
-            </option>
-
             {startTijden.map(
               (tijd) => (
                 <option
@@ -1621,33 +1227,21 @@ export default function DienstForm({
         <div>
           <label
             htmlFor="dienst-eindtijd"
-            className="block text-sm font-medium text-gray-900"
+            className="mb-2 block text-sm font-medium text-slate-700"
           >
-            Eindtijd (optioneel)
+            Eindtijd
           </label>
 
           <select
             id="dienst-eindtijd"
             value={eindtijd}
-            onChange={(event) => {
-              const waarde =
-                event.target.value;
-
+            onChange={(event) =>
               setEindtijd(
-                waarde,
-              );
-
-              setTotSluit(
-                waarde ===
-                  "23:00",
-              );
-            }}
-            className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-900"
+                event.target.value,
+              )
+            }
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
           >
-            <option value="">
-              Geen eindtijd
-            </option>
-
             {eindTijden.map(
               (tijd) => (
                 <option
@@ -1659,77 +1253,24 @@ export default function DienstForm({
               ),
             )}
           </select>
-
-          <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-gray-600">
-            <input
-              type="checkbox"
-              checked={totSluit}
-              onChange={(event) => {
-                const aangevinkt =
-                  event.target.checked;
-
-                setTotSluit(
-                  aangevinkt,
-                );
-
-                setEindtijd(
-                  aangevinkt
-                    ? "23:00"
-                    : "",
-                );
-              }}
-            />
-
-            <span>
-              Tot sluit
-            </span>
-          </label>
         </div>
       </div>
 
       <div>
-        <label
-          htmlFor="dienst-opmerkingen"
-          className="block text-sm font-medium text-gray-900"
-        >
-          Opmerkingen
-        </label>
+        <p className="mb-2 text-sm font-medium text-slate-700">
+          Functies
+        </p>
 
-        <textarea
-          id="dienst-opmerkingen"
-          value={opmerkingen}
-          onChange={(event) =>
-            setOpmerkingen(
-              event.target.value,
-            )
-          }
-          rows={3}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
-        />
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between">
-          <label className="block text-sm font-medium text-gray-900">
-            Benodigde functies
-          </label>
-
-          {ladenTags && (
-            <span className="text-xs text-gray-500">
-              Laden...
-            </span>
-          )}
-        </div>
-
-        {!ladenTags &&
-        tags.length === 0 ? (
-          <p className="mt-2 text-sm text-gray-500">
-            Er zijn nog geen
-            actieve
-            planningtags.
+        {ladenTags ? (
+          <p className="text-sm text-slate-500">
+            Functies laden...
+          </p>
+        ) : tags.length === 0 ? (
+          <p className="text-sm text-slate-500">
+            Geen functies beschikbaar.
           </p>
         ) : (
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {tags.map((tag) => {
               const geselecteerd =
                 geselecteerdeTags[
@@ -1739,9 +1280,9 @@ export default function DienstForm({
               return (
                 <div
                   key={tag.id}
-                  className="flex items-center gap-3 rounded-lg border border-gray-200 p-3"
+                  className="rounded-xl border border-slate-200 bg-white p-4"
                 >
-                  <label className="flex flex-1 cursor-pointer items-center gap-2">
+                  <label className="flex items-center gap-3">
                     <input
                       type="checkbox"
                       checked={
@@ -1752,34 +1293,42 @@ export default function DienstForm({
                           tag.id,
                         )
                       }
+                      className="h-4 w-4 rounded border-slate-300"
                     />
 
-                    <span className="text-sm text-gray-800">
+                    <span className="text-sm font-medium text-slate-800">
                       {tag.naam}
                     </span>
                   </label>
 
                   {geselecteerd && (
-                    <input
-                      type="number"
-                      min={1}
-                      value={
-                        geselecteerdeTags[
-                          tag.id
-                        ]
-                      }
-                      onChange={(
-                        event,
-                      ) =>
-                        wijzigAantal(
-                          tag.id,
-                          event.target
-                            .value,
-                        )
-                      }
-                      className="w-20 rounded-lg border border-gray-300 px-2 py-1 text-sm"
-                      aria-label={`Aantal ${tag.naam}`}
-                    />
+                    <div className="mt-3">
+                      <label
+                        htmlFor={`aantal-${tag.id}`}
+                        className="mb-1 block text-xs text-slate-500"
+                      >
+                        Aantal
+                      </label>
+
+                      <input
+                        id={`aantal-${tag.id}`}
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={
+                          geselecteerdeTags[
+                            tag.id
+                          ] ?? 1
+                        }
+                        onChange={(event) =>
+                          wijzigAantal(
+                            tag.id,
+                            event.target.value,
+                          )
+                        }
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
+                      />
+                    </div>
                   )}
                 </div>
               );
@@ -1788,22 +1337,18 @@ export default function DienstForm({
         )}
       </div>
 
-      {waarschuwingen.length >
-        0 && (
-        <div className="rounded-xl border border-amber-400 bg-amber-100 p-4">
-          <p className="text-sm font-semibold text-amber-950">
-            ⚠️ Let op: overlap
-            in functie
+      {waarschuwingen.length > 0 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm font-semibold text-amber-800">
+            Let op
           </p>
 
           <div className="mt-2 space-y-1">
             {waarschuwingen.map(
               (waarschuwing) => (
                 <p
-                  key={
-                    waarschuwing
-                  }
-                  className="text-sm text-amber-900"
+                  key={waarschuwing}
+                  className="text-sm text-amber-700"
                 >
                   {waarschuwing}
                 </p>
@@ -1813,268 +1358,136 @@ export default function DienstForm({
         </div>
       )}
 
-      <div
-        className={`rounded-xl border p-4 ${
-          bhvGedekt
-            ? "border-green-300 bg-green-50"
-            : "border-amber-300 bg-amber-50"
-        }`}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h4 className="text-sm font-semibold text-gray-900">
-              BHV-controle
-            </h4>
-
-            <p className="mt-1 text-xs text-gray-600">
-              BHV wordt automatisch
-              gecontroleerd op basis
-              van de geselecteerde
-              medewerkers.
-            </p>
-          </div>
-
-          <span
-            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-              bhvGedekt
-                ? "bg-green-100 text-green-800"
-                : "bg-amber-100 text-amber-800"
-            }`}
-          >
-            {bhvGedekt
-              ? "BHV gedekt"
-              : "BHV nog niet gedekt"}
-          </span>
-        </div>
-
-        <p className="mt-3 text-sm">
-          {bhvGedekt ? (
-            <span className="text-green-800">
-              ✓{" "}
-              {aantalGeselecteerdeBhv}{" "}
-              BHV'er
-              {aantalGeselecteerdeBhv !==
-              1
-                ? "s"
-                : ""}{" "}
-              geselecteerd.
-            </span>
-          ) : (
-            <span className="text-amber-800">
-              ⚠ Er is nog geen
-              BHV-gekwalificeerde
-              medewerker
-              geselecteerd.
-            </span>
-          )}
-        </p>
-      </div>
-
-      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-        <div>
-          <h4 className="text-sm font-semibold text-gray-900">
-            Medewerkers voor deze
-            dienst
-          </h4>
-
-          <p className="mt-1 text-xs text-gray-500">
-            Groen = volledig
-            beschikbaar · Geel =
-            gedeeltelijk beschikbaar
-            · Rood = niet beschikbaar.
-          </p>
-        </div>
-
-        <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-gray-600">
-          <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-full border border-green-300 bg-green-100" />
-            Volledig beschikbaar
-          </span>
-
-          <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-full border border-amber-300 bg-amber-100" />
-            Gedeeltelijk beschikbaar
-          </span>
-
-          <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-full border border-red-300 bg-red-100" />
-            Niet beschikbaar
-          </span>
-        </div>
-
-        {ladenMedewerkers ||
-        ladenDiensten ? (
-          <p className="mt-4 text-sm text-gray-500">
-            Medewerkers en
-            beschikbaarheid laden...
-          </p>
-        ) : !begintijd ? (
-          <p className="mt-4 text-sm text-gray-500">
-            Kies eerst een begintijd.
-          </p>
-        ) : passendeMedewerkers.length ===
-          0 ? (
-          <p className="mt-4 text-sm text-gray-500">
-            Er zijn geen
-            medewerkers met de
-            gekozen functie(s).
-          </p>
-        ) : (
-          <div className="mt-4 space-y-2">
-            {passendeMedewerkers.map(
-              (medewerker) => {
-                const niveau =
-                  beschikbaarheidsNiveau(
-                    medewerker,
-                    datum,
-                    begintijd,
-                    eindtijd,
-                  );
-
-                const geselecteerd =
-                  geselecteerdeMedewerkers[
-                    medewerker.id
-                  ] ?? false;
-
-                const heeftOverlap =
-                  medewerkerHeeftDienstOverlap(
-                    medewerker,
-                    datum,
-                    begintijd,
-                    eindtijd,
-                  );
-
-                const beschikbaarheden =
-                  medewerker.beschikbaarheden.filter(
-                    (beschikbaarheid) =>
-                      beschikbaarheid.datum.slice(
-                        0,
-                        10,
-                      ) === datum,
-                  );
-
-                const heeftVoorkeur =
-                  beschikbaarheden.some(
-                    (beschikbaarheid) =>
-                      beschikbaarheid.status ===
-                      "VOORKEUR",
-                  );
-
-                const heeftBhv =
-                  medewerkerIsBhv(
-                    medewerker,
-                  );
-
-                const niveauKlassen =
-                  niveau === "groen"
-                    ? "border-green-300 bg-green-50"
-                    : niveau ===
-                        "geel"
-                      ? "border-amber-300 bg-amber-50"
-                      : "border-red-300 bg-red-50";
-
-                const statusTekst =
-                  niveau === "groen"
-                    ? "Volledig beschikbaar"
-                    : niveau ===
-                        "geel"
-                      ? "Gedeeltelijk beschikbaar"
-                      : "Niet beschikbaar";
-
-                return (
-                  <label
-                    key={
-                      medewerker.id
-                    }
-                    className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition ${niveauKlassen} ${
-                      heeftOverlap
-                        ? "cursor-not-allowed opacity-60"
-                        : "cursor-pointer"
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-gray-900">
-                        {volledigeNaam(
-                          medewerker,
-                        )}
-                      </p>
-
-                      <p
-                        className={`text-xs ${
-                          niveau ===
-                          "groen"
-                            ? "text-green-700"
-                            : niveau ===
-                                "geel"
-                              ? "text-amber-700"
-                              : "text-red-700"
-                        }`}
-                      >
-                        {heeftOverlap
-                          ? "Heeft al een overlappende dienst"
-                          : statusTekst}
-
-                        {heeftVoorkeur &&
-                          !heeftOverlap &&
-                          " · voorkeur"}
-
-                        {heeftBhv &&
-                          " · ✓ BHV"}
-                      </p>
-                    </div>
-
-                    <input
-                      type="checkbox"
-                      checked={
-                        geselecteerd
-                      }
-                      disabled={
-                        heeftOverlap
-                      }
-                      onChange={() =>
-                        toggleMedewerker(
-                          medewerker.id,
-                        )
-                      }
-                    />
-                  </label>
-                );
-              },
-            )}
-          </div>
-        )}
-      </div>
-
       {fout && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
           <p className="text-sm text-red-700">
             {fout}
           </p>
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-gray-500">
-          Geselecteerde
-          medewerkers:{" "}
-          {
-            Object.values(
-              geselecteerdeMedewerkers,
-            ).filter(Boolean)
-              .length
-          }
-        </p>
+      {!datum ? (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <p className="text-sm text-slate-600">
+            Kies een datum om geschikte medewerkers te bekijken.
+          </p>
+        </div>
+      ) : geladenFoutloos(
+          ladenMedewerkers,
+          ladenDiensten,
+        ) ? (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <p className="text-sm text-slate-600">
+            Medewerkers en bestaande diensten worden geladen...
+          </p>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-slate-200 bg-white">
+          <div className="border-b border-slate-100 px-5 py-4">
+            <h3 className="font-semibold text-slate-900">
+              Geschikte medewerkers
+            </h3>
 
+            <p className="mt-1 text-sm text-slate-500">
+              Alleen medewerkers met een passende functie worden getoond.
+            </p>
+          </div>
+
+          <div className="divide-y divide-slate-100">
+            {passendeMedewerkers.length ===
+            0 ? (
+              <div className="px-5 py-8 text-center">
+                <p className="text-sm font-medium text-slate-700">
+                  Geen passende medewerkers gevonden.
+                </p>
+              </div>
+            ) : (
+              passendeMedewerkers.map(
+                (medewerker) => {
+                  const niveau =
+                    beschikbaarheidsNiveau(
+                      medewerker,
+                      datum,
+                      begintijd,
+                      eindtijd,
+                    );
+
+                  const niveauKlasse =
+                    niveau === "groen"
+                      ? "bg-emerald-100 text-emerald-800"
+                      : niveau === "oranje"
+                        ? "bg-amber-100 text-amber-800"
+                        : "bg-red-100 text-red-800";
+
+                  const niveauTekst =
+                    niveau === "groen"
+                      ? "Beschikbaar"
+                      : niveau === "oranje"
+                        ? "Gedeeltelijk beschikbaar"
+                        : "Niet beschikbaar";
+
+                  return (
+                    <div
+                      key={medewerker.id}
+                      className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div>
+                        <p className="font-medium text-slate-900">
+                          {volledigeNaam(
+                            medewerker,
+                          )}
+                        </p>
+
+                        {medewerker.personeelsnummer && (
+                          <p className="mt-1 text-xs text-slate-500">
+                            {medewerker.personeelsnummer}
+                          </p>
+                        )}
+                      </div>
+
+                      <span
+                        className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${niveauKlasse}`}
+                      >
+                        {niveauTekst}
+                      </span>
+                    </div>
+                  );
+                },
+              )
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-end">
         <button
-          type="submit"
-          disabled={laden}
-          className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+          type="button"
+          disabled={
+            laden ||
+            !datum ||
+            geselecteerdeTagIds.length ===
+              0
+          }
+          onClick={() =>
+            void maakDienst()
+          }
+          className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {laden
-            ? "Dienst opslaan..."
+            ? "Dienst aanmaken..."
             : "Dienst aanmaken"}
         </button>
       </div>
-    </form>
+    </div>
+  );
+}
+
+function geladenFoutloos(
+  ladenMedewerkers: boolean,
+  ladenDiensten: boolean,
+) {
+  return (
+    ladenMedewerkers ||
+    ladenDiensten
   );
 }
