@@ -31,6 +31,7 @@ import Button from "@/components/ui/Button";
 import MedewerkerTabBewerken from "@/components/medewerkers/MedewerkerTabBewerken";
 
 import BeschikbaarheidPanel from "@/components/medewerkers/beschikbaarheid/components/BeschikbaarheidPanel";
+import VakantiePlanningPanel from "@/components/medewerkers/VakantiePlanningPanel";
 
 /*
  * ============================================================
@@ -1336,74 +1337,11 @@ export default async function MedewerkerPage({
           {actieveTab === "vakantie" && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">
-                  Vakantie
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Vakantie en andere geplande afwezigheid van deze medewerker.
-                </p>
+                <h2 className="text-lg font-semibold text-slate-900">Vakantieplanning</h2>
+                <p className="mt-1 text-sm text-slate-500">Vakantieplanning voor juni, juli en augustus. De medewerker levert deze uiterlijk 30 april in en de eigenaar beoordeelt de aanvraag.</p>
               </div>
-
-              <Card
-                title="Vakantieaanvragen"
-                description="Aanvragen worden door de eigenaar beoordeeld. De status van iedere aanvraag blijft zichtbaar."
-              >
-                {vakantieAanvragen.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-6 text-center">
-                    <p className="text-sm font-semibold text-slate-700">
-                      Geen vakantieaanvragen
-                    </p>
-
-                    <p className="mt-1 text-sm text-slate-500">
-                      Er zijn nog geen vakantie- of afwezigheidsaanvragen geregistreerd.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {vakantieAanvragen.map((aanvraag) => (
-                      <div
-                        key={aanvraag.id}
-                        className="rounded-xl border border-slate-200 bg-white p-4"
-                      >
-                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                          <div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="font-semibold text-slate-900">
-                                {formatteerDatum(aanvraag.startDatum)} t/m {formatteerDatum(aanvraag.eindDatum)}
-                              </p>
-
-                              <Badge variant="default">
-                                {aanvraag.type === "VAKANTIE" ? "Vakantie" : "Overig"}
-                              </Badge>
-                            </div>
-
-                            {aanvraag.opmerking && (
-                              <p className="mt-2 text-sm text-slate-600">
-                                {aanvraag.opmerking}
-                              </p>
-                            )}
-
-                            {aanvraag.status === "AFGEWEZEN" && aanvraag.redenAfwijzing && (
-                              <div className="mt-3 rounded-lg bg-red-50 px-3 py-2">
-                                <p className="text-xs font-medium text-red-700">Reden afwijzing</p>
-                                <p className="mt-1 text-sm text-red-800">{aanvraag.redenAfwijzing}</p>
-                              </div>
-                            )}
-
-                            <p className="mt-3 text-xs text-slate-400">
-                              Aangevraagd op {formatteerDatum(aanvraag.aangevraagdOp)}
-                            </p>
-                          </div>
-
-                          <Badge variant={vakantieStatusVariant(aanvraag.status)}>
-                            {vakantieStatusLabel(aanvraag.status)}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              <Card title="Zomervakantie" description="Maximaal 14 dagen in totaal en maximaal 14 dagen aaneengesloten.">
+                <VakantiePlanningPanel medewerkerId={medewerker.id} isEigenaar={isEigenaar} />
               </Card>
             </div>
           )}
