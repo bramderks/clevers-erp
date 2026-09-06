@@ -440,6 +440,30 @@ export default async function DashboardPage() {
       });
     }
 
+    const openVerloningsControles =
+      await prisma.verloningsControle.count({
+        where: {
+          medewerkerId,
+          status: "OPEN",
+          verloningsPeriode: {
+            status: "KLAAR",
+            controleStart: { lte: vandaag },
+            controleDeadline: { gte: vandaag },
+          },
+        },
+      });
+
+    if (openVerloningsControles > 0) {
+      taken.unshift({
+        id: "verloning-controleren",
+        titel: "Mijn verloning controleren",
+        omschrijving: "Je verloning staat klaar om te controleren.",
+        aantal: openVerloningsControles,
+        href: "/mijn-verloning",
+        variant: "warning",
+      });
+    }
+
     return (
       <main className="space-y-8">
         <PageHeader title="Dashboard" />
