@@ -33,7 +33,7 @@ export async function POST(request:Request,{params}:{params:Promise<{id:string}>
  if(!medewerker?.actief)return fout("Alleen actieve medewerkers kunnen een vakantieplanning indienen.",400);
  const vestiging=medewerker.vestigingen[0]?.vestiging; if(!vestiging||!vestiging.actief)return fout("Deze medewerker is niet actief gekoppeld aan deze vestiging.",400);
  if(!vestiging.seizoenStart)return fout("De eigenaar heeft voor deze vestiging nog geen seizoenstart ingesteld.",400);
- const deadline=deadlineVoorSeizoen(vestiging.seizoenStart); const jaar=vestiging.seizoenStart.getFullYear(); const zomer=zomerGrenzen(jaar);
+ const deadline=deadlineVoorSeizoen(vestiging.seizoenStart); if(new Date()>deadline)return fout("De deadline van 30 april voor deze vakantieplanning is verstreken.",400); const jaar=vestiging.seizoenStart.getFullYear(); const zomer=zomerGrenzen(jaar);
  if(start<zomer.start||einde>zomer.einde)return fout("De vakantieplanning mag alleen betrekking hebben op juni, juli en augustus van het seizoen.",400);
  if(dagen(start,einde)>14)return fout("Je mag maximaal 14 dagen aaneengesloten vakantie plannen.",400);
  const bestaande=await prisma.vakantieAanvraag.findMany({where:{medewerkerId:id,vestigingId:vestiging.id,status:{in:["AANGEVRAAGD","GOEDGEKEURD"]},startDatum:{lte:zomer.einde},eindDatum:{gte:zomer.start}},select:{startDatum:true,eindDatum:true}});
