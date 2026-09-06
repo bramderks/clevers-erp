@@ -511,7 +511,51 @@ HEADER
         </div>
 
         <DienstBewerkToggle
-          dienst={dienst}
+          dienst={{
+            id: dienst.id,
+            weekId: dienst.weekId,
+            datum: dienst.datum.toISOString(),
+            begintijd: dienst.begintijd.toISOString(),
+            eindtijd: dienst.eindtijd.toISOString(),
+            opmerkingen: dienst.opmerkingen,
+            tags: dienst.tags.map((dienstTag) => ({
+              id: dienstTag.id,
+              dienstId: dienstTag.dienstId,
+              tagId: dienstTag.tagId,
+              aantal: dienstTag.aantal,
+              tag: {
+                id: dienstTag.tag.id,
+                naam: dienstTag.tag.naam,
+                volgorde: dienstTag.tag.volgorde,
+                actief: dienstTag.tag.actief,
+              },
+            })),
+            bezetting: dienst.bezetting.map((bezetting) => ({
+              id: bezetting.id,
+              dienstId: bezetting.dienstId,
+              medewerkerId: bezetting.medewerkerId,
+              status: bezetting.status as
+                | "OPEN"
+                | "GEPLAND"
+                | "BEVESTIGD"
+                | "AFGEZEGD"
+                | "GEWERKT",
+              medewerker: bezetting.medewerker
+                ? {
+                    id: bezetting.medewerker.id,
+                    personeelsnummer:
+                      bezetting.medewerker.personeelsnummer,
+                    aanhef: bezetting.medewerker.aanhef,
+                    voornaam: bezetting.medewerker.voornaam,
+                    tussenvoegsel:
+                      bezetting.medewerker.tussenvoegsel,
+                    achternaam:
+                      bezetting.medewerker.achternaam,
+                    tags: [],
+                  }
+                : null,
+            })),
+          }}
           vestigingId={
             dienst.week.vestigingId
           }
