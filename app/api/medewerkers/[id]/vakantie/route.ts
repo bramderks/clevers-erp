@@ -23,8 +23,8 @@ export async function GET(_:Request,{params}:{params:Promise<{id:string}>}){
 
 export async function POST(request:Request,{params}:{params:Promise<{id:string}>}){
  const gebruiker=await getCurrentUser(); if(!gebruiker)return fout("Je moet ingelogd zijn.",401);
- const {id}=await params; const eigenaar=await magEigenaar(gebruiker);
- if(!eigenaar&&gebruiker.medewerker?.id!==id)return fout("Geen toegang.",403);
+ const {id}=await params;
+ if(gebruiker.medewerker?.id!==id)return fout("Een vakantieplanning kan alleen voor je eigen medewerkerprofiel worden ingediend.",403);
  const body=await request.json() as {startDatum?:string;eindDatum?:string;vestigingId?:string;opmerking?:string};
  const start=body.startDatum?datum(body.startDatum):null, einde=body.eindDatum?datum(body.eindDatum):null;
  if(!start||!einde||!body.vestigingId)return fout("Vul vestiging, startdatum en einddatum in.",400);
