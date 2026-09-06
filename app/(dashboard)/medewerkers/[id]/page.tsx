@@ -42,7 +42,12 @@ const TABS = [
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
-type EditSection = "algemeen" | "contract" | "vestigingen" | "beschikbaarheid" | "verloning";
+type EditSection =
+  | "algemeen"
+  | "contract"
+  | "vestigingen"
+  | "beschikbaarheid"
+  | "verloning";
 
 type MaandOverzicht = {
   maand: number;
@@ -271,8 +276,7 @@ export default async function MedewerkerPage({
       id: relatie.vestiging.id,
       naam: relatie.vestiging.naam,
     })),
-    hoofdvestigingId:
-      medewerker.vestigingen.find((relatie) => relatie.hoofdvestiging)?.vestiging.id ?? null,
+    hoofdvestigingId: medewerker.vestigingen.find((relatie) => relatie.hoofdvestiging)?.vestiging.id ?? null,
     rollen: medewerker.rollen.map((relatie) => ({
       id: relatie.rol.id,
       naam: relatie.rol.naam,
@@ -358,7 +362,6 @@ export default async function MedewerkerPage({
     const periode = verloningsPeriodes.find(
       (item) => item.jaar === verloningsJaar && item.maand === maand,
     );
-
     const regel = periode?.regels[0];
     const controle = periode?.controles[0];
 
@@ -472,6 +475,7 @@ export default async function MedewerkerPage({
                   <p className="mt-1 text-slate-900">{formatteerDatum(medewerker.geboortedatum)}</p>
                 </div>
               </div>
+
               {isBewerken ? (
                 <AnnuleerBewerkenKnop href={`/medewerkers/${medewerker.id}?tab=${actieveTab}`} />
               ) : (
@@ -481,7 +485,10 @@ export default async function MedewerkerPage({
                 />
               )}
             </div>
-            {isBewerken && editSection === "algemeen" && <MedewerkerBewerken section="algemeen" />}
+
+            {isBewerken && editSection === "algemeen" && (
+              <MedewerkerBewerken section="algemeen" />
+            )}
           </Card>
         )}
 
@@ -519,7 +526,10 @@ export default async function MedewerkerPage({
                 />
               )}
             </div>
-            {isBewerken && editSection === "contract" && <MedewerkerBewerken section="contract" />}
+
+            {isBewerken && editSection === "contract" && (
+              <MedewerkerBewerken section="contract" />
+            )}
           </Card>
         )}
 
@@ -553,7 +563,9 @@ export default async function MedewerkerPage({
                 />
               )}
             </div>
-            {isBewerken && editSection === "vestigingen" && <MedewerkerBewerken section="vestigingen" />}
+            {isBewerken && editSection === "vestigingen" && (
+              <MedewerkerBewerken section="vestigingen" />
+            )}
           </Card>
         )}
 
@@ -602,12 +614,10 @@ export default async function MedewerkerPage({
                   <tbody>
                     {vakantieAanvragen.map((aanvraag) => (
                       <tr key={aanvraag.id} className="border-b border-slate-100 last:border-0">
-                        <td className="py-4 pr-4 text-slate-900">{formatteerDatum(aanvraag.startDatum)} t/m {formatteerDatum(aanvraag.eindDatum)}</td>
+                        <td className="py-4 pr-4 text-slate-900">{formatteerDatum(aanvraag.startDatum)}{" "}t/m{" "}{formatteerDatum(aanvraag.eindDatum)}</td>
                         <td className="py-4 pr-4 text-slate-700">{aanvraag.type}</td>
                         <td className="py-4 pr-4">
-                          <Badge variant={vakantieStatusVariant(aanvraag.status)}>
-                            {vakantieStatusLabel(aanvraag.status)}
-                          </Badge>
+                          <Badge variant={vakantieStatusVariant(aanvraag.status)}>{vakantieStatusLabel(aanvraag.status)}</Badge>
                         </td>
                         <td className="py-4 pr-4 text-slate-700">{formatteerDatumTijd(aanvraag.aangevraagdOp)}</td>
                         <td className="py-4 text-slate-600">{aanvraag.opmerking || "—"}</td>
@@ -635,7 +645,7 @@ export default async function MedewerkerPage({
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <p className="font-medium text-slate-900">{formatteerDatumTijd(bezetting.dienst.datum)}</p>
-                        <p className="mt-1 text-sm text-slate-500">{bezetting.dienst.begintijd} t/m {bezetting.dienst.eindtijd || "—"}</p>
+                        <p className="mt-1 text-sm text-slate-500">{bezetting.dienst.begintijd}{" "}t/m{" "}{bezetting.dienst.eindtijd || "—"}</p>
                       </div>
                       <Badge>{bezetting.status}</Badge>
                     </div>
@@ -691,7 +701,9 @@ export default async function MedewerkerPage({
                 <tbody>
                   {maandOverzicht.map((maand) => {
                     const periode = verloningsPeriodes.find(
-                      (item) => item.jaar === verloningsJaar && item.maand === maand.maand,
+                      (item) =>
+                        item.jaar === verloningsJaar &&
+                        item.maand === maand.maand,
                     );
                     const statusVariant =
                       maand.status === "AKKOORD"
@@ -723,7 +735,9 @@ export default async function MedewerkerPage({
               </table>
             </div>
 
-            {isBewerken && editSection === "verloning" && <MedewerkerBewerken section="verloning" />}
+            {isBewerken && editSection === "verloning" && (
+              <MedewerkerBewerken section="verloning" />
+            )}
           </Card>
         )}
       </div>
