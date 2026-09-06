@@ -175,6 +175,102 @@ export async function GET() {
 
     /*
      * ======================================================
+     * EIGEN VERLONING
+     * ======================================================
+     *
+     * Iedere gebruiker die ook een medewerkerprofiel heeft,
+     * ontvangt zijn eigen verloningstaak. Daardoor geldt dit
+     * automatisch ook voor teamleiders en eigenaren die zelf
+     * als medewerker in de verloning zijn opgenomen.
+     */
+
+    if (gebruiker.medewerker?.id) {
+      const medewerkerId = gebruiker.medewerker.id;
+
+      const openControles =
+        await prisma.verloningsControle.findMany({
+          where: {
+            medewerkerId,
+            status: "OPEN",
+            verloningsPeriode: {
+              status: "KLAAR",
+              controleStart: { lte: new Date() },
+              controleDeadline: { gte: new Date() },
+            },
+          },
+          orderBy: {
+            verloningsPeriode: {
+              periodeStart: "desc",
+            },
+          },
+          select: {
+            verloningsPeriode: {
+              select: {
+                id: true,
+                periodeStart: true,
+                regels: {
+                  where: {
+                    medewerkerId,
+                  },
+                  select: {
+                    gewerkteDagen: true,
+                    gewerkteUren: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+      for (const controle of openControles) {
+        const periode = controle.verloningsPeriode;
+
+        const gewerkteDagen =
+          periode.regels.reduce(
+            (totaal, regel) =>
+              totaal + regel.gewerkteDagen,
+            0,
+          );
+
+        const gewerkteUren =
+          periode.regels.reduce(
+            (totaal, regel) =>
+              totaal + Number(regel.gewerkteUren),
+            0,
+          );
+
+        taken.push({
+          id: "eigen-verloning-" + periode.id,
+          type: "EIGEN_VERLONING_CONTROLEREN",
+          categorie: "Verloning",
+          titel: "Mijn verloning controleren",
+          omschrijving:
+            new Intl.DateTimeFormat(
+              "nl-NL",
+              {
+                month: "long",
+                year: "numeric",
+              },
+            ).format(periode.periodeStart) +
+            " · " +
+            gewerkteDagen +
+            " gewerkte dagen · " +
+            gewerkteUren
+              .toFixed(2)
+              .replace(".", ",") +
+            " gewerkte uren.",
+          aangemaaktOp: periode.periodeStart,
+          actie: "EIGEN_VERLONING_CONTROLEREN",
+          gegevens: {
+            periodeId: periode.id,
+            href: "/mijn-verloning",
+          },
+        });
+      }
+    }
+
+    /*
+     * ======================================================
      * RUILVERZOEKEN
      * ======================================================
      *
