@@ -48,8 +48,8 @@ export default function VakantiePlanningPanel({medewerkerId,isEigenaar,magIndien
   }
 
   async function beoordeel(id:string,status:"GOEDGEKEURD"|"AFGEWEZEN"){
-    const reden=status==="AFGEWEZEN"?window.prompt("Reden van afwijzing:") ?? "":undefined;
-    if(status==="AFGEWEZEN" && !reden.trim()) return;
+    const reden=status==="AFGEWEZEN"?(window.prompt("Reden van afwijzing:") ?? ""):undefined;
+    if(status==="AFGEWEZEN" && !reden) return;
     const r=await fetch(`/api/medewerkers/${encodeURIComponent(medewerkerId)}/vakantie/${encodeURIComponent(id)}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status,redenAfwijzing:reden})});
     const d=await r.json();
     if(!r.ok){setFout(d.fout ?? "Aanvraag kon niet worden beoordeeld.");return;}
