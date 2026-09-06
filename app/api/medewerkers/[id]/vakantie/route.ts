@@ -16,8 +16,9 @@ export async function GET(_:Request,{params}:{params:Promise<{id:string}>}){
  const gebruiker=await getCurrentUser(); if(!gebruiker)return fout("Je moet ingelogd zijn.",401);
  const {id}=await params; const eigenaar=await magEigenaar(gebruiker);
  if(!eigenaar&&gebruiker.medewerker?.id!==id)return fout("Geen toegang.",403);
- const aanvragen=await prisma.vakantieAanvraag.findMany({where:{medewerkerId:id},orderBy:{startDatum:"asc"},select:{id:true,startDatum:true,eindDatum:true,vestigingId:true,status:true,opmerking:true,redenAfwijzing:true,vestiging:{select:{naam:true}}}});
- return NextResponse.json({aanvragen:aanvragen.map(a=>({...a,vestigingNaam:a.vestiging.naam}))});
+ const [aanvragen, medewerker]=await Promise.all([prisma.vakantieAanvraag.findMany({where:{medewerkerId:id},orderBy:{startDatum:"asc"},select:{id:true,startDatum:true,eindDatum:true,vestigingId:true,status:true,opmerking:true,redenAfwijzing:true,vestiging:{select:{naam:true}}}}),prisma.medewerker.findUnique({where:{id},select:{vestigingen:{select:{vestiging:{select:{id:true,naam:true,actief:true,seizoenStart:true}}}}}})]);
+ const vestigingen=(medewerker?.vestigingen??[]).map(v=>v.vestiging).filter(v=>v.actief&&v.seizoenStart).map(v=>({id:v.id,naam:v.naam}));
+ return NextResponse.json({aanvragen:aanvragen.map(a=>({...a,vestigingNaam:a.vestiging.naam})),vestigingen});
 }
 
 export async function POST(request:Request,{params}:{params:Promise<{id:string}>}){
