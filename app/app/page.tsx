@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { Prisma } from "@/generated/prisma";
 import Link from "next/link";
 import {
   CalendarDays,
@@ -37,7 +36,6 @@ export default async function MedewerkerAppPage() {
   }
 
   const vandaag = new Date();
-  const beschikbareBezettingStatussen: Prisma.DienstBezettingWhereInput["status"] = undefined;
 
   const [
     aankomendeDiensten,
