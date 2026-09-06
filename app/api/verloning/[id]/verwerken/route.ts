@@ -14,17 +14,7 @@ type RouteContext = {
  * ============================================================
  *
  * Deze API-route bevat uitsluitend de HTTP-afhandeling.
- *
- * De centrale bedrijfslogica voor:
- *
- * - authenticatie;
- * - autorisatie;
- * - organisatietoegang;
- * - statuscontrole;
- * - validatie;
- * - definitieve verwerking;
- *
- * staat in:
+ * De centrale bedrijfslogica staat in:
  *
  * lib/verloning/verwerkVerloning.ts
  * ============================================================
@@ -35,14 +25,7 @@ export async function POST(
   { params }: RouteContext,
 ) {
   try {
-    /*
-     * ========================================================
-     * PERIODE-ID
-     * ========================================================
-     */
-
-    const { id } =
-      await params;
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json(
@@ -58,22 +41,8 @@ export async function POST(
       );
     }
 
-    /*
-     * ========================================================
-     * CENTRALE VERWERKINGSLOGICA
-     * ========================================================
-     */
-
     const resultaat =
-      await verwerkVerloning(
-        id,
-      );
-
-    /*
-     * ========================================================
-     * SUCCES
-     * ========================================================
-     */
+      await verwerkVerloning(id);
 
     return NextResponse.json(
       {
@@ -92,16 +61,6 @@ export async function POST(
       error instanceof Error
         ? error.message
         : "Onbekende fout bij het verwerken van de verloningsperiode.";
-
-    /*
-     * ========================================================
-     * FOUTSTATUS BEPALEN
-     * ========================================================
-     *
-     * De centrale functie gebruikt duidelijke foutmeldingen.
-     * Hier vertalen we die naar passende HTTP-statuscodes.
-     * ========================================================
-     */
 
     if (
       fout ===
@@ -171,17 +130,21 @@ export async function POST(
       );
     }
 
-    /*
-     * ========================================================
-     * VALIDATIEFOUT
-     * ========================================================
-     */
-
     if (
       fout ===
         "Alleen een verloningsperiode met status Klaar kan worden verwerkt." ||
       fout ===
-        "Deze verloningsperiode bevat geen regels en kan niet worden verwerkt."
+        "Deze verloningsperiode bevat geen regels en kan niet worden verwerkt." ||
+      fout ===
+        "Deze verloningsperiode heeft geen controledeadline en kan daarom niet veilig worden verwerkt." ||
+      fout ===
+        "De controleperiode is nog niet verlopen. De verloning kan pas vanaf de 4e dag worden verwerkt." ||
+      fout ===
+        "De eigenaar heeft deze volledige verloningsperiode nog niet gecontroleerd." ||
+      fout ===
+        "Niet voor iedere medewerker in deze verloningsperiode is precies één controle-record aanwezig." ||
+      fout ===
+        "Niet alle medewerkercontroles zijn afgerond."
     ) {
       return NextResponse.json(
         {
@@ -194,12 +157,6 @@ export async function POST(
         },
       );
     }
-
-    /*
-     * ========================================================
-     * ONBEKENDE TECHNISCHE FOUT
-     * ========================================================
-     */
 
     console.error(
       "Fout bij verwerken verloningsperiode:",
