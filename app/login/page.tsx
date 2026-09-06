@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import LoginForm from "@/components/login/LoginForm";
 
 export default function LoginPage() {
@@ -5,11 +7,12 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-10">
       <div className="w-full max-w-md">
         <div className="mb-8 flex justify-center">
-          <img
+          <Image
             src="/logo.png"
             alt="Clevers"
             width={300}
             height={128}
+            priority
             className="h-auto max-h-32 w-auto max-w-[300px] object-contain"
           />
         </div>
