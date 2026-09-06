@@ -19,6 +19,7 @@ function fmt(d:string){return new Intl.DateTimeFormat("nl-NL",{day:"2-digit",mon
 
 export default function VakantiePlanningPanel({medewerkerId,isEigenaar}:{medewerkerId:string;isEigenaar:boolean}) {
   const [items,setItems]=useState<Aanvraag[]>([]);
+  const [vestigingen,setVestigingen]=useState<Array<{id:string;naam:string}>>([]);
   const [loading,setLoading]=useState(true);
   const [fout,setFout]=useState<string|null>(null);
   const [opslaan,setOpslaan]=useState(false);
@@ -32,7 +33,7 @@ export default function VakantiePlanningPanel({medewerkerId,isEigenaar}:{medewer
     const r=await fetch(`/api/medewerkers/${encodeURIComponent(medewerkerId)}/vakantie`,{cache:"no-store"});
     const d=await r.json();
     if(!r.ok){setFout(d.fout ?? "Vakantieplanning kon niet worden geladen.");setLoading(false);return;}
-    setItems(d.aanvragen ?? []);
+    setItems(d.aanvragen ?? []);setVestigingen(d.vestigingen ?? []);
     setLoading(false);
   }
   useEffect(()=>{void laad();},[medewerkerId]);
@@ -63,7 +64,7 @@ export default function VakantiePlanningPanel({medewerkerId,isEigenaar}:{medewer
       <p className="mt-1">Je levert je vakantieplanning uiterlijk 30 april in. In deze periode mag je maximaal 14 dagen vakantie opnemen, ook maximaal 14 dagen aaneengesloten.</p>
     </div>
     <form onSubmit={indienen} className="grid gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-2">
-      <label className="text-sm font-medium text-slate-700">Vestiging<select required value={vestigingId} onChange={e=>setVestigingId(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"><option value="">Kies een vestiging</option>{Array.from(new Map(items.map(i=>[i.vestigingId,i.vestigingNaam])).entries()).map(([id,naam])=><option key={id} value={id}>{naam}</option>)}</select></label>
+      <label className="text-sm font-medium text-slate-700">Vestiging<select required value={vestigingId} onChange={e=>setVestigingId(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"><option value="">Kies een vestiging</option>{vestigingen.map(v=><option key={v.id} value={v.id}>{v.naam}</option>)}</select></label>
       <label className="text-sm font-medium text-slate-700">Startdatum<input required type="date" value={startDatum} onChange={e=>setStartDatum(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"/></label>
       <label className="text-sm font-medium text-slate-700">Einddatum<input required type="date" value={eindDatum} onChange={e=>setEindDatum(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"/></label>
       <label className="text-sm font-medium text-slate-700 md:col-span-2">Opmerking<textarea value={opmerking} onChange={e=>setOpmerking(e.target.value)} className="mt-1 min-h-20 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"/></label>
