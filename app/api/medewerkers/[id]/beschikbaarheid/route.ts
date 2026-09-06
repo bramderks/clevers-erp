@@ -982,7 +982,7 @@ export async function POST(
             )
           : await prisma.beschikbaarheid.create(
               {
-                data: data as any,
+                data,
               },
             );
 
