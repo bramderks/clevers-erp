@@ -169,14 +169,27 @@ export default function Topbar({
   }
 
   useEffect(() => {
-    void laadTaken();
+    let actief = true;
+
+    async function laadTakenEersteKeer() {
+      if (!actief) {
+        return;
+      }
+
+      await laadTaken();
+    }
+
+    void laadTakenEersteKeer();
 
     const interval =
       window.setInterval(() => {
-        void laadTaken(true);
+        if (actief) {
+          void laadTaken(true);
+        }
       }, 30000);
 
     return () => {
+      actief = false;
       window.clearInterval(
         interval,
       );
@@ -613,38 +626,31 @@ export default function Topbar({
                             </div>
 
                             <p className="mt-2 text-xs leading-5 text-slate-600">
-                              {
-                                taak.omschrijving
-                              }
+                              {taak.omschrijving}
                             </p>
 
-                            {datum &&
-                              begintijd &&
-                              eindtijd && (
-                                <div className="mt-2 rounded-lg bg-slate-50 px-3 py-2">
-                                  <p className="text-xs font-medium text-slate-800">
-                                    {formatteerDatum(
-                                      datum,
-                                    )}
-                                  </p>
-
-                                  <p className="mt-0.5 text-[11px] text-slate-500">
-                                    {formatteerTijd(
-                                      begintijd,
-                                    )}{" "}
-                                    -{" "}
-                                    {formatteerTijd(
-                                      eindtijd,
-                                    )}
-                                  </p>
-                                </div>
-                              )}
-
-                            {taakFout && (
-                              <p className="mt-2 rounded-md bg-red-50 px-2 py-1.5 text-[11px] text-red-600">
-                                {taakFout}
+                            {datum && (
+                              <p className="mt-2 text-xs text-slate-500">
+                                {formatteerDatum(
+                                  datum,
+                                )}
+                                {begintijd &&
+                                  ` · ${formatteerTijd(
+                                    begintijd,
+                                  )}`}
+                                {eindtijd &&
+                                  ` – ${formatteerTijd(
+                                    eindtijd,
+                                  )}`}
                               </p>
                             )}
+
+                            {taakFout &&
+                              bezig && (
+                                <p className="mt-2 text-xs font-medium text-red-600">
+                                  {taakFout}
+                                </p>
+                              )}
 
                             <div className="mt-3 flex flex-wrap gap-2">
                               {kanAccepteren(
@@ -661,14 +667,10 @@ export default function Topbar({
                                       "ACCEPTEREN",
                                     )
                                   }
-                                  className="flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                  <Check
-                                    size={13}
-                                  />
-
                                   {bezig
-                                    ? "..."
+                                    ? "Bezig..."
                                     : bepaalActieLabel(
                                         taak,
                                       )}
@@ -689,44 +691,13 @@ export default function Topbar({
                                       "GOEDKEUREN",
                                     )
                                   }
-                                  className="flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                  <Check
-                                    size={13}
-                                  />
-
                                   {bezig
-                                    ? "..."
+                                    ? "Bezig..."
                                     : bepaalActieLabel(
                                         taak,
                                       )}
-                                </button>
-                              )}
-
-                              {(kanAccepteren(
-                                taak,
-                              ) ||
-                                kanGoedkeuren(
-                                  taak,
-                                )) && (
-                                <button
-                                  type="button"
-                                  disabled={
-                                    bezig
-                                  }
-                                  onClick={() =>
-                                    void verwerkTaak(
-                                      taak,
-                                      "AFWIJZEN",
-                                    )
-                                  }
-                                  className="flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-1.5 text-[11px] font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                  <X
-                                    size={13}
-                                  />
-
-                                  Afwijzen
                                 </button>
                               )}
                             </div>
@@ -741,50 +712,40 @@ export default function Topbar({
           )}
         </div>
 
-        {/* Gebruikersmenu */}
+        {/* Profielmenu */}
         <div
           ref={menuRef}
           className="relative"
         >
           <button
             type="button"
+            aria-label="Profielmenu"
             aria-expanded={menuOpen}
-            aria-haspopup="menu"
             onClick={() => {
               setMenuOpen(
                 (waarde) => !waarde,
               );
               setTakenOpen(false);
             }}
-            className={`flex items-center gap-3 rounded-xl border px-3 py-2 transition ${
-              menuOpen
-                ? "border-slate-300 bg-slate-50"
-                : "border-slate-200 bg-white hover:bg-slate-50"
-            }`}
+            className="flex items-center gap-3 rounded-xl p-1.5 transition hover:bg-slate-100"
           >
-            <div
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-bold"
-              style={{
-                background:
-                  theme.colors.primary,
-              }}
-            >
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C7E5E5] text-sm font-bold text-slate-700">
               {initialen}
             </div>
 
-            <div className="hidden text-left sm:block">
-              <div className="max-w-[160px] truncate font-semibold text-slate-900">
+            <div className="hidden text-left md:block">
+              <p className="text-sm font-semibold text-slate-900">
                 {gebruiker.naam}
-              </div>
+              </p>
 
-              <div className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500">
                 {eersteRol}
-              </div>
+              </p>
             </div>
 
             <ChevronDown
-              size={18}
-              className={`transition-transform ${
+              size={16}
+              className={`hidden text-slate-400 transition-transform md:block ${
                 menuOpen
                   ? "rotate-180"
                   : ""
@@ -793,62 +754,43 @@ export default function Topbar({
           </button>
 
           {menuOpen && (
-            <div
-              role="menu"
-              className="absolute right-0 top-[calc(100%+8px)] z-[100] w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl"
-            >
-              <div className="border-b border-slate-100 px-3 py-3">
-                <p className="truncate font-semibold text-slate-900">
+            <div className="absolute right-0 top-[calc(100%+8px)] z-[100] w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+              <div className="border-b border-slate-100 px-4 py-4">
+                <p className="text-sm font-semibold text-slate-900">
                   {gebruiker.naam}
                 </p>
 
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-0.5 text-xs text-slate-500">
                   {eersteRol}
                 </p>
               </div>
 
-              <div className="py-1">
+              <div className="p-2">
                 <Link
                   href="/profiel"
-                  role="menuitem"
                   onClick={() =>
-                    setMenuOpen(
-                      false,
-                    )
+                    setMenuOpen(false)
                   }
-                  className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50"
                 >
-                  <User
-                    size={18}
-                    className="text-slate-400"
-                  />
-
-                  <span>
-                    Profiel
-                  </span>
+                  <User size={17} />
+                  Mijn profiel
                 </Link>
 
                 <button
                   type="button"
-                  role="menuitem"
-                  onClick={
-                    handleLogout
-                  }
                   disabled={
                     uitloggenBezig
                   }
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={() =>
+                    void handleLogout()
+                  }
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <LogOut
-                    size={18}
-                    className="text-slate-400"
-                  />
-
-                  <span>
-                    {uitloggenBezig
-                      ? "Uitloggen..."
-                      : "Uitloggen"}
-                  </span>
+                  <LogOut size={17} />
+                  {uitloggenBezig
+                    ? "Uitloggen..."
+                    : "Uitloggen"}
                 </button>
               </div>
             </div>
