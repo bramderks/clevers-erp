@@ -93,6 +93,7 @@ export default function SidebarClient({
             <Navigation
               permissions={permissions}
               isEigenaar={isEigenaar}
+              isMedewerker={isMedewerker}
               ingeklapt={!hovered}
             />
           </div>
