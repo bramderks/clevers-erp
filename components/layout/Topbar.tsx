@@ -409,6 +409,31 @@ export default function Topbar({
     );
   }
 
+  function taakLink(
+    taak: Taak,
+  ) {
+    const href =
+      taak.gegevens.href;
+
+    return typeof href === "string"
+      ? href
+      : null;
+  }
+
+  function openTaak(
+    taak: Taak,
+  ) {
+    const href = taakLink(taak);
+
+    if (!href) {
+      return;
+    }
+
+    setTakenOpen(false);
+    setTaakFout(null);
+    router.push(href);
+  }
+
   return (
     <header
       className="sticky top-0 z-40 flex h-[76px] shrink-0 items-center justify-between border-b bg-white px-4 lg:px-8"
@@ -700,6 +725,20 @@ export default function Topbar({
                                     : bepaalActieLabel(
                                         taak,
                                       )}
+                                </button>
+                              )}
+
+                              {taakLink(
+                                taak,
+                              ) && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    openTaak(taak)
+                                  }
+                                  className="flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-slate-700"
+                                >
+                                  Openen
                                 </button>
                               )}
 
