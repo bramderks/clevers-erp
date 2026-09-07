@@ -1429,6 +1429,15 @@ export default async function MedewerkerPage({
                                   </Button>
                                 </Link>
                               )}
+
+                              {isEigenProfiel &&
+                                !isEigenaar &&
+                                (bezetting.status === "GEPLAND" ||
+                                  bezetting.status === "BEVESTIGD") && (
+                                  <Link href={`/planning/dienst/${dienst.id}`}>
+                                    <Button>Ruilen</Button>
+                                  </Link>
+                                )}
                             </div>
                           </div>
                         </div>
