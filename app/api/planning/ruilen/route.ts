@@ -433,7 +433,11 @@ export async function POST(
           id: { not: eigenMedewerkerId },
           vestigingen: { some: { vestigingId: vestiging.id } },
           ...(vereisteTagIds.length > 0
-            ? { tags: { some: { tagId: { in: vereisteTagIds } } } }
+            ? {
+                AND: vereisteTagIds.map((tagId) => ({
+                  tags: { some: { tagId } },
+                })),
+              }
             : {}),
         },
         select: { id: true },
@@ -477,13 +481,20 @@ export async function POST(
           actief: true,
 
           vestigingen: {
-            where: {
-              vestigingId:
-                vestiging.id,
-            },
+            where: { vestigingId: vestiging.id },
+            select: { id: true },
+          },
 
+          tags: {
+            select: { tagId: true },
+          },
+
+          beschikbaarheden: {
+            where: { datum: bezetting.dienst.datum },
             select: {
-              id: true,
+              begintijd: true,
+              eindtijd: true,
+              status: true,
             },
           },
         },
@@ -509,6 +520,41 @@ export async function POST(
     ) {
       return fout(
         "Deze medewerker hoort niet bij deze vestiging.",
+        400,
+      );
+    }
+
+    const vereisteTagIds = bezetting.dienst.tags.map(
+      (tag) => tag.tagId,
+    );
+
+    const ruilTagIds = new Set(
+      ruilMedewerker.tags.map((tag) => tag.tagId),
+    );
+
+    if (
+      !vereisteTagIds.every((tagId) =>
+        ruilTagIds.has(tagId),
+      )
+    ) {
+      return fout(
+        "Deze medewerker heeft niet alle vereiste tags voor deze dienst.",
+        400,
+      );
+    }
+
+    const volledigBeschikbaar =
+      ruilMedewerker.beschikbaarheden.some(
+        (beschikbaarheid) =>
+          (beschikbaarheid.status === "BESCHIKBAAR" ||
+            beschikbaarheid.status === "VOORKEUR") &&
+          beschikbaarheid.begintijd <= bezetting.dienst.begintijd &&
+          beschikbaarheid.eindtijd >= bezetting.dienst.eindtijd,
+      );
+
+    if (!volledigBeschikbaar) {
+      return fout(
+        "Deze medewerker is niet beschikbaar gedurende de volledige dienst.",
         400,
       );
     }
