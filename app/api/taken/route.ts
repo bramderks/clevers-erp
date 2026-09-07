@@ -271,6 +271,49 @@ export async function GET() {
 
     /*
      * ======================================================
+     * VAKANTIEPLANNING
+     * ======================================================
+     */
+
+    if (gebruiker.medewerker?.id) {
+      const medewerkerId = gebruiker.medewerker.id;
+      const vandaag = new Date();
+      const vakantieVestigingen = await prisma.medewerkerVestiging.findMany({
+        where: { medewerkerId, vestiging: { actief: true, seizoenStart: { not: null, lte: vandaag } } },
+        select: { vestiging: { select: { id: true, naam: true, seizoenStart: true } } },
+      });
+
+      for (const relatie of vakantieVestigingen) {
+        const seizoenStart = relatie.vestiging.seizoenStart;
+        if (!seizoenStart) continue;
+        const jaar = seizoenStart.getFullYear();
+        const deadline = new Date(jaar, 3, 30, 23, 59, 59, 999);
+        if (vandaag > deadline) continue;
+        const bestaand = await prisma.vakantieAanvraag.count({
+          where: {
+            medewerkerId,
+            vestigingId: relatie.vestiging.id,
+            status: { in: ["AANGEVRAAGD", "GOEDGEKEURD"] },
+            startDatum: { gte: new Date(jaar, 5, 1), lt: new Date(jaar, 8, 1) },
+          },
+        });
+        if (bestaand === 0) {
+          taken.push({
+            id: `vakantie-${relatie.vestiging.id}-${jaar}`,
+            type: "VAKANTIEPLANNING_INLEVEREN",
+            categorie: "Vakantie",
+            titel: "Vakantieplanning inleveren",
+            omschrijving: `${relatie.vestiging.naam} · Lever je vakantieplanning voor juni, juli en augustus uiterlijk 30 april in.`,
+            aangemaaktOp: seizoenStart,
+            actie: "VAKANTIEPLANNING_INLEVEREN",
+            gegevens: { href: `/medewerkers/${medewerkerId}?tab=vakantie`, medewerkerId, vestigingId: relatie.vestiging.id, jaar, deadline },
+          });
+        }
+      }
+    }
+
+    /*
+     * ======================================================
      * RUILVERZOEKEN
      * ======================================================
      *
