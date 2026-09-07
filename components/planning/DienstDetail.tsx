@@ -416,6 +416,18 @@
                   medewerker.id,
                 ),
             )
+            .filter((medewerker) =>
+              medewerkerHeeftAlleDienstTags(
+                medewerker,
+                dienst,
+              ),
+            )
+            .filter((medewerker) =>
+              medewerkerIsBeschikbaarVoorDienst(
+                medewerker,
+                dienst,
+              ),
+            )
             .map(
               (medewerker) => ({
                 id: medewerker.id,
@@ -429,6 +441,9 @@
                   medewerker.tussenvoegsel,
                 achternaam:
                   medewerker.achternaam,
+                tags: medewerker.tags,
+                beschikbaarheden:
+                  medewerker.beschikbaarheden,
               }),
             )
             .sort((a, b) =>
