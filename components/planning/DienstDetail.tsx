@@ -19,6 +19,17 @@
     onKlik?: (dienstId: string) => void;
   };
 
+  type PlanningTag = {
+    id: string;
+    naam: string;
+  };
+
+  type Beschikbaarheid = {
+    begintijd: string | null;
+    eindtijd: string | null;
+    status: "BESCHIKBAAR" | "NIET_BESCHIKBAAR" | "VOORKEUR";
+  };
+
   type RuilMedewerker = {
     id: string;
     personeelsnummer: string | null;
@@ -26,6 +37,8 @@
     voornaam: string;
     tussenvoegsel: string | null;
     achternaam: string;
+    tags: PlanningTag[];
+    beschikbaarheden: Beschikbaarheid[];
   };
 
   type MedewerkerResponse = {
@@ -35,6 +48,8 @@
     voornaam: string;
     tussenvoegsel: string | null;
     achternaam: string;
+    tags: PlanningTag[];
+    beschikbaarheden: Beschikbaarheid[];
   };
 
   type MedewerkersResponse = {
@@ -71,6 +86,53 @@
     ]
       .filter(Boolean)
       .join(" ");
+  }
+
+  function medewerkerHeeftAlleDienstTags(
+    medewerker: MedewerkerResponse,
+    dienst: Dienst,
+  ) {
+    const vereisteTagIds = new Set(
+      dienst.tags.map((dienstTag) => dienstTag.tag.id),
+    );
+
+    if (vereisteTagIds.size === 0) {
+      return true;
+    }
+
+    const medewerkerTagIds = new Set(
+      medewerker.tags.map((tag) => tag.id),
+    );
+
+    return [...vereisteTagIds].every((tagId) =>
+      medewerkerTagIds.has(tagId),
+    );
+  }
+
+  function medewerkerIsBeschikbaarVoorDienst(
+    medewerker: MedewerkerResponse,
+    dienst: Dienst,
+  ) {
+    const dienstStart = new Date(dienst.begintijd).getTime();
+    const dienstEinde = new Date(dienst.eindtijd).getTime();
+
+    return medewerker.beschikbaarheden.some((beschikbaarheid) => {
+      if (
+        beschikbaarheid.status !== "BESCHIKBAAR" &&
+        beschikbaarheid.status !== "VOORKEUR"
+      ) {
+        return false;
+      }
+
+      if (!beschikbaarheid.begintijd || !beschikbaarheid.eindtijd) {
+        return false;
+      }
+
+      const begin = new Date(beschikbaarheid.begintijd).getTime();
+      const einde = new Date(beschikbaarheid.eindtijd).getTime();
+
+      return begin <= dienstStart && einde >= dienstEinde;
+    });
   }
 
   function isBhvTag(
@@ -420,6 +482,37 @@
       setRuilFout(null);
       setGekozenRuilMedewerkerId("");
       setRuilMedewerkers([]);
+    }
+
+    async function dienAlgemeneRuilaanbiedingIn() {
+      if (!eigenBezetting) return;
+
+      try {
+        setRuilBezig(true);
+        setRuilFout(null);
+
+        const response = await fetch("/api/planning/ruilen", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            dienstBezettingId: eigenBezetting.id,
+            algemeen: true,
+          }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.fout ?? "De algemene ruilaanbieding kon niet worden aangemaakt.");
+        }
+
+        sluitRuilen();
+        onGewijzigd?.();
+      } catch (error) {
+        setRuilFout(error instanceof Error ? error.message : "De algemene ruilaanbieding kon niet worden aangemaakt.");
+      } finally {
+        setRuilBezig(false);
+      }
     }
 
     async function dienRuilverzoekIn() {
@@ -843,11 +936,21 @@
                     </select>
                   ) : (
                     !ruilFout && (
-                      <div className="rounded-xl bg-slate-50 px-4 py-5 text-center text-xs text-slate-500">
-                        Er zijn geen andere
-                        medewerkers beschikbaar
-                        om deze dienst aan te
-                        bieden.
+                      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-5 text-center">
+                        <p className="text-xs font-semibold text-amber-900">
+                          Niemand met de juiste tags is momenteel beschikbaar.
+                        </p>
+                        <p className="mt-1 text-xs text-amber-800">
+                          Je kunt de dienst algemeen ter ruil aanbieden. Alle actieve medewerkers met de juiste tags krijgen dan een melding, ook als zij nu niet beschikbaar staan.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => void dienAlgemeneRuilaanbiedingIn()}
+                          disabled={ruilBezig}
+                          className="mt-4 rounded-xl border border-amber-300 bg-white px-4 py-2.5 text-xs font-semibold text-amber-900 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {ruilBezig ? "Aanbieden..." : "Algemeen ter ruil aanbieden"}
+                        </button>
                       </div>
                     )
                   )}
