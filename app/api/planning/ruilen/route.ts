@@ -122,6 +122,12 @@ async function haalBezettingOp(
           begintijd: true,
           eindtijd: true,
 
+          tags: {
+            select: {
+              tagId: true,
+            },
+          },
+
           week: {
             select: {
               id: true,
@@ -319,6 +325,9 @@ export async function POST(
     const ruilMedewerkerId =
       body?.ruilMedewerkerId;
 
+    const algemeen =
+      body?.algemeen === true;
+
     if (
       typeof dienstBezettingId !==
         "string" ||
@@ -331,9 +340,9 @@ export async function POST(
     }
 
     if (
-      typeof ruilMedewerkerId !==
-        "string" ||
-      ruilMedewerkerId.length === 0
+      !algemeen &&
+      (typeof ruilMedewerkerId !== "string" ||
+        ruilMedewerkerId.length === 0)
     ) {
       return fout(
         "ruilMedewerkerId is verplicht.",
@@ -390,12 +399,74 @@ export async function POST(
     }
 
     if (
-      ruilMedewerkerId ===
-      eigenMedewerkerId
+      !algemeen &&
+      ruilMedewerkerId === eigenMedewerkerId
     ) {
       return fout(
         "Je kunt niet met jezelf ruilen.",
         400,
+      );
+    }
+
+    const bestaandeRuil =
+      await prisma.ruilverzoek.findFirst({
+        where: {
+          dienstBezettingId,
+          status: { in: ["AANGEVRAAGD", "WACHT_OP_EIGENAAR"] },
+        },
+        select: { id: true },
+      });
+
+    if (bestaandeRuil) {
+      return fout(
+        "Voor deze dienst staat al een actief ruilverzoek open.",
+        409,
+      );
+    }
+
+    if (algemeen) {
+      const vereisteTagIds = bezetting.dienst.tags.map((tag) => tag.tagId);
+
+      const kandidaten = await prisma.medewerker.findMany({
+        where: {
+          actief: true,
+          id: { not: eigenMedewerkerId },
+          vestigingen: { some: { vestigingId: vestiging.id } },
+          ...(vereisteTagIds.length > 0
+            ? {
+                AND: vereisteTagIds.map((tagId) => ({
+                  tags: { some: { tagId } },
+                })),
+              }
+            : {}),
+        },
+        select: { id: true },
+      });
+
+      if (kandidaten.length === 0) {
+        return fout(
+          "Er zijn geen actieve medewerkers met de juiste tags voor deze dienst.",
+          400,
+        );
+      }
+
+      const ruilverzoeken = await prisma.$transaction(
+        kandidaten.map((kandidaat) =>
+          prisma.ruilverzoek.create({
+            data: {
+              dienstBezettingId,
+              aanvragerId: eigenMedewerkerId,
+              ruilMedewerkerId: kandidaat.id,
+              status: "AANGEVRAAGD",
+            },
+            select: RUIL_SELECT,
+          }),
+        ),
+      );
+
+      return NextResponse.json(
+        { algemeen: true, aantal: ruilverzoeken.length },
+        { status: 201 },
       );
     }
 
@@ -410,13 +481,20 @@ export async function POST(
           actief: true,
 
           vestigingen: {
-            where: {
-              vestigingId:
-                vestiging.id,
-            },
+            where: { vestigingId: vestiging.id },
+            select: { id: true },
+          },
 
+          tags: {
+            select: { tagId: true },
+          },
+
+          beschikbaarheden: {
+            where: { datum: bezetting.dienst.datum },
             select: {
-              id: true,
+              begintijd: true,
+              eindtijd: true,
+              status: true,
             },
           },
         },
@@ -446,28 +524,40 @@ export async function POST(
       );
     }
 
-    const bestaandeRuil =
-      await prisma.ruilverzoek.findFirst({
-        where: {
-          dienstBezettingId,
+    const vereisteTagIds = bezetting.dienst.tags.map(
+      (tag) => tag.tagId,
+    );
 
-          status: {
-            in: [
-              "AANGEVRAAGD",
-              "WACHT_OP_EIGENAAR",
-            ],
-          },
-        },
+    const ruilTagIds = new Set(
+      ruilMedewerker.tags.map((tag) => tag.tagId),
+    );
 
-        select: {
-          id: true,
-        },
-      });
-
-    if (bestaandeRuil) {
+    if (
+      !vereisteTagIds.every((tagId) =>
+        ruilTagIds.has(tagId),
+      )
+    ) {
       return fout(
-        "Voor deze dienst staat al een actief ruilverzoek open.",
-        409,
+        "Deze medewerker heeft niet alle vereiste tags voor deze dienst.",
+        400,
+      );
+    }
+
+    const volledigBeschikbaar =
+      ruilMedewerker.beschikbaarheden.some(
+        (beschikbaarheid) =>
+          (beschikbaarheid.status === "BESCHIKBAAR" ||
+            beschikbaarheid.status === "VOORKEUR") &&
+          beschikbaarheid.begintijd !== null &&
+          beschikbaarheid.eindtijd !== null &&
+          beschikbaarheid.begintijd <= bezetting.dienst.begintijd &&
+          beschikbaarheid.eindtijd >= bezetting.dienst.eindtijd,
+      );
+
+    if (!volledigBeschikbaar) {
+      return fout(
+        "Deze medewerker is niet beschikbaar gedurende de volledige dienst.",
+        400,
       );
     }
 
@@ -721,6 +811,15 @@ export async function PATCH(
           409,
         );
       }
+
+      await prisma.ruilverzoek.updateMany({
+        where: {
+          dienstBezettingId: ruilverzoek.dienstBezettingId,
+          id: { not: ruilverzoek.id },
+          status: "AANGEVRAAGD",
+        },
+        data: { status: "AFGEWEZEN_DOOR_MEDEWERKER" },
+      });
 
       const bijgewerkt =
         await prisma.ruilverzoek.update({
