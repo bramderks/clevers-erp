@@ -20,6 +20,13 @@ type Kandidaat = {
   achternaam: string;
   tags: PlanningTag[];
   beschikbaarheden: Beschikbaarheid[];
+  diensten?: {
+    status: string;
+    dienst: {
+      begintijd: string;
+      eindtijd: string;
+    };
+  }[];
 };
 
 type RuilDienstPaneelProps = {
@@ -57,6 +64,30 @@ function heeftAlleTags(
   return vereisteTags.every((tag) =>
     medewerkerTagIds.has(tag.id),
   );
+}
+
+function heeftGeenOverlappendeDienst(
+  medewerker: Kandidaat,
+  begintijd: string,
+  eindtijd: string,
+) {
+  const dienstStart = new Date(begintijd).getTime();
+  const dienstEinde = new Date(eindtijd).getTime();
+
+  return !(medewerker.diensten ?? []).some((bezetting) => {
+    if (bezetting.status === "AFGEZEGD") {
+      return false;
+    }
+
+    const bestaandBegin = new Date(
+      bezetting.dienst.begintijd,
+    ).getTime();
+    const bestaandEinde = new Date(
+      bezetting.dienst.eindtijd,
+    ).getTime();
+
+    return bestaandBegin < dienstEinde && bestaandEinde > dienstStart;
+  });
 }
 
 function isVolledigBeschikbaar(
@@ -149,6 +180,13 @@ export default function RuilDienstPaneel({
         )
         .filter((medewerker) =>
           isVolledigBeschikbaar(
+            medewerker,
+            begintijd,
+            eindtijd,
+          ),
+        )
+        .filter((medewerker) =>
+          heeftGeenOverlappendeDienst(
             medewerker,
             begintijd,
             eindtijd,
