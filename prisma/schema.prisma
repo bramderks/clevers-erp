@@ -38,6 +38,7 @@ model Vestiging {
   organisatie Organisatie @relation(fields: [organisatieId], references: [id], onDelete: Cascade)
 
   vakantieAanvragen VakantieAanvraag[]
+  vasteUrenAfspraken VasteUrenAfspraak[]
 
   code String
   naam String
@@ -278,6 +279,13 @@ model Medewerker {
   vakantieAanvragen VakantieAanvraag[]
 
   /// ----------------------------------------------------
+  /// AFSPRAKEN EN DOSSIER
+  /// ----------------------------------------------------
+
+  dossierItems MedewerkerDossierItem[]
+  vasteUrenAfspraken VasteUrenAfspraak[]
+
+  /// ----------------------------------------------------
   /// ROLLEN EN TAGS
   /// ----------------------------------------------------
 
@@ -337,6 +345,70 @@ model Medewerker {
   @@index([achternaam])
 
   @@index([voornaam])
+}
+
+/// ======================================================
+  /// MEDEWERKERAFSPRAKEN EN DOSSIER
+  /// ======================================================
+
+model MedewerkerDossierItem {
+  id String @id
+
+  medewerkerId String
+
+  type String
+  titel String
+  omschrijving String?
+  kanaal String?
+
+  documentNaam String?
+  documentUrl String?
+
+  datum DateTime
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+
+  @@index([medewerkerId])
+  @@index([datum])
+  @@index([type])
+}
+
+model VasteUrenAfspraak {
+  id String @id
+
+  medewerkerId String
+  vestigingId String
+  tagId String
+
+  /// ISO-weekdag: maandag = 1, zondag = 7.
+  dagVanWeek Int
+
+  begintijd String
+  eindtijd String
+
+  startDatum DateTime
+  eindDatum DateTime
+
+  actief Boolean @default(true)
+
+  akkoordDoorId String?
+  akkoordOp DateTime?
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+  tag Tag @relation(fields: [tagId], references: [id], onDelete: Restrict)
+
+  @@index([medewerkerId])
+  @@index([vestigingId])
+  @@index([tagId])
+  @@index([actief])
+  @@index([startDatum, eindDatum])
 }
 
 /// ======================================================
@@ -408,6 +480,7 @@ model Tag {
 
   medewerkers MedewerkerTag[]
   diensten DienstTag[]
+  vasteUrenAfspraken VasteUrenAfspraak[]
 
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt
