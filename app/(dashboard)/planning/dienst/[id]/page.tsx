@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 import DienstBewerkToggle from "@/components/planning/DienstBewerkToggle";
+import RuilDienstPaneel from "@/components/planning/RuilDienstPaneel";
 
 type RouteProps = {
 params: Promise<{
@@ -735,6 +736,23 @@ HEADER
             </p>
           </div>
         )}
+
+        {eigenBezetting &&
+          (eigenBezetting.status === "GEPLAND" ||
+            eigenBezetting.status === "BEVESTIGD") && (
+            <RuilDienstPaneel
+              dienstBezettingId={eigenBezetting.id}
+              huidigeMedewerkerId={gebruiker.medewerker!.id}
+              vestigingId={dienst.week.vestigingId}
+              datum={dienst.datum.toISOString()}
+              begintijd={dienst.begintijd.toISOString()}
+              eindtijd={dienst.eindtijd.toISOString()}
+              vereisteTags={dienst.tags.map((dienstTag) => ({
+                id: dienstTag.tag.id,
+                naam: dienstTag.tag.naam,
+              }))}
+            />
+          )}
       </section>
     )}
 
