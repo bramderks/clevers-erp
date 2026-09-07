@@ -508,9 +508,15 @@ export default async function MedewerkerPage({
         "eigenaar",
     );
 
+  /*
+   * Profielpagina wordt vanuit /profiel geopend met het
+   * medewerker-id van de ingelogde gebruiker. Vergelijk daarom
+   * rechtstreeks met de routeparameter, zodat de eigen-profiel-
+   * rechten niet afhankelijk zijn van de geladen relationele data.
+   */
   const isEigenProfiel =
     gebruiker.medewerker?.id ===
-    medewerker.id;
+    id;
 
   if (
     !isEigenaar &&
@@ -1431,10 +1437,10 @@ export default async function MedewerkerPage({
                               )}
 
                               {isEigenProfiel &&
-                                !isEigenaar &&
-                                (bezetting.status === "GEPLAND" ||
-                                  bezetting.status === "BEVESTIGD") && (
-                                  <Link href={`/planning/dienst/${dienst.id}`}>
+                                !isEigenaar && (
+                                  <Link
+                                    href={`/planning/dienst/${dienst.id}`}
+                                  >
                                     <Button>Ruilen</Button>
                                   </Link>
                                 )}
