@@ -548,6 +548,8 @@ export async function POST(
         (beschikbaarheid) =>
           (beschikbaarheid.status === "BESCHIKBAAR" ||
             beschikbaarheid.status === "VOORKEUR") &&
+          beschikbaarheid.begintijd !== null &&
+          beschikbaarheid.eindtijd !== null &&
           beschikbaarheid.begintijd <= bezetting.dienst.begintijd &&
           beschikbaarheid.eindtijd >= bezetting.dienst.eindtijd,
       );
