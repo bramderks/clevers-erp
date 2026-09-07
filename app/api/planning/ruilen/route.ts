@@ -550,8 +550,10 @@ export async function POST(
             beschikbaarheid.status === "VOORKEUR") &&
           beschikbaarheid.begintijd !== null &&
           beschikbaarheid.eindtijd !== null &&
-          beschikbaarheid.begintijd <= bezetting.dienst.begintijd &&
-          beschikbaarheid.eindtijd >= bezetting.dienst.eindtijd,
+          new Date(beschikbaarheid.begintijd).getTime() <=
+            new Date(bezetting.dienst.begintijd).getTime() &&
+          new Date(beschikbaarheid.eindtijd).getTime() >=
+            new Date(bezetting.dienst.eindtijd).getTime(),
       );
 
     if (!volledigBeschikbaar) {
