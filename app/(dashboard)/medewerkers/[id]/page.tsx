@@ -32,6 +32,7 @@ import MedewerkerTabBewerken from "@/components/medewerkers/MedewerkerTabBewerke
 
 import BeschikbaarheidPanel from "@/components/medewerkers/beschikbaarheid/components/BeschikbaarheidPanel";
 import VakantiePlanningPanel from "@/components/medewerkers/VakantiePlanningPanel";
+import MedewerkerAfsprakenPanel from "@/components/medewerkers/MedewerkerAfsprakenPanel";
 
 /*
  * ============================================================
@@ -84,6 +85,10 @@ const TABS = [
   {
     id: "verloning",
     label: "Verloning",
+  },
+  {
+    id: "afspraken",
+    label: "Afspraken",
   },
 ] as const;
 
@@ -528,7 +533,9 @@ export default async function MedewerkerPage({
   }
 
   const actieveTab: TabId =
-    isTabId(tab)
+    isTabId(tab) &&
+    (tab !== "afspraken" ||
+      isEigenaar)
       ? tab
       : "algemeen";
 
@@ -712,6 +719,72 @@ export default async function MedewerkerPage({
       }),
     );
 
+  const [
+    dossierItems,
+    vasteUrenAfspraken,
+  ] = isEigenaar
+    ? await Promise.all([
+        prisma.$queryRawUnsafe<
+          Array<{
+            id: string;
+            type: string;
+            titel: string;
+            omschrijving: string | null;
+            kanaal: string | null;
+            documentNaam: string | null;
+            documentUrl: string | null;
+            datum: Date;
+          }>
+        >(
+          `SELECT "id", "type", "titel", "omschrijving", "kanaal", "documentNaam", "documentUrl", "datum"
+           FROM "MedewerkerDossierItem"
+           WHERE "medewerkerId" = $1
+           ORDER BY "datum" DESC, "aangemaaktOp" DESC`,
+          medewerker.id,
+        ),
+
+        prisma.$queryRawUnsafe<
+          Array<{
+            id: string;
+            vestigingId: string;
+            vestigingNaam: string;
+            tagId: string;
+            tagNaam: string;
+            dagVanWeek: number;
+            begintijd: string;
+            eindtijd: string;
+            startDatum: Date;
+            eindDatum: Date;
+            actief: boolean;
+            akkoordOp: Date;
+          }>
+        >(
+          `SELECT
+             a."id",
+             a."vestigingId",
+             v."naam" AS "vestigingNaam",
+             a."tagId",
+             t."naam" AS "tagNaam",
+             a."dagVanWeek",
+             a."begintijd",
+             a."eindtijd",
+             a."startDatum",
+             a."eindDatum",
+             a."actief",
+             a."akkoordOp"
+           FROM "VasteUrenAfspraak" a
+           INNER JOIN "Vestiging" v ON v."id" = a."vestigingId"
+           INNER JOIN "Tag" t ON t."id" = a."tagId"
+           WHERE a."medewerkerId" = $1
+           ORDER BY a."startDatum" ASC, a."dagVanWeek" ASC, a."begintijd" ASC`,
+          medewerker.id,
+        ),
+      ])
+    : [
+        [],
+        [],
+      ];
+
   const vakantieAanvragen =
     await prisma.vakantieAanvraag.findMany(
       {
@@ -863,7 +936,14 @@ export default async function MedewerkerPage({
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-4 pt-4">
           <div className="flex gap-1 overflow-x-auto">
-            {TABS.map(
+            {TABS
+              .filter(
+                (tabItem) =>
+                  tabItem.id !==
+                    "afspraken" ||
+                  isEigenaar,
+              )
+              .map(
               (
                 tabItem,
               ) => {
@@ -1453,6 +1533,34 @@ export default async function MedewerkerPage({
                 )}
               </Card>
             </div>
+          )}
+
+          {actieveTab === "afspraken" &&
+            isEigenaar && (
+            <MedewerkerAfsprakenPanel
+              medewerkerId={medewerker.id}
+              vestigingen={vestigingen}
+              tags={medewerker.tags.map(
+                (medewerkerTag) => ({
+                  id: medewerkerTag.tag.id,
+                  naam: medewerkerTag.tag.naam,
+                }),
+              )}
+              dossier={dossierItems.map(
+                (item) => ({
+                  ...item,
+                  datum: item.datum.toISOString(),
+                }),
+              )}
+              vasteUren={vasteUrenAfspraken.map(
+                (afspraak) => ({
+                  ...afspraak,
+                  startDatum: afspraak.startDatum.toISOString(),
+                  eindDatum: afspraak.eindDatum.toISOString(),
+                  akkoordOp: afspraak.akkoordOp.toISOString(),
+                }),
+              )}
+            />
           )}
 
           {actieveTab === "verloning" && (
