@@ -89,7 +89,7 @@
   }
 
   function medewerkerHeeftAlleDienstTags(
-    medewerker: MedewerkerResponse,
+    medewerker: RuilMedewerker,
     dienst: Dienst,
   ) {
     const vereisteTagIds = new Set(
@@ -110,7 +110,7 @@
   }
 
   function medewerkerIsBeschikbaarVoorDienst(
-    medewerker: MedewerkerResponse,
+    medewerker: RuilMedewerker,
     dienst: Dienst,
   ) {
     const dienstStart = new Date(dienst.begintijd).getTime();
