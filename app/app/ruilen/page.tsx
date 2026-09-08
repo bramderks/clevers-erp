@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 type Ruil = {
@@ -36,8 +35,7 @@ function fmtDatum(value: string) {
 }
 
 export default function AppRuilenPage() {
-  const searchParams = useSearchParams();
-  const dienstBezettingId = searchParams.get("dienstBezettingId");
+  const [dienstBezettingId, setDienstBezettingId] = useState<string | null>(null);
   const [items, setItems] = useState<Ruil[] | null>(null);
   const [fout, setFout] = useState<string | null>(null);
   const [bezig, setBezig] = useState(false);
@@ -57,6 +55,8 @@ export default function AppRuilenPage() {
   }
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setDienstBezettingId(params.get("dienstBezettingId"));
     void laad();
   }, []);
 
