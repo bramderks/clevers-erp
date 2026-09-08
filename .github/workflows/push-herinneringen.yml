@@ -1,0 +1,29 @@
+name: Clevers push-herinneringen
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  verstuur-herinneringen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Verwerk dienstherinneringen
+        env:
+          APP_URL: ${{ secrets.CLEVERS_APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$APP_URL" ]; then
+            echo "CLEVERS_APP_URL ontbreekt."
+            exit 1
+          fi
+
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET ontbreekt."
+            exit 1
+          fi
+
+          curl --fail --silent --show-error             --retry 2             --retry-delay 5             -H "Authorization: Bearer $CRON_SECRET"             "$APP_URL/api/cron/push-dienstherinneringen"
