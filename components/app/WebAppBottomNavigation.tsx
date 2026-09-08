@@ -13,13 +13,13 @@ import {
 const items = [
   { href: "/app", label: "Home", icon: Home },
   { href: "/app/planning", label: "Planning", icon: CalendarDays },
-  { href: "/dashboard", label: "Taken", icon: CheckSquare },
+  { href: "/app/taken", label: "Taken", icon: CheckSquare },
   {
     href: "/app/beschikbaarheid",
     label: "Beschikbaar",
     icon: ClipboardClock,
   },
-  { href: "/profiel", label: "Profiel", icon: UserRound },
+  { href: "/app/profiel", label: "Profiel", icon: UserRound },
 ];
 
 export default function WebAppBottomNavigation() {
