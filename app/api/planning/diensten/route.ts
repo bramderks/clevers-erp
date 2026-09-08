@@ -159,6 +159,7 @@ async function haalWeekVoorDatumOp(
       vestiging: {
         select: {
           id: true,
+          organisatieId: true,
           seizoenStart: true,
           seizoenEinde: true,
         },
