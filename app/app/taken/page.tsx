@@ -44,12 +44,23 @@ export default function AppTakenPage() {
           </section>
         ) : (
           taken.map((taak) => {
-            const href =
+            const bronHref =
               typeof taak.gegevens.href === "string"
                 ? taak.gegevens.href
-                : taak.categorie === "Verloning"
-                  ? "/mijn-verloning"
-                  : "/app";
+                : "";
+
+            const href =
+              bronHref.startsWith("/app/")
+                ? bronHref
+                : bronHref === "/planning"
+                  ? "/app/planning"
+                  : bronHref === "/mijn-verloning" || taak.categorie === "Verloning"
+                    ? "/app/verloning"
+                    : bronHref === "/profiel/beschikbaarheid"
+                      ? "/app/beschikbaarheid"
+                      : bronHref === "/profiel"
+                        ? "/app/profiel"
+                        : "/app";
 
             return (
               <Link key={taak.id} href={href} className="block rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
