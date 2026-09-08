@@ -8,5 +8,10 @@
       "path": "/api/cron/push-dienstherinneringen",
       "schedule": "*/5 * * * *"
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  }
 }
