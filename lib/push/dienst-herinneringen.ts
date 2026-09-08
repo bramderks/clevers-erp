@@ -51,7 +51,9 @@ function binnenVenster(
 ) {
   const verschil = doel.getTime() - nu.getTime();
 
-  const venster = minuten * 60_000;\n\n  return verschil <= venster && verschil >= -venster;
+  const venster = minuten * 60_000;
+
+  return verschil <= venster && verschil >= -venster;
 }
 
 export async function verstuurDienstHerinneringen() {
