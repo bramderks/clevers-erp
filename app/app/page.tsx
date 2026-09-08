@@ -185,7 +185,7 @@ export default async function MedewerkerAppPage() {
           <div className="flex items-center gap-2">
             <PushNotificationButton />
           <Link
-            href="/profiel"
+            href="/app/profiel"
             className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-900 text-white"
             aria-label="Mijn profiel"
           >
@@ -211,7 +211,7 @@ export default async function MedewerkerAppPage() {
           </Link>
 
           <Link
-            href="/mijn-verloning"
+            href="/app/verloning"
             className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200"
           >
             <WalletCards
@@ -300,19 +300,19 @@ export default async function MedewerkerAppPage() {
             <p className="mt-1 text-lg font-bold text-slate-900">Mijn diensten</p>
           </Link>
 
-          <Link href={"/medewerkers/" + encodeURIComponent(medewerkerId) + "?tab=vakantie"} className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+          <Link href="/app/vakantie" className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
             <Palmtree size={24} className="text-slate-700" />
             <p className="mt-8 text-sm text-slate-500">Vakantie</p>
             <p className="mt-1 text-lg font-bold text-slate-900">Doorgeven</p>
           </Link>
 
-          <Link href="/dashboard" className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+          <Link href="/app/taken" className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
             <CheckSquare size={24} className="text-slate-700" />
             <p className="mt-8 text-sm text-slate-500">To do&apos;s</p>
             <p className="mt-1 text-lg font-bold text-slate-900">Bekijk taken</p>
           </Link>
 
-          <Link href="/app/planning" className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+          <Link href="/app/ruilen" className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
             <ArrowLeftRight size={24} className="text-slate-700" />
             <p className="mt-8 text-sm text-slate-500">Ruilverzoeken</p>
             <p className="mt-1 text-lg font-bold text-slate-900">Mijn diensten</p>
