@@ -7,6 +7,7 @@ import {
 import { getCurrentUser } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { vereisPermission } from "@/lib/requirePermission";
+import { redirect } from "next/navigation";
 
 import PageLayout from "@/components/ui/PageLayout";
 import PageToolbar from "@/components/ui/PageToolbar";
@@ -39,24 +40,7 @@ export default async function MedewerkersImporterenPage() {
     );
 
   if (!isEigenaar) {
-    return (
-      <PageLayout>
-        <PageToolbar
-          title="Medewerkers importeren"
-        />
-
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
-          <p className="text-sm font-semibold text-red-800">
-            Geen toegang
-          </p>
-
-          <p className="mt-1 text-sm text-red-700">
-            Alleen de eigenaar kan
-            medewerkers importeren.
-          </p>
-        </div>
-      </PageLayout>
-    );
+    redirect("/medewerkers");
   }
 
   return (
