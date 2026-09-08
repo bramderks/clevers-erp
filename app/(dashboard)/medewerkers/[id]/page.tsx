@@ -504,13 +504,28 @@ export default async function MedewerkerPage({
         relatie.organisatie.actief,
     );
 
+  const medewerkerOrganisatieIds =
+    Array.from(
+      new Set(
+        medewerker.vestigingen.map(
+          (relatie) =>
+            relatie.vestiging.organisatieId,
+        ),
+      ),
+    );
+
   const isEigenaar =
-    actieveRelaties.some(
-      (relatie) =>
-        relatie.rol.naam
-          .trim()
-          .toLowerCase() ===
-        "eigenaar",
+    medewerkerOrganisatieIds.length > 0 &&
+    medewerkerOrganisatieIds.every(
+      (organisatieId) =>
+        actieveRelaties.some(
+          (relatie) =>
+            relatie.organisatieId === organisatieId &&
+            relatie.rol.naam
+              .trim()
+              .toLowerCase() ===
+              "eigenaar",
+        ),
     );
 
   /*
