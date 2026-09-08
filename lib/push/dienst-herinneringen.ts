@@ -1,9 +1,9 @@
-import type { PushSubscription } from "@/types/web-push";
+import type { WebPushSubscription } from "@/types/web-push";
 
 const webpush: {
   setVapidDetails(subject: string, publicKey: string, privateKey: string): void;
   sendNotification(
-    subscription: PushSubscription,
+    subscription: WebPushSubscription,
     payload?: string,
   ): Promise<unknown>;
 } = require("web-push");
