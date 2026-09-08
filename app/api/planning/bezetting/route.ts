@@ -280,6 +280,23 @@ export async function POST(
       );
     }
 
+    const eigenaar =
+      await isEigenaar(
+        dienst.week.vestiging.organisatieId,
+      );
+
+    if (!eigenaar) {
+      return NextResponse.json(
+        {
+          fout:
+            "Alleen de eigenaar kan de bezetting wijzigen.",
+        },
+        {
+          status: 403,
+        },
+      );
+    }
+
     const toegang =
       await hasPermissionForVestiging(
         permissions.planning.update,
