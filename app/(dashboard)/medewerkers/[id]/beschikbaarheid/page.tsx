@@ -146,9 +146,19 @@ export default async function BeschikbaarheidPage({
     );
   }
 
+  const isEigenaar =
+    actieveRelaties.some(
+      (relatie) =>
+        relatie.rol.naam.trim().toLowerCase() === "eigenaar" &&
+        medewerker.vestigingen.some(
+          (vestigingRelatie) =>
+            vestigingRelatie.vestiging.organisatieId === relatie.organisatieId,
+        ),
+    );
+
   const isBeheerder =
     !eigenMedewerker &&
-    heeftBeheerToegang;
+    isEigenaar;
 
   return (
     <BeschikbaarheidPaginaClient
@@ -156,6 +166,7 @@ export default async function BeschikbaarheidPage({
       medewerkerNaam={naam}
       vestigingen={vestigingen}
       isBeheerder={isBeheerder}
+      isEigenMedewerker={eigenMedewerker}
     />
   );
 }
