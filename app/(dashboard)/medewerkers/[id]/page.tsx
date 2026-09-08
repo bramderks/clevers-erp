@@ -87,6 +87,14 @@ const TABS = [
     label: "Verloning",
   },
   {
+    id: "gegevens",
+    label: "Gegevens bewerken",
+  },
+  {
+    id: "vakantie",
+    label: "Vakantie",
+  },
+  {
     id: "afspraken",
     label: "Afspraken",
   },
@@ -148,6 +156,7 @@ function getEditSection(
 
     case "vakantie":
     case "planning":
+    case "gegevens":
       return null;
 
     default:
@@ -183,6 +192,7 @@ function getMagTabBewerken(
 
     case "vakantie":
     case "planning":
+    case "gegevens":
       return false;
 
     default:
@@ -549,14 +559,17 @@ export default async function MedewerkerPage({
 
   const actieveTab: TabId =
     isTabId(tab) &&
-    (tab !== "afspraken" ||
-      isEigenaar)
+    ((tab !== "afspraken" && tab !== "gegevens") || isEigenaar)
       ? tab
       : "algemeen";
 
+  /*
+   * Bewerkrechten binnen het medewerkerdossier zijn uitsluitend
+   * voor de Eigenaar. Teamleiders en medewerkers mogen de relevante
+   * informatie bekijken, maar kunnen deze hier niet wijzigen.
+   */
   const magAlgemeenBewerken =
-    isEigenaar ||
-    isEigenProfiel;
+    isEigenaar;
 
   const magContractBewerken =
     isEigenaar;
@@ -565,7 +578,7 @@ export default async function MedewerkerPage({
     isEigenaar;
 
   const magBeschikbaarheidBewerken =
-    isEigenaar || isEigenProfiel;
+    isEigenaar;
 
   const magVerloningBewerken =
     isEigenaar;
@@ -954,8 +967,8 @@ export default async function MedewerkerPage({
             {TABS
               .filter(
                 (tabItem) =>
-                  tabItem.id !==
-                    "afspraken" ||
+                  (tabItem.id !== "afspraken" &&
+                    tabItem.id !== "gegevens") ||
                   isEigenaar,
               )
               .map(
