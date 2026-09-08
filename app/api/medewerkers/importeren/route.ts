@@ -970,7 +970,15 @@ export async function POST(
         permissions.medewerkers.update,
       );
 
-    if (!magImporteren) {
+    const isEigenaar =
+      gebruiker.organisaties.some(
+        (relatie) =>
+          relatie.actief &&
+          relatie.organisatie.actief &&
+          relatie.rol.naam.trim().toLowerCase() === "eigenaar",
+      );
+
+    if (!magImporteren || !isEigenaar) {
       return NextResponse.json(
         {
           ok: false,
