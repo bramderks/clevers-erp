@@ -1,28 +1,5 @@
 import type { WebPushSubscription } from "@/types/web-push";
-
-type WebPushRuntime = {
-  setVapidDetails(
-    subject: string,
-    publicKey: string,
-    privateKey: string,
-  ): void;
-  sendNotification(
-    subscription: WebPushSubscription,
-    payload?: string,
-  ): Promise<unknown>;
-};
-
-async function webpushRuntime(): Promise<WebPushRuntime> {
-  const moduleName = "web-push";
-
-  try {
-    return (await import(moduleName)) as unknown as WebPushRuntime;
-  } catch {
-    throw new Error(
-      "Push-functionaliteit is nog niet geconfigureerd op deze omgeving.",
-    );
-  }
-}
+import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
 
 type HerinneringType = "DIENST_24U" | "DIENST_12U" | "DIENST_2U";
@@ -36,19 +13,18 @@ const HERINNERINGEN: Array<{
   { type: "DIENST_2U", minuten: 2 * 60 },
 ];
 
-async function vapidInstellen() {
+function vapidInstellen() {
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
   const subject = process.env.VAPID_SUBJECT;
 
   if (!publicKey || !privateKey || !subject) {
-    return null;
+    return false;
   }
 
-  const webpush = await webpushRuntime();
   webpush.setVapidDetails(subject, publicKey, privateKey);
 
-  return webpush;
+  return true;
 }
 
 function datumMetTijd(datum: Date, tijd: Date) {
@@ -75,9 +51,7 @@ function binnenVenster(
 }
 
 export async function verstuurDienstHerinneringen() {
-  const webpush = await vapidInstellen();
-
-  if (!webpush) {
+  if (!vapidInstellen()) {
     throw new Error("VAPID-configuratie ontbreekt.");
   }
 
