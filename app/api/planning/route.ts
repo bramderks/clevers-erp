@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import {
   hasPermissionForVestiging,
+  isEigenaar,
 } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
@@ -714,6 +715,35 @@ export async function POST(
       );
     }
 
+    const vestigingVoorRechten =
+      await prisma.vestiging.findUnique({
+        where: {
+          id: vestigingId,
+        },
+        select: {
+          organisatieId: true,
+        },
+      });
+
+    const eigenaar =
+      vestigingVoorRechten
+        ? await isEigenaar(
+            vestigingVoorRechten.organisatieId,
+          )
+        : false;
+
+    if (!eigenaar) {
+      return NextResponse.json(
+        {
+          fout:
+            "Alleen de eigenaar kan een planningweek aanmaken.",
+        },
+        {
+          status: 403,
+        },
+      );
+    }
+
     const toegang =
       await hasPermissionForVestiging(
         permissions.planning.create,
@@ -775,6 +805,7 @@ export async function POST(
 
         select: {
           id: true,
+          organisatieId: true,
           seizoenStart: true,
           seizoenEinde: true,
         },
