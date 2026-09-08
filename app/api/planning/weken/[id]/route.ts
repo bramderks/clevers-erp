@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { hasPermissionForVestiging } from "@/lib/auth";
+import { hasPermissionForVestiging, isEigenaar } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
@@ -32,6 +32,7 @@ async function haalWeekOp(id: string) {
       weeknummer: true,
       status: true,
       beschikbaarheidDeadline: true,
+      vestiging: { select: { organisatieId: true } },
     },
   });
 }
@@ -177,6 +178,12 @@ export async function PATCH(
         },
         { status: 404 },
       );
+    }
+
+    const eigenaar = await isEigenaar(bestaandeWeek.vestiging.organisatieId);
+
+    if (!eigenaar) {
+      return NextResponse.json({ fout: "Alleen de eigenaar kan deze planningweek wijzigen." }, { status: 403 });
     }
 
     const toegang =
@@ -373,6 +380,12 @@ export async function DELETE(
         },
         { status: 404 },
       );
+    }
+
+    const eigenaar = await isEigenaar(week.vestiging.organisatieId);
+
+    if (!eigenaar) {
+      return NextResponse.json({ fout: "Alleen de eigenaar kan deze planningweek verwijderen." }, { status: 403 });
     }
 
     const toegang =
