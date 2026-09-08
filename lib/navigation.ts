@@ -11,6 +11,7 @@ import {
   BarChart3,
   Settings,
   Building2,
+  ScrollText,
 } from "lucide-react";
 
 import { permissions } from "@/lib/permissions";
@@ -121,6 +122,13 @@ export const navigation = [
         title: "Vestigingen",
         href: "/vestigingen",
         icon: Building2,
+        ownerOnly: true,
+      },
+
+      {
+        title: "Auditlog",
+        href: "/audit",
+        icon: ScrollText,
         ownerOnly: true,
       },
 
