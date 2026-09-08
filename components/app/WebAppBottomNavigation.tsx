@@ -27,10 +27,11 @@ export default function WebAppBottomNavigation() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
+      className="fixed inset-x-3 z-[100] mx-auto max-w-lg rounded-2xl border border-slate-200 bg-white shadow-xl"
+      style={{ bottom: "max(12px, env(safe-area-inset-bottom))" }}
       aria-label="Webapp navigatie"
     >
-      <div className="mx-auto grid max-w-lg grid-cols-5">
+      <div className="grid grid-cols-5">
         {items.map((item) => {
           const Icon = item.icon;
           const actief =
@@ -45,14 +46,14 @@ export default function WebAppBottomNavigation() {
               href={item.href}
               aria-current={actief ? "page" : undefined}
               className={
-                "flex min-h-[60px] flex-col items-center justify-center gap-1 px-1 py-2 text-[10px] font-medium transition " +
+                "flex min-h-[68px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[10px] font-semibold transition " +
                 (actief
-                  ? "text-slate-950"
-                  : "text-slate-400 hover:text-slate-700")
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-900")
               }
             >
-              <Icon size={21} strokeWidth={actief ? 2.5 : 2} />
-              <span className="truncate">{item.label}</span>
+              <Icon size={22} strokeWidth={actief ? 2.5 : 2} />
+              <span className="max-w-full truncate">{item.label}</span>
             </Link>
           );
         })}
