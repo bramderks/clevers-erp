@@ -5,6 +5,10 @@ import {
   ClipboardClock,
   UserRound,
   WalletCards,
+  CheckSquare,
+  ArrowLeftRight,
+  Palmtree,
+  ClipboardCheck,
 } from "lucide-react";
 
 import { getCurrentUser } from "@/lib/auth";
@@ -36,6 +40,13 @@ export default async function MedewerkerAppPage() {
   }
 
   const vandaag = new Date();
+
+  const isEigenaar = gebruiker.organisaties.some(
+    (relatie) =>
+      relatie.actief &&
+      relatie.organisatie.actief &&
+      relatie.rol.naam.trim().toLowerCase() === "eigenaar",
+  );
 
   const [
     aankomendeDiensten,
@@ -277,6 +288,40 @@ export default async function MedewerkerAppPage() {
             )}
           </div>
         </section>
+
+        <section className="grid grid-cols-2 gap-3">
+          <Link href="/app/planning" className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+            <CalendarDays size={24} className="text-slate-700" />
+            <p className="mt-8 text-sm text-slate-500">Planning</p>
+            <p className="mt-1 text-lg font-bold text-slate-900">Mijn diensten</p>
+          </Link>
+
+          <Link href={"/medewerkers/" + encodeURIComponent(medewerkerId) + "?tab=vakantie"} className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+            <Palmtree size={24} className="text-slate-700" />
+            <p className="mt-8 text-sm text-slate-500">Vakantie</p>
+            <p className="mt-1 text-lg font-bold text-slate-900">Doorg even</p>
+          </Link>
+
+          <Link href="/dashboard" className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+            <CheckSquare size={24} className="text-slate-700" />
+            <p className="mt-8 text-sm text-slate-500">To do&apos;s</p>
+            <p className="mt-1 text-lg font-bold text-slate-900">Bekijk taken</p>
+          </Link>
+
+          <Link href="/app/planning" className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+            <ArrowLeftRight size={24} className="text-slate-700" />
+            <p className="mt-8 text-sm text-slate-500">Ruilverzoeken</p>
+            <p className="mt-1 text-lg font-bold text-slate-900">Mijn diensten</p>
+          </Link>
+        </section>
+
+        {isEigenaar && (
+          <Link href="/app/afronden" className="block rounded-3xl bg-slate-900 p-5 text-white shadow-sm">
+            <ClipboardCheck size={24} />
+            <p className="mt-5 text-sm text-slate-300">Dagelijkse planning</p>
+            <p className="mt-1 text-lg font-bold">Diensten en uren afronden</p>
+          </Link>
+        )}
 
         <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <div className="flex items-center gap-3">
