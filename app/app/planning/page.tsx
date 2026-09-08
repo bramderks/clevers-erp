@@ -128,13 +128,13 @@ export default async function AppPlanningPage() {
 
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <Link
-                  href={"/planning/diensten/" + bezetting.dienst.id}
+                  href={"/app/ruilen?dienstBezettingId=" + encodeURIComponent(bezetting.id)}
                   className="rounded-xl border border-slate-300 px-4 py-3 text-center text-sm font-semibold text-slate-700"
                 >
                   Details
                 </Link>
                 <Link
-                  href={"/planning/diensten/" + bezetting.dienst.id + "?ruilen=1"}
+                  href={"/app/ruilen?dienstBezettingId=" + encodeURIComponent(bezetting.id)}
                   className="rounded-xl bg-slate-900 px-4 py-3 text-center text-sm font-semibold text-white"
                 >
                   Ruilen
