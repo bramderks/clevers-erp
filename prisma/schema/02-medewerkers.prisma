@@ -71,6 +71,10 @@ model Medewerker {
 
   vakantieAanvragen VakantieAanvraag[]
 
+  ziekmeldingen Ziekmelding[]
+
+  documenten MedewerkerDocument[]
+
   /// ----------------------------------------------------
   /// ROLLEN EN TAGS
   /// ----------------------------------------------------
@@ -181,4 +185,53 @@ model MedewerkerRol {
   @@index([medewerkerId])
 
   @@index([rolId])
+}
+
+/// ======================================================
+/// ZIEKMELDINGEN
+/// ======================================================
+
+model Ziekmelding {
+  id String @id @default(cuid())
+
+  medewerkerId String
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+
+  ziekVanaf DateTime
+  verwachtHersteldOp DateTime?
+  hersteldOp DateTime?
+
+  opmerking String?
+  status String @default("ZIEK")
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([medewerkerId])
+  @@index([status])
+}
+
+/// ======================================================
+/// MEDEWERKERDOCUMENTEN
+/// ======================================================
+
+model MedewerkerDocument {
+  id String @id @default(cuid())
+
+  medewerkerId String
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+
+  categorie String
+  naam String
+  url String
+  verloopDatum DateTime?
+  opmerkingen String?
+
+  aangemaaktDoorId String?
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([medewerkerId])
+  @@index([categorie])
+  @@index([verloopDatum])
 }
