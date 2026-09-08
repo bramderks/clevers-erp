@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getCurrentUser,
   hasPermissionForVestiging,
+  isEigenaar,
 } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
@@ -262,6 +263,12 @@ export async function POST(
       );
     }
 
+    const eigenaar = await isEigenaar(vestiging.organisatieId);
+
+    if (!eigenaar) {
+      return NextResponse.json({ error: "Alleen de eigenaar kan een planningweek aanmaken." }, { status: 403 });
+    }
+
     const toegang =
       await hasPermissionForVestiging(
         permissions.planning.create,
@@ -409,6 +416,12 @@ export async function PATCH(
           status: 403,
         },
       );
+    }
+
+    const eigenaar = await isEigenaar(vestiging.organisatieId);
+
+    if (!eigenaar) {
+      return NextResponse.json({ error: "Alleen de eigenaar kan de planning wijzigen." }, { status: 403 });
     }
 
     const toegang =
