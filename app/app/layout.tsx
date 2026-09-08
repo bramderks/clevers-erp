@@ -1,4 +1,5 @@
 import WebAppServiceWorker from "@/components/app/WebAppServiceWorker";
+import WebAppBottomNavigation from "@/components/app/WebAppBottomNavigation";
 
 export default function AppLayout({
   children,
@@ -6,7 +7,10 @@ export default function AppLayout({
   return (
     <>
       <WebAppServiceWorker />
-      {children}
+      <div className="min-h-screen pb-20">
+        {children}
+      </div>
+      <WebAppBottomNavigation />
     </>
   );
 }
