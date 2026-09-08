@@ -21,7 +21,7 @@ export default function OpenDienstenPage() {
   const [laden, setLaden] = useState(true);
   const [bericht, setBericht] = useState("");
 
-  async function laden() {
+  async function laadOpenDiensten() {
     setLaden(true);
     const response = await fetch("/api/open-diensten/beoordelen", { cache: "no-store" });
     const data = await response.json();
@@ -30,7 +30,7 @@ export default function OpenDienstenPage() {
   }
 
   useEffect(() => {
-    void laden();
+    void laadOpenDiensten();
   }, []);
 
   async function toewijzen(item: Interesse) {
@@ -47,7 +47,7 @@ export default function OpenDienstenPage() {
 
     const data = await response.json();
     setBericht(response.ok ? "Medewerker definitief toegewezen." : data.fout ?? "Toewijzen mislukt.");
-    if (response.ok) await laden();
+    if (response.ok) await laadOpenDiensten();
   }
 
   return (
