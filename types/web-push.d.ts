@@ -1,3 +1,5 @@
+declare module "web-push";
+
 export interface WebPushSubscription {
   endpoint: string;
   keys: {
