@@ -147,6 +147,7 @@ model SysteemGebruiker {
   organisaties OrganisatieGebruiker[]
   vestigingToegang SysteemGebruikerVestiging[]
   auditLogs AuditLog[]
+  pushSubscriptions PushSubscription[]
 
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt
@@ -185,6 +186,53 @@ model Rol {
 
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt
+}
+
+model PushSubscription {
+  id String @id @default(cuid())
+
+  systeemGebruikerId String
+  endpoint String @unique
+  p256dh String
+  auth String
+
+  actief Boolean @default(true)
+  laatsteFoutOp DateTime?
+
+  systeemGebruiker SysteemGebruiker @relation(fields: [systeemGebruikerId], references: [id], onDelete: Cascade)
+  meldingen PushMelding[]
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([systeemGebruikerId])
+  @@index([actief])
+}
+
+model PushMelding {
+  id String @id @default(cuid())
+
+  type String
+  sleutel String @unique
+
+  pushSubscriptionId String
+  systeemGebruikerId String
+
+  dienstBezettingId String?
+
+  geplandVoor DateTime
+  verstuurdOp DateTime?
+  foutmelding String?
+
+  pushSubscription PushSubscription @relation(fields: [pushSubscriptionId], references: [id], onDelete: Cascade)
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([systeemGebruikerId])
+  @@index([dienstBezettingId])
+  @@index([geplandVoor])
+  @@index([verstuurdOp])
 }
 
 model AuditLog {
