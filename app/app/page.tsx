@@ -369,31 +369,7 @@ export default async function MedewerkerAppPage() {
         </section>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white">
-        <div className="mx-auto grid max-w-lg grid-cols-3">
-          <Link
-            href="/app"
-            className="flex flex-col items-center gap-1 py-3 text-xs font-semibold text-slate-900"
-          >
-            <CalendarDays size={20} />
-            Home
-          </Link>
-          <Link
-            href="/app/beschikbaarheid"
-            className="flex flex-col items-center gap-1 py-3 text-xs text-slate-500"
-          >
-            <ClipboardClock size={20} />
-            Beschikbaar
-          </Link>
-          <Link
-            href="/profiel"
-            className="flex flex-col items-center gap-1 py-3 text-xs text-slate-500"
-          >
-            <UserRound size={20} />
-            Profiel
-          </Link>
-        </div>
-      </nav>
+
     </main>
   );
 }
