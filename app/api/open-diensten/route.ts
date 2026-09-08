@@ -57,72 +57,72 @@ export async function POST(request: Request) {
     ? body.dienstBezettingId
     : "";
 
-  if (!dienstBezettingId) {
-    return NextResponse.json({ fout: "Dienst ontbreekt." }, { status: 400 });
-  }
-
-  const resultaat = await prisma.$transaction(async (tx) => {
-    const openDienst = await tx.dienstBezetting.findFirst({
-      where: {
-        id: dienstBezettingId,
-        status: "OPEN",
-        medewerkerId: null,
-      },
-      include: {
-        dienst: {
-          include: {
-            week: { include: { vestiging: true } },
-          },
+  const openDienst = await prisma.dienstBezetting.findFirst({
+    where: {
+      id: dienstBezettingId,
+      status: "OPEN",
+      medewerkerId: null,
+      dienst: { datum: { gte: new Date() } },
+    },
+    select: {
+      id: true,
+      dienst: {
+        select: {
+          week: { select: { vestigingId: true } },
         },
       },
-    });
-
-    if (!openDienst) {
-      return null;
-    }
-
-    const koppeling = await tx.medewerkerVestiging.findFirst({
-      where: {
-        medewerkerId: gebruiker.medewerker!.id,
-        vestigingId: openDienst.dienst.week.vestigingId,
-      },
-      select: { id: true },
-    });
-
-    if (!koppeling) {
-      throw new Error("Geen toegang tot deze vestiging.");
-    }
-
-    const bezetting = await tx.dienstBezetting.update({
-      where: { id: openDienst.id },
-      data: {
-        medewerkerId: gebruiker.medewerker!.id,
-        status: "GEPLAND",
-      },
-    });
-
-    await tx.auditLog.create({
-      data: {
-        systeemGebruikerId: gebruiker.id,
-        module: "PLANNING",
-        actie: "OPEN_DIENST_GEVULD",
-        recordId: bezetting.id,
-        details: {
-          medewerkerId: gebruiker.medewerker!.id,
-          vestigingId: openDienst.dienst.week.vestigingId,
-        },
-      },
-    });
-
-    return bezetting;
+    },
   });
 
-  if (!resultaat) {
+  if (!openDienst) {
     return NextResponse.json(
       { fout: "Deze open dienst is niet meer beschikbaar." },
       { status: 409 },
     );
   }
 
-  return NextResponse.json({ succes: true, bezetting: resultaat });
+  const koppeling = await prisma.medewerkerVestiging.findFirst({
+    where: {
+      medewerkerId: gebruiker.medewerker.id,
+      vestigingId: openDienst.dienst.week.vestigingId,
+    },
+    select: { id: true },
+  });
+
+  if (!koppeling) {
+    return NextResponse.json(
+      { fout: "Je bent niet gekoppeld aan deze vestiging." },
+      { status: 403 },
+    );
+  }
+
+  const bestaand = await prisma.auditLog.findFirst({
+    where: {
+      systeemGebruikerId: gebruiker.id,
+      module: "PLANNING",
+      actie: "INTERESSE_OPEN_DIENST",
+      recordId: openDienst.id,
+    },
+    select: { id: true },
+  });
+
+  if (!bestaand) {
+    await prisma.auditLog.create({
+      data: {
+        systeemGebruikerId: gebruiker.id,
+        module: "PLANNING",
+        actie: "INTERESSE_OPEN_DIENST",
+        recordId: openDienst.id,
+        details: {
+          medewerkerId: gebruiker.medewerker.id,
+          vestigingId: openDienst.dienst.week.vestigingId,
+        },
+      },
+    });
+  }
+
+  return NextResponse.json({
+    succes: true,
+    bericht: "Je interesse is doorgegeven. De eigenaar beslist over de definitieve indeling.",
+  });
 }
