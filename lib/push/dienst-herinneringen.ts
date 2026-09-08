@@ -1,12 +1,28 @@
 import type { WebPushSubscription } from "@/types/web-push";
 
-const webpush: {
-  setVapidDetails(subject: string, publicKey: string, privateKey: string): void;
+type WebPushRuntime = {
+  setVapidDetails(
+    subject: string,
+    publicKey: string,
+    privateKey: string,
+  ): void;
   sendNotification(
     subscription: WebPushSubscription,
     payload?: string,
   ): Promise<unknown>;
-} = require("web-push");
+};
+
+async function webpushRuntime(): Promise<WebPushRuntime> {
+  const moduleName = "web-push";
+
+  try {
+    return (await import(moduleName)) as unknown as WebPushRuntime;
+  } catch {
+    throw new Error(
+      "Push-functionaliteit is nog niet geconfigureerd op deze omgeving.",
+    );
+  }
+}
 import { prisma } from "@/lib/prisma";
 
 type HerinneringType = "DIENST_24U" | "DIENST_12U" | "DIENST_2U";
@@ -20,17 +36,19 @@ const HERINNERINGEN: Array<{
   { type: "DIENST_2U", minuten: 2 * 60 },
 ];
 
-function vapidInstellen() {
+async function vapidInstellen() {
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
   const subject = process.env.VAPID_SUBJECT;
 
   if (!publicKey || !privateKey || !subject) {
-    return false;
+    return null;
   }
 
+  const webpush = await webpushRuntime();
   webpush.setVapidDetails(subject, publicKey, privateKey);
-  return true;
+
+  return webpush;
 }
 
 function datumMetTijd(datum: Date, tijd: Date) {
@@ -57,7 +75,9 @@ function binnenVenster(
 }
 
 export async function verstuurDienstHerinneringen() {
-  if (!vapidInstellen()) {
+  const webpush = await vapidInstellen();
+
+  if (!webpush) {
     throw new Error("VAPID-configuratie ontbreekt.");
   }
 
