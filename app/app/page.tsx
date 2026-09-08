@@ -9,6 +9,7 @@ import {
   ArrowLeftRight,
   Palmtree,
   ClipboardCheck,
+  HeartPulse,
 } from "lucide-react";
 
 import { getCurrentUser } from "@/lib/auth";
@@ -316,6 +317,12 @@ export default async function MedewerkerAppPage() {
             <ArrowLeftRight size={24} className="text-slate-700" />
             <p className="mt-8 text-sm text-slate-500">Ruilverzoeken</p>
             <p className="mt-1 text-lg font-bold text-slate-900">Mijn diensten</p>
+          </Link>
+
+          <Link href="/app/ziekmelding" className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+            <HeartPulse size={24} className="text-slate-700" />
+            <p className="mt-8 text-sm text-slate-500">Ziekmelding</p>
+            <p className="mt-1 text-lg font-bold text-slate-900">Direct doorgeven</p>
           </Link>
         </section>
 
