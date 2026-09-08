@@ -91,10 +91,6 @@ const TABS = [
     label: "Gegevens bewerken",
   },
   {
-    id: "vakantie",
-    label: "Vakantie",
-  },
-  {
     id: "afspraken",
     label: "Afspraken",
   },
