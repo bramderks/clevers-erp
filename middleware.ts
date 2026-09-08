@@ -7,6 +7,8 @@ const PUBLIC_ROUTES = [
   "/favicon.ico",
   "/logo.png",
   "/ijs-logo-transparent.png",
+  "/sw.js",
+  "/manifest.webmanifest",
 ];
 
 export function middleware(request: NextRequest) {
@@ -34,6 +36,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api/login|_next/static|_next/image|favicon.ico|logo.png|ijs-logo-transparent.png).*)",
+    "/((?!api/login|_next/static|_next/image|favicon.ico|logo.png|ijs-logo-transparent.png|sw.js|manifest.webmanifest).*)",
   ],
 };
