@@ -19,7 +19,7 @@ export default function BeschikbaarheidPanel({
   medewerkerId,
   vestigingen,
   isBeheerder,
-  isEigenMedewerker = !isBeheerder,
+  isEigenMedewerker = true,
 }: BeschikbaarheidPanelProps) {
   return (
     <section className="space-y-6">
