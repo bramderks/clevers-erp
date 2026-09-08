@@ -1,20 +1,42 @@
 import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
+
 import { PrismaClient } from "@/generated/prisma/client";
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
-});
+const databaseUrl = process.env.DATABASE_URL;
 
-const globalForPrisma = globalThis as {
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is niet ingesteld.");
+}
+
+const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
+  prismaPool?: Pool;
 };
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    adapter,
+const maxConnections = Number.parseInt(
+  process.env.DATABASE_POOL_MAX ?? "2",
+  10,
+);
+
+const prismaPool =
+  globalForPrisma.prismaPool ??
+  new Pool({
+    connectionString: databaseUrl,
+    max: Number.isFinite(maxConnections)
+      ? Math.max(1, maxConnections)
+      : 2,
+    idleTimeoutMillis: 10_000,
+    connectionTimeoutMillis: 10_000,
   });
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    adapter: new PrismaPg(prismaPool),
+  });
+
+globalForPrisma.prismaPool = prismaPool;
+globalForPrisma.prisma = prisma;
+
+export { prisma };
