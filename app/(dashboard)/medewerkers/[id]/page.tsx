@@ -1439,9 +1439,54 @@ export default async function MedewerkerPage({
                 medewerkerId={medewerker.id}
                 vestigingen={vestigingen}
                 isBeheerder={magBeschikbaarheidBewerken}
-                isEigenMedewerker={isEigenProfiel}
+                isEigenMedewerker={false}
                 bewerkmodus={isBewerken}
               />
+            </div>
+          )}
+
+          {actieveTab === "gegevens" && isEigenaar && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Gegevens bewerken
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Beheer de gegevens van deze medewerker. Alleen de Eigenaar kan wijzigingen uitvoeren.
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card title="Persoonsgegevens" description="Naam, contactgegevens en overige algemene gegevens.">
+                  <Link href={`/medewerkers/${medewerker.id}?tab=algemeen&edit=1`}>
+                    <Button>Algemene gegevens wijzigen</Button>
+                  </Link>
+                </Card>
+
+                <Card title="Dienstverband" description="Contract, uren en loonafspraken.">
+                  <Link href={`/medewerkers/${medewerker.id}?tab=contract&edit=1`}>
+                    <Button>Contractgegevens wijzigen</Button>
+                  </Link>
+                </Card>
+
+                <Card title="Vestigingen" description="Vestigingskoppelingen en hoofdvestiging.">
+                  <Link href={`/medewerkers/${medewerker.id}?tab=vestigingen&edit=1`}>
+                    <Button>Vestigingen wijzigen</Button>
+                  </Link>
+                </Card>
+
+                <Card title="Beschikbaarheid" description="Beschikbaarheid beheren vanuit het medewerkerdossier.">
+                  <Link href={`/medewerkers/${medewerker.id}?tab=beschikbaarheid&edit=1`}>
+                    <Button>Beschikbaarheid wijzigen</Button>
+                  </Link>
+                </Card>
+
+                <Card title="Verloning" description="Uurloon en verloningsgegevens beheren.">
+                  <Link href={`/medewerkers/${medewerker.id}?tab=verloning&edit=1`}>
+                    <Button>Verloningsgegevens wijzigen</Button>
+                  </Link>
+                </Card>
+              </div>
             </div>
           )}
 
