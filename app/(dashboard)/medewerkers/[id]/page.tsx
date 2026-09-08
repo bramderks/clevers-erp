@@ -550,7 +550,7 @@ export default async function MedewerkerPage({
     isEigenaar;
 
   const magBeschikbaarheidBewerken =
-    isEigenaar;
+    isEigenaar || isEigenProfiel;
 
   const magVerloningBewerken =
     isEigenaar;
