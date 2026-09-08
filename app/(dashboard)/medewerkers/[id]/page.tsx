@@ -1556,12 +1556,7 @@ export default async function MedewerkerPage({
             <MedewerkerAfsprakenPanel
               medewerkerId={medewerker.id}
               vestigingen={vestigingen}
-              tags={medewerker.tags.map(
-                (medewerkerTag) => ({
-                  id: medewerkerTag.tag.id,
-                  naam: medewerkerTag.tag.naam,
-                }),
-              )}
+              tags={beschikbareTags}
               dossier={dossierItems.map(
                 (item) => ({
                   ...item,
