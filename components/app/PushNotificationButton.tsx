@@ -23,10 +23,7 @@ export default function PushNotificationButton() {
   async function schakelIn() {
     if (!ondersteund) return;
 
-    const resultaat =
-      await Notification.requestPermission();
-
-    setToestemming(resultaat);
+    const resultaat =\n      await Notification.requestPermission();\n\n    setToestemming(resultaat);\n\n    if (resultaat !== "granted") return;\n\n    const registratie =\n      await navigator.serviceWorker.ready;\n\n    const subscription =\n      await registratie.pushManager.subscribe({\n        userVisibleOnly: true,\n        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,\n      });\n\n    await fetch("/api/push/subscription", {\n      method: "POST",\n      headers: { "Content-Type": "application/json" },\n      body: JSON.stringify(subscription),\n    });
   }
 
   if (!ondersteund || toestemming === "denied") {
