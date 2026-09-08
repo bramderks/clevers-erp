@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import {
   hasPermissionForVestiging,
+  isEigenaar,
 } from "@/lib/auth";
 
 import {
@@ -47,6 +48,7 @@ async function haalWeekMetVestigingOp(
       vestiging: {
         select: {
           id: true,
+          organisatieId: true,
           seizoenStart: true,
           seizoenEinde: true,
         },
@@ -817,6 +819,30 @@ export async function POST(
      * planning.create mogen daadwerkelijk
      * een dienst aanmaken.
      */
+
+    /*
+     * Alleen de Eigenaar mag diensten
+     * daadwerkelijk aanmaken. Teamleiders
+     * en medewerkers kunnen deze endpoint
+     * dus niet via een directe URL of API-call
+     * gebruiken om de planning te wijzigen.
+     */
+    const eigenaar =
+      await isEigenaar(
+        week.vestiging.organisatieId,
+      );
+
+    if (!eigenaar) {
+      return NextResponse.json(
+        {
+          fout:
+            "Alleen de eigenaar kan een dienst aanmaken.",
+        },
+        {
+          status: 403,
+        },
+      );
+    }
 
     const toegang =
       await hasPermissionForVestiging(
