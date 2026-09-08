@@ -38,7 +38,7 @@ export async function GET() {
 
   for (const item of interesse) {
     const bezetting = await prisma.dienstBezetting.findUnique({
-      where: { id: item.recordId },
+      where: { id: item.recordId ?? "__geen_record__" },
       select: {
         id: true,
         status: true,
@@ -54,14 +54,14 @@ export async function GET() {
       },
     });
 
-    if (bezetting?.status === "OPEN" && !bezetting.medewerkerId) {
+    if (bezetting?.status === "OPEN" && !bezetting.medewerkerId && item.systeemGebruiker) {
       resultaat.push({
         interesseId: item.id,
         dienstBezettingId: bezetting.id,
         medewerkerId: item.systeemGebruiker.medewerker?.id ?? null,
         medewerkerNaam: item.systeemGebruiker.naam,
         aangemeldOp: item.aangemaaktOp,
-        dienst: bezetting.dienst,
+        dienst: bezetting.dienst!,
       });
     }
   }
