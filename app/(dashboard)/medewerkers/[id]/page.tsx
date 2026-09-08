@@ -1415,6 +1415,7 @@ export default async function MedewerkerPage({
                 medewerkerId={medewerker.id}
                 vestigingen={vestigingen}
                 isBeheerder={magBeschikbaarheidBewerken}
+                isEigenMedewerker={isEigenProfiel}
                 bewerkmodus={isBewerken}
               />
             </div>
