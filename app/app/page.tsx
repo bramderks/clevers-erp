@@ -299,7 +299,7 @@ export default async function MedewerkerAppPage() {
           <Link href={"/medewerkers/" + encodeURIComponent(medewerkerId) + "?tab=vakantie"} className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
             <Palmtree size={24} className="text-slate-700" />
             <p className="mt-8 text-sm text-slate-500">Vakantie</p>
-            <p className="mt-1 text-lg font-bold text-slate-900">Doorg even</p>
+            <p className="mt-1 text-lg font-bold text-slate-900">Doorgeven</p>
           </Link>
 
           <Link href="/dashboard" className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
