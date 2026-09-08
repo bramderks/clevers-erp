@@ -241,16 +241,18 @@ async function vereisEigenaarVoorMedewerker(
     );
 
   const toegestaan =
-    gebruiker.organisaties.some(
-      (relatie) =>
-        relatie.actief &&
-        relatie.organisatie.actief &&
-        relatie.rol.naam
-          .trim()
-          .toLowerCase() ===
-          "eigenaar" &&
-        organisatieIds.includes(
-          relatie.organisatieId,
+    organisatieIds.length > 0 &&
+    organisatieIds.every(
+      (organisatieId) =>
+        gebruiker.organisaties.some(
+          (relatie) =>
+            relatie.actief &&
+            relatie.organisatie.actief &&
+            relatie.organisatieId === organisatieId &&
+            relatie.rol.naam
+              .trim()
+              .toLowerCase() ===
+              "eigenaar",
         ),
     );
 
