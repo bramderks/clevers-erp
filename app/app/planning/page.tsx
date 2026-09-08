@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CalendarPlus } from "lucide-react";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -88,9 +89,19 @@ export default async function AppPlanningPage() {
               Mijn planning
             </h1>
           </div>
-          <Link href="/app" className="text-sm font-semibold text-slate-700">
-            Terug
-          </Link>
+          <div className="flex items-center gap-3">
+            <a
+              href="/api/app/planning/agenda"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700"
+              title="Zet mijn komende diensten in mijn agenda"
+            >
+              <CalendarPlus size={18} />
+              Agenda
+            </a>
+            <Link href="/app" className="text-sm font-semibold text-slate-700">
+              Terug
+            </Link>
+          </div>
         </div>
       </header>
 
