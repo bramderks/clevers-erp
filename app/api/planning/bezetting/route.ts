@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { hasPermissionForVestiging } from "@/lib/auth";
+import { hasPermissionForVestiging, isEigenaar } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
@@ -38,6 +38,11 @@ async function haalDienstOp(
       week: {
         select: {
           vestigingId: true,
+          vestiging: {
+            select: {
+              organisatieId: true,
+            },
+          },
         },
       },
     },
