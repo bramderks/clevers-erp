@@ -30,6 +30,7 @@ type BeschikbaarheidWeekSelectorProps = {
   vestigingen: Vestiging[];
   medewerkerId: string;
   isBeheerder: boolean;
+  isEigenMedewerker: boolean;
   bewerkmodus?: boolean;
   onSelected?: (
     vestigingId: string,
@@ -796,6 +797,7 @@ export default function BeschikbaarheidWeekSelector({
   vestigingen,
   medewerkerId,
   isBeheerder,
+  isEigenMedewerker,
   bewerkmodus = false,
   onSelected,
 }: BeschikbaarheidWeekSelectorProps) {
@@ -872,9 +874,8 @@ export default function BeschikbaarheidWeekSelector({
    * bewerkmodus bepalend.
    */
   const magBewerken =
-    isBeheerder
-      ? bewerkmodus
-      : true;
+    isEigenMedewerker ||
+    (isBeheerder && bewerkmodus);
 
   const geselecteerdeWeek =
     useMemo<SelectorWeek | null>(() => {
