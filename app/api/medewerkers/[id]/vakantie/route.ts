@@ -8,16 +8,20 @@ function dagen(start:Date,eind:Date){return Math.floor((eind.getTime()-start.get
 function deadlineVoorSeizoen(seizoenStart:Date){return new Date(seizoenStart.getFullYear(),3,30,23,59,59,999);}
 function zomerGrenzen(jaar:number){return {start:new Date(jaar,5,1),einde:new Date(jaar,7,31,23,59,59,999)};}
 
-async function magEigenaar(gebruiker:Awaited<ReturnType<typeof getCurrentUser>>){
- return !!gebruiker?.organisaties.some(r=>r.actief&&r.organisatie.actief&&r.rol.naam.trim().toLowerCase()==="eigenaar");
+async function magEigenaarVoorOrganisatie(gebruiker:Awaited<ReturnType<typeof getCurrentUser>>, organisatieId:string){
+ return !!gebruiker?.organisaties.some(r=>r.actief&&r.organisatie.actief&&r.organisatieId===organisatieId&&r.rol.naam.trim().toLowerCase()==="eigenaar");
 }
 
 export async function GET(_:Request,{params}:{params:Promise<{id:string}>}){
  const gebruiker=await getCurrentUser(); if(!gebruiker)return fout("Je moet ingelogd zijn.",401);
- const {id}=await params; const eigenaar=await magEigenaar(gebruiker);
+ const {id}=await params;
+ const medewerker=await prisma.medewerker.findUnique({where:{id},select:{vestigingen:{select:{vestiging:{select:{id:true,naam:true,actief:true,seizoenStart:true,organisatieId:true}}}}}});
+ if(!medewerker)return fout("Medewerker niet gevonden.",404);
+ const organisatieIds=[...new Set(medewerker.vestigingen.filter(v=>v.vestiging.actief).map(v=>v.vestiging.organisatieId))];
+ const eigenaar=organisatieIds.some(organisatieId=>magEigenaarVoorOrganisatie(gebruiker,organisatieId));
  if(!eigenaar&&gebruiker.medewerker?.id!==id)return fout("Geen toegang.",403);
- const [aanvragen, medewerker]=await Promise.all([prisma.vakantieAanvraag.findMany({where:{medewerkerId:id},orderBy:{startDatum:"asc"},select:{id:true,startDatum:true,eindDatum:true,vestigingId:true,status:true,opmerking:true,redenAfwijzing:true,vestiging:{select:{naam:true}}}}),prisma.medewerker.findUnique({where:{id},select:{vestigingen:{select:{vestiging:{select:{id:true,naam:true,actief:true,seizoenStart:true}}}}}})]);
- const vestigingen=(medewerker?.vestigingen??[]).map(v=>v.vestiging).filter(v=>v.actief&&v.seizoenStart).map(v=>({id:v.id,naam:v.naam}));
+ const aanvragen=await prisma.vakantieAanvraag.findMany({where:{medewerkerId:id},orderBy:{startDatum:"asc"},select:{id:true,startDatum:true,eindDatum:true,vestigingId:true,status:true,opmerking:true,redenAfwijzing:true,vestiging:{select:{naam:true}}}});
+ const vestigingen=medewerker.vestigingen.map(v=>v.vestiging).filter(v=>v.actief&&v.seizoenStart).map(v=>({id:v.id,naam:v.naam}));
  return NextResponse.json({aanvragen:aanvragen.map(a=>({...a,vestigingNaam:a.vestiging.naam})),vestigingen});
 }
 
