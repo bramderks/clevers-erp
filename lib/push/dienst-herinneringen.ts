@@ -1,4 +1,12 @@
-import webpush from "web-push";
+import type { PushSubscription } from "@/types/web-push";
+
+const webpush: {
+  setVapidDetails(subject: string, publicKey: string, privateKey: string): void;
+  sendNotification(
+    subscription: PushSubscription,
+    payload?: string,
+  ): Promise<unknown>;
+} = require("web-push");
 import { prisma } from "@/lib/prisma";
 
 type HerinneringType = "DIENST_24U" | "DIENST_12U" | "DIENST_2U";
