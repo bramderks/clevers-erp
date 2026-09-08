@@ -12,6 +12,7 @@ type BeschikbaarheidPaginaClientProps = {
   medewerkerNaam: string;
   vestigingen: Vestiging[];
   isBeheerder: boolean;
+  isEigenMedewerker: boolean;
 };
 
 export default function BeschikbaarheidPaginaClient({
@@ -19,6 +20,7 @@ export default function BeschikbaarheidPaginaClient({
   medewerkerNaam,
   vestigingen,
   isBeheerder,
+  isEigenMedewerker,
 }: BeschikbaarheidPaginaClientProps) {
   return (
     <main className="space-y-6">
@@ -50,6 +52,7 @@ export default function BeschikbaarheidPaginaClient({
             vestigingen={vestigingen}
             medewerkerId={medewerkerId}
             isBeheerder={isBeheerder}
+            isEigenMedewerker={isEigenMedewerker}
             onSelected={() => {
               /*
                * De geselecteerde week en het
