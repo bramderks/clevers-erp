@@ -52,6 +52,11 @@ async function haalBeschikbaarheidOp(
           id: true,
           vestigingId: true,
           jaar: true,
+          vestiging: {
+            select: {
+              organisatieId: true,
+            },
+          },
           weeknummer: true,
           beschikbaarheidDeadline: true,
         },
@@ -63,6 +68,7 @@ async function haalBeschikbaarheidOp(
 async function controleerToegang(
   medewerkerId: string,
   vestigingId: string,
+  organisatieId: string,
   deadline: Date | null,
 ) {
   const gebruiker =
@@ -78,7 +84,9 @@ async function controleerToegang(
   }
 
   const eigenaar =
-    await isEigenaar();
+    await isEigenaar(
+      organisatieId,
+    );
 
   /*
    * ============================================================
@@ -253,6 +261,7 @@ export async function PATCH(
       await controleerToegang(
         bestaande.medewerkerId,
         bestaande.week.vestigingId,
+        bestaande.week.vestiging.organisatieId,
         bestaande.week
           .beschikbaarheidDeadline,
       );
