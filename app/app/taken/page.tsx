@@ -1,28 +1,27 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CheckSquare } from "lucide-react";
+import { CheckSquare, LoaderCircle } from "lucide-react";
 
-import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+type Taak = {
+  id: string;
+  categorie: string;
+  titel: string;
+  omschrijving: string;
+  actie: string;
+  gegevens: Record<string, unknown>;
+};
 
-export default async function AppTakenPage() {
-  const gebruiker = await getCurrentUser();
+export default function AppTakenPage() {
+  const [taken, setTaken] = useState<Taak[] | null>(null);
 
-  if (!gebruiker) {
-    redirect("/login?redirect=/app/taken");
-  }
-
-  const taken = await prisma.todo.findMany({
-    where: {
-      gebruikerId: gebruiker.id,
-      afgerond: false,
-    },
-    orderBy: [
-      { deadline: "asc" },
-      { aangemaaktOp: "desc" },
-    ],
-    take: 50,
-  });
+  useEffect(() => {
+    fetch("/api/taken")
+      .then((response) => response.ok ? response.json() : [])
+      .then((data) => setTaken(Array.isArray(data) ? data : []))
+      .catch(() => setTaken([]));
+  }, []);
 
   return (
     <main className="min-h-screen bg-slate-100 pb-10">
@@ -32,20 +31,34 @@ export default async function AppTakenPage() {
           <h1 className="text-xl font-bold text-slate-900">Mijn taken</h1>
         </div>
       </header>
+
       <div className="mx-auto max-w-lg space-y-3 px-4 py-5">
-        {taken.length === 0 ? (
+        {taken === null ? (
+          <div className="flex justify-center py-10 text-slate-400">
+            <LoaderCircle className="animate-spin" size={28} />
+          </div>
+        ) : taken.length === 0 ? (
           <section className="rounded-3xl bg-white p-6 text-center shadow-sm ring-1 ring-slate-200">
             <CheckSquare className="mx-auto text-slate-400" size={28} />
             <p className="mt-3 font-semibold text-slate-900">Geen openstaande taken</p>
           </section>
         ) : (
-          taken.map((taak) => (
-            <Link key={taak.id} href={taak.link ?? "/app"} className="block rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-              <p className="font-semibold text-slate-900">{taak.titel}</p>
-              {taak.omschrijving && <p className="mt-1 text-sm text-slate-500">{taak.omschrijving}</p>}
-              {taak.deadline && <p className="mt-3 text-xs font-medium text-slate-400">Deadline: {new Intl.DateTimeFormat("nl-NL",{day:"2-digit",month:"long",year:"numeric"}).format(taak.deadline)}</p>}
-            </Link>
-          ))
+          taken.map((taak) => {
+            const href =
+              typeof taak.gegevens.href === "string"
+                ? taak.gegevens.href
+                : taak.categorie === "Verloning"
+                  ? "/mijn-verloning"
+                  : "/app";
+
+            return (
+              <Link key={taak.id} href={href} className="block rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{taak.categorie}</p>
+                <p className="mt-1 font-semibold text-slate-900">{taak.titel}</p>
+                <p className="mt-1 text-sm text-slate-500">{taak.omschrijving}</p>
+              </Link>
+            );
+          })
         )}
       </div>
     </main>
