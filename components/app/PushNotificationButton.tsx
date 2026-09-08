@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bell, BellOff } from "lucide-react";
 
-export default function PushNotificationButton() {
+function base64UrlNaarUint8Array(waarde: string) {\n  const padding = "=".repeat((4 - (waarde.length % 4)) % 4);\n  const base64 = (waarde + padding).replace(/-/g, "+").replace(/_/g, "/");\n  const raw = window.atob(base64);\n  return Uint8Array.from(raw, (karakter) => karakter.charCodeAt(0));\n}\n\nexport default function PushNotificationButton() {
   const [ondersteund, setOndersteund] = useState(false);
   const [toestemming, setToestemming] =
     useState<NotificationPermission | "unknown">("unknown");
@@ -23,7 +23,7 @@ export default function PushNotificationButton() {
   async function schakelIn() {
     if (!ondersteund) return;
 
-    const resultaat =\n      await Notification.requestPermission();\n\n    setToestemming(resultaat);\n\n    if (resultaat !== "granted") return;\n\n    const registratie =\n      await navigator.serviceWorker.ready;\n\n    const subscription =\n      await registratie.pushManager.subscribe({\n        userVisibleOnly: true,\n        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,\n      });\n\n    await fetch("/api/push/subscription", {\n      method: "POST",\n      headers: { "Content-Type": "application/json" },\n      body: JSON.stringify(subscription),\n    });
+    const resultaat =\n      await Notification.requestPermission();\n\n    setToestemming(resultaat);\n\n    if (resultaat !== "granted") return;\n\n    const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;\n\n    if (!vapidPublicKey) {\n      console.error("VAPID public key ontbreekt.");\n      return;\n    }\n\n    const registratie =\n      await navigator.serviceWorker.ready;\n\n    const subscription =\n      await registratie.pushManager.subscribe({\n        userVisibleOnly: true,\n        applicationServerKey: base64UrlNaarUint8Array(vapidPublicKey),\n      });\n\n    await fetch("/api/push/subscription", {\n      method: "POST",\n      headers: { "Content-Type": "application/json" },\n      body: JSON.stringify(subscription),\n    });
   }
 
   if (!ondersteund || toestemming === "denied") {
