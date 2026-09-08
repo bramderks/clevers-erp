@@ -18,7 +18,7 @@ export async function GET(_:Request,{params}:{params:Promise<{id:string}>}){
  const medewerker=await prisma.medewerker.findUnique({where:{id},select:{vestigingen:{select:{vestiging:{select:{id:true,naam:true,actief:true,seizoenStart:true,organisatieId:true}}}}}});
  if(!medewerker)return fout("Medewerker niet gevonden.",404);
  const organisatieIds=[...new Set(medewerker.vestigingen.filter(v=>v.vestiging.actief).map(v=>v.vestiging.organisatieId))];
- const eigenaar=organisatieIds.some(organisatieId=>magEigenaarVoorOrganisatie(gebruiker,organisatieId));
+ const eigenaar=organisatieIds.length>0&&organisatieIds.every(organisatieId=>magEigenaarVoorOrganisatie(gebruiker,organisatieId));
  if(!eigenaar&&gebruiker.medewerker?.id!==id)return fout("Geen toegang.",403);
  const aanvragen=await prisma.vakantieAanvraag.findMany({where:{medewerkerId:id},orderBy:{startDatum:"asc"},select:{id:true,startDatum:true,eindDatum:true,vestigingId:true,status:true,opmerking:true,redenAfwijzing:true,vestiging:{select:{naam:true}}}});
  const vestigingen=medewerker.vestigingen.map(v=>v.vestiging).filter(v=>v.actief&&v.seizoenStart).map(v=>({id:v.id,naam:v.naam}));
