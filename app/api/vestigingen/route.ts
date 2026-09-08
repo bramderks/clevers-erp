@@ -47,7 +47,7 @@ function controleerSeizoen(
   }
 }
 
-async function haalEigenaar() {
+async function haalEigenaar(organisatieId?: string) {
   const gebruiker =
     await getCurrentUser();
 
@@ -65,7 +65,8 @@ async function haalEigenaar() {
         relatie.actief &&
         relatie.organisatie.actief &&
         relatie.rol.naam.toLowerCase() ===
-          "eigenaar",
+          "eigenaar" &&
+        (!organisatieId || relatie.organisatieId === organisatieId),
     );
 
   if (
@@ -156,6 +157,25 @@ export async function POST(
     const body =
       await request.json();
 
+    const gevraagdeOrganisatieId =
+      typeof body.organisatieId === "string" && body.organisatieId.trim()
+        ? body.organisatieId.trim()
+        : null;
+
+    if (!gevraagdeOrganisatieId && eigenaar.organisatieIds.length > 1) {
+      return NextResponse.json(
+        { error: "organisatieId is verplicht wanneer je eigenaar bent van meerdere organisaties." },
+        { status: 400 },
+      );
+    }
+
+    if (gevraagdeOrganisatieId && !eigenaar.organisatieIds.includes(gevraagdeOrganisatieId)) {
+      return NextResponse.json(
+        { error: "Je hebt geen toegang tot deze organisatie." },
+        { status: 403 },
+      );
+    }
+
     if (
       typeof body.code !==
         "string" ||
@@ -217,8 +237,7 @@ export async function POST(
 
           organisatie: {
             connect: {
-              id: eigenaar
-                .organisatieIds[0],
+              id: gevraagdeOrganisatieId ?? eigenaar.organisatieIds[0],
             },
           },
         },
