@@ -13,6 +13,7 @@ import {
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import PushNotificationButton from "@/components/app/PushNotificationButton";
 
 function formatUren(uren: number) {
   return uren.toFixed(2).replace(".", ",");
@@ -181,6 +182,8 @@ export default async function MedewerkerAppPage() {
             </h1>
           </div>
 
+          <div className="flex items-center gap-2">
+            <PushNotificationButton />
           <Link
             href="/profiel"
             className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-900 text-white"
@@ -188,6 +191,7 @@ export default async function MedewerkerAppPage() {
           >
             <UserRound size={20} />
           </Link>
+          </div>
         </div>
       </header>
 
