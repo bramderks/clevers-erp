@@ -722,6 +722,7 @@ export async function DELETE(
       await controleerToegang(
         bestaande.medewerkerId,
         bestaande.week.vestigingId,
+        bestaande.week.vestiging.organisatieId,
         bestaande.week
           .beschikbaarheidDeadline,
       );
