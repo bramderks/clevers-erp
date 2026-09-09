@@ -18,7 +18,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm install --package-lock-only --ignore-scripts
-      - run: npm audit fix --package-lock-only
       - name: Commit lockfile
         run: |
           if git diff --quiet -- package-lock.json; then
