@@ -6,13 +6,8 @@ import { prisma } from "@/lib/prisma";
 
 type Context = { params: Promise<{ id: string }> };
 
-const MAX_SIZE = 10 * 1024 * 1024;
-const ALLOWED_TYPES = new Set([
-  "application/pdf",
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-]);
+const MAX_SIZE = 4 * 1024 * 1024;
+const ALLOWED_TYPES = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
 
 export async function POST(request: Request, context: Context) {
   const gebruiker = await getCurrentUser();
@@ -32,48 +27,46 @@ export async function POST(request: Request, context: Context) {
   if (!(file instanceof File) || !categorie) {
     return NextResponse.json({ fout: "Bestand en categorie zijn verplicht." }, { status: 400 });
   }
-
   if (!ALLOWED_TYPES.has(file.type)) {
     return NextResponse.json({ fout: "Alleen PDF, JPG, PNG en WEBP zijn toegestaan." }, { status: 400 });
   }
-
   if (file.size > MAX_SIZE) {
-    return NextResponse.json({ fout: "Bestand is groter dan 10 MB." }, { status: 400 });
+    return NextResponse.json({ fout: "Bestand is groter dan 4 MB." }, { status: 400 });
   }
 
   const veiligNaam = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const pathname = "medewerkers/" + medewerkerId + "/" + Date.now() + "-" + veiligNaam;
+  const pathname = `medewerkers/${medewerkerId}/${Date.now()}-${veiligNaam}`;
+  const blob = await put(pathname, file, { access: "private", addRandomSuffix: true });
 
-  const blob = await put(pathname, file, {
-    access: "public",
-    addRandomSuffix: true,
-  });
+  try {
+    const document = await prisma.$transaction(async (tx) => {
+      const nieuw = await tx.medewerkerDocument.create({
+        data: {
+          medewerkerId,
+          categorie,
+          naam: file.name,
+          url: blob.pathname,
+          verloopDatum: verloopDatumWaarde ? new Date(verloopDatumWaarde) : null,
+          opmerkingen: opmerkingen || null,
+          aangemaaktDoorId: gebruiker.id,
+        },
+      });
 
-  const document = await prisma.$transaction(async (tx) => {
-    const nieuw = await tx.medewerkerDocument.create({
-      data: {
-        medewerkerId,
-        categorie,
-        naam: file.name,
-        url: blob.url,
-        verloopDatum: verloopDatumWaarde ? new Date(verloopDatumWaarde) : null,
-        opmerkingen: opmerkingen || null,
-        aangemaaktDoorId: gebruiker.id,
-      },
+      await tx.auditLog.create({
+        data: {
+          systeemGebruikerId: gebruiker.id,
+          module: "MEDEWERKERS",
+          actie: "DOCUMENT_GEUPLOAD",
+          recordId: nieuw.id,
+          details: { medewerkerId, categorie, naam: file.name },
+        },
+      });
+      return nieuw;
     });
 
-    await tx.auditLog.create({
-      data: {
-        systeemGebruikerId: gebruiker.id,
-        module: "MEDEWERKERS",
-        actie: "DOCUMENT_GEUPLOAD",
-        recordId: nieuw.id,
-        details: { medewerkerId, categorie, naam: file.name },
-      },
-    });
-
-    return nieuw;
-  });
-
-  return NextResponse.json({ succes: true, document });
+    return NextResponse.json({ succes: true, document });
+  } catch (error) {
+    await fetch(blob.url, { method: "DELETE" }).catch(() => undefined);
+    throw error;
+  }
 }
