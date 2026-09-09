@@ -1,4 +1,4 @@
-import { put } from "@vercel/blob";
+import { del, put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 
 import { getCurrentUser, isEigenaar } from "@/lib/auth";
@@ -24,15 +24,9 @@ export async function POST(request: Request, context: Context) {
   const verloopDatumWaarde = String(formData.get("verloopDatum") ?? "").trim();
   const opmerkingen = String(formData.get("opmerkingen") ?? "").trim();
 
-  if (!(file instanceof File) || !categorie) {
-    return NextResponse.json({ fout: "Bestand en categorie zijn verplicht." }, { status: 400 });
-  }
-  if (!ALLOWED_TYPES.has(file.type)) {
-    return NextResponse.json({ fout: "Alleen PDF, JPG, PNG en WEBP zijn toegestaan." }, { status: 400 });
-  }
-  if (file.size > MAX_SIZE) {
-    return NextResponse.json({ fout: "Bestand is groter dan 4 MB." }, { status: 400 });
-  }
+  if (!(file instanceof File) || !categorie) return NextResponse.json({ fout: "Bestand en categorie zijn verplicht." }, { status: 400 });
+  if (!ALLOWED_TYPES.has(file.type)) return NextResponse.json({ fout: "Alleen PDF, JPG, PNG en WEBP zijn toegestaan." }, { status: 400 });
+  if (file.size > MAX_SIZE) return NextResponse.json({ fout: "Bestand is groter dan 4 MB." }, { status: 400 });
 
   const veiligNaam = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const pathname = `medewerkers/${medewerkerId}/${Date.now()}-${veiligNaam}`;
@@ -51,7 +45,6 @@ export async function POST(request: Request, context: Context) {
           aangemaaktDoorId: gebruiker.id,
         },
       });
-
       await tx.auditLog.create({
         data: {
           systeemGebruikerId: gebruiker.id,
@@ -63,10 +56,9 @@ export async function POST(request: Request, context: Context) {
       });
       return nieuw;
     });
-
     return NextResponse.json({ succes: true, document });
   } catch (error) {
-    await fetch(blob.url, { method: "DELETE" }).catch(() => undefined);
+    await del(blob.pathname).catch(() => undefined);
     throw error;
   }
 }
