@@ -17,7 +17,7 @@
     "prisma:reset": "npm run prisma:push && npm run seed",
     "prisma:check": "npm run prisma:generate && npm run typecheck",
     "dev:sync": "npm run prisma:push && prisma generate && npm run seed && npm run typecheck",
-    "dev:check": "npm run prisma:push && prisma generate && prisma migrate deploy && next build"
+    "dev:check": "npm run prisma:push && prisma generate && npm run seed && npm run build"
   },
   "dependencies": {
     "@auth/core": "^0.41.3",
