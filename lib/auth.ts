@@ -8,9 +8,15 @@ import {
 import { prisma } from "@/lib/prisma";
 import { roles } from "@/lib/roles";
 
-const secret = new TextEncoder().encode(
-  process.env.AUTH_SECRET!,
-);
+function getAuthSecret() {
+  const waarde = process.env.AUTH_SECRET?.trim();
+
+  if (!waarde) {
+    throw new Error("AUTH_SECRET is niet ingesteld.");
+  }
+
+  return new TextEncoder().encode(waarde);
+}
 
 /*
  * ============================================================
@@ -27,7 +33,7 @@ export async function maakToken(
     })
     .setIssuedAt()
     .setExpirationTime("12h")
-    .sign(secret);
+    .sign(getAuthSecret());
 }
 
 export async function controleerToken(
@@ -36,7 +42,7 @@ export async function controleerToken(
   const { payload } =
     await jwtVerify(
       token,
-      secret,
+      getAuthSecret(),
     );
 
   return payload;
