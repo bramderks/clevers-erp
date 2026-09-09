@@ -39,3 +39,6 @@ jobs:
 
       - name: ESLint
         run: npm run lint
+
+      - name: Audit productie dependencies
+        run: npm audit --omit=dev --audit-level=high
