@@ -40,5 +40,8 @@ jobs:
       - name: ESLint
         run: npm run lint
 
+      - name: Beperk installatie tot productie
+        run: npm prune --omit=dev
+
       - name: Audit productie dependencies
-        run: npm audit --omit=dev --audit-level=high
+        run: npm audit --audit-level=high
