@@ -33,13 +33,12 @@
     "next": "16.3.3",
     "next-auth": "^5.0.0-beta.32",
     "pg": "^8.22.0",
-    "prisma": "^7.9.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-hook-form": "^7.65.0",
     "tailwind-merge": "^3.6.0",
     "web-push": "^3.6.7",
-    "xlsx": "^0.18.5",
+    "xlsx": "npm:@stackline/xlsx@1.0.6",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -51,6 +50,7 @@
     "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.3.3",
+    "prisma": "^7.9.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.10",
     "typescript": "^5"
