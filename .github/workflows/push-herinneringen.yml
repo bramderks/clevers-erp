@@ -5,25 +5,60 @@ on:
     - cron: "*/5 * * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   verstuur-herinneringen:
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
+      - name: Vraag GitHub OIDC-token aan
+        id: oidc
+        env:
+          ACTIONS_ID_TOKEN_REQUEST_URL: ${{ env.ACTIONS_ID_TOKEN_REQUEST_URL }}
+          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ env.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}
+        run: |
+          if [ -z "$ACTIONS_ID_TOKEN_REQUEST_URL" ]; then
+            echo "GitHub OIDC request URL ontbreekt."
+            exit 1
+          fi
+
+          if [ -z "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
+            echo "GitHub OIDC request token ontbreekt."
+            exit 1
+          fi
+
+          token_url="${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=https%3A%2F%2Fgithub.com%2Fbramderks%2Fclevers-erp"
+          oidc_token="$(curl --fail --silent --show-error \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$token_url" | jq -r '.value')"
+
+          if [ -z "$oidc_token" ] || [ "$oidc_token" = "null" ]; then
+            echo "GitHub OIDC-token kon niet worden opgehaald."
+            exit 1
+          fi
+
+          {
+            echo "token<<EOF"
+            echo "$oidc_token"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Verwerk dienstherinneringen
         env:
-          APP_URL: ${{ secrets.CLEVERS_APP_URL }}
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          APP_URL: https://clevers-erp-clevers-nijmegen-roermond.vercel.app
+          OIDC_TOKEN: ${{ steps.oidc.outputs.token }}
         run: |
-          if [ -z "$APP_URL" ]; then
-            echo "CLEVERS_APP_URL ontbreekt."
+          if [ -z "$OIDC_TOKEN" ]; then
+            echo "OIDC-token ontbreekt."
             exit 1
           fi
 
-          if [ -z "$CRON_SECRET" ]; then
-            echo "CRON_SECRET ontbreekt."
-            exit 1
-          fi
-
-          curl --fail --silent --show-error             --retry 2             --retry-delay 5             -H "Authorization: Bearer $CRON_SECRET"             "$APP_URL/api/cron/push-dienstherinneringen"
+          curl --fail --silent --show-error \
+            --retry 2 \
+            --retry-delay 5 \
+            -H "Authorization: Bearer $OIDC_TOKEN" \
+            "$APP_URL/api/cron/push-dienstherinneringen"
