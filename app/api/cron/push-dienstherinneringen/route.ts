@@ -1,20 +1,55 @@
+import { createRemoteJWKSet, jwtVerify } from "jose";
 import { NextRequest, NextResponse } from "next/server";
 import { verstuurDienstHerinneringen } from "@/lib/push/dienst-herinneringen";
 
 export const dynamic = "force-dynamic";
 
-function geautoriseerd(request: NextRequest) {
-  const secret = process.env.CRON_SECRET;
+const GITHUB_OIDC_ISSUER = "https://token.actions.githubusercontent.com";
+const GITHUB_OIDC_AUDIENCE = "https://github.com/bramderks/clevers-erp";
+const GITHUB_REPOSITORY = "bramderks/clevers-erp";
+const GITHUB_REPOSITORY_ID = "1325101992";
+const GITHUB_BRANCH = "refs/heads/main";
 
-  if (!secret) return false;
+const GITHUB_JWKS = createRemoteJWKSet(
+  new URL("https://token.actions.githubusercontent.com/.well-known/jwks"),
+);
 
+async function geautoriseerd(request: NextRequest) {
+  const legacySecret = process.env.CRON_SECRET;
   const authorization = request.headers.get("authorization");
 
-  return authorization === `Bearer ${secret}`;
+  if (legacySecret && authorization === `Bearer ${legacySecret}`) {
+    return true;
+  }
+
+  if (!authorization?.startsWith("Bearer ")) {
+    return false;
+  }
+
+  const token = authorization.slice("Bearer ".length).trim();
+  if (!token) return false;
+
+  try {
+    const { payload } = await jwtVerify(token, GITHUB_JWKS, {
+      issuer: GITHUB_OIDC_ISSUER,
+      audience: GITHUB_OIDC_AUDIENCE,
+    });
+
+    return (
+      payload.repository === GITHUB_REPOSITORY &&
+      payload.repository_id === GITHUB_REPOSITORY_ID &&
+      payload.repository_visibility === "public" &&
+      payload.ref === GITHUB_BRANCH &&
+      (payload.event_name === "schedule" ||
+        payload.event_name === "workflow_dispatch")
+    );
+  } catch {
+    return false;
+  }
 }
 
 export async function GET(request: NextRequest) {
-  if (!geautoriseerd(request)) {
+  if (!(await geautoriseerd(request))) {
     return NextResponse.json(
       { fout: "Niet geautoriseerd." },
       { status: 401 },
