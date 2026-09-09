@@ -17,7 +17,7 @@
     "prisma:reset": "npm run prisma:push && npm run seed",
     "prisma:check": "npm run prisma:generate && npm run typecheck",
     "dev:sync": "npm run prisma:push && prisma generate && npm run seed && npm run typecheck",
-    "dev:check": "npm run prisma:push && prisma generate && npm run seed && npm run build"
+    "dev:check": "npm run prisma:push && prisma generate && prisma migrate deploy && next build"
   },
   "dependencies": {
     "@auth/core": "^0.41.3",
@@ -39,7 +39,7 @@
     "react-hook-form": "^7.65.0",
     "tailwind-merge": "^3.6.0",
     "web-push": "^3.6.7",
-    "xlsx": "^0.18.0",
+    "xlsx": "^0.18.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {
