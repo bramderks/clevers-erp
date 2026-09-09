@@ -1,3 +1,4 @@
+import { del } from "@vercel/blob";
 import { NextResponse } from "next/server";
 
 import { getCurrentUser, isEigenaar } from "@/lib/auth";
@@ -11,15 +12,11 @@ export async function DELETE(_: Request, context: Context) {
   if (!(await isEigenaar())) return NextResponse.json({ fout: "Alleen eigenaar." }, { status: 403 });
 
   const { id: medewerkerId, documentId } = await context.params;
-
   const bestaand = await prisma.medewerkerDocument.findFirst({
     where: { id: documentId, medewerkerId },
-    select: { id: true, naam: true },
+    select: { id: true, naam: true, url: true },
   });
-
-  if (!bestaand) {
-    return NextResponse.json({ fout: "Document niet gevonden." }, { status: 404 });
-  }
+  if (!bestaand) return NextResponse.json({ fout: "Document niet gevonden." }, { status: 404 });
 
   await prisma.$transaction(async (tx) => {
     await tx.medewerkerDocument.delete({ where: { id: documentId } });
@@ -34,5 +31,6 @@ export async function DELETE(_: Request, context: Context) {
     });
   });
 
+  await del(bestaand.url).catch(() => undefined);
   return NextResponse.json({ succes: true });
 }
