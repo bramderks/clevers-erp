@@ -43,5 +43,5 @@ jobs:
       - name: Beperk installatie tot productie
         run: npm prune --omit=dev
 
-      - name: Audit productie dependencies
-        run: npm audit --audit-level=high
+      - name: Audit geïnstalleerde productie dependencies
+        run: npm audit --no-package-lock --audit-level=high
