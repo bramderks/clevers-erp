@@ -83,7 +83,7 @@ jobs:
 
           edit('components/planning/PlanningOverzicht.tsx', [
               (r'"use client";\n\n', '"use client";\n\nimport { useRouter } from "next/navigation";\n\n', 1),
-              (r'(export default function PlanningOverzicht\(\{[\s\S]*?\n\}\) \{)', r'\1\n  const router = useRouter();', 1),
+              (r'(}: PlanningOverzichtProps\) \{)', r'\1\n  const router = useRouter();', 1),
               (r'geselecteerdeTagIds\.join\("\|"\)', 'geselecteerdeTagIds', 1),
               (r'window\.location\.href =\n      `([^`]+)`;', r'router.push(`\1`);', 1),
           ])
