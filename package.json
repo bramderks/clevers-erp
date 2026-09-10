@@ -12,7 +12,7 @@
     "prisma:merge": "node prisma/merge-schema.mjs",
     "prisma:generate": "npm run prisma:merge && prisma generate",
     "prisma:validate": "npm run prisma:merge && prisma validate",
-    "prisma:push": "npm run prisma:merge && prisma db push",
+    "prisma:push": "npm run prisma:push && prisma db push",
     "prisma:seed": "npm run prisma:push && npm run seed",
     "prisma:reset": "npm run prisma:push && npm run seed",
     "prisma:check": "npm run prisma:generate && npm run typecheck",
@@ -56,6 +56,7 @@
     "typescript": "^5"
   },
   "overrides": {
+    "brace-expansion": "^5.0.8",
     "deepmerge-ts": "8.0.2",
     "fast-uri": "3.1.7",
     "mysql2": "3.23.2",
