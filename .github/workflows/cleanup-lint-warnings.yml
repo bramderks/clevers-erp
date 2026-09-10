@@ -65,7 +65,8 @@ jobs:
 
           edit('components/medewerkers/VakantiePlanningPanel.tsx', [
               (r'import \{ useEffect, useState \} from "react";', 'import { useCallback, useEffect, useState } from "react";', 1),
-              (r'  async function laad\(\) \{([\s\S]*?)\n  \}\n  useEffect\(\(\)=>\{void laad\(\);\},\[medewerkerId\]\);', '  const laad = useCallback(async () => {\1\n  }, [medewerkerId]);\n  useEffect(() => { void laad(); }, [laad]);', 1),
+              (r'  async function laad\(\)\{', '  const laad = useCallback(async () => {', 1),
+              (r'\n  \}\n  useEffect\(\(\)=>\{void laad\(\);\},\[medewerkerId\]\);', '\n  }, [medewerkerId]);\n  useEffect(() => { void laad(); }, [laad]);', 1),
           ])
 
           edit('components/medewerkers/beschikbaarheid/components/BeschikbaarheidWeekKalender.tsx', [
@@ -74,7 +75,6 @@ jobs:
               (r'  const start = new Date\(week.startdatum\);', '  const start = new Date(startdatum);', 1),
               (r'\(\(\) => maakLegeWeek\(week\)\)', '() => maakLegeWeek(week.startdatum)', 1),
               (r'const legeWeek = maakLegeWeek\(week\);', 'const legeWeek = maakLegeWeek(week.startdatum);', 1),
-              (r'    week\.id,\n    week\.startdatum,', '    week.id,\n    week.startdatum,', 1),
           ])
 
           edit('components/planning/BeschikbaarheidWeekSelector.tsx', [
@@ -105,7 +105,7 @@ jobs:
           PY
 
       - name: Verify lint
-        run: npm run lint
+        run: npm run lint -- --max-warnings 0
 
       - name: Remove temporary workflow and commit
         run: |
