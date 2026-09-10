@@ -30,4 +30,5 @@ const eslintConfig = defineConfig([
 
 // CI enforces a zero-warning ESLint result.
 // Keep this policy explicit so local and CI lint commands stay aligned.
+// Dependency security is audited before and after production pruning.
 export default eslintConfig;
