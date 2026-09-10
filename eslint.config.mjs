@@ -28,4 +28,5 @@ const eslintConfig = defineConfig([
   ]),
 ]);
 
+// CI enforces a zero-warning ESLint result.
 export default eslintConfig;
