@@ -44,4 +44,4 @@ jobs:
         run: npm prune --omit=dev
 
       - name: Audit geïnstalleerde productie dependencies
-        run: npm audit --no-package-lock --audit-level=high
+        run: npm audit --audit-level=high
