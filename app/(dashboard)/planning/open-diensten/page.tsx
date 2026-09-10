@@ -30,7 +30,10 @@ export default function OpenDienstenPage() {
   }
 
   useEffect(() => {
-    void laadOpenDiensten();
+    const timer = window.setTimeout(() => {
+      void laadOpenDiensten();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   async function toewijzen(item: Interesse) {
