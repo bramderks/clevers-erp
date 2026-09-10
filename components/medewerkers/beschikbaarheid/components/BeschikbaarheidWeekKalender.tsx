@@ -95,8 +95,8 @@ function formatteerDatum(datum: string) {
   }).format(waarde);
 }
 
-function maakLegeWeek(week: BeschikbaarheidWeek) {
-  const start = new Date(week.startdatum);
+function maakLegeWeek(startdatum: string) {
+  const start = new Date(startdatum);
 
   return DAGEN.map((dagNaam, index) => {
     const datum = new Date(start);
@@ -116,11 +116,10 @@ export default function BeschikbaarheidWeekKalender({
   medewerkerId,
   vestigingId,
   week,
-  isBeheerder,
 }: Props) {
   const [dagen, setDagen] = useState<
     BeschikbaarheidDag[]
-  >(() => maakLegeWeek(week));
+  >(() => maakLegeWeek(week.startdatum));
 
   const [loading, setLoading] = useState(true);
   const [opslaan, setOpslaan] = useState(false);
@@ -162,7 +161,7 @@ export default function BeschikbaarheidWeekKalender({
           );
         }
 
-        const legeWeek = maakLegeWeek(week);
+        const legeWeek = maakLegeWeek(week.startdatum);
 
         const bestaande =
           Array.isArray(

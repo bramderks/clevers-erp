@@ -1280,10 +1280,7 @@ export default function BeschikbaarheidWeekSelector({
     return () => {
       actief = false;
     };
-  }, [
-    geselecteerdeWeek?.id,
-    medewerkerId,
-  ]);
+  }, [geselecteerdeWeek, medewerkerId]);
 
   /* ==========================================================
      WEEK SELECTEREN

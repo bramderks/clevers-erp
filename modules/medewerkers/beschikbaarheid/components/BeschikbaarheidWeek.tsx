@@ -3,12 +3,6 @@
 import { useMemo, useState } from "react";
 
 import Badge from "@/components/ui/Badge";
-import Button from "@/components/ui/Button";
-
-type BeschikbaarheidStatus =
-  | "BESCHIKBAAR"
-  | "NIET_BESCHIKBAAR"
-  | "VOORKEUR";
 
 type Beschikbaarheid = {
   id: string;
@@ -20,8 +14,6 @@ type Beschikbaarheid = {
 };
 
 type BeschikbaarheidWeekProps = {
-  medewerkerId: string;
-  weekId: string;
   jaar: number;
   weeknummer: number;
   beschikbaarheden: Beschikbaarheid[];
@@ -148,8 +140,6 @@ function statusVariant(
 }
 
 export default function BeschikbaarheidWeek({
-  medewerkerId,
-  weekId,
   jaar,
   weeknummer,
   beschikbaarheden,

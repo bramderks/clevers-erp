@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 
@@ -28,15 +28,15 @@ export default function VakantiePlanningPanel({medewerkerId,isEigenaar,magIndien
   const [vestigingId,setVestigingId]=useState("");
   const [opmerking,setOpmerking]=useState("");
 
-  async function laad(){
+  const laad = useCallback(async () => {
     setLoading(true);
     const r=await fetch(`/api/medewerkers/${encodeURIComponent(medewerkerId)}/vakantie`,{cache:"no-store"});
     const d=await r.json();
     if(!r.ok){setFout(d.fout ?? "Vakantieplanning kon niet worden geladen.");setLoading(false);return;}
     setItems(d.aanvragen ?? []);setVestigingen(d.vestigingen ?? []);
     setLoading(false);
-  }
-  useEffect(()=>{void laad();},[medewerkerId]);
+  }, [medewerkerId]);
+  useEffect(() => { void laad(); }, [laad]);
 
   async function indienen(e:React.FormEvent){
     e.preventDefault();setFout(null);setOpslaan(true);

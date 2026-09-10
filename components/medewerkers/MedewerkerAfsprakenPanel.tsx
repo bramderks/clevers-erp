@@ -65,19 +65,6 @@ const DAGEN = [
   "Zondag",
 ];
 
-function datumInput(
-  waarde: string,
-) {
-  return new Date(
-    waarde,
-  )
-    .toISOString()
-    .slice(
-      0,
-      10,
-    );
-}
-
 function formatteerDatum(
   waarde: string,
 ) {

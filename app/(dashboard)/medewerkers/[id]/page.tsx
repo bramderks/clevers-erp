@@ -428,52 +428,6 @@ function maakMaandOverzicht(
 
 /*
  * ============================================================
- * VAKANTIE
- * ============================================================
- */
-
-function vakantieStatusVariant(
-  status: string,
-) {
-  switch (status) {
-    case "GOEDGEKEURD":
-      return "success" as const;
-
-    case "AFGEWEZEN":
-      return "danger" as const;
-
-    case "GEANNULEERD":
-      return "default" as const;
-
-    case "AANGEVRAAGD":
-    default:
-      return "warning" as const;
-  }
-}
-
-function vakantieStatusLabel(
-  status: string,
-) {
-  switch (status) {
-    case "GOEDGEKEURD":
-      return "Goedgekeurd";
-
-    case "AFGEWEZEN":
-      return "Afgewezen";
-
-    case "GEANNULEERD":
-      return "Geannuleerd";
-
-    case "AANGEVRAAGD":
-      return "Aangevraagd";
-
-    default:
-      return status;
-  }
-}
-
-/*
- * ============================================================
  * PAGINA
  * ============================================================
  */
@@ -809,8 +763,7 @@ export default async function MedewerkerPage({
         [],
       ];
 
-  const vakantieAanvragen =
-    await prisma.vakantieAanvraag.findMany(
+      await prisma.vakantieAanvraag.findMany(
       {
         where: {
           medewerkerId:

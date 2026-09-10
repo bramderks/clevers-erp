@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import {
   useEffect,
   useMemo,
@@ -755,6 +757,7 @@ export default function PlanningOverzicht({
 
   onGewijzigd,
 }: PlanningOverzichtProps) {
+  const router = useRouter();
   const gesorteerdeWeken =
     useMemo(
       () =>
@@ -1110,7 +1113,7 @@ export default function PlanningOverzicht({
   }, [
     nieuweDienstDatum,
     vestigingId,
-    geselecteerdeTagIds.join("|"),
+    geselecteerdeTagIds,
   ]);
 
   /*
@@ -1488,8 +1491,7 @@ export default function PlanningOverzicht({
   function handleWijzigDienst(
     dienstId: string,
   ) {
-    window.location.href =
-      `/planning/dienst/${dienstId}`;
+    router.push(`/planning/dienst/${dienstId}`);
   }
 
   /*

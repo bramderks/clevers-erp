@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from "react";
 
 type Document = { id: string; naam: string; categorie: string; verloopDatum: string | null; opmerkingen: string | null };
 
@@ -15,13 +15,13 @@ export default function MedewerkerDocumentenPage({ params }: { params: Promise<{
   const [bezig, setBezig] = useState(false);
 
   useEffect(() => { void params.then((waarde) => setId(waarde.id)); }, [params]);
-  async function laden() {
+  const laden = useCallback(async () => {
     if (!id) return;
     const response = await fetch(`/api/medewerkers/${id}/documenten`, { cache: "no-store" });
     const data = await response.json();
     setDocumenten(Array.isArray(data) ? data : []);
-  }
-  useEffect(() => { void laden(); }, [id]);
+  }, [id]);
+  useEffect(() => { void laden(); }, [laden]);
 
   async function upload(event: FormEvent) {
     event.preventDefault();

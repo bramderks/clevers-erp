@@ -51,63 +51,6 @@ function maandagVanWeek(
   return datum;
 }
 
-function isoWeekVanDatum(
-  datum: Date,
-) {
-  const waarde = new Date(
-    datum,
-  );
-
-  waarde.setHours(
-    0,
-    0,
-    0,
-    0,
-  );
-
-  const dag =
-    waarde.getDay() || 7;
-
-  waarde.setDate(
-    waarde.getDate() +
-      4 -
-      dag,
-  );
-
-  const jaar =
-    waarde.getFullYear();
-
-  const eersteDonderdag =
-    new Date(
-      jaar,
-      0,
-      4,
-    );
-
-  const eersteDag =
-    eersteDonderdag.getDay() ||
-    7;
-
-  eersteDonderdag.setDate(
-    eersteDonderdag.getDate() +
-      4 -
-      eersteDag,
-  );
-
-  const weeknummer =
-    1 +
-    Math.round(
-      (waarde.getTime() -
-        eersteDonderdag.getTime()) /
-        604800000,
-    );
-
-  return {
-    jaar,
-    weeknummer,
-  };
-}
-
 function datumVoorApi(
   datum: Date,
 ) {

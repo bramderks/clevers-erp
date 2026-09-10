@@ -125,23 +125,6 @@
     );
   }
 
-  async function controleerBeheerder(
-    gebruikerId: string,
-    organisatieId: string,
-  ) {
-    const beheerder =
-      await isBeheerder(
-        gebruikerId,
-        organisatieId,
-      );
-
-    if (!beheerder) {
-      throw new Error(
-        "Alleen een eigenaar of teamleider mag deze beschikbaarheid beheren.",
-      );
-    }
-  }
-
   function controleerTijden(
     begintijd: Date,
     eindtijd: Date,
