@@ -47,7 +47,8 @@ jobs:
 
           edit('app/(dashboard)/medewerkers/[id]/documenten/page.tsx', [
               (r'import \{ ChangeEvent, FormEvent, useEffect, useState \} from "react";', 'import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from "react";', 1),
-              (r'  async function laden\(\) \{([\s\S]*?)\n  \}\n  useEffect\(\(\) => \{ void laden\(\); \}, \[id\]\);', '  const laden = useCallback(async () => {\1\n  }, [id]);\n  useEffect(() => { void laden(); }, [laden]);', 1),
+              (r'  async function laden\(\) \{', '  const laden = useCallback(async () => {', 1),
+              (r'\n  \}\n  useEffect\(\(\) => \{ void laden\(\); \}, \[id\]\);', '\n  }, [id]);\n  useEffect(() => { void laden(); }, [laden]);', 1),
           ])
 
           edit('app/(dashboard)/medewerkers/[id]/page.tsx', [
@@ -73,7 +74,7 @@ jobs:
               (r'  isBeheerder,\n', '', 1),
               (r'function maakLegeWeek\(week: BeschikbaarheidWeek\)', 'function maakLegeWeek(startdatum: string)', 1),
               (r'  const start = new Date\(week.startdatum\);', '  const start = new Date(startdatum);', 1),
-              (r'\(\(\) => maakLegeWeek\(week\)\)', '() => maakLegeWeek(week.startdatum)', 1),
+              (r'\(\) => maakLegeWeek\(week\)', '() => maakLegeWeek(week.startdatum)', 1),
               (r'const legeWeek = maakLegeWeek\(week\);', 'const legeWeek = maakLegeWeek(week.startdatum);', 1),
           ])
 
@@ -83,7 +84,7 @@ jobs:
 
           edit('components/planning/PlanningOverzicht.tsx', [
               (r'"use client";\n\n', '"use client";\n\nimport { useRouter } from "next/navigation";\n\n', 1),
-              (r'(}: PlanningOverzichtProps\) \{)', r'\1\n  const router = useRouter();', 1),
+              (r'}: PlanningOverzichtProps\) \{', '}: PlanningOverzichtProps) {\n  const router = useRouter();', 1),
               (r'geselecteerdeTagIds\.join\("\|"\)', 'geselecteerdeTagIds', 1),
               (r'window\.location\.href =\n      `([^`]+)`;', r'router.push(`\1`);', 1),
           ])
