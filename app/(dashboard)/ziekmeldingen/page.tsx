@@ -19,7 +19,12 @@ export default function ZiekmeldingenPage() {
     setMeldingen(Array.isArray(data) ? data : []);
   }
 
-  useEffect(() => { void laad(); }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void laad();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   async function herstel(id: string) {
     const response = await fetch("/api/ziekmeldingen", {
