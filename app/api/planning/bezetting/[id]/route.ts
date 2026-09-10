@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import {
+  getCurrentUser,
   hasPermissionForVestiging,
   isEigenaar,
 } from "@/lib/auth";
@@ -34,6 +35,8 @@ async function haalBezettingOp(
     select: {
       id: true,
       dienstId: true,
+      medewerkerId: true,
+      status: true,
 
       dienst: {
         select: {
@@ -59,11 +62,19 @@ export async function PATCH(
   context: RouteContext,
 ) {
   try {
-    const { id } =
-      await context.params;
+    const gebruiker = await getCurrentUser();
 
-    const body =
-      await request.json();
+    if (!gebruiker) {
+      return NextResponse.json(
+        {
+          fout: "Je moet ingelogd zijn.",
+        },
+        { status: 401 },
+      );
+    }
+
+    const { id } = await context.params;
+    const body = await request.json();
 
     const bestaandeBezetting =
       await haalBezettingOp(id);
@@ -71,42 +82,104 @@ export async function PATCH(
     if (!bestaandeBezetting) {
       return NextResponse.json(
         {
-          fout:
-            "Bezetting niet gevonden.",
+          fout: "Bezetting niet gevonden.",
         },
         { status: 404 },
       );
     }
 
     const vestigingId =
-      bestaandeBezetting.dienst.week
-        .vestigingId;
+      bestaandeBezetting.dienst.week.vestigingId;
 
     const organisatieId =
-      bestaandeBezetting.dienst.week
-        .vestiging.organisatieId;
+      bestaandeBezetting.dienst.week.vestiging
+        .organisatieId;
 
     /*
      * ============================================================
-     * RECHTEN
+     * MEDEWERKER — EIGEN DIENST BEVESTIGEN
      * ============================================================
      *
-     * Alleen de Eigenaar mag de bezetting
-     * daadwerkelijk wijzigen.
+     * Een medewerker mag uitsluitend zijn eigen geplande dienst
+     * van GEPLAND naar BEVESTIGD zetten.
      *
-     * Teamleider:
-     * - mag planning bekijken
-     * - mag bezetting niet wijzigen
-     *
-     * Medewerker:
-     * - mag planning bekijken
-     * - mag bezetting niet wijzigen
+     * Andere velden of statuswijzigingen blijven uitsluitend voor
+     * de Eigenaar.
      */
 
-    const eigenaar =
-      await isEigenaar(
-        organisatieId,
-      );
+    const eigenMedewerkerId =
+      gebruiker.medewerker?.id ?? null;
+
+    if (eigenMedewerkerId !== null) {
+      const isEigenBezetting =
+        bestaandeBezetting.medewerkerId ===
+        eigenMedewerkerId;
+
+      const isUitsluitendBevestigen =
+        body.medewerkerId === undefined &&
+        body.status === "BEVESTIGD" &&
+        Object.keys(body).every(
+          (key) => key === "status",
+        );
+
+      if (
+        isEigenBezetting &&
+        isUitsluitendBevestigen
+      ) {
+        if (
+          bestaandeBezetting.status !==
+          "GEPLAND"
+        ) {
+          return NextResponse.json(
+            {
+              fout:
+                "Alleen een geplande dienst kan door de medewerker worden bevestigd.",
+            },
+            { status: 400 },
+          );
+        }
+
+        const bevestigdeBezetting =
+          await prisma.dienstBezetting.update({
+            where: {
+              id,
+            },
+            data: {
+              status: "BEVESTIGD",
+            },
+            include: {
+              medewerker: {
+                select: {
+                  id: true,
+                  personeelsnummer: true,
+                  aanhef: true,
+                  voornaam: true,
+                  tussenvoegsel: true,
+                  achternaam: true,
+                },
+              },
+            },
+          });
+
+        return NextResponse.json(
+          bevestigdeBezetting,
+        );
+      }
+    }
+
+    /*
+     * ============================================================
+     * EIGENAAR — VOLLEDIG BEHEER
+     * ============================================================
+     *
+     * Alleen de Eigenaar mag de bezetting daadwerkelijk beheren.
+     * Teamleider en Medewerker mogen geen andere bezettingsgegevens
+     * wijzigen.
+     */
+
+    const eigenaar = await isEigenaar(
+      organisatieId,
+    );
 
     if (!eigenaar) {
       return NextResponse.json(
@@ -134,6 +207,19 @@ export async function PATCH(
       );
     }
 
+    if (
+      bestaandeBezetting.status ===
+      "GEWERKT"
+    ) {
+      return NextResponse.json(
+        {
+          fout:
+            "Deze bezetting kan niet meer worden gewijzigd omdat de dienst als gewerkt is geregistreerd.",
+        },
+        { status: 400 },
+      );
+    }
+
     const data: {
       medewerkerId?: string | null;
       status?: BezettingStatus;
@@ -144,13 +230,11 @@ export async function PATCH(
     ) {
       if (
         body.medewerkerId !== null &&
-        typeof body.medewerkerId !==
-          "string"
+        typeof body.medewerkerId !== "string"
       ) {
         return NextResponse.json(
           {
-            fout:
-              "medewerkerId is ongeldig.",
+            fout: "medewerkerId is ongeldig.",
           },
           { status: 400 },
         );
@@ -158,34 +242,28 @@ export async function PATCH(
 
       if (body.medewerkerId) {
         const medewerker =
-          await prisma.medewerker.findUnique(
-            {
-              where: {
-                id: body.medewerkerId,
-              },
-
-              select: {
-                id: true,
-                actief: true,
-
-                vestigingen: {
-                  where: {
-                    vestigingId,
-                  },
-
-                  select: {
-                    id: true,
-                  },
+          await prisma.medewerker.findUnique({
+            where: {
+              id: body.medewerkerId,
+            },
+            select: {
+              id: true,
+              actief: true,
+              vestigingen: {
+                where: {
+                  vestigingId,
+                },
+                select: {
+                  id: true,
                 },
               },
             },
-          );
+          });
 
         if (!medewerker) {
           return NextResponse.json(
             {
-              fout:
-                "Medewerker niet gevonden.",
+              fout: "Medewerker niet gevonden.",
             },
             { status: 404 },
           );
@@ -202,8 +280,8 @@ export async function PATCH(
         }
 
         if (
-          medewerker.vestigingen
-            .length === 0
+          medewerker.vestigingen.length ===
+          0
         ) {
           return NextResponse.json(
             {
@@ -215,25 +293,20 @@ export async function PATCH(
         }
 
         const dubbeleBezetting =
-          await prisma.dienstBezetting.findFirst(
-            {
-              where: {
-                dienstId:
-                  bestaandeBezetting.dienstId,
-
-                medewerkerId:
-                  body.medewerkerId,
-
-                id: {
-                  not: id,
-                },
-              },
-
-              select: {
-                id: true,
+          await prisma.dienstBezetting.findFirst({
+            where: {
+              dienstId:
+                bestaandeBezetting.dienstId,
+              medewerkerId:
+                body.medewerkerId,
+              id: {
+                not: id,
               },
             },
-          );
+            select: {
+              id: true,
+            },
+          });
 
         if (dubbeleBezetting) {
           return NextResponse.json(
@@ -270,29 +343,35 @@ export async function PATCH(
         body.status as BezettingStatus;
     }
 
-    const bezetting =
-      await prisma.dienstBezetting.update(
+    if (Object.keys(data).length === 0) {
+      return NextResponse.json(
         {
-          where: {
-            id,
-          },
+          fout:
+            "Er is geen geldige wijziging opgegeven.",
+        },
+        { status: 400 },
+      );
+    }
 
-          data,
-
-          include: {
-            medewerker: {
-              select: {
-                id: true,
-                personeelsnummer: true,
-                aanhef: true,
-                voornaam: true,
-                tussenvoegsel: true,
-                achternaam: true,
-              },
+    const bezetting =
+      await prisma.dienstBezetting.update({
+        where: {
+          id,
+        },
+        data,
+        include: {
+          medewerker: {
+            select: {
+              id: true,
+              personeelsnummer: true,
+              aanhef: true,
+              voornaam: true,
+              tussenvoegsel: true,
+              achternaam: true,
             },
           },
         },
-      );
+      });
 
     return NextResponse.json(
       bezetting,
@@ -318,8 +397,18 @@ export async function DELETE(
   context: RouteContext,
 ) {
   try {
-    const { id } =
-      await context.params;
+    const gebruiker = await getCurrentUser();
+
+    if (!gebruiker) {
+      return NextResponse.json(
+        {
+          fout: "Je moet ingelogd zijn.",
+        },
+        { status: 401 },
+      );
+    }
+
+    const { id } = await context.params;
 
     const bestaandeBezetting =
       await haalBezettingOp(id);
@@ -327,34 +416,22 @@ export async function DELETE(
     if (!bestaandeBezetting) {
       return NextResponse.json(
         {
-          fout:
-            "Bezetting niet gevonden.",
+          fout: "Bezetting niet gevonden.",
         },
         { status: 404 },
       );
     }
 
     const vestigingId =
-      bestaandeBezetting.dienst.week
-        .vestigingId;
+      bestaandeBezetting.dienst.week.vestigingId;
 
     const organisatieId =
-      bestaandeBezetting.dienst.week
-        .vestiging.organisatieId;
+      bestaandeBezetting.dienst.week.vestiging
+        .organisatieId;
 
-    /*
-     * ============================================================
-     * RECHTEN
-     * ============================================================
-     *
-     * Alleen de Eigenaar mag een
-     * bezetting verwijderen.
-     */
-
-    const eigenaar =
-      await isEigenaar(
-        organisatieId,
-      );
+    const eigenaar = await isEigenaar(
+      organisatieId,
+    );
 
     if (!eigenaar) {
       return NextResponse.json(
@@ -379,6 +456,19 @@ export async function DELETE(
             "Je hebt geen rechten om de bezetting te verwijderen.",
         },
         { status: 403 },
+      );
+    }
+
+    if (
+      bestaandeBezetting.status ===
+      "GEWERKT"
+    ) {
+      return NextResponse.json(
+        {
+          fout:
+            "Deze bezetting kan niet worden verwijderd omdat de dienst als gewerkt is geregistreerd.",
+        },
+        { status: 400 },
       );
     }
 
