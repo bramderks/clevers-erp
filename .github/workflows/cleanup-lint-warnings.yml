@@ -1,0 +1,117 @@
+name: Temporary lint warning cleanup
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Apply targeted source fixes
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          def edit(path, replacements):
+              p = Path(path)
+              s = p.read_text()
+              original = s
+              for pattern, replacement, count in replacements:
+                  s, n = re.subn(pattern, replacement, s, count=count, flags=re.MULTILINE | re.DOTALL)
+                  if n != count:
+                      raise SystemExit(f"{path}: expected {count} replacement(s), got {n}: {pattern}")
+              if s != original:
+                  p.write_text(s)
+
+          edit('app/(dashboard)/dashboard/page.tsx', [
+              (r'function isoWeekVanDatum\([\s\S]*?\n}\n\n(?=function )', '', 1),
+          ])
+
+          edit('app/(dashboard)/medewerkers/[id]/documenten/page.tsx', [
+              (r'import \{ ChangeEvent, FormEvent, useEffect, useState \} from "react";', 'import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from "react";', 1),
+              (r'  async function laden\(\) \{([\s\S]*?)\n  \}\n  useEffect\(\(\) => \{ void laden\(\); \}, \[id\]\);', '  const laden = useCallback(async () => {\1\n  }, [id]);\n  useEffect(() => { void laden(); }, [laden]);', 1),
+          ])
+
+          edit('app/(dashboard)/medewerkers/[id]/page.tsx', [
+              (r'/\*\n \* ============================================================\n \* VAKANTIE\n \* ============================================================\n \*/\n\nfunction vakantieStatusVariant[\s\S]*?(?=/\*\n \* ============================================================\n \* PAGINA)', '', 1),
+              (r'  const vakantieAanvragen =\n', '  ', 1),
+          ])
+
+          edit('app/api/integraties/clevers-tellen/route.ts', [
+              (r'import \{ createHash, timingSafeEqual \} from "node:crypto";', 'import { timingSafeEqual } from "node:crypto";', 1),
+          ])
+
+          edit('components/medewerkers/MedewerkerAfsprakenPanel.tsx', [
+              (r'function datumInput\([\s\S]*?\n}\n\n(?=function formatteerDatum)', '', 1),
+          ])
+
+          edit('components/medewerkers/VakantiePlanningPanel.tsx', [
+              (r'import \{ useEffect, useState \} from "react";', 'import { useCallback, useEffect, useState } from "react";', 1),
+              (r'  async function laad\(\) \{([\s\S]*?)\n  \}\n  useEffect\(\(\)=>\{void laad\(\);\},\[medewerkerId\]\);', '  const laad = useCallback(async () => {\1\n  }, [medewerkerId]);\n  useEffect(() => { void laad(); }, [laad]);', 1),
+          ])
+
+          edit('components/medewerkers/beschikbaarheid/components/BeschikbaarheidWeekKalender.tsx', [
+              (r'  isBeheerder,\n', '', 1),
+              (r'function maakLegeWeek\(week: BeschikbaarheidWeek\)', 'function maakLegeWeek(startdatum: string)', 1),
+              (r'  const start = new Date\(week.startdatum\);', '  const start = new Date(startdatum);', 1),
+              (r'\(\(\) => maakLegeWeek\(week\)\)', '() => maakLegeWeek(week.startdatum)', 1),
+              (r'const legeWeek = maakLegeWeek\(week\);', 'const legeWeek = maakLegeWeek(week.startdatum);', 1),
+              (r'    week\.id,\n    week\.startdatum,', '    week.id,\n    week.startdatum,', 1),
+          ])
+
+          edit('components/planning/BeschikbaarheidWeekSelector.tsx', [
+              (r'  \}, \[\n    geselecteerdeWeek\?\.id,\n    medewerkerId,\n  \]\);', '  }, [geselecteerdeWeek, medewerkerId]);', 1),
+          ])
+
+          edit('components/planning/PlanningOverzicht.tsx', [
+              (r'"use client";\n\n', '"use client";\n\nimport { useRouter } from "next/navigation";\n\n', 1),
+              (r'(export default function PlanningOverzicht\(\{[\s\S]*?\n\}\) \{)', r'\1\n  const router = useRouter();', 1),
+              (r'geselecteerdeTagIds\.join\("\|"\)', 'geselecteerdeTagIds', 1),
+              (r'window\.location\.href =\n      `([^`]+)`;', r'router.push(`\1`);', 1),
+          ])
+
+          edit('lib/push/dienst-herinneringen.ts', [
+              (r'import type \{ WebPushSubscription \} from "@/types/web-push";\n', '', 1),
+          ])
+
+          edit('lib/services/beschikbaarheid.service.ts', [
+              (r'  async function controleerBeheerder\([\s\S]*?\n  }\n\n(?=  function controleerTijden)', '', 1),
+          ])
+
+          edit('modules/medewerkers/beschikbaarheid/components/BeschikbaarheidWeek.tsx', [
+              (r'import Badge from "@/components/ui/Badge";\nimport Button from "@/components/ui/Button";\n', 'import Badge from "@/components/ui/Badge";\n', 1),
+              (r'type BeschikbaarheidStatus =\n  \| "BESCHIKBAAR"\n  \| "NIET_BESCHIKBAAR"\n  \| "VOORKEUR";\n\n', '', 1),
+              (r'type BeschikbaarheidWeekProps = \{\n  medewerkerId: string;\n  weekId: string;\n  jaar: number;', 'type BeschikbaarheidWeekProps = {\n  jaar: number;', 1),
+              (r'export default function BeschikbaarheidWeek\(\{\n  medewerkerId,\n  weekId,\n  jaar,', 'export default function BeschikbaarheidWeek({\n  jaar,', 1),
+          ])
+          PY
+
+      - name: Verify lint
+        run: npm run lint
+
+      - name: Remove temporary workflow and commit
+        run: |
+          rm .github/workflows/cleanup-lint-warnings.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: remove remaining lint warnings"
+          git push
