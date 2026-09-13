@@ -15,6 +15,7 @@ model Organisatie {
 
   vestigingen Vestiging[]
   gebruikers OrganisatieGebruiker[]
+  medewerkerUitnodigingen MedewerkerUitnodiging[]
 
   aangemaaktDoor String?
   gewijzigdDoor String?
@@ -34,19 +35,6 @@ model Vestiging {
   naam String
 
   actief Boolean @default(true)
-
-  /// -----------------------------------------------------
-  /// SEIZOEN
-  ///
-  /// Bepaalt de periode waarin de personeelsplanning
-  /// actief is.
-  ///
-  /// Binnen deze periode worden automatisch
-  /// planningweken aangemaakt.
-  ///
-  /// Buiten deze periode worden planningweken
-  /// automatisch afgesloten.
-  /// -----------------------------------------------------
 
   seizoenStart DateTime?
   seizoenEinde DateTime?
