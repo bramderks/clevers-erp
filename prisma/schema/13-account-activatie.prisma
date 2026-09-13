@@ -1,0 +1,29 @@
+/// ======================================================
+/// ACCOUNT ACTIVATIE
+/// ======================================================
+
+model MedewerkerUitnodiging {
+  id String @id @default(cuid())
+
+  organisatieId String
+  organisatie Organisatie @relation(fields: [organisatieId], references: [id], onDelete: Cascade)
+
+  voornaam String
+  achternaam String
+  email String
+
+  tokenHash String @unique
+  verlooptOp DateTime
+  verstuurdOp DateTime @default(now())
+  gebruiktOp DateTime?
+
+  aangemaaktDoorId String?
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([organisatieId])
+  @@index([email])
+  @@index([verlooptOp])
+  @@index([gebruiktOp])
+}
