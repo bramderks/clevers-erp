@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 const PUBLIC_ROUTES = [
   "/login",
   "/api/login",
+  "/account/activeren",
+  "/api/account/activeren",
   "/_next",
   "/favicon.ico",
   "/logo.png",
