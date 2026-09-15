@@ -11,31 +11,101 @@ export async function POST(request: Request) {
     const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
     const wachtwoord = typeof body?.wachtwoord === "string" ? body.wachtwoord : "";
 
-    if (!email || !wachtwoord) return NextResponse.json({ message: "Vul e-mailadres en wachtwoord in." }, { status: 400 });
+    if (!email || !wachtwoord) {
+      return NextResponse.json(
+        { message: "Vul e-mailadres en wachtwoord in." },
+        { status: 400 },
+      );
+    }
 
     const gebruiker = await prisma.systeemGebruiker.findUnique({
       where: { email },
-      include: { medewerker: { include: { rollen: { select: { rolId: true } } } } },
+      include: {
+        medewerker: {
+          include: {
+            status: true,
+            rollen: { select: { rolId: true } },
+          },
+        },
+      },
     });
 
-    if (!gebruiker) return NextResponse.json({ message: "Ongeldige inloggegevens." }, { status: 401 });
-    if (!gebruiker.actief) return NextResponse.json({ message: "Dit account is gedeactiveerd." }, { status: 403 });
+    if (!gebruiker) {
+      return NextResponse.json(
+        { message: "Ongeldige inloggegevens." },
+        { status: 401 },
+      );
+    }
 
-    if (gebruiker.medewerker && (!gebruiker.medewerker.actief || gebruiker.medewerker.rollen.length === 0)) {
-      return NextResponse.json({ message: "Je account is geactiveerd, maar je toegang wordt nog klaargezet door de eigenaar." }, { status: 403 });
+    const medewerker = gebruiker.medewerker;
+    const wachtOpEigenaar =
+      medewerker?.status?.module === "MEDEWERKER" &&
+      medewerker.status.code === "AANGEMELD" &&
+      medewerker.actief === false;
+
+    if (wachtOpEigenaar) {
+      return NextResponse.json(
+        {
+          message:
+            "Je account is succesvol geregistreerd. De eigenaar moet je rol nog toewijzen voordat je kunt inloggen.",
+        },
+        { status: 403 },
+      );
+    }
+
+    if (!gebruiker.actief) {
+      return NextResponse.json(
+        { message: "Dit account is gedeactiveerd." },
+        { status: 403 },
+      );
+    }
+
+    if (medewerker && (!medewerker.actief || medewerker.rollen.length === 0)) {
+      return NextResponse.json(
+        {
+          message:
+            "Je account is geactiveerd, maar je toegang wordt nog klaargezet door de eigenaar.",
+        },
+        { status: 403 },
+      );
     }
 
     const geldig = await bcrypt.compare(wachtwoord, gebruiker.wachtwoordHash);
-    if (!geldig) return NextResponse.json({ message: "Ongeldige inloggegevens." }, { status: 401 });
+    if (!geldig) {
+      return NextResponse.json(
+        { message: "Ongeldige inloggegevens." },
+        { status: 401 },
+      );
+    }
 
-    const token = await maakToken({ sub: gebruiker.id, naam: gebruiker.naam, email: gebruiker.email });
+    const token = await maakToken({
+      sub: gebruiker.id,
+      naam: gebruiker.naam,
+      email: gebruiker.email,
+    });
+
     const cookieStore = await cookies();
-    cookieStore.set({ name: "token", value: token, httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 60 * 60 * 12 });
+    cookieStore.set({
+      name: "token",
+      value: token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 12,
+    });
 
-    await prisma.systeemGebruiker.update({ where: { id: gebruiker.id }, data: { laatsteLoginOp: new Date() } });
+    await prisma.systeemGebruiker.update({
+      where: { id: gebruiker.id },
+      data: { laatsteLoginOp: new Date() },
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Login mislukt:", error);
-    return NextResponse.json({ message: "Er is een interne fout opgetreden." }, { status: 500 });
+    return NextResponse.json(
+      { message: "Er is een interne fout opgetreden." },
+      { status: 500 },
+    );
   }
 }
