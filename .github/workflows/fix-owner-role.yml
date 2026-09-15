@@ -17,8 +17,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Patch owner permissions and role assignment
-        shell: python
+        shell: bash
         run: |
+          python3 <<'PY'
           from pathlib import Path
 
           def replace(path, old, new):
@@ -30,28 +31,188 @@ jobs:
 
           page = 'app/(dashboard)/medewerkers/[id]/page.tsx'
           replace(page,
-              '''  const medewerkerOrganisatieIds =\n    Array.from(\n      new Set(\n        medewerker.vestigingen.map(\n          (relatie) =>\n            relatie.vestiging.organisatieId,\n        ),\n      ),\n    );\n\n  const isEigenaar =\n    medewerkerOrganisatieIds.length > 0 &&\n    medewerkerOrganisatieIds.every(\n      (organisatieId) =>\n        actieveRelaties.some(\n          (relatie) =>\n            relatie.organisatieId === organisatieId &&\n            relatie.rol.naam\n              .trim()\n              .toLowerCase() ===\n              "eigenaar",\n        ),\n    );''',
-              '''  const medewerkerOrganisatieIds =\n    Array.from(\n      new Set(\n        medewerker.vestigingen.map(\n          (relatie) =>\n            relatie.vestiging.organisatieId,\n        ),\n      ),\n    );\n\n  // Een geactiveerde nieuwe medewerker kan nog geen vestiging hebben.\n  // De uitnodiging bepaalt in die fase tot welke organisatie het dossier behoort.\n  const uitnodigingOrganisatieIds =\n    medewerker.email\n      ? (\n          await prisma.medewerkerUitnodiging.findMany({\n            where: {\n              email: medewerker.email.trim().toLowerCase(),\n              gebruiktOp: { not: null },\n            },\n            select: {\n              organisatieId: true,\n            },\n          })\n        ).map((uitnodiging) => uitnodiging.organisatieId)\n      : [];\n\n  const toegestaneOrganisatieIds =\n    Array.from(\n      new Set([\n        ...medewerkerOrganisatieIds,\n        ...uitnodigingOrganisatieIds,\n      ]),\n    );\n\n  const isEigenaar =\n    toegestaneOrganisatieIds.length > 0 &&\n    toegestaneOrganisatieIds.some(\n      (organisatieId) =>\n        actieveRelaties.some(\n          (relatie) =>\n            relatie.organisatieId === organisatieId &&\n            relatie.rol.naam\n              .trim()\n              .toLowerCase() ===\n              "eigenaar",\n        ),\n    );''')
+              '''  const medewerkerOrganisatieIds =
+    Array.from(
+      new Set(
+        medewerker.vestigingen.map(
+          (relatie) =>
+            relatie.vestiging.organisatieId,
+        ),
+      ),
+    );
+
+  const isEigenaar =
+    medewerkerOrganisatieIds.length > 0 &&
+    medewerkerOrganisatieIds.every(
+      (organisatieId) =>
+        actieveRelaties.some(
+          (relatie) =>
+            relatie.organisatieId === organisatieId &&
+            relatie.rol.naam
+              .trim()
+              .toLowerCase() ===
+              "eigenaar",
+        ),
+    );''',
+              '''  const medewerkerOrganisatieIds =
+    Array.from(
+      new Set(
+        medewerker.vestigingen.map(
+          (relatie) =>
+            relatie.vestiging.organisatieId,
+        ),
+      ),
+    );
+
+  // Een geactiveerde nieuwe medewerker kan nog geen vestiging hebben.
+  // De gebruikte uitnodiging bepaalt in die fase tot welke organisatie het dossier behoort.
+  const uitnodigingOrganisatieIds =
+    medewerker.email
+      ? (
+          await prisma.medewerkerUitnodiging.findMany({
+            where: {
+              email: medewerker.email.trim().toLowerCase(),
+              gebruiktOp: { not: null },
+            },
+            select: {
+              organisatieId: true,
+            },
+          })
+        ).map((uitnodiging) => uitnodiging.organisatieId)
+      : [];
+
+  const toegestaneOrganisatieIds =
+    Array.from(
+      new Set([
+        ...medewerkerOrganisatieIds,
+        ...uitnodigingOrganisatieIds,
+      ]),
+    );
+
+  const isEigenaar =
+    toegestaneOrganisatieIds.length > 0 &&
+    toegestaneOrganisatieIds.some(
+      (organisatieId) =>
+        actieveRelaties.some(
+          (relatie) =>
+            relatie.organisatieId === organisatieId &&
+            relatie.rol.naam
+              .trim()
+              .toLowerCase() ===
+              "eigenaar",
+        ),
+    );''')
 
           route = 'app/api/medewerkers/[id]/route.ts'
           replace(route,
-              '''            id: true,\n\n            vestigingen: {''',
-              '''            id: true,\n\n            email: true,\n\n            vestigingen: {''')
-          replace(route,
-              '''    if (\n      organisatieIds.length === 0\n    ) {\n      return NextResponse.json(\n        {\n          error:\n            "Deze medewerker is niet aan een actieve organisatie gekoppeld.",\n        },\n        {\n          status: 400,\n        },\n      );\n    }''',
-              '''    const uitnodigingOrganisatieIds =\n      medewerker.email\n        ? (\n            await prisma.medewerkerUitnodiging.findMany({\n              where: {\n                email: medewerker.email.trim().toLowerCase(),\n                gebruiktOp: { not: null },\n              },\n              select: {\n                organisatieId: true,\n              },\n            })\n          ).map((uitnodiging) => uitnodiging.organisatieId)\n        : [];\n\n    const toegestaneOrganisatieIds =\n      Array.from(\n        new Set([\n          ...organisatieIds,\n          ...uitnodigingOrganisatieIds,\n        ]),\n      );\n\n    if (\n      toegestaneOrganisatieIds.length === 0\n    ) {\n      return NextResponse.json(\n        {\n          error:\n            "Deze medewerker is niet aan een actieve organisatie gekoppeld.",\n        },\n        {\n          status: 400,\n        },\n      );\n    }''')
-          replace(route,
-              '''    const isEigenaar =\n      organisatieIds.length > 0 &&\n      organisatieIds.every(\n        (organisatieId) =>''',
-              '''    const isEigenaar =\n      toegestaneOrganisatieIds.length > 0 &&\n      toegestaneOrganisatieIds.some(\n        (organisatieId) =>''')
-          replace(route,
-              '''              organisatieId: {\n                in: organisatieIds,\n              },''',
-              '''              organisatieId: {\n                in: toegestaneOrganisatieIds,\n              },''')
+              '''            id: true,
 
-          replace(route,
-              '''      const resultaat =\n        await medewerkerService.update(\n          id,\n          updateData,\n        );\n\n      return NextResponse.json({''',
-              '''      const resultaat =\n        await medewerkerService.update(\n          id,\n          updateData,\n        );\n\n      if (data.rolIds !== undefined) {\n        const rolIds = controleerStringArray(\n          data.rolIds,\n          "Rollen",\n        );\n        await medewerkerService.setRollen(id, rolIds);\n      }\n\n      if (data.tagIds !== undefined) {\n        const tagIds = controleerStringArray(\n          data.tagIds,\n          "Tags",\n        );\n        await medewerkerService.setTags(id, tagIds);\n      }\n\n      return NextResponse.json({''')
+            vestigingen: {''',
+              '''            id: true,
 
-          Path('.github/workflows/fix-owner-role.yml').unlink()
+            email: true,
+
+            vestigingen: {''')
+          replace(route,
+              '''    if (
+      organisatieIds.length === 0
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Deze medewerker is niet aan een actieve organisatie gekoppeld.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }''',
+              '''    const uitnodigingOrganisatieIds =
+      medewerker.email
+        ? (
+            await prisma.medewerkerUitnodiging.findMany({
+              where: {
+                email: medewerker.email.trim().toLowerCase(),
+                gebruiktOp: { not: null },
+              },
+              select: {
+                organisatieId: true,
+              },
+            })
+          ).map((uitnodiging) => uitnodiging.organisatieId)
+        : [];
+
+    const toegestaneOrganisatieIds =
+      Array.from(
+        new Set([
+          ...organisatieIds,
+          ...uitnodigingOrganisatieIds,
+        ]),
+      );
+
+    if (
+      toegestaneOrganisatieIds.length === 0
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Deze medewerker is niet aan een actieve organisatie gekoppeld.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }''')
+          replace(route,
+              '''    const isEigenaar =
+      organisatieIds.length > 0 &&
+      organisatieIds.every(
+        (organisatieId) =>''',
+              '''    const isEigenaar =
+      toegestaneOrganisatieIds.length > 0 &&
+      toegestaneOrganisatieIds.some(
+        (organisatieId) =>''')
+          replace(route,
+              '''              organisatieId: {
+                in: organisatieIds,
+              },''',
+              '''              organisatieId: {
+                in: toegestaneOrganisatieIds,
+              },''')
+          replace(route,
+              '''      const resultaat =
+        await medewerkerService.update(
+          id,
+          updateData,
+        );
+
+      return NextResponse.json({''',
+              '''      const resultaat =
+        await medewerkerService.update(
+          id,
+          updateData,
+        );
+
+      if (data.rolIds !== undefined) {
+        const rolIds = controleerStringArray(
+          data.rolIds,
+          "Rollen",
+        );
+        await medewerkerService.setRollen(id, rolIds);
+      }
+
+      if (data.tagIds !== undefined) {
+        const tagIds = controleerStringArray(
+          data.tagIds,
+          "Tags",
+        );
+        await medewerkerService.setTags(id, tagIds);
+      }
+
+      return NextResponse.json({''')
+          PY
+
+          rm .github/workflows/fix-owner-role.yml
 
       - name: Commit patch
         run: |
