@@ -26,11 +26,11 @@ export async function verstuurMail({ to, subject, html, text }: MailInput) {
 }
 
 export function absoluteUrl(path: string) {
-  const base = (process.env.NEXT_PUBLIC_APP_URL || "https://erp.clevers.nl").replace(/\/$/, "");
+  const base = (process.env.NEXT_PUBLIC_APP_URL || "https://erp.iselto.nl").replace(/\/$/, "");
   return `${base}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 export function webAppUrl(path = "/") {
-  const base = (process.env.NEXT_PUBLIC_WEBAPP_URL || "https://app.clevers.nl").replace(/\/$/, "");
+  const base = (process.env.NEXT_PUBLIC_WEBAPP_URL || "https://app.iselto.nl").replace(/\/$/, "");
   return `${base}${path.startsWith("/") ? path : `/${path}`}`;
 }
