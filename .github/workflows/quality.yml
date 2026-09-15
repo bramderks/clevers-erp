@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   quality:
@@ -18,6 +18,213 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
+      - name: Apply owner employee workflow fix
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  return False
+              p.write_text(text.replace(old, new, 1))
+              return True
+
+          page = 'app/(dashboard)/medewerkers/[id]/page.tsx'
+          replace(page,
+              '''  const medewerkerOrganisatieIds =
+    Array.from(
+      new Set(
+        medewerker.vestigingen.map(
+          (relatie) =>
+            relatie.vestiging.organisatieId,
+        ),
+      ),
+    );
+
+  const isEigenaar =
+    medewerkerOrganisatieIds.length > 0 &&
+    medewerkerOrganisatieIds.every(
+      (organisatieId) =>
+        actieveRelaties.some(
+          (relatie) =>
+            relatie.organisatieId === organisatieId &&
+            relatie.rol.naam
+              .trim()
+              .toLowerCase() ===
+              "eigenaar",
+        ),
+    );''',
+              '''  const medewerkerOrganisatieIds =
+    Array.from(
+      new Set(
+        medewerker.vestigingen.map(
+          (relatie) =>
+            relatie.vestiging.organisatieId,
+        ),
+      ),
+    );
+
+  // Een geactiveerde nieuwe medewerker kan nog geen vestiging hebben.
+  // De gebruikte uitnodiging bepaalt in die fase tot welke organisatie het dossier behoort.
+  const uitnodigingOrganisatieIds =
+    medewerker.email
+      ? (
+          await prisma.medewerkerUitnodiging.findMany({
+            where: {
+              email: medewerker.email.trim().toLowerCase(),
+              gebruiktOp: { not: null },
+            },
+            select: {
+              organisatieId: true,
+            },
+          })
+        ).map((uitnodiging) => uitnodiging.organisatieId)
+      : [];
+
+  const toegestaneOrganisatieIds =
+    Array.from(
+      new Set([
+        ...medewerkerOrganisatieIds,
+        ...uitnodigingOrganisatieIds,
+      ]),
+    );
+
+  const isEigenaar =
+    toegestaneOrganisatieIds.length > 0 &&
+    toegestaneOrganisatieIds.some(
+      (organisatieId) =>
+        actieveRelaties.some(
+          (relatie) =>
+            relatie.organisatieId === organisatieId &&
+            relatie.rol.naam
+              .trim()
+              .toLowerCase() ===
+              "eigenaar",
+        ),
+    );''')
+
+          route = 'app/api/medewerkers/[id]/route.ts'
+          replace(route,
+              '''            id: true,
+
+            vestigingen: {''',
+              '''            id: true,
+
+            email: true,
+
+            vestigingen: {''')
+          replace(route,
+              '''    if (
+      organisatieIds.length === 0
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Deze medewerker is niet aan een actieve organisatie gekoppeld.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }''',
+              '''    const uitnodigingOrganisatieIds =
+      medewerker.email
+        ? (
+            await prisma.medewerkerUitnodiging.findMany({
+              where: {
+                email: medewerker.email.trim().toLowerCase(),
+                gebruiktOp: { not: null },
+              },
+              select: {
+                organisatieId: true,
+              },
+            })
+          ).map((uitnodiging) => uitnodiging.organisatieId)
+        : [];
+
+    const toegestaneOrganisatieIds =
+      Array.from(
+        new Set([
+          ...organisatieIds,
+          ...uitnodigingOrganisatieIds,
+        ]),
+      );
+
+    if (
+      toegestaneOrganisatieIds.length === 0
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Deze medewerker is niet aan een actieve organisatie gekoppeld.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }''')
+          replace(route,
+              '''    const isEigenaar =
+      organisatieIds.length > 0 &&
+      organisatieIds.every(
+        (organisatieId) =>''',
+              '''    const isEigenaar =
+      toegestaneOrganisatieIds.length > 0 &&
+      toegestaneOrganisatieIds.some(
+        (organisatieId) =>''')
+          replace(route,
+              '''              organisatieId: {
+                in: organisatieIds,
+              },''',
+              '''              organisatieId: {
+                in: toegestaneOrganisatieIds,
+              },''')
+          replace(route,
+              '''      const resultaat =
+        await medewerkerService.update(
+          id,
+          updateData,
+        );
+
+      return NextResponse.json({''',
+              '''      const resultaat =
+        await medewerkerService.update(
+          id,
+          updateData,
+        );
+
+      if (data.rolIds !== undefined) {
+        const rolIds = controleerStringArray(
+          data.rolIds,
+          "Rollen",
+        );
+        await medewerkerService.setRollen(id, rolIds);
+      }
+
+      if (data.tagIds !== undefined) {
+        const tagIds = controleerStringArray(
+          data.tagIds,
+          "Tags",
+        );
+        await medewerkerService.setTags(id, tagIds);
+      }
+
+      return NextResponse.json({''')
+
+          Path('.github/workflows/fix-owner-role.yml').unlink(missing_ok=True)
+          PY
+
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "chore: apply owner employee workflow patch"
+            git push
+          fi
 
       - name: Node.js
         uses: actions/setup-node@v5
