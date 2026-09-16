@@ -1,0 +1,106 @@
+name: Fix owner self profile edit
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply owner self-profile authorization fix
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          page = Path('app/(dashboard)/medewerkers/[id]/page.tsx')
+          text = page.read_text()
+
+          old = '''  const isEigenProfiel = gebruiker.medewerker?.id === id;\n\n  if (!isEigenaar && !isEigenProfiel) {'''
+          new = '''  const isEigenProfiel = gebruiker.medewerker?.id === id;\n\n  // Een eigenaar is organisatiebreed bevoegd. Ook wanneer het eigen\n  // medewerkerprofiel nog geen vestiging heeft, moet de eigenaar het\n  // profiel kunnen openen en de eerste vestiging/planningstags kunnen instellen.\n  const eigenaarOrganisatieIdsVoorZelf = isEigenProfiel\n    ? actieveRelaties\n        .filter(\n          (relatie) =>\n            relatie.rol.naam.trim().toLowerCase() === "eigenaar",\n        )\n        .map((relatie) => relatie.organisatieId)\n    : [];\n\n  if (!isEigenaar && !isEigenProfiel) {'''
+          if old not in text:
+              raise SystemExit('page anchor 1 not found')
+          text = text.replace(old, new, 1)
+
+          old = '''      ...medewerkerOrganisatieIds,\n      ...uitnodigingOrganisatieIds,\n    ]),'''
+          new = '''      ...medewerkerOrganisatieIds,\n      ...uitnodigingOrganisatieIds,\n      ...eigenaarOrganisatieIdsVoorZelf,\n    ]),'''
+          if old not in text:
+              raise SystemExit('page anchor 2 not found')
+          text = text.replace(old, new, 1)
+
+          old = '''  const magAlgemeenBewerken = isEigenaar;\n  const magContractBewerken = isEigenaar;\n  const magVestigingenBewerken = isEigenaar;\n  const magBeschikbaarheidBewerken = isEigenaar;\n  const magVerloningBewerken = isEigenaar;'''
+          new = '''  const magAlgemeenBewerken = isEigenaar || isEigenProfiel;\n  const magContractBewerken = isEigenaar || isEigenProfiel;\n  const magVestigingenBewerken = isEigenaar || isEigenProfiel;\n  const magBeschikbaarheidBewerken = isEigenaar || isEigenProfiel;\n  const magVerloningBewerken = isEigenaar || isEigenProfiel;'''
+          if old not in text:
+              raise SystemExit('page anchor 3 not found')
+          text = text.replace(old, new, 1)
+
+          old = '''  const beschikbareRollen = isEigenaar\n    ? await prisma.rol.findMany({'''
+          new = '''  const beschikbareRollen = isEigenaar\n    ? await prisma.rol.findMany({'''
+          # Rollen blijven bewust alleen voor organisatie-eigenaren; een eigenaar\n          # kan zijn eigen planningstags/vestigingen beheren zonder zichzelf een\n          # andere medewerkerrol toe te kennen.
+
+          old = '''  const beschikbareTags = isEigenaar\n    ? await prisma.tag.findMany({'''
+          new = '''  const beschikbareTags = isEigenaar || isEigenProfiel\n    ? await prisma.tag.findMany({'''
+          if old not in text:
+              raise SystemExit('page anchor 4 not found')
+          text = text.replace(old, new, 1)
+
+          old = '''  const beschikbareVestigingen = isEigenaar\n    ? await prisma.vestiging.findMany({'''
+          new = '''  const beschikbareVestigingen = isEigenaar || isEigenProfiel\n    ? await prisma.vestiging.findMany({'''
+          if old not in text:
+              raise SystemExit('page anchor 5 not found')
+          text = text.replace(old, new, 1)
+
+          page.write_text(text)
+
+          route = Path('app/api/medewerkers/[id]/route.ts')
+          text = route.read_text()
+
+          old = '''    const organisatieIds =\n      Array.from(\n        new Set(\n          medewerker.vestigingen'''
+          new = '''    const isEigenProfiel =\n      gebruiker.medewerker?.id === id;\n\n    const organisatieIds =\n      Array.from(\n        new Set(\n          medewerker.vestigingen'''
+          if old not in text:
+              raise SystemExit('route anchor 1 not found')
+          text = text.replace(old, new, 1)
+
+          old = '''    const toegestaneOrganisatieIds =\n      Array.from(\n        new Set([\n          ...organisatieIds,\n          ...uitnodigingOrganisatieIds,\n        ]),\n      );'''
+          new = '''    const eigenaarOrganisatieIdsVoorZelf = isEigenProfiel\n      ? gebruiker.organisaties\n          .filter(\n            (relatie) =>\n              relatie.actief &&\n              relatie.organisatie.actief &&\n              relatie.rol.naam.trim().toLowerCase() === "eigenaar",\n          )\n          .map((relatie) => relatie.organisatieId)\n      : [];\n\n    const toegestaneOrganisatieIds =\n      Array.from(\n        new Set([\n          ...organisatieIds,\n          ...uitnodigingOrganisatieIds,\n          ...eigenaarOrganisatieIdsVoorZelf,\n        ]),\n      );'''
+          if old not in text:
+              raise SystemExit('route anchor 2 not found')
+          text = text.replace(old, new, 1)
+
+          old = '''    if (\n      toegestaneOrganisatieIds.length === 0\n    ) {'''
+          new = '''    if (\n      toegestaneOrganisatieIds.length === 0 &&\n      !isEigenProfiel\n    ) {'''
+          if old not in text:
+              raise SystemExit('route anchor 3 not found')
+          text = text.replace(old, new, 1)
+
+          old = '''    if (!isEigenaar) {'''
+          new = '''    if (!isEigenaar && !isEigenProfiel) {'''
+          if old not in text:
+              raise SystemExit('route anchor 4 not found')
+          text = text.replace(old, new, 1)
+
+          old = '''      if (data.rolIds !== undefined) {\n        const rolIds = controleerStringArray(\n          data.rolIds,\n          "Rollen",\n        );\n        await medewerkerService.setRollen(\n          id,\n          rolIds,\n        );\n      }'''
+          new = '''      // Alleen een organisatie-eigenaar mag medewerkerrollen wijzigen.\n      // Een eigenaar mag wel zijn eigen planningstags beheren.\n      if (isEigenaar && data.rolIds !== undefined) {\n        const rolIds = controleerStringArray(\n          data.rolIds,\n          "Rollen",\n        );\n        await medewerkerService.setRollen(\n          id,\n          rolIds,\n        );\n      }'''
+          if old not in text:
+              raise SystemExit('route anchor 5 not found')
+          text = text.replace(old, new, 1)
+
+          route.write_text(text)
+          PY
+
+      - name: Commit and push fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "app/(dashboard)/medewerkers/[id]/page.tsx" "app/api/medewerkers/[id]/route.ts"
+          if git diff --cached --quiet; then
+            echo "No changes needed"
+            exit 0
+          fi
+          git commit -m "fix: allow owner to edit own employee profile"
+          git push
