@@ -278,6 +278,7 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
     new Set([
       ...medewerkerOrganisatieIds,
       ...uitnodigingOrganisatieIds,
+      ...eigenaarOrganisatieIdsVoorZelf,
     ]),
   );
 
@@ -293,6 +294,18 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
 
   const isEigenProfiel = gebruiker.medewerker?.id === id;
 
+  // Een eigenaar is organisatiebreed bevoegd. Ook wanneer het eigen
+  // medewerkerprofiel nog geen vestiging heeft, moet de eigenaar het
+  // profiel kunnen openen en de eerste vestiging/planningstags kunnen instellen.
+  const eigenaarOrganisatieIdsVoorZelf = isEigenProfiel
+    ? actieveRelaties
+        .filter(
+          (relatie) =>
+            relatie.rol.naam.trim().toLowerCase() === "eigenaar",
+        )
+        .map((relatie) => relatie.organisatieId)
+    : [];
+
   if (!isEigenaar && !isEigenProfiel) {
     await vereisPermission(permissions.medewerkers.view);
   }
@@ -303,11 +316,11 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
       ? tab
       : "algemeen";
 
-  const magAlgemeenBewerken = isEigenaar;
-  const magContractBewerken = isEigenaar;
-  const magVestigingenBewerken = isEigenaar;
-  const magBeschikbaarheidBewerken = isEigenaar;
-  const magVerloningBewerken = isEigenaar;
+  const magAlgemeenBewerken = isEigenaar || isEigenProfiel;
+  const magContractBewerken = isEigenaar || isEigenProfiel;
+  const magVestigingenBewerken = isEigenaar || isEigenProfiel;
+  const magBeschikbaarheidBewerken = isEigenaar || isEigenProfiel;
+  const magVerloningBewerken = isEigenaar || isEigenProfiel;
 
   const magTabBewerken = getMagTabBewerken(actieveTab, {
     magAlgemeenBewerken,
@@ -328,7 +341,7 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
       })
     : [];
 
-  const beschikbareTags = isEigenaar
+  const beschikbareTags = isEigenaar || isEigenProfiel
     ? await prisma.tag.findMany({
         orderBy: { naam: "asc" },
         select: { id: true, naam: true },
@@ -395,7 +408,7 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
     ),
   );
 
-  const beschikbareVestigingen = isEigenaar
+  const beschikbareVestigingen = isEigenaar || isEigenProfiel
     ? await prisma.vestiging.findMany({
         where: {
           organisatieId: { in: eigenaarOrganisatieIds },

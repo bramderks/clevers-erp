@@ -407,6 +407,9 @@ export async function PATCH(
       );
     }
 
+    const isEigenProfiel =
+      gebruiker.medewerker?.id === id;
+
     const organisatieIds =
       Array.from(
         new Set(
@@ -438,16 +441,29 @@ export async function PATCH(
           ).map((uitnodiging) => uitnodiging.organisatieId)
         : [];
 
+    const eigenaarOrganisatieIdsVoorZelf = isEigenProfiel
+      ? gebruiker.organisaties
+          .filter(
+            (relatie) =>
+              relatie.actief &&
+              relatie.organisatie.actief &&
+              relatie.rol.naam.trim().toLowerCase() === "eigenaar",
+          )
+          .map((relatie) => relatie.organisatieId)
+      : [];
+
     const toegestaneOrganisatieIds =
       Array.from(
         new Set([
           ...organisatieIds,
           ...uitnodigingOrganisatieIds,
+          ...eigenaarOrganisatieIdsVoorZelf,
         ]),
       );
 
     if (
-      toegestaneOrganisatieIds.length === 0
+      toegestaneOrganisatieIds.length === 0 &&
+      !isEigenProfiel
     ) {
       return NextResponse.json(
         {
@@ -476,7 +492,7 @@ export async function PATCH(
           ),
       );
 
-    if (!isEigenaar) {
+    if (!isEigenaar && !isEigenProfiel) {
       return NextResponse.json(
         {
           error:
@@ -581,7 +597,9 @@ export async function PATCH(
           updateData,
         );
 
-      if (data.rolIds !== undefined) {
+      // Alleen een organisatie-eigenaar mag medewerkerrollen wijzigen.
+      // Een eigenaar mag wel zijn eigen planningstags beheren.
+      if (isEigenaar && data.rolIds !== undefined) {
         const rolIds = controleerStringArray(
           data.rolIds,
           "Rollen",
