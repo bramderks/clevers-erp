@@ -2,9 +2,20 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+export type ChecklistItem = {
+  key: string;
+  label: string;
+  klaar: boolean;
+};
+
 export async function GET() {
   const gebruiker = await getCurrentUser();
-  if (!gebruiker) return NextResponse.json({ error: "Je moet ingelogd zijn." }, { status: 401 });
+  if (!gebruiker) {
+    return NextResponse.json(
+      { error: "Je moet ingelogd zijn." },
+      { status: 401 },
+    );
+  }
 
   const taken: Array<{
     id: string;
@@ -14,7 +25,18 @@ export async function GET() {
     omschrijving: string;
     actie: string;
     aangemaaktOp: Date;
-    gegevens: Record<string, unknown>;
+    gegevens: {
+      href?: string;
+      medewerkerId?: string;
+      checklist?: ChecklistItem[];
+      diensten?: Array<{
+        id: string;
+        datum: Date;
+        begintijd: Date;
+        eindtijd: Date;
+        vestigingNaam: string;
+      }>;
+    };
   }> = [];
 
   const eigenaarRelaties = gebruiker.organisaties.filter(
@@ -26,6 +48,18 @@ export async function GET() {
   const organisatieIds = eigenaarRelaties.map((r) => r.organisatieId);
 
   if (organisatieIds.length) {
+    const gebruikteUitnodigingen = await prisma.medewerkerUitnodiging.findMany({
+      where: {
+        organisatieId: { in: organisatieIds },
+        gebruiktOp: { not: null },
+      },
+      select: { email: true, gebruiktOp: true },
+    });
+
+    const geregistreerdeEmails = new Set(
+      gebruikteUitnodigingen.map((i) => i.email.trim().toLowerCase()),
+    );
+
     const geregistreerdeMedewerkers = await prisma.medewerker.findMany({
       where: {
         actief: false,
@@ -33,34 +67,15 @@ export async function GET() {
           module: "MEDEWERKER",
           code: "AANGEMELD",
         },
-        systeemGebruiker: {
-          isNot: null,
-        },
+        systeemGebruiker: { isNot: null },
       },
       include: {
         systeemGebruiker: { select: { email: true } },
         status: true,
-        vestigingen: {
-          include: { vestiging: true },
-        },
+        vestigingen: { include: { vestiging: true } },
       },
       orderBy: { aangemaaktOp: "asc" },
     });
-
-    const gebruikteUitnodigingen = await prisma.medewerkerUitnodiging.findMany({
-      where: {
-        organisatieId: { in: organisatieIds },
-        gebruiktOp: { not: null },
-      },
-      select: {
-        email: true,
-        gebruiktOp: true,
-      },
-    });
-
-    const geregistreerdeEmails = new Set(
-      gebruikteUitnodigingen.map((i) => i.email.trim().toLowerCase()),
-    );
 
     for (const m of geregistreerdeMedewerkers) {
       const email = m.systeemGebruiker?.email?.trim().toLowerCase();
@@ -88,121 +103,154 @@ export async function GET() {
     const actieveMedewerkers = await prisma.medewerker.findMany({
       where: {
         actief: true,
-        vestigingen: {
-          some: {
-            vestiging: {
-              organisatieId: { in: organisatieIds },
-              actief: true,
+        OR: [
+          {
+            vestigingen: {
+              some: {
+                vestiging: {
+                  organisatieId: { in: organisatieIds },
+                  actief: true,
+                },
+              },
             },
           },
-        },
+          ...(geregistreerdeEmails.size
+            ? [{ email: { in: Array.from(geregistreerdeEmails) } }]
+            : []),
+        ],
       },
       include: {
-        rollen: true,
+        rollen: { include: { rol: true } },
+        tags: { include: { tag: true } },
         vestigingen: { include: { vestiging: true } },
+        systeemGebruiker: { select: { actief: true } },
       },
     });
 
     for (const m of actieveMedewerkers) {
-      const dossierKlaar = Boolean(
-        m.personeelsnummer &&
-          m.contractType &&
-          m.datumInDienst &&
-          m.uurloon !== null &&
-          m.vestigingen.length > 0,
-      );
+      const checklist: ChecklistItem[] = [
+        {
+          key: "rol",
+          label: "Rol toegewezen",
+          klaar: m.rollen.length > 0,
+        },
+        {
+          key: "vestiging",
+          label: "Vestiging gekoppeld",
+          klaar: m.vestigingen.some((v) => v.vestiging.actief),
+        },
+        {
+          key: "personeelsnummer",
+          label: "Personeelsnummer ingevuld",
+          klaar: Boolean(m.personeelsnummer),
+        },
+        {
+          key: "contract",
+          label: "Contracttype ingevuld",
+          klaar: Boolean(m.contractType),
+        },
+        {
+          key: "datumInDienst",
+          label: "Datum in dienst ingevuld",
+          klaar: Boolean(m.datumInDienst),
+        },
+        {
+          key: "uurloon",
+          label: "Uurloon ingevuld",
+          klaar: m.uurloon !== null,
+        },
+        {
+          key: "planningstags",
+          label: "Planningstags toegewezen",
+          klaar: m.tags.length > 0,
+        },
+      ];
+
+      const dossierKlaar = checklist
+        .filter((item) => item.key !== "rol")
+        .every((item) => item.klaar);
 
       if (!dossierKlaar) {
+        const eersteOpenItem = checklist.find((item) => !item.klaar);
         taken.push({
           id: `dossier-${m.id}`,
           type: "MEDEWERKER_DOSSIER_INVULLEN",
           categorie: "Medewerkers",
-          titel: "Dossier medewerker invullen",
-          omschrijving: `${m.voornaam} ${m.achternaam} · Vul het medewerkerdossier verder aan.`,
+          titel: "Medewerkerprofiel aanvullen",
+          omschrijving: `${m.voornaam} ${m.achternaam} · ${eersteOpenItem?.label ?? "Profiel verder aanvullen"}.`,
           actie: "MEDEWERKER_DOSSIER_INVULLEN",
           aangemaaktOp: m.aangemaaktOp,
           gegevens: {
-            href: `/medewerkers/${m.id}`,
+            href: `/medewerkers/${m.id}?tab=algemeen`,
             medewerkerId: m.id,
+            checklist,
           },
         });
       }
     }
-  }
 
-  if (gebruiker.medewerker?.id) {
-    const medewerkerId = gebruiker.medewerker.id;
-    const relaties = await prisma.medewerkerVestiging.findMany({
-      where: {
-        medewerkerId,
-        vestiging: { actief: true },
-      },
-      select: {
-        vestigingId: true,
-        vestiging: { select: { naam: true } },
-      },
-    });
+    const eigenaarMedewerkerId = gebruiker.medewerker?.id;
 
-    for (const relatie of relaties) {
-      const weken = await prisma.week.findMany({
+    if (eigenaarMedewerkerId) {
+      const vandaag = new Date();
+      const vandaagBegin = new Date(
+        vandaag.getFullYear(),
+        vandaag.getMonth(),
+        vandaag.getDate(),
+      );
+
+      const diensten = await prisma.dienstBezetting.findMany({
         where: {
-          vestigingId: relatie.vestigingId,
-          status: { in: ["OPEN", "IN_PLANNING"] },
-          OR: [
-            { jaar: { gt: new Date().getFullYear() } },
-            {
-              jaar: new Date().getFullYear(),
-              weeknummer: {
-                gte: Math.ceil(
-                  (Date.now() -
-                    new Date(new Date().getFullYear(), 0, 1).getTime()) /
-                    604800000,
-                ),
+          medewerkerId: eigenaarMedewerkerId,
+          status: { in: ["GEPLAND", "BEVESTIGD"] },
+          dienst: {
+            datum: { gte: vandaagBegin },
+            week: {
+              vestiging: {
+                organisatieId: { in: organisatieIds },
+                actief: true,
               },
             },
-          ],
+          },
         },
-        orderBy: [
-          { jaar: "asc" },
-          { weeknummer: "asc" },
-        ],
         select: {
           id: true,
-          jaar: true,
-          weeknummer: true,
-          beschikbaarheidDeadline: true,
+          dienst: {
+            select: {
+              id: true,
+              datum: true,
+              begintijd: true,
+              eindtijd: true,
+              week: {
+                select: {
+                  vestiging: { select: { naam: true } },
+                },
+              },
+            },
+          },
         },
+        orderBy: { dienst: { datum: "asc" } },
+        take: 20,
       });
 
-      const ontbrekend = [];
-      for (const week of weken) {
-        if (week.beschikbaarheidDeadline && week.beschikbaarheidDeadline < new Date()) {
-          continue;
-        }
-
-        const count = await prisma.beschikbaarheid.count({
-          where: {
-            medewerkerId,
-            weekId: week.id,
-          },
-        });
-
-        if (!count) ontbrekend.push(week);
-      }
-
-      if (ontbrekend.length) {
+      if (diensten.length) {
         taken.push({
-          id: `beschikbaarheid-seizoen-${relatie.vestigingId}`,
-          type: "BESCHIKBAARHEID_RESTEREND_SEIZOEN",
-          categorie: "Beschikbaarheid",
-          titel: "Beschikbaarheid doorgeven",
-          omschrijving: `${relatie.vestiging.naam} · Geef je beschikbaarheid door voor de resterende weken van het seizoen.`,
-          actie: "BESCHIKBAARHEID_RESTEREND_SEIZOEN",
+          id: "eigenaar-aankomende-diensten",
+          type: "EIGENAAR_AANKOMENDE_DIENSTEN",
+          categorie: "Planning",
+          titel: "Mijn aankomende diensten",
+          omschrijving: "Je eigen ingeplande diensten als eigenaar.",
+          actie: "EIGENAAR_AANKOMENDE_DIENSTEN",
           aangemaaktOp: new Date(),
           gegevens: {
-            href: "/app/beschikbaarheid",
-            vestigingId: relatie.vestigingId,
-            weken: ontbrekend.map((w) => `${w.jaar}-W${w.weeknummer}`),
+            medewerkerId: eigenaarMedewerkerId,
+            diensten: diensten.map((bezetting) => ({
+              id: bezetting.dienst.id,
+              datum: bezetting.dienst.datum,
+              begintijd: bezetting.dienst.begintijd,
+              eindtijd: bezetting.dienst.eindtijd,
+              vestigingNaam: bezetting.dienst.week.vestiging.naam,
+            })),
           },
         });
       }
