@@ -380,6 +380,35 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
     naam: medewerkerVestiging.vestiging.naam,
   }));
 
+  // Bij een nieuwe medewerker zonder bestaande vestiging moeten in het
+  // profiel alle actieve vestigingen van de toegestane organisatie zichtbaar zijn.
+  // Zodra er wel vestigingen gekoppeld zijn, blijven dezelfde organisatiegrenzen gelden.
+  const eigenaarOrganisatieIds = Array.from(
+    new Set(
+      actieveRelaties
+        .filter(
+          (relatie) =>
+            toegestaneOrganisatieIds.includes(relatie.organisatieId) &&
+            relatie.rol.naam.trim().toLowerCase() === "eigenaar",
+        )
+        .map((relatie) => relatie.organisatieId),
+    ),
+  );
+
+  const beschikbareVestigingen = isEigenaar
+    ? await prisma.vestiging.findMany({
+        where: {
+          organisatieId: { in: eigenaarOrganisatieIds },
+          actief: true,
+        },
+        orderBy: { naam: "asc" },
+        select: {
+          id: true,
+          naam: true,
+        },
+      })
+    : vestigingen;
+
   const [dossierItems, vasteUrenAfspraken] = isEigenaar
     ? await Promise.all([
         prisma.$queryRawUnsafe<
@@ -563,7 +592,7 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
                     section="algemeen"
                     beschikbareRollen={beschikbareRollen}
                     beschikbareTags={beschikbareTags}
-                    beschikbareVestigingen={vestigingen}
+                    beschikbareVestigingen={beschikbareVestigingen}
                   />
                 </Card>
               ) : (
@@ -682,7 +711,11 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
               </div>
               {isBewerken && editSection === "vestigingen" ? (
                 <Card title="Vestigingen wijzigen" description="Wijzig de vestigingen waar deze medewerker werkt en stel de hoofdvestiging in.">
-                  <MedewerkerTabBewerken medewerker={medewerkerFormData} section="vestigingen" />
+                  <MedewerkerTabBewerken
+                    medewerker={medewerkerFormData}
+                    section="vestigingen"
+                    beschikbareVestigingen={beschikbareVestigingen}
+                  />
                 </Card>
               ) : (
                 <Card title="Gekoppelde vestigingen" description="Vestigingen waarvoor de medewerker is gekoppeld.">
