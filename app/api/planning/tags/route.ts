@@ -4,9 +4,8 @@ import { hasPermissionForVestiging } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
-// Dit zijn de enige tags die als planningstaak mogen worden gebruikt.
-// BHV staat wel als personeelstag in het dossier, maar is uitsluitend
-// een controletag en verschijnt daarom nooit in deze lijst.
+// Definitieve Clevers-set: planning gebruikt alleen deze vijf tags.
+// BHV is bewust alleen een controletag en verschijnt nooit als planningstaak.
 const PLANNING_TAGS = [
   "Leidinggevende",
   "Coupes",
