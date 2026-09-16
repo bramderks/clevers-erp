@@ -1,12 +1,7 @@
 -- Maak voor bestaande eigenaar-accounts een volwaardig medewerkerprofiel aan.
 -- Een eigenaar moet immers ook als planbare medewerker kunnen functioneren.
---
--- Deze migratie is idempotent:
--- 1. bestaande medewerkers worden waar mogelijk aan het systeemaccount gekoppeld;
--- 2. ontbrekende eigenaar-profielen worden aangemaakt;
--- 3. er worden geen bestaande medewerkerrecords gedupliceerd.
+-- Deze migratie is idempotent.
 
--- Herstel eerst een ontbrekende systeemkoppeling op basis van het unieke e-mailadres.
 UPDATE "Medewerker" m
 SET "systeemGebruikerId" = sg."id"
 FROM "SysteemGebruiker" sg
@@ -14,9 +9,6 @@ WHERE LOWER(m."email") = LOWER(sg."email")
   AND LOWER(sg."email") IN ('bram.derks@outlook.com', 'j.derks@clevers.nl')
   AND (m."systeemGebruikerId" IS NULL OR m."systeemGebruikerId" <> sg."id");
 
--- Maak een basis-medewerkerdossier voor een eigenaar die nog geen dossier heeft.
--- De ontbrekende inhoud (geboortedatum, telefoon, contractgegevens, vestiging
--- en planningstags) blijft bewust invulbaar via het profiel.
 INSERT INTO "Medewerker" (
   "id",
   "systeemGebruikerId",
@@ -65,20 +57,16 @@ WHERE LOWER(sg."email") IN ('bram.derks@outlook.com', 'j.derks@clevers.nl')
        OR LOWER(m."email") = LOWER(sg."email")
   );
 
--- Een eigenaar is ook een planbare medewerker. Geef het medewerkerprofiel
--- daarom de standaard medewerkerrol wanneer die nog geen medewerkerrol heeft.
 INSERT INTO "MedewerkerRol" (
   "id",
   "medewerkerId",
   "rolId",
-  "aangemaaktOp",
-  "gewijzigdOp"
+  "aangemaaktOp"
 )
 SELECT
   md5(m."id" || ':medewerker-rol'),
   m."id",
   r."id",
-  CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 FROM "Medewerker" m
 JOIN "SysteemGebruiker" sg
