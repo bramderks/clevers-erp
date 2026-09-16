@@ -10,12 +10,12 @@
 --   Leidinggevende, Coupes, Handijs, Bediening, Vaatstraat
 --   BHV blijft een controle-tag en is geen planningstag.
 
-INSERT INTO "Rol" ("id", "naam", "omschrijving")
+INSERT INTO "Rol" ("id", "naam", "omschrijving", "aangemaaktOp", "gewijzigdOp")
 VALUES
-  ('rol-clevers-super-admin', 'Super Admin', 'Volledige toegang tot Clevers ERP'),
-  ('rol-clevers-eigenaar', 'Eigenaar', 'Eigenaar van één of meerdere vestigingen'),
-  ('rol-clevers-teamleider', 'Teamleider', 'Verantwoordelijk voor de dagelijkse aansturing'),
-  ('rol-clevers-medewerker', 'Medewerker', 'Standaard medewerker')
+  ('rol-clevers-super-admin', 'Super Admin', 'Volledige toegang tot Clevers ERP', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('rol-clevers-eigenaar', 'Eigenaar', 'Eigenaar van één of meerdere vestigingen', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('rol-clevers-teamleider', 'Teamleider', 'Verantwoordelijk voor de dagelijkse aansturing', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('rol-clevers-medewerker', 'Medewerker', 'Standaard medewerker', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT ("naam") DO NOTHING;
 
 -- Organisatiegebruikers hebben precies één rol per organisatie.
@@ -81,8 +81,8 @@ DELETE FROM "Rol"
 WHERE "naam" NOT IN ('Super Admin', 'Eigenaar', 'Teamleider', 'Medewerker');
 
 -- Voeg Coupes toe en zet de definitieve volgorde vast.
-INSERT INTO "Tag" ("id", "naam", "volgorde", "actief")
-VALUES ('tag-clevers-coupes', 'Coupes', 20, TRUE)
+INSERT INTO "Tag" ("id", "naam", "volgorde", "actief", "aangemaaktOp", "gewijzigdOp")
+VALUES ('tag-clevers-coupes', 'Coupes', 20, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT ("naam") DO UPDATE
 SET "volgorde" = EXCLUDED."volgorde", "actief" = TRUE;
 
