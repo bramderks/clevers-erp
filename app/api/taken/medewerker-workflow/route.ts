@@ -26,27 +26,6 @@ export async function GET() {
   const organisatieIds = eigenaarRelaties.map((r) => r.organisatieId);
 
   if (organisatieIds.length) {
-    const uitnodigingen = await prisma.medewerkerUitnodiging.findMany({
-      where: {
-        organisatieId: { in: organisatieIds },
-        gebruiktOp: null,
-      },
-      orderBy: { aangemaaktOp: "asc" },
-    });
-
-    for (const i of uitnodigingen) {
-      taken.push({
-        id: `uitnodiging-${i.id}`,
-        type: "MEDEWERKER_ACTIVEREN",
-        categorie: "Medewerkers",
-        titel: "Nieuwe medewerker staat klaar voor activatie",
-        omschrijving: `${i.voornaam} ${i.achternaam} · ${i.email}`,
-        actie: "MEDEWERKER_ACTIVEREN",
-        aangemaaktOp: i.aangemaaktOp,
-        gegevens: { href: "/medewerkers" },
-      });
-    }
-
     const geregistreerdeMedewerkers = await prisma.medewerker.findMany({
       where: {
         actief: false,
@@ -100,7 +79,7 @@ export async function GET() {
         actie: "MEDEWERKER_ROL_TOEWIJZEN",
         aangemaaktOp: uitnodiging?.gebruiktOp ?? m.aangemaaktOp,
         gegevens: {
-          href: `/medewerkers/${m.id}`,
+          href: `/medewerkers/${m.id}?tab=algemeen&edit=1`,
           medewerkerId: m.id,
         },
       });
