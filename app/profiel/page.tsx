@@ -8,6 +8,8 @@ import {
   getCurrentUser,
 } from "@/lib/auth";
 
+import { prisma } from "@/lib/prisma";
+
 import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
 import Card from "@/components/ui/Card";
@@ -25,11 +27,15 @@ export default async function ProfielPage() {
    * MEDEWERKERSPROFIEL
    * ============================================================
    *
-   * Wanneer de ingelogde gebruiker gekoppeld is aan een
-   * medewerker, gebruiken we het volledige medewerkerprofiel.
+   * Een medewerkerprofiel is normaal rechtstreeks gekoppeld aan
+   * het systeemaccount. Voor eigenaren kan die koppeling in een
+   * bestaande database echter ontbreken terwijl het
+   * medewerkerdossier al wel bestaat. Daarom herstellen we voor
+   * een eigenaar de koppeling op basis van het account-e-mailadres.
+   * Zo komt /profiel altijd uit op hetzelfde volledige profiel
+   * met dezelfde tabbladen als bij een medewerker.
    *
-   * Hierdoor zien Medewerker en Teamleider alle tabbladen:
-   *
+   * Tabbladen:
    * - Algemeen
    * - Contract
    * - Vestigingen
@@ -37,30 +43,35 @@ export default async function ProfielPage() {
    * - Vakantie
    * - Planning
    * - Verloning
-   *
-   * De rechten worden vervolgens volledig bepaald in:
-   *
-   * app/medewerkers/[id]/page.tsx
-   *
-   * Eigenaar:
-   * - alle tabbladen bekijken
-   * - alle tabbladen bewerken
-   *
-   * Teamleider:
-   * - alle tabbladen bekijken
-   * - alleen Algemeen van eigen profiel bewerken
-   *
-   * Medewerker:
-   * - alle tabbladen bekijken
-   * - alleen Algemeen van eigen profiel bewerken
+   * - Afspraken (eigenaar)
    */
 
-  if (
-    gebruiker.medewerker?.id
-  ) {
+  let medewerkerId = gebruiker.medewerker?.id;
+
+  if (!medewerkerId) {
+    const isEigenaar = gebruiker.organisaties.some(
+      (relatie) =>
+        relatie.actief &&
+        relatie.organisatie.actief &&
+        relatie.rol.naam.trim().toLowerCase() === "eigenaar",
+    );
+
+    if (isEigenaar && gebruiker.email) {
+      const medewerkerOpEmail = await prisma.medewerker.findFirst({
+        where: {
+          email: gebruiker.email.trim().toLowerCase(),
+        },
+        select: { id: true },
+      });
+
+      medewerkerId = medewerkerOpEmail?.id;
+    }
+  }
+
+  if (medewerkerId) {
     redirect(
       `/medewerkers/${encodeURIComponent(
-        gebruiker.medewerker.id,
+        medewerkerId,
       )}?tab=algemeen`,
     );
   }
