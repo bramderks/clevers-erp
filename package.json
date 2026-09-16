@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run prisma:generate && next build",
+    "build": "node scripts/migrate-vercel.mjs && npm run prisma:generate && next build",
     "start": "next start",
     "lint": "eslint",
     "lint:ci": "eslint --max-warnings 0",
@@ -29,6 +29,7 @@
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
+    "jose": "^6.2.0",
     "jose": "^6.2.8",
     "lucide-react": "^1.30.0",
     "next": "16.3.3",
@@ -37,7 +38,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-hook-form": "^7.65.0",
-    "tailwind-merge": "^3.6.0",
+    "tailwind-merge": "^3.6.4",
     "web-push": "^3.6.4",
     "xlsx": "npm:@stackline/xlsx@1.0.6",
     "zod": "^4.4.3"
