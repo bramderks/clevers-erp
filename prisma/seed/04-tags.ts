@@ -13,20 +13,24 @@ const TAGS = [
     volgorde: 10,
   },
   {
-    naam: "Bediening",
+    naam: "Coupes",
     volgorde: 20,
   },
   {
-    naam: "Vaatstraat",
+    naam: "Handijs",
     volgorde: 30,
   },
   {
-    naam: "Handijs",
+    naam: "Bediening",
     volgorde: 40,
   },
   {
-    naam: "BHV",
+    naam: "Vaatstraat",
     volgorde: 50,
+  },
+  {
+    naam: "BHV",
+    volgorde: 60,
   },
 ] as const;
 
@@ -53,6 +57,19 @@ export async function seedTags(
       },
     });
   }
+
+  // De applicatie kent bewust maar zes personeelstags.
+  // BHV blijft bestaan als controletag en wordt niet als planningstag gebruikt.
+  await prisma.tag.updateMany({
+    where: {
+      naam: {
+        notIn: TAGS.map((tag) => tag.naam),
+      },
+    },
+    data: {
+      actief: false,
+    },
+  });
 
   console.log(
     `   ✓ ${TAGS.length} tags`,
