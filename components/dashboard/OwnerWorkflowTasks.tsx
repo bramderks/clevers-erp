@@ -17,15 +17,12 @@ type WorkflowTaak = {
 };
 
 const EIGENAAR_ACTIES = new Set([
-  "MEDEWERKER_ACTIVEREN",
   "MEDEWERKER_ROL_TOEWIJZEN",
   "MEDEWERKER_DOSSIER_INVULLEN",
 ]);
 
 function variantKlassen(actie: string) {
   switch (actie) {
-    case "MEDEWERKER_ACTIVEREN":
-      return "bg-amber-400";
     case "MEDEWERKER_ROL_TOEWIJZEN":
       return "bg-red-500";
     case "MEDEWERKER_DOSSIER_INVULLEN":
