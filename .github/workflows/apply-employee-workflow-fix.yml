@@ -16,9 +16,11 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Apply fix
-        shell: python
+        shell: bash
         run: |
+          python3 <<'PY'
           from pathlib import Path
+          import subprocess
 
           def replace_once(path, old, new):
               p = Path(path)
@@ -42,8 +44,7 @@ jobs:
         },'''
           if old not in text:
               raise SystemExit('Expected workflow href block not found')
-          text = text.replace(old, new, 1)
-          route.write_text(text)
+          route.write_text(text.replace(old, new, 1))
 
           page = Path('app/(dashboard)/medewerkers/[id]/page.tsx')
           replace_once(page, '''  const medewerkerOrganisatieIds =
@@ -213,12 +214,10 @@ jobs:
 
       return NextResponse.json({''')
 
-          wf = Path('.github/workflows/apply-employee-workflow-fix.yml')
-          wf.unlink()
-
-          import subprocess
+          Path('.github/workflows/apply-employee-workflow-fix.yml').unlink()
           subprocess.run(['git', 'config', 'user.name', 'github-actions[bot]'], check=True)
           subprocess.run(['git', 'config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com'], check=True)
           subprocess.run(['git', 'add', '-A'], check=True)
           subprocess.run(['git', 'commit', '-m', 'fix: complete employee activation workflow'], check=True)
           subprocess.run(['git', 'push'], check=True)
+          PY
