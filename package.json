@@ -37,7 +37,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-hook-form": "^7.65.0",
-    "tailwind-merge": "^3.6.4",
+    "tailwind-merge": "^3.6.0",
     "web-push": "^3.6.4",
     "xlsx": "npm:@stackline/xlsx@1.0.6",
     "zod": "^4.4.3"
