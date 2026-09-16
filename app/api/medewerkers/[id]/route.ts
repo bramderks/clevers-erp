@@ -31,12 +31,6 @@ type ContractType =
   | "OPROEP"
   | "VAST";
 
-/*
- * ============================================================
- * VALIDATIE
- * ============================================================
- */
-
 function maakDatum(
   waarde: unknown,
   verplicht: true,
@@ -75,11 +69,6 @@ function maakDatum(
       `${veldnaam} is ongeldig.`,
     );
   }
-
-  /*
-   * Datumvelden vanuit de frontend
-   * worden als YYYY-MM-DD verwacht.
-   */
 
   const datum =
     new Date(
@@ -347,12 +336,6 @@ function controleerStringArray(
   );
 }
 
-/*
- * ============================================================
- * PATCH
- * ============================================================
- */
-
 export async function PATCH(
   request: NextRequest,
   { params }: RouteContext,
@@ -360,12 +343,6 @@ export async function PATCH(
   try {
     const { id } =
       await params;
-
-    /*
-     * ==========================================================
-     * GEBRUIKER
-     * ==========================================================
-     */
 
     const gebruiker =
       await getCurrentUser();
@@ -394,22 +371,15 @@ export async function PATCH(
       );
     }
 
-    /*
-     * ==========================================================
-     * MEDEWERKER
-     * ==========================================================
-     */
-
     const medewerker =
       await prisma.medewerker.findUnique(
         {
           where: {
             id,
           },
-
           select: {
             id: true,
-
+            email: true,
             vestigingen: {
               select: {
                 vestiging: {
@@ -437,16 +407,6 @@ export async function PATCH(
       );
     }
 
-    /*
-     * ==========================================================
-     * ORGANISATIES
-     * ==========================================================
-     *
-     * De medewerker is gekoppeld aan vestigingen.
-     * Via deze vestigingen bepalen we binnen welke organisatie
-     * deze medewerker momenteel valt.
-     */
-
     const organisatieIds =
       Array.from(
         new Set(
@@ -463,8 +423,31 @@ export async function PATCH(
         ),
       );
 
+    const uitnodigingOrganisatieIds =
+      medewerker.email
+        ? (
+            await prisma.medewerkerUitnodiging.findMany({
+              where: {
+                email: medewerker.email.trim().toLowerCase(),
+                gebruiktOp: { not: null },
+              },
+              select: {
+                organisatieId: true,
+              },
+            })
+          ).map((uitnodiging) => uitnodiging.organisatieId)
+        : [];
+
+    const toegestaneOrganisatieIds =
+      Array.from(
+        new Set([
+          ...organisatieIds,
+          ...uitnodigingOrganisatieIds,
+        ]),
+      );
+
     if (
-      organisatieIds.length === 0
+      toegestaneOrganisatieIds.length === 0
     ) {
       return NextResponse.json(
         {
@@ -477,20 +460,9 @@ export async function PATCH(
       );
     }
 
-    /*
-     * ==========================================================
-     * EIGENAAR
-     * ==========================================================
-     *
-     * De Eigenaar is organisatiebreed.
-     *
-     * Teamleiders en medewerkers krijgen via deze route
-     * geen beheerrechten.
-     */
-
     const isEigenaar =
-      organisatieIds.length > 0 &&
-      organisatieIds.every(
+      toegestaneOrganisatieIds.length > 0 &&
+      toegestaneOrganisatieIds.some(
         (organisatieId) =>
           gebruiker.organisaties.some(
             (relatie) =>
@@ -515,12 +487,6 @@ export async function PATCH(
         },
       );
     }
-
-    /*
-     * ==========================================================
-     * REQUEST
-     * ==========================================================
-     */
 
     const body =
       await request.json();
@@ -560,12 +526,6 @@ export async function PATCH(
         "De bewerkgegevens hebben een ongeldig formaat.",
       );
 
-    /*
-     * ==========================================================
-     * ALGEMEEN
-     * ==========================================================
-     */
-
     if (section === "algemeen") {
       const updateData = {
         personeelsnummer:
@@ -573,50 +533,42 @@ export async function PATCH(
             data.personeelsnummer,
             "Personeelsnummer",
           ),
-
         aanhef:
           controleerAanhef(
             data.aanhef,
           ),
-
         voornaam:
           controleerTekst(
             data.voornaam,
             "Voornaam",
             true,
           ),
-
         tussenvoegsel:
           controleerTekst(
             data.tussenvoegsel,
             "Tussenvoegsel",
           ),
-
         achternaam:
           controleerTekst(
             data.achternaam,
             "Achternaam",
             true,
           ),
-
         roepnaam:
           controleerTekst(
             data.roepnaam,
             "Roepnaam",
           ),
-
         geboortedatum:
           maakDatum(
             data.geboortedatum,
             true,
             "Geboortedatum",
           ),
-
         email:
           controleerEmail(
             data.email,
           ),
-
         telefoon:
           controleerTelefoon(
             data.telefoon,
@@ -629,6 +581,28 @@ export async function PATCH(
           updateData,
         );
 
+      if (data.rolIds !== undefined) {
+        const rolIds = controleerStringArray(
+          data.rolIds,
+          "Rollen",
+        );
+        await medewerkerService.setRollen(
+          id,
+          rolIds,
+        );
+      }
+
+      if (data.tagIds !== undefined) {
+        const tagIds = controleerStringArray(
+          data.tagIds,
+          "Tags",
+        );
+        await medewerkerService.setTags(
+          id,
+          tagIds,
+        );
+      }
+
       return NextResponse.json({
         id: resultaat.id,
         section,
@@ -636,12 +610,6 @@ export async function PATCH(
           "De algemene gegevens zijn succesvol opgeslagen.",
       });
     }
-
-    /*
-     * ==========================================================
-     * CONTRACT
-     * ==========================================================
-     */
 
     if (section === "contract") {
       const datumInDienst =
@@ -674,15 +642,12 @@ export async function PATCH(
           controleerContractType(
             data.contractType,
           ),
-
         contractUren:
           maakNummer(
             data.contractUren,
             "Contracturen",
           ),
-
         datumInDienst,
-
         datumUitDienst,
       };
 
@@ -699,12 +664,6 @@ export async function PATCH(
           "De contractgegevens zijn succesvol opgeslagen.",
       });
     }
-
-    /*
-     * ==========================================================
-     * VESTIGINGEN
-     * ==========================================================
-     */
 
     if (section === "vestigingen") {
       const vestigingIds =
@@ -738,11 +697,6 @@ export async function PATCH(
         );
       }
 
-      /*
-       * Alleen actieve vestigingen binnen dezelfde organisatie
-       * mogen gekoppeld worden.
-       */
-
       const geldigeVestigingen =
         await prisma.vestiging.findMany(
           {
@@ -750,14 +704,11 @@ export async function PATCH(
               id: {
                 in: vestigingIds,
               },
-
               actief: true,
-
               organisatieId: {
-                in: organisatieIds,
+                in: toegestaneOrganisatieIds,
               },
             },
-
             select: {
               id: true,
             },
@@ -788,12 +739,6 @@ export async function PATCH(
           "De vestigingen zijn succesvol opgeslagen.",
       });
     }
-
-    /*
-     * ==========================================================
-     * VERLONING
-     * ==========================================================
-     */
 
     if (section === "verloning") {
       const updateData = {
