@@ -12,10 +12,6 @@ const ROLLEN = [
     omschrijving: "Eigenaar van één of meerdere vestigingen",
   },
   {
-    naam: "Vestigingsmanager",
-    omschrijving: "Beheerder van een vestiging",
-  },
-  {
     naam: "Teamleider",
     omschrijving: "Verantwoordelijk voor de dagelijkse aansturing",
   },
