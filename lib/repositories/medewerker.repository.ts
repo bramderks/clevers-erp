@@ -12,8 +12,51 @@ export const medewerkerRepository = {
     const { organisatieIds, vestigingIds } = options;
     const heeftOrganisatieFilter = organisatieIds !== undefined;
     const heeftVestigingFilter = vestigingIds !== undefined;
+
+    // Een geactiveerde nieuwe medewerker kan tijdelijk nog geen vestiging hebben.
+    // De uitnodiging koppelt het dossier wél aan de organisatie. Neem daarom
+    // gebruikte uitnodigingen mee wanneer er geen vestigingsfilter actief is.
+    let geactiveerdeUitnodigingEmails: string[] = [];
+    if (heeftOrganisatieFilter && !heeftVestigingFilter && (organisatieIds?.length ?? 0) > 0) {
+      const uitnodigingen = await prisma.medewerkerUitnodiging.findMany({
+        where: {
+          organisatieId: { in: organisatieIds ?? [] },
+          gebruiktOp: { not: null },
+        },
+        select: { email: true },
+      });
+      geactiveerdeUitnodigingEmails = uitnodigingen.map((uitnodiging) => uitnodiging.email.trim().toLowerCase());
+    }
+
+    const vestigingVoorwaarde = {
+      vestigingen: {
+        some: {
+          ...(heeftOrganisatieFilter
+            ? { vestiging: { organisatieId: { in: organisatieIds ?? [] } } }
+            : {}),
+          ...(heeftVestigingFilter
+            ? { vestigingId: { in: vestigingIds ?? [] } }
+            : {}),
+        },
+      },
+    };
+
+    const where =
+      heeftOrganisatieFilter || heeftVestigingFilter
+        ? heeftOrganisatieFilter && !heeftVestigingFilter
+          ? {
+              OR: [
+                vestigingVoorwaarde,
+                ...(geactiveerdeUitnodigingEmails.length > 0
+                  ? [{ email: { in: geactiveerdeUitnodigingEmails } }]
+                  : []),
+              ],
+            }
+          : vestigingVoorwaarde
+        : {};
+
     return prisma.medewerker.findMany({
-      where: { ...(heeftOrganisatieFilter || heeftVestigingFilter ? { vestigingen: { some: { ...(heeftOrganisatieFilter ? { vestiging: { organisatieId: { in: organisatieIds ?? [] } } } : {}), ...(heeftVestigingFilter ? { vestigingId: { in: vestigingIds ?? [] } } : {}) } } } : {}) },
+      where,
       include: { status: true, vestigingen: { include: { vestiging: true }, orderBy: { hoofdvestiging: "desc" } }, rollen: { include: { rol: true }, orderBy: { rol: { naam: "asc" } } }, tags: { include: { tag: true }, orderBy: { tag: { volgorde: "asc" } } }, beschikbaarheden: { orderBy: [{ datum: "asc" }, { begintijd: "asc" }] }, vakantieAanvragen: { orderBy: [{ startDatum: "asc" }, { eindDatum: "asc" }], include: { vestiging: true } }, diensten: { include: { dienst: { include: { week: true, tags: { include: { tag: true }, orderBy: { tag: { volgorde: "asc" } } } } } }, orderBy: { dienst: { datum: "asc" } } }, verloningsRegels: { include: { verloningsPeriode: true, vestiging: true }, orderBy: { verloningsPeriode: { periodeStart: "desc" } } } },
       orderBy: [{ achternaam: "asc" }, { voornaam: "asc" }],
     });
