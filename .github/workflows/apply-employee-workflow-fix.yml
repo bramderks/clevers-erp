@@ -1,0 +1,224 @@
+name: Apply employee workflow fix
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Apply fix
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f"Expected block not found in {path}")
+              p.write_text(text.replace(old, new, 1))
+
+          route = Path('app/api/taken/medewerker-workflow/route.ts')
+          text = route.read_text()
+          start = text.index('    const uitnodigingen = await prisma.medewerkerUitnodiging.findMany({')
+          end = text.index('    const geregistreerdeMedewerkers = await prisma.medewerker.findMany({', start)
+          text = text[:start] + text[end:]
+          old = '''        gegevens: {
+          href: `/medewerkers/${m.id}`,
+          medewerkerId: m.id,
+        },'''
+          new = '''        gegevens: {
+          href: `/medewerkers/${m.id}?tab=algemeen&edit=1`,
+          medewerkerId: m.id,
+        },'''
+          if old not in text:
+              raise SystemExit('Expected workflow href block not found')
+          text = text.replace(old, new, 1)
+          route.write_text(text)
+
+          page = Path('app/(dashboard)/medewerkers/[id]/page.tsx')
+          replace_once(page, '''  const medewerkerOrganisatieIds =
+    Array.from(
+      new Set(
+        medewerker.vestigingen.map(
+          (relatie) =>
+            relatie.vestiging.organisatieId,
+        ),
+      ),
+    );
+
+  const isEigenaar =
+    medewerkerOrganisatieIds.length > 0 &&
+    medewerkerOrganisatieIds.every(
+      (organisatieId) =>
+        actieveRelaties.some(
+          (relatie) =>
+            relatie.organisatieId === organisatieId &&
+            relatie.rol.naam
+              .trim()
+              .toLowerCase() ===
+              "eigenaar",
+        ),
+    );''', '''  const medewerkerOrganisatieIds =
+    Array.from(
+      new Set(
+        medewerker.vestigingen.map(
+          (relatie) =>
+            relatie.vestiging.organisatieId,
+        ),
+      ),
+    );
+
+  const uitnodigingOrganisatieIds =
+    medewerker.email
+      ? (
+          await prisma.medewerkerUitnodiging.findMany({
+            where: {
+              email: medewerker.email.trim().toLowerCase(),
+              gebruiktOp: { not: null },
+            },
+            select: {
+              organisatieId: true,
+            },
+          })
+        ).map((uitnodiging) => uitnodiging.organisatieId)
+      : [];
+
+  const toegestaneOrganisatieIds =
+    Array.from(
+      new Set([
+        ...medewerkerOrganisatieIds,
+        ...uitnodigingOrganisatieIds,
+      ]),
+    );
+
+  const isEigenaar =
+    toegestaneOrganisatieIds.length > 0 &&
+    toegestaneOrganisatieIds.some(
+      (organisatieId) =>
+        actieveRelaties.some(
+          (relatie) =>
+            relatie.organisatieId === organisatieId &&
+            relatie.rol.naam
+              .trim()
+              .toLowerCase() ===
+              "eigenaar",
+        ),
+    );''')
+
+          api = Path('app/api/medewerkers/[id]/route.ts')
+          replace_once(api, '''            id: true,
+
+            vestigingen: {''', '''            id: true,
+
+            email: true,
+
+            vestigingen: {''')
+          replace_once(api, '''    if (
+      organisatieIds.length === 0
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Deze medewerker is niet aan een actieve organisatie gekoppeld.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }''', '''    const uitnodigingOrganisatieIds =
+      medewerker.email
+        ? (
+            await prisma.medewerkerUitnodiging.findMany({
+              where: {
+                email: medewerker.email.trim().toLowerCase(),
+                gebruiktOp: { not: null },
+              },
+              select: {
+                organisatieId: true,
+              },
+            })
+          ).map((uitnodiging) => uitnodiging.organisatieId)
+        : [];
+
+    const toegestaneOrganisatieIds =
+      Array.from(
+        new Set([
+          ...organisatieIds,
+          ...uitnodigingOrganisatieIds,
+        ]),
+      );
+
+    if (
+      toegestaneOrganisatieIds.length === 0
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Deze medewerker is niet aan een actieve organisatie gekoppeld.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }''')
+          replace_once(api, '''    const isEigenaar =
+      organisatieIds.length > 0 &&
+      organisatieIds.every(
+        (organisatieId) =>''', '''    const isEigenaar =
+      toegestaneOrganisatieIds.length > 0 &&
+      toegestaneOrganisatieIds.some(
+        (organisatieId) =>''')
+          replace_once(api, '''              organisatieId: {
+                in: organisatieIds,
+              },''', '''              organisatieId: {
+                in: toegestaneOrganisatieIds,
+              },''')
+          replace_once(api, '''      const resultaat =
+        await medewerkerService.update(
+          id,
+          updateData,
+        );
+
+      return NextResponse.json({''', '''      const resultaat =
+        await medewerkerService.update(
+          id,
+          updateData,
+        );
+
+      if (data.rolIds !== undefined) {
+        const rolIds = controleerStringArray(
+          data.rolIds,
+          "Rollen",
+        );
+        await medewerkerService.setRollen(id, rolIds);
+      }
+
+      if (data.tagIds !== undefined) {
+        const tagIds = controleerStringArray(
+          data.tagIds,
+          "Tags",
+        );
+        await medewerkerService.setTags(id, tagIds);
+      }
+
+      return NextResponse.json({''')
+
+          wf = Path('.github/workflows/apply-employee-workflow-fix.yml')
+          wf.unlink()
+
+          import subprocess
+          subprocess.run(['git', 'config', 'user.name', 'github-actions[bot]'], check=True)
+          subprocess.run(['git', 'config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com'], check=True)
+          subprocess.run(['git', 'add', '-A'], check=True)
+          subprocess.run(['git', 'commit', '-m', 'fix: complete employee activation workflow'], check=True)
+          subprocess.run(['git', 'push'], check=True)
