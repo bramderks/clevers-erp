@@ -10,8 +10,6 @@
 --   Leidinggevende, Coupes, Handijs, Bediening, Vaatstraat
 --   BHV blijft een controle-tag en is geen planningstag.
 
--- Zorg dat de vier toegestane rollen bestaan voordat oude verwijzingen
--- worden omgezet.
 INSERT INTO "Rol" ("id", "naam", "omschrijving")
 VALUES
   ('rol-clevers-super-admin', 'Super Admin', 'Volledige toegang tot Clevers ERP'),
@@ -20,7 +18,8 @@ VALUES
   ('rol-clevers-medewerker', 'Medewerker', 'Standaard medewerker')
 ON CONFLICT ("naam") DO NOTHING;
 
--- Oude/extra organisatie-rollen worden teruggebracht naar Medewerker.
+-- Organisatiegebruikers hebben precies één rol per organisatie.
+-- Niet-toegestane rollen gaan naar Medewerker.
 UPDATE "OrganisatieGebruiker" og
 SET "rolId" = (SELECT "id" FROM "Rol" WHERE "naam" = 'Medewerker')
 WHERE og."rolId" IN (
@@ -28,17 +27,36 @@ WHERE og."rolId" IN (
   WHERE r."naam" NOT IN ('Super Admin', 'Eigenaar', 'Teamleider', 'Medewerker')
 );
 
--- Super Admin blijft uitsluitend aan Bram gekoppeld.
 UPDATE "OrganisatieGebruiker" og
 SET "rolId" = (SELECT "id" FROM "Rol" WHERE "naam" = 'Medewerker')
 WHERE og."rolId" = (SELECT "id" FROM "Rol" WHERE "naam" = 'Super Admin')
-  AND og."systeemGebruikerId" NOT IN (
-    SELECT sg."id"
-    FROM "SysteemGebruiker" sg
-    WHERE LOWER(sg."email") = 'bram.derks@outlook.com'
+  AND LOWER((SELECT sg."email" FROM "SysteemGebruiker" sg WHERE sg."id" = og."systeemGebruikerId")) <> 'bram.derks@outlook.com';
+
+-- Medewerkerrollen kunnen meerdere rollen bevatten. Eerst verwijderen we
+-- dubbele ongewenste koppelingen als de medewerker al Medewerker heeft.
+DELETE FROM "MedewerkerRol" mr
+WHERE mr."rolId" IN (
+  SELECT r."id" FROM "Rol" r
+  WHERE r."naam" NOT IN ('Super Admin', 'Eigenaar', 'Teamleider', 'Medewerker')
+)
+AND EXISTS (
+  SELECT 1
+  FROM "MedewerkerRol" bestaand
+  WHERE bestaand."medewerkerId" = mr."medewerkerId"
+    AND bestaand."rolId" = (SELECT "id" FROM "Rol" WHERE "naam" = 'Medewerker')
+);
+
+DELETE FROM "MedewerkerRol" mr
+WHERE mr."rolId" = (SELECT "id" FROM "Rol" WHERE "naam" = 'Super Admin')
+  AND LOWER((SELECT m."email" FROM "Medewerker" m WHERE m."id" = mr."medewerkerId")) <> 'bram.derks@outlook.com'
+  AND EXISTS (
+    SELECT 1
+    FROM "MedewerkerRol" bestaand
+    WHERE bestaand."medewerkerId" = mr."medewerkerId"
+      AND bestaand."rolId" = (SELECT "id" FROM "Rol" WHERE "naam" = 'Medewerker')
   );
 
--- Hetzelfde voor rollen die direct aan medewerkers hangen.
+-- Resterende oude rollen worden Medewerker.
 UPDATE "MedewerkerRol" mr
 SET "rolId" = (SELECT "id" FROM "Rol" WHERE "naam" = 'Medewerker')
 WHERE mr."rolId" IN (
@@ -49,14 +67,9 @@ WHERE mr."rolId" IN (
 UPDATE "MedewerkerRol" mr
 SET "rolId" = (SELECT "id" FROM "Rol" WHERE "naam" = 'Medewerker')
 WHERE mr."rolId" = (SELECT "id" FROM "Rol" WHERE "naam" = 'Super Admin')
-  AND mr."medewerkerId" NOT IN (
-    SELECT m."id"
-    FROM "Medewerker" m
-    WHERE LOWER(m."email") = 'bram.derks@outlook.com'
-  );
+  AND LOWER((SELECT m."email" FROM "Medewerker" m WHERE m."id" = mr."medewerkerId")) <> 'bram.derks@outlook.com';
 
--- Verwijder dubbele medewerkerrol-koppelingen die door bovenstaande
--- omzetting kunnen zijn ontstaan.
+-- Verwijder eventuele dubbele koppelingen na de omzetting.
 DELETE FROM "MedewerkerRol" a
 USING "MedewerkerRol" b
 WHERE a."id" <> b."id"
@@ -64,7 +77,6 @@ WHERE a."id" <> b."id"
   AND a."rolId" = b."rolId"
   AND a."id" > b."id";
 
--- Nu kunnen de niet-toegestane rollen veilig worden verwijderd.
 DELETE FROM "Rol"
 WHERE "naam" NOT IN ('Super Admin', 'Eigenaar', 'Teamleider', 'Medewerker');
 
@@ -75,22 +87,23 @@ ON CONFLICT ("naam") DO UPDATE
 SET "volgorde" = EXCLUDED."volgorde", "actief" = TRUE;
 
 UPDATE "Tag"
-SET "volgorde" = CASE "naam"
-  WHEN 'Leidinggevende' THEN 10
-  WHEN 'Coupes' THEN 20
-  WHEN 'Handijs' THEN 30
-  WHEN 'Bediening' THEN 40
-  WHEN 'Vaatstraat' THEN 50
-  WHEN 'BHV' THEN 60
-  ELSE "volgorde"
-END,
-"actief" = CASE
-  WHEN "naam" IN ('Leidinggevende', 'Coupes', 'Handijs', 'Bediening', 'Vaatstraat', 'BHV') THEN TRUE
-  ELSE FALSE
-END;
+SET
+  "volgorde" = CASE "naam"
+    WHEN 'Leidinggevende' THEN 10
+    WHEN 'Coupes' THEN 20
+    WHEN 'Handijs' THEN 30
+    WHEN 'Bediening' THEN 40
+    WHEN 'Vaatstraat' THEN 50
+    WHEN 'BHV' THEN 60
+    ELSE "volgorde"
+  END,
+  "actief" = CASE
+    WHEN "naam" IN ('Leidinggevende', 'Coupes', 'Handijs', 'Bediening', 'Vaatstraat', 'BHV') THEN TRUE
+    ELSE FALSE
+  END;
 
 -- Oude/extra tags mogen niet in medewerkerprofielen of bestaande diensten
--- blijven staan. Alleen de zes afgesproken tags blijven behouden.
+-- blijven staan. BHV blijft behouden als controletag.
 DELETE FROM "DienstTag"
 WHERE "tagId" IN (
   SELECT "id" FROM "Tag"
