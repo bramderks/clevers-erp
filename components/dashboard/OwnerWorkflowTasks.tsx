@@ -31,6 +31,23 @@ function variantKlassen(actie: string) {
   }
 }
 
+function uniekeActieveTaken(data: WorkflowTaak[]) {
+  const gezien = new Set<string>();
+
+  return data.filter((taak) => {
+    if (!EIGENAAR_ACTIES.has(taak.actie)) return false;
+
+    const medewerkerId = taak.gegevens?.medewerkerId;
+    const sleutel = medewerkerId
+      ? `${taak.actie}:${medewerkerId}`
+      : taak.id;
+
+    if (gezien.has(sleutel)) return false;
+    gezien.add(sleutel);
+    return true;
+  });
+}
+
 export default function OwnerWorkflowTasks() {
   const [taken, setTaken] = useState<WorkflowTaak[]>([]);
 
@@ -47,34 +64,30 @@ export default function OwnerWorkflowTasks() {
           },
         );
 
-        if (!response.ok) {
-          return;
-        }
+        if (!response.ok || !actief) return;
 
         const data = (await response.json()) as WorkflowTaak[];
+        if (!actief) return;
 
-        if (!actief) {
-          return;
-        }
-
-        setTaken(
-          data.filter((taak) => EIGENAAR_ACTIES.has(taak.actie)),
-        );
+        setTaken(uniekeActieveTaken(data));
       } catch {
-        // Het bestaande dashboard mag nooit breken wanneer de workflow-feed tijdelijk niet beschikbaar is.
+        // Het dashboard blijft bruikbaar als de workflow-feed tijdelijk niet bereikbaar is.
       }
     }
 
     void laadTaken();
 
+    const interval = window.setInterval(() => {
+      void laadTaken();
+    }, 15000);
+
     return () => {
       actief = false;
+      window.clearInterval(interval);
     };
   }, []);
 
-  if (taken.length === 0) {
-    return null;
-  }
+  if (taken.length === 0) return null;
 
   return (
     <section>
@@ -91,8 +104,9 @@ export default function OwnerWorkflowTasks() {
         <div className="divide-y divide-slate-100">
           {taken.map((taak) => {
             const href = taak.gegevens?.href;
+            if (!href) return null;
 
-            return href ? (
+            return (
               <a
                 key={taak.id}
                 href={href}
@@ -100,9 +114,7 @@ export default function OwnerWorkflowTasks() {
               >
                 <div className="flex min-w-0 items-center gap-4">
                   <div
-                    className={`h-3 w-3 shrink-0 rounded-full ${variantKlassen(
-                      taak.actie,
-                    )}`}
+                    className={`h-3 w-3 shrink-0 rounded-full ${variantKlassen(taak.actie)}`}
                   />
 
                   <div className="min-w-0">
@@ -119,7 +131,7 @@ export default function OwnerWorkflowTasks() {
                   →
                 </span>
               </a>
-            ) : null;
+            );
           })}
         </div>
       </div>
