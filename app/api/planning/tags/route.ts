@@ -4,12 +4,15 @@ import { hasPermissionForVestiging } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
+// Dit zijn de enige tags die als planningstaak mogen worden gebruikt.
+// BHV staat wel als personeelstag in het dossier, maar is uitsluitend
+// een controletag en verschijnt daarom nooit in deze lijst.
 const PLANNING_TAGS = [
   "Leidinggevende",
+  "Coupes",
+  "Handijs",
   "Bediening",
   "Vaatstraat",
-  "Handijs",
-  "Coupes",
 ] as const;
 
 export async function GET(request: Request) {
@@ -81,7 +84,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         fout:
-          "De planningtags konden niet worden opgehaald.",
+          "De planningstags konden niet worden opgehaald.",
       },
       {
         status: 500,
