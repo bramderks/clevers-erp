@@ -41,24 +41,4 @@ replaceIfPresent(
 `,
 );
 
-replaceIfPresent(
-  "app/api/medewerkers/[id]/beschikbaarheid/route.ts",
-`  const isEigenMedewerker =
-    gebruiker.medewerker?.id ===
-    medewerkerId;
-
-  if (
-    !isBeheerder &&
-    !isTeamleider &&
-    !isEigenMedewerker
-  ) {
-`,
-`  if (
-    !isBeheerder &&
-    !isTeamleider &&
-    !isEigenMedewerker
-  ) {
-`,
-);
-
 console.log("Employee availability access fix applied successfully.");
