@@ -1,673 +1,183 @@
 import { cookies } from "next/headers";
-import {
-  jwtVerify,
-  SignJWT,
-  type JWTPayload,
-} from "jose";
-
+import { jwtVerify, SignJWT, type JWTPayload } from "jose";
 import { prisma } from "@/lib/prisma";
 import { roles } from "@/lib/roles";
 
 function getAuthSecret() {
   const waarde = process.env.AUTH_SECRET?.trim();
-
-  if (!waarde) {
-    throw new Error("AUTH_SECRET is niet ingesteld.");
-  }
-
+  if (!waarde) throw new Error("AUTH_SECRET is niet ingesteld.");
   return new TextEncoder().encode(waarde);
 }
 
-/*
- * ============================================================
- * TOKEN
- * ============================================================
- */
-
-export async function maakToken(
-  payload: JWTPayload,
-) {
-  return new SignJWT(payload)
-    .setProtectedHeader({
-      alg: "HS256",
-    })
-    .setIssuedAt()
-    .setExpirationTime("12h")
-    .sign(getAuthSecret());
+export async function maakToken(payload: JWTPayload) {
+  return new SignJWT(payload).setProtectedHeader({ alg: "HS256" }).setIssuedAt().setExpirationTime("12h").sign(getAuthSecret());
 }
 
-export async function controleerToken(
-  token: string,
-) {
-  const { payload } =
-    await jwtVerify(
-      token,
-      getAuthSecret(),
-    );
-
+export async function controleerToken(token: string) {
+  const { payload } = await jwtVerify(token, getAuthSecret());
   return payload;
 }
 
-/*
- * ============================================================
- * HUIDIGE GEBRUIKER
- * ============================================================
- */
-
 export async function getCurrentUser() {
-  const cookieStore =
-    await cookies();
-
-  const token =
-    cookieStore.get("token")?.value;
-
-  if (!token) {
-    return null;
-  }
-
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+  if (!token) return null;
   try {
-    const payload =
-      await controleerToken(token);
-
-    if (!payload.sub) {
-      return null;
-    }
-
-    return prisma.systeemGebruiker.findUnique(
-      {
-        where: {
-          id: payload.sub as string,
-        },
-
-        include: {
-          organisaties: {
-            include: {
-              organisatie: true,
-              rol: true,
-            },
-          },
-
-          vestigingToegang: {
-            include: {
-              vestiging: true,
-            },
-          },
-
-          medewerker: true,
-        },
+    const payload = await controleerToken(token);
+    if (!payload.sub) return null;
+    return prisma.systeemGebruiker.findUnique({
+      where: { id: payload.sub as string },
+      include: {
+        organisaties: { include: { organisatie: true, rol: true } },
+        vestigingToegang: { include: { vestiging: true } },
+        medewerker: true,
       },
-    );
+    });
   } catch {
     return null;
   }
 }
 
 export async function isAuthenticated() {
-  const gebruiker =
-    await getCurrentUser();
-
-  return gebruiker !== null;
+  return (await getCurrentUser()) !== null;
 }
 
-/*
- * ============================================================
- * ORGANISATIE
- * ============================================================
- */
-
-export async function heeftRol(
-  rolNaam: string,
-  organisatieId?: string,
-) {
-  const gebruiker =
-    await getCurrentUser();
-
-  if (!gebruiker) {
-    return false;
-  }
-
+export async function heeftRol(rolNaam: string, organisatieId?: string) {
+  const gebruiker = await getCurrentUser();
+  if (!gebruiker) return false;
   return gebruiker.organisaties.some(
-    (relatie) =>
-      relatie.actief &&
-      relatie.organisatie.actief &&
-      (!organisatieId ||
-        relatie.organisatieId ===
-          organisatieId) &&
-      relatie.rol.naam.toLowerCase() ===
-        rolNaam.toLowerCase(),
+    (relatie) => relatie.actief && relatie.organisatie.actief && (!organisatieId || relatie.organisatieId === organisatieId) && relatie.rol.naam.toLowerCase() === rolNaam.toLowerCase(),
   );
 }
 
-export async function isEigenaar(
-  organisatieId?: string,
-) {
-  return heeftRol(
-    "Eigenaar",
-    organisatieId,
-  );
+export async function isEigenaar(organisatieId?: string) {
+  return heeftRol("Eigenaar", organisatieId);
 }
 
-export async function heeftOrganisatieToegang(
-  organisatieId: string,
-) {
-  const gebruiker =
-    await getCurrentUser();
-
-  if (!gebruiker) {
-    return false;
-  }
-
+export async function heeftOrganisatieToegang(organisatieId: string) {
+  const gebruiker = await getCurrentUser();
+  if (!gebruiker) return false;
   return gebruiker.organisaties.some(
-    (relatie) =>
-      relatie.organisatieId ===
-        organisatieId &&
-      relatie.actief &&
-      relatie.organisatie.actief,
+    (relatie) => relatie.organisatieId === organisatieId && relatie.actief && relatie.organisatie.actief,
   );
 }
 
-/*
- * ============================================================
- * HULPFUNCTIES VESTIGING
- * ============================================================
- */
+async function haalVestiging(vestigingId: string) {
+  return prisma.vestiging.findUnique({ where: { id: vestigingId }, select: { id: true, organisatieId: true, actief: true } });
+}
 
-async function haalVestiging(
-  vestigingId: string,
-) {
-  return prisma.vestiging.findUnique({
-    where: {
-      id: vestigingId,
-    },
+function heeftActieveOrganisatieRelatie(gebruiker: Awaited<ReturnType<typeof getCurrentUser>>, organisatieId: string) {
+  if (!gebruiker) return false;
+  return gebruiker.organisaties.some(
+    (relatie) => relatie.organisatieId === organisatieId && relatie.actief && relatie.organisatie.actief,
+  );
+}
 
+function isEigenaarVanOrganisatie(gebruiker: Awaited<ReturnType<typeof getCurrentUser>>, organisatieId: string) {
+  if (!gebruiker) return false;
+  return gebruiker.organisaties.some(
+    (relatie) => relatie.organisatieId === organisatieId && relatie.actief && relatie.organisatie.actief && relatie.rol.naam.trim().toLowerCase() === "eigenaar",
+  );
+}
+
+function heeftExplicieteVestigingToegang(gebruiker: Awaited<ReturnType<typeof getCurrentUser>>, vestigingId: string, organisatieId: string) {
+  if (!gebruiker) return false;
+  return gebruiker.vestigingToegang.some(
+    (toegang) => toegang.vestigingId === vestigingId && toegang.actief && toegang.vestiging.actief && toegang.vestiging.organisatieId === organisatieId,
+  );
+}
+
+async function heeftMedewerkerVestiging(gebruiker: Awaited<ReturnType<typeof getCurrentUser>>, vestigingId: string, organisatieId: string) {
+  if (!gebruiker?.medewerker?.id) return false;
+  const medewerker = await prisma.medewerker.findUnique({
+    where: { id: gebruiker.medewerker.id },
     select: {
       id: true,
-      organisatieId: true,
       actief: true,
+      vestigingen: {
+        where: { vestigingId },
+        select: { vestigingId: true, vestiging: { select: { organisatieId: true, actief: true } } },
+      },
     },
   });
-}
-
-function heeftActieveOrganisatieRelatie(
-  gebruiker: Awaited<
-    ReturnType<typeof getCurrentUser>
-  >,
-  organisatieId: string,
-) {
-  if (!gebruiker) {
-    return false;
-  }
-
-  return gebruiker.organisaties.some(
-    (relatie) =>
-      relatie.organisatieId ===
-        organisatieId &&
-      relatie.actief &&
-      relatie.organisatie.actief,
-  );
-}
-
-function isEigenaarVanOrganisatie(
-  gebruiker: Awaited<
-    ReturnType<typeof getCurrentUser>
-  >,
-  organisatieId: string,
-) {
-  if (!gebruiker) {
-    return false;
-  }
-
-  return gebruiker.organisaties.some(
-    (relatie) =>
-      relatie.organisatieId ===
-        organisatieId &&
-      relatie.actief &&
-      relatie.organisatie.actief &&
-      relatie.rol.naam
-        .trim()
-        .toLowerCase() ===
-        "eigenaar",
-  );
-}
-
-function heeftExplicieteVestigingToegang(
-  gebruiker: Awaited<
-    ReturnType<typeof getCurrentUser>
-  >,
-  vestigingId: string,
-  organisatieId: string,
-) {
-  if (!gebruiker) {
-    return false;
-  }
-
-  return gebruiker.vestigingToegang.some(
-    (toegang) =>
-      toegang.vestigingId ===
-        vestigingId &&
-      toegang.actief &&
-      toegang.vestiging.actief &&
-      toegang.vestiging.organisatieId ===
-        organisatieId,
-  );
-}
-
-async function heeftMedewerkerVestiging(
-  gebruiker: Awaited<
-    ReturnType<typeof getCurrentUser>
-  >,
-  vestigingId: string,
-  organisatieId: string,
-) {
-  if (
-    !gebruiker?.medewerker?.id
-  ) {
-    return false;
-  }
-
-  const medewerker =
-    await prisma.medewerker.findUnique(
-      {
-        where: {
-          id: gebruiker.medewerker.id,
-        },
-
-        select: {
-          id: true,
-          actief: true,
-
-          vestigingen: {
-            where: {
-              vestigingId,
-            },
-
-            select: {
-              vestigingId: true,
-
-              vestiging: {
-                select: {
-                  organisatieId: true,
-                  actief: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    );
-
-  if (!medewerker?.actief) {
-    return false;
-  }
-
+  if (!medewerker?.actief) return false;
   return medewerker.vestigingen.some(
-    (relatie) =>
-      relatie.vestigingId ===
-        vestigingId &&
-      relatie.vestiging.actief &&
-      relatie.vestiging.organisatieId ===
-        organisatieId,
+    (relatie) => relatie.vestigingId === vestigingId && relatie.vestiging.actief && relatie.vestiging.organisatieId === organisatieId,
   );
 }
 
-/*
- * ============================================================
- * VESTIGINGSTOEGANG
- * ============================================================
- *
- * Eigenaar:
- *   organisatiebreed.
- *
- * Medewerker / teamleider:
- *   toegang via medewerker.vestigingen.
- *
- * Overige gebruikers:
- *   toegang via vestigingToegang.
- */
-
-export async function heeftVestigingToegang(
-  vestigingId: string,
-) {
-  const gebruiker =
-    await getCurrentUser();
-
-  if (!gebruiker) {
-    return false;
-  }
-
-  const vestiging =
-    await haalVestiging(
-      vestigingId,
-    );
-
-  if (!vestiging?.actief) {
-    return false;
-  }
-
-  if (
-    !heeftActieveOrganisatieRelatie(
-      gebruiker,
-      vestiging.organisatieId,
-    )
-  ) {
-    return false;
-  }
-
-  if (
-    isEigenaarVanOrganisatie(
-      gebruiker,
-      vestiging.organisatieId,
-    )
-  ) {
-    return true;
-  }
-
-  if (
-    await heeftMedewerkerVestiging(
-      gebruiker,
-      vestigingId,
-      vestiging.organisatieId,
-    )
-  ) {
-    return true;
-  }
-
-  return heeftExplicieteVestigingToegang(
-    gebruiker,
-    vestigingId,
-    vestiging.organisatieId,
-  );
+export async function heeftVestigingToegang(vestigingId: string) {
+  const gebruiker = await getCurrentUser();
+  if (!gebruiker) return false;
+  const vestiging = await haalVestiging(vestigingId);
+  if (!vestiging?.actief) return false;
+  if (isEigenaarVanOrganisatie(gebruiker, vestiging.organisatieId)) return true;
+  if (await heeftMedewerkerVestiging(gebruiker, vestigingId, vestiging.organisatieId)) return true;
+  if (!heeftActieveOrganisatieRelatie(gebruiker, vestiging.organisatieId)) return false;
+  return heeftExplicieteVestigingToegang(gebruiker, vestigingId, vestiging.organisatieId);
 }
 
-/*
- * ============================================================
- * VESTIGING BINNEN ORGANISATIE
- * ============================================================
- */
-
-export async function heeftVestigingToegangBinnenOrganisatie(
-  vestigingId: string,
-  organisatieId: string,
-) {
-  const gebruiker =
-    await getCurrentUser();
-
-  if (!gebruiker) {
-    return false;
-  }
-
-  const vestiging =
-    await haalVestiging(
-      vestigingId,
-    );
-
-  if (
-    !vestiging?.actief ||
-    vestiging.organisatieId !==
-      organisatieId
-  ) {
-    return false;
-  }
-
-  if (
-    !heeftActieveOrganisatieRelatie(
-      gebruiker,
-      organisatieId,
-    )
-  ) {
-    return false;
-  }
-
-  if (
-    isEigenaarVanOrganisatie(
-      gebruiker,
-      organisatieId,
-    )
-  ) {
-    return true;
-  }
-
-  if (
-    await heeftMedewerkerVestiging(
-      gebruiker,
-      vestigingId,
-      organisatieId,
-    )
-  ) {
-    return true;
-  }
-
-  return heeftExplicieteVestigingToegang(
-    gebruiker,
-    vestigingId,
-    organisatieId,
-  );
+export async function heeftVestigingToegangBinnenOrganisatie(vestigingId: string, organisatieId: string) {
+  const gebruiker = await getCurrentUser();
+  if (!gebruiker) return false;
+  const vestiging = await haalVestiging(vestigingId);
+  if (!vestiging?.actief || vestiging.organisatieId !== organisatieId) return false;
+  if (isEigenaarVanOrganisatie(gebruiker, organisatieId)) return true;
+  if (await heeftMedewerkerVestiging(gebruiker, vestigingId, organisatieId)) return true;
+  if (!heeftActieveOrganisatieRelatie(gebruiker, organisatieId)) return false;
+  return heeftExplicieteVestigingToegang(gebruiker, vestigingId, organisatieId);
 }
 
-/*
- * ============================================================
- * ALGEMENE PERMISSION
- * ============================================================
- *
- * Eigenaar:
- *   organisatiebreed.
- *
- * Overige rollen:
- *   permission wordt gecontroleerd
- *   via de centrale rol-definitie.
- */
-
-export async function hasPermission(
-  permission: string,
-  organisatieId?: string,
-) {
-  const gebruiker =
-    await getCurrentUser();
-
-  if (!gebruiker) {
-    return false;
-  }
-
-  const relaties =
-    gebruiker.organisaties.filter(
-      (relatie) =>
-        relatie.actief &&
-        relatie.organisatie.actief &&
-        (!organisatieId ||
-          relatie.organisatieId ===
-            organisatieId),
-    );
-
-  return relaties.some(
-    (relatie) => {
-      const rolNaam =
-        relatie.rol.naam
-          .trim()
-          .toLowerCase();
-
-      /*
-       * Eigenaar is altijd organisatiebreed
-       * en gebruikt de eigenaar-definitie uit
-       * roles.ts.
-       */
-      if (rolNaam === "eigenaar") {
-        return roles.eigenaar.permissions.some(
-          (toegestanePermission) =>
-            toegestanePermission ===
-            permission,
-        );
-      }
-
-      /*
-       * Alle overige rollen worden gekoppeld
-       * aan de centrale rol-definitie.
-       */
-      const rolDefinitie =
-        Object.values(
-          roles,
-        ).find(
-          (rol) =>
-            rol.naam
-              .trim()
-              .toLowerCase() ===
-            rolNaam,
-        );
-
-      if (!rolDefinitie) {
-        return false;
-      }
-
-      return rolDefinitie.permissions.some(
-        (toegestanePermission) =>
-          toegestanePermission ===
-          permission,
-      );
-    },
+export async function hasPermission(permission: string, organisatieId?: string) {
+  const gebruiker = await getCurrentUser();
+  if (!gebruiker) return false;
+  const relaties = gebruiker.organisaties.filter(
+    (relatie) => relatie.actief && relatie.organisatie.actief && (!organisatieId || relatie.organisatieId === organisatieId),
   );
-}
-
-/*
- * ============================================================
- * PERMISSION + VESTIGING
- * ============================================================
- */
-
-export async function hasPermissionForVestiging(
-  permission: string,
-  vestigingId: string,
-) {
-  const gebruiker =
-    await getCurrentUser();
-
-  if (!gebruiker) {
-    return false;
+  if (relaties.some((relatie) => relatie.rol.naam.trim().toLowerCase() === "eigenaar")) {
+    return roles.eigenaar.permissions.includes(permission);
   }
-
-  const vestiging =
-    await haalVestiging(
-      vestigingId,
-    );
-
-  if (!vestiging?.actief) {
-    return false;
-  }
-
-  const organisatieRelaties =
-    gebruiker.organisaties.filter(
-      (relatie) =>
-        relatie.organisatieId ===
-          vestiging.organisatieId &&
-        relatie.actief &&
-        relatie.organisatie.actief,
-    );
-
-  if (
-    organisatieRelaties.length === 0
-  ) {
-    return false;
-  }
-
-  const heeftPermission =
-    organisatieRelaties.some(
-      (relatie) => {
-        const rolNaam =
-          relatie.rol.naam
-            .trim()
-            .toLowerCase();
-
-        /*
-         * Eigenaar gebruikt altijd de
-         * centrale eigenaar-definitie.
-         */
-        if (
-          rolNaam === "eigenaar"
-        ) {
-          return roles.eigenaar.permissions.some(
-            (toegestanePermission) =>
-              toegestanePermission ===
-              permission,
-          );
-        }
-
-        const rolDefinitie =
-          Object.values(
-            roles,
-          ).find(
-            (rol) =>
-              rol.naam
-                .trim()
-                .toLowerCase() ===
-              rolNaam,
-          );
-
-        if (!rolDefinitie) {
-          return false;
-        }
-
-        return rolDefinitie.permissions.some(
-          (toegestanePermission) =>
-            toegestanePermission ===
-            permission,
-        );
-      },
-    );
-
-  if (!heeftPermission) {
-    return false;
-  }
-
-  /*
-   * Eigenaar is organisatiebreed.
-   */
-
-  if (
-    organisatieRelaties.some(
-      (relatie) =>
-        relatie.rol.naam
-          .trim()
-          .toLowerCase() ===
-        "eigenaar",
-    )
-  ) {
+  const resultaat = relaties.some((relatie) => {
+    const rol = Object.values(roles).find((item) => item.naam.trim().toLowerCase() === relatie.rol.naam.trim().toLowerCase());
+    return rol?.permissions.includes(permission) ?? false;
+  });
+  if (resultaat) return true;
+  // Medewerkers worden organisatorisch via hun vestigingskoppeling geautoriseerd.
+  // Alleen het beperkte medewerkerprofiel mag zonder systeem-organisatierelatie dashboard/planning bekijken.
+  if (gebruiker.medewerker?.id && ["dashboard.view", "planning.view"].includes(permission)) {
     return true;
   }
-
-  /*
-   * Medewerker / teamleider met een
-   * medewerkerrecord.
-   */
-
-  if (
-    await heeftMedewerkerVestiging(
-      gebruiker,
-      vestigingId,
-      vestiging.organisatieId,
-    )
-  ) {
-    return true;
-  }
-
-  /*
-   * Expliciete vestigingToegang blijft
-   * beschikbaar als fallback.
-   */
-
-  return heeftExplicieteVestigingToegang(
-    gebruiker,
-    vestigingId,
-    vestiging.organisatieId,
-  );
+  return false;
 }
 
-/*
- * ============================================================
- * LOGOUT
- * ============================================================
- */
+export async function hasPermissionForVestiging(permission: string, vestigingId: string) {
+  const gebruiker = await getCurrentUser();
+  if (!gebruiker) return false;
+  const vestiging = await haalVestiging(vestigingId);
+  if (!vestiging?.actief) return false;
+
+  const heeftVestiging = await heeftMedewerkerVestiging(gebruiker, vestigingId, vestiging.organisatieId);
+  const isEigenaar = isEigenaarVanOrganisatie(gebruiker, vestiging.organisatieId);
+  const organisatieRelaties = gebruiker.organisaties.filter(
+    (relatie) => relatie.organisatieId === vestiging.organisatieId && relatie.actief && relatie.organisatie.actief,
+  );
+
+  if (gebruiker.medewerker?.id && heeftVestiging && permission === "planning.view") return true;
+  if (organisatieRelaties.length === 0) return false;
+
+  const heeftPermission = organisatieRelaties.some((relatie) => {
+    const rolNaam = relatie.rol.naam.trim().toLowerCase();
+    if (rolNaam === "eigenaar") return roles.eigenaar.permissions.includes(permission);
+    const rol = Object.values(roles).find((item) => item.naam.trim().toLowerCase() === rolNaam);
+    return rol?.permissions.includes(permission) ?? false;
+  });
+  if (!heeftPermission) return false;
+  if (isEigenaar) return true;
+  if (heeftVestiging) return true;
+  return heeftExplicieteVestigingToegang(gebruiker, vestigingId, vestiging.organisatieId);
+}
 
 export async function logout() {
-  const cookieStore =
-    await cookies();
-
+  const cookieStore = await cookies();
   cookieStore.delete("token");
 }
