@@ -3,6 +3,10 @@
     {
       "path": "/api/verloning/genereren",
       "schedule": "0 2 1 * *"
+    },
+    {
+      "path": "/api/cron/push-dienstherinneringen",
+      "schedule": "0 * * * *"
     }
   ],
   "buildCommand": "node scripts/apply-security-fix.mjs && node scripts/migrate-vercel.mjs && npm run prisma:generate && next build"
