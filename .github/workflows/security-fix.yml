@@ -1,0 +1,126 @@
+name: Apply ERP security and planning fix
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  fix:
+    if: ${{ !contains(github.event.head_commit.message, 'fix: employee security and planning access') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Patch security and planning
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('app/(dashboard)/medewerkers/[id]/page.tsx')
+          s = p.read_text()
+          replacements = {
+            'const magAlgemeenBewerken = isEigenaar || isEigenProfiel;': 'const magAlgemeenBewerken = isEigenaar;',
+            'const magContractBewerken = isEigenaar || isEigenProfiel;': 'const magContractBewerken = isEigenaar;',
+            'const magVestigingenBewerken = isEigenaar || isEigenProfiel;': 'const magVestigingenBewerken = isEigenaar;',
+            'const magBeschikbaarheidBewerken = isEigenaar || isEigenProfiel;': 'const magBeschikbaarheidBewerken = isEigenaar;',
+            'const magVerloningBewerken = isEigenaar || isEigenProfiel;': 'const magVerloningBewerken = isEigenaar;',
+            'const beschikbareTags = isEigenaar || isEigenProfiel': 'const beschikbareTags = isEigenaar',
+            'const beschikbareVestigingen = isEigenaar || isEigenProfiel': 'const beschikbareVestigingen = isEigenaar',
+          }
+          for a,b in replacements.items():
+            if a not in s: raise SystemExit(f'missing profile pattern: {a}')
+            s=s.replace(a,b)
+          p.write_text(s)
+
+          p = Path('app/api/medewerkers/[id]/route.ts')
+          s = p.read_text()
+          old = '''    if (!isEigenaar && !isEigenProfiel) {
+      return NextResponse.json(
+        {
+          error:
+            "Je hebt geen toestemming om deze medewerker te wijzigen.",
+        },
+        {
+          status: 403,
+        },
+      );
+    }
+'''
+          new = '''    if (!isEigenaar) {
+      return NextResponse.json(
+        {
+          error:
+            "Je hebt geen toestemming om deze medewerker te wijzigen.",
+        },
+        {
+          status: 403,
+        },
+      );
+    }
+'''
+          if old not in s: raise SystemExit('missing API authorization pattern')
+          s=s.replace(old,new,1)
+          p.write_text(s)
+
+          p = Path('app/(dashboard)/planning/page.tsx')
+          s = p.read_text()
+          old = '''      isEigenaar={isEigenaar}
+      isTeamleider={isTeamleider}
+      isMedewerker={isMedewerker}
+    />'''
+          new = '''      isEigenaar={isEigenaar}
+      isTeamleider={isTeamleider}
+      isMedewerker={isMedewerker}
+      huidigeMedewerkerId={gebruiker.medewerker?.id ?? null}
+    />'''
+          if old not in s: raise SystemExit('missing planning page pattern')
+          s=s.replace(old,new,1)
+          p.write_text(s)
+
+          p = Path('components/planning/PlanningPagina.tsx')
+          s = p.read_text()
+          old = '''  isTeamleider?: boolean;
+  isMedewerker?: boolean;
+};'''
+          new = '''  isTeamleider?: boolean;
+  isMedewerker?: boolean;
+  huidigeMedewerkerId?: string | null;
+};'''
+          if old not in s: raise SystemExit('missing PlanningPagina props pattern')
+          s=s.replace(old,new,1)
+          old = '''  isTeamleider = false,
+  isMedewerker = false,
+}: PlanningPaginaProps)'''
+          new = '''  isTeamleider = false,
+  isMedewerker = false,
+  huidigeMedewerkerId = null,
+}: PlanningPaginaProps)'''
+          if old not in s: raise SystemExit('missing PlanningPagina destructuring pattern')
+          s=s.replace(old,new,1)
+          old = '''          isTeamleider={isTeamleider}
+          isMedewerker={isMedewerker}
+          kanVerwijderen={isEigenaar}'''
+          new = '''          isTeamleider={isTeamleider}
+          isMedewerker={isMedewerker}
+          huidigeMedewerkerId={huidigeMedewerkerId}
+          kanVerwijderen={isEigenaar}'''
+          if old not in s: raise SystemExit('missing PlanningPagina render pattern')
+          s=s.replace(old,new,1)
+          p.write_text(s)
+
+          p = Path('components/planning/PlanningOverzicht.tsx')
+          s = p.read_text()
+          if 'huidigeMedewerkerId?: string | null;' not in s:
+            raise SystemExit('PlanningOverzicht does not expose huidigeMedewerkerId')
+          p.write_text(s)
+          PY
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/security-fix.yml
+          git add 'app/(dashboard)/medewerkers/[id]/page.tsx' 'app/api/medewerkers/[id]/route.ts' 'app/(dashboard)/planning/page.tsx' 'components/planning/PlanningPagina.tsx'
+          git diff --cached --check
+          git commit -m 'fix: employee security and planning access'
+          git push
