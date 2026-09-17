@@ -109,4 +109,88 @@ patch("components/layout/Navigation.tsx", [[
 `,
 ]]);
 
-console.log("ERP security/planning build fix applied successfully.");
+patch("app/(dashboard)/dashboard/page.tsx", [
+  [
+`import PageHeader from "@/components/ui/PageHeader";
+`,
+`import PageHeader from "@/components/ui/PageHeader";
+import OpenDienstenMedewerker from "@/components/dashboard/OpenDienstenMedewerker";
+`,
+  ],
+  [
+`    const aankomendeDiensten =
+      toekomstigeDienstenResultaat.filter(
+`,
+`    const openDienstenResultaat = await prisma.dienstBezetting.findMany({
+      where: {
+        status: "OPEN",
+        medewerkerId: null,
+        dienst: {
+          datum: { gte: vandaagBegin },
+          week: {
+            vestiging: {
+              actief: true,
+              medewerkers: { some: { medewerkerId } },
+            },
+          },
+          tags: {
+            some: {
+              tag: {
+                medewerkers: { some: { medewerkerId } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { dienst: { datum: "asc" } },
+      take: 50,
+      select: {
+        id: true,
+        dienst: {
+          select: {
+            datum: true,
+            begintijd: true,
+            eindtijd: true,
+            tags: { select: { tag: { select: { naam: true } } } },
+            week: { select: { vestiging: { select: { naam: true, seizoenEinde: true } } } },
+          },
+        },
+      },
+    });
+
+    const openDiensten = openDienstenResultaat
+      .filter((bezetting) =>
+        isDienstBinnenSeizoen(
+          bezetting.dienst.datum,
+          bezetting.dienst.week.vestiging.seizoenEinde,
+        ),
+      )
+      .map((bezetting) => ({
+        id: bezetting.id,
+        datum: bezetting.dienst.datum.toISOString(),
+        begintijd: bezetting.dienst.begintijd.toISOString(),
+        eindtijd: bezetting.dienst.eindtijd.toISOString(),
+        vestigingNaam: bezetting.dienst.week.vestiging.naam,
+        tags: bezetting.dienst.tags.map((item) => item.tag.naam),
+        interesseGemeld: false,
+      }));
+
+    const aankomendeDiensten =
+      toekomstigeDienstenResultaat.filter(
+`,
+  ],
+  [
+`        <PageHeader title="Dashboard" />
+
+        {laatsteEigenVerloning && (
+`,
+`        <PageHeader title="Dashboard" />
+
+        <OpenDienstenMedewerker diensten={openDiensten} />
+
+        {laatsteEigenVerloning && (
+`,
+  ],
+]);
+
+console.log("ERP security/planning/open-services build fix applied successfully.");
