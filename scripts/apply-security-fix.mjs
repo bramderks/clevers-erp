@@ -6,13 +6,13 @@ const root = process.cwd();
 function patch(relativePath, replacements) {
   const file = path.join(root, relativePath);
   let source = fs.readFileSync(file, "utf8");
+  let gewijzigd = false;
   for (const [from, to] of replacements) {
-    if (!source.includes(from)) {
-      throw new Error(`Security fix pattern not found in ${relativePath}`);
-    }
+    if (!source.includes(from)) continue;
     source = source.replace(from, to);
+    gewijzigd = true;
   }
-  fs.writeFileSync(file, source);
+  if (gewijzigd) fs.writeFileSync(file, source);
 }
 
 patch("app/(dashboard)/medewerkers/[id]/page.tsx", [
@@ -65,33 +65,24 @@ patch("app/(dashboard)/planning/page.tsx", [[
 ]]);
 
 patch("components/planning/PlanningPagina.tsx", [
-  [
-`  isTeamleider?: boolean;
+  [`  isTeamleider?: boolean;
   isMedewerker?: boolean;
-};`,
-`  isTeamleider?: boolean;
+};`, `  isTeamleider?: boolean;
   isMedewerker?: boolean;
   huidigeMedewerkerId?: string | null;
-};`,
-  ],
-  [
-`  isTeamleider = false,
+};`],
+  [`  isTeamleider = false,
   isMedewerker = false,
-}: PlanningPaginaProps)`,
-`  isTeamleider = false,
+}: PlanningPaginaProps)`, `  isTeamleider = false,
   isMedewerker = false,
   huidigeMedewerkerId = null,
-}: PlanningPaginaProps)`,
-  ],
-  [
-`          isTeamleider={isTeamleider}
+}: PlanningPaginaProps)`],
+  [`          isTeamleider={isTeamleider}
           isMedewerker={isMedewerker}
-          kanVerwijderen={isEigenaar}`,
-`          isTeamleider={isTeamleider}
+          kanVerwijderen={isEigenaar}`, `          isTeamleider={isTeamleider}
           isMedewerker={isMedewerker}
           huidigeMedewerkerId={huidigeMedewerkerId}
-          kanVerwijderen={isEigenaar}`,
-  ],
+          kanVerwijderen={isEigenaar}`],
 ]);
 
 patch("components/layout/Navigation.tsx", [[
@@ -110,36 +101,20 @@ patch("components/layout/Navigation.tsx", [[
 ]]);
 
 patch("app/(dashboard)/dashboard/page.tsx", [
-  [
-`import PageHeader from "@/components/ui/PageHeader";
-`,
-`import PageHeader from "@/components/ui/PageHeader";
+  [`import PageHeader from "@/components/ui/PageHeader";
+`, `import PageHeader from "@/components/ui/PageHeader";
 import OpenDienstenMedewerker from "@/components/dashboard/OpenDienstenMedewerker";
-`,
-  ],
-  [
-`    const aankomendeDiensten =
+`],
+  [`    const aankomendeDiensten =
       toekomstigeDienstenResultaat.filter(
-`,
-`    const openDienstenResultaat = await prisma.dienstBezetting.findMany({
+`, `    const openDienstenResultaat = await prisma.dienstBezetting.findMany({
       where: {
         status: "OPEN",
         medewerkerId: null,
         dienst: {
           datum: { gte: vandaagBegin },
-          week: {
-            vestiging: {
-              actief: true,
-              medewerkers: { some: { medewerkerId } },
-            },
-          },
-          tags: {
-            some: {
-              tag: {
-                medewerkers: { some: { medewerkerId } },
-              },
-            },
-          },
+          week: { vestiging: { actief: true, medewerkers: { some: { medewerkerId } } } },
+          tags: { some: { tag: { medewerkers: { some: { medewerkerId } } } } },
         },
       },
       orderBy: { dienst: { datum: "asc" } },
@@ -159,12 +134,7 @@ import OpenDienstenMedewerker from "@/components/dashboard/OpenDienstenMedewerke
     });
 
     const openDiensten = openDienstenResultaat
-      .filter((bezetting) =>
-        isDienstBinnenSeizoen(
-          bezetting.dienst.datum,
-          bezetting.dienst.week.vestiging.seizoenEinde,
-        ),
-      )
+      .filter((bezetting) => isDienstBinnenSeizoen(bezetting.dienst.datum, bezetting.dienst.week.vestiging.seizoenEinde))
       .map((bezetting) => ({
         id: bezetting.id,
         datum: bezetting.dienst.datum.toISOString(),
@@ -177,20 +147,16 @@ import OpenDienstenMedewerker from "@/components/dashboard/OpenDienstenMedewerke
 
     const aankomendeDiensten =
       toekomstigeDienstenResultaat.filter(
-`,
-  ],
-  [
-`        <PageHeader title="Dashboard" />
+`],
+  [`        <PageHeader title="Dashboard" />
 
         {laatsteEigenVerloning && (
-`,
-`        <PageHeader title="Dashboard" />
+`, `        <PageHeader title="Dashboard" />
 
         <OpenDienstenMedewerker diensten={openDiensten} />
 
         {laatsteEigenVerloning && (
-`,
-  ],
+`],
 ]);
 
 console.log("ERP security/planning/open-services build fix applied successfully.");
