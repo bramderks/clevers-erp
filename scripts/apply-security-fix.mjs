@@ -95,19 +95,15 @@ patch("components/planning/PlanningPagina.tsx", [
 ]);
 
 patch("components/layout/Navigation.tsx", [[
-`    if (item.medewerkerOnly &&
-      !isMedewerker
-    ) {
-      return false;
+`    if (!item.permission) {
+      return true;
     }
 `,
-`    if (item.medewerkerOnly &&
-      !isMedewerker
-    ) {
-      return false;
+`    if (item.href === "/planning" && isMedewerker) {
+      return true;
     }
 
-    if (item.href === "/planning" && isMedewerker) {
+    if (!item.permission) {
       return true;
     }
 `,
