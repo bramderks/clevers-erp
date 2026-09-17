@@ -10,24 +10,19 @@ export async function GET() {
     return NextResponse.json({ fout: "Geen medewerkeraccount." }, { status: 403 });
   }
 
+  const medewerkerId = gebruiker.medewerker.id;
+
   const diensten = await prisma.dienstBezetting.findMany({
     where: {
       status: "OPEN",
       medewerkerId: null,
       dienst: {
         datum: { gte: new Date() },
-        week: {
-          vestiging: {
-            medewerkers: {
-              some: { medewerkerId: gebruiker.medewerker.id },
-            },
-          },
-        },
+        week: { vestiging: { medewerkers: { some: { medewerkerId } } } },
+        tags: { some: { tag: { medewerkers: { some: { medewerkerId } } } } },
       },
     },
-    orderBy: {
-      dienst: { datum: "asc" },
-    },
+    orderBy: { dienst: { datum: "asc" } },
     take: 50,
     select: {
       id: true,
@@ -36,13 +31,35 @@ export async function GET() {
           datum: true,
           begintijd: true,
           eindtijd: true,
+          tags: { select: { tag: { select: { naam: true } } } },
           week: { select: { vestiging: { select: { naam: true } } } },
         },
       },
     },
   });
 
-  return NextResponse.json(diensten);
+  const interesse = await prisma.auditLog.findMany({
+    where: {
+      systeemGebruikerId: gebruiker.id,
+      module: "PLANNING",
+      actie: "INTERESSE_OPEN_DIENST",
+      recordId: { in: diensten.map((dienst) => dienst.id) },
+    },
+    select: { recordId: true },
+  });
+  const interesseIds = new Set(interesse.map((item) => item.recordId));
+
+  return NextResponse.json(
+    diensten.map((dienst) => ({
+      id: dienst.id,
+      datum: dienst.dienst.datum,
+      begintijd: dienst.dienst.begintijd,
+      eindtijd: dienst.dienst.eindtijd,
+      vestigingNaam: dienst.dienst.week.vestiging.naam,
+      tags: dienst.dienst.tags.map((item) => item.tag.naam),
+      interesseGemeld: interesseIds.has(dienst.id),
+    })),
+  );
 }
 
 export async function POST(request: Request) {
@@ -52,47 +69,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ fout: "Geen medewerkeraccount." }, { status: 403 });
   }
 
-  const body = await request.json();
-  const dienstBezettingId = typeof body.dienstBezettingId === "string"
-    ? body.dienstBezettingId
-    : "";
+  const body = await request.json().catch(() => null);
+  const dienstBezettingId = typeof body?.dienstBezettingId === "string" ? body.dienstBezettingId : "";
+  const medewerkerId = gebruiker.medewerker.id;
 
   const openDienst = await prisma.dienstBezetting.findFirst({
     where: {
       id: dienstBezettingId,
       status: "OPEN",
       medewerkerId: null,
-      dienst: { datum: { gte: new Date() } },
-    },
-    select: {
-      id: true,
       dienst: {
-        select: {
-          week: { select: { vestigingId: true } },
-        },
+        datum: { gte: new Date() },
+        week: { vestiging: { medewerkers: { some: { medewerkerId } } } },
+        tags: { some: { tag: { medewerkers: { some: { medewerkerId } } } } },
       },
     },
+    select: { id: true, dienst: { select: { week: { select: { vestigingId: true } } } } },
   });
 
   if (!openDienst) {
     return NextResponse.json(
-      { fout: "Deze open dienst is niet meer beschikbaar." },
+      { fout: "Deze open dienst is niet beschikbaar voor jouw planningstags of is al ingevuld." },
       { status: 409 },
-    );
-  }
-
-  const koppeling = await prisma.medewerkerVestiging.findFirst({
-    where: {
-      medewerkerId: gebruiker.medewerker.id,
-      vestigingId: openDienst.dienst.week.vestigingId,
-    },
-    select: { id: true },
-  });
-
-  if (!koppeling) {
-    return NextResponse.json(
-      { fout: "Je bent niet gekoppeld aan deze vestiging." },
-      { status: 403 },
     );
   }
 
@@ -113,16 +111,13 @@ export async function POST(request: Request) {
         module: "PLANNING",
         actie: "INTERESSE_OPEN_DIENST",
         recordId: openDienst.id,
-        details: {
-          medewerkerId: gebruiker.medewerker.id,
-          vestigingId: openDienst.dienst.week.vestigingId,
-        },
+        details: { medewerkerId, vestigingId: openDienst.dienst.week.vestigingId },
       },
     });
   }
 
   return NextResponse.json({
     succes: true,
-    bericht: "Je interesse is doorgegeven. De eigenaar beslist over de definitieve indeling.",
+    bericht: "Je beschikbaarheid is doorgegeven. De eigenaar beslist over de definitieve indeling.",
   });
 }
