@@ -1,6 +1,7 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { NextRequest, NextResponse } from "next/server";
 import { verstuurDienstHerinneringen } from "@/lib/push/dienst-herinneringen";
+import { verstuurOpenDienstMeldingen } from "@/lib/push/open-diensten";
 
 export const dynamic = "force-dynamic";
 
@@ -18,13 +19,8 @@ async function geautoriseerd(request: NextRequest) {
   const legacySecret = process.env.CRON_SECRET;
   const authorization = request.headers.get("authorization");
 
-  if (legacySecret && authorization === `Bearer ${legacySecret}`) {
-    return true;
-  }
-
-  if (!authorization?.startsWith("Bearer ")) {
-    return false;
-  }
+  if (legacySecret && authorization === `Bearer ${legacySecret}`) return true;
+  if (!authorization?.startsWith("Bearer ")) return false;
 
   const token = authorization.slice("Bearer ".length).trim();
   if (!token) return false;
@@ -40,8 +36,7 @@ async function geautoriseerd(request: NextRequest) {
       payload.repository_id === GITHUB_REPOSITORY_ID &&
       payload.repository_visibility === "public" &&
       payload.ref === GITHUB_BRANCH &&
-      (payload.event_name === "schedule" ||
-        payload.event_name === "workflow_dispatch")
+      (payload.event_name === "schedule" || payload.event_name === "workflow_dispatch")
     );
   } catch {
     return false;
@@ -50,26 +45,24 @@ async function geautoriseerd(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   if (!(await geautoriseerd(request))) {
-    return NextResponse.json(
-      { fout: "Niet geautoriseerd." },
-      { status: 401 },
-    );
+    return NextResponse.json({ fout: "Niet geautoriseerd." }, { status: 401 });
   }
 
   try {
-    const resultaat = await verstuurDienstHerinneringen();
+    const [dienstHerinneringen, openDienstMeldingen] = await Promise.all([
+      verstuurDienstHerinneringen(),
+      verstuurOpenDienstMeldingen(),
+    ]);
 
     return NextResponse.json({
       ok: true,
-      ...resultaat,
+      dienstHerinneringen,
+      openDienstMeldingen,
     });
   } catch (error) {
-    console.error("Dienstherinneringen mislukt:", error);
-
+    console.error("Pushmeldingen planning mislukt:", error);
     return NextResponse.json(
-      {
-        fout: "Dienstherinneringen konden niet worden verwerkt.",
-      },
+      { fout: "Pushmeldingen konden niet worden verwerkt." },
       { status: 500 },
     );
   }
