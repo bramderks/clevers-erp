@@ -119,7 +119,7 @@ jobs:
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git rm .github/workflows/security-fix.yml
+          git rm .github/workflows/security-fix.yml .security-fix-trigger
           git add 'app/(dashboard)/medewerkers/[id]/page.tsx' 'app/api/medewerkers/[id]/route.ts' 'app/(dashboard)/planning/page.tsx' 'components/planning/PlanningPagina.tsx'
           git diff --cached --check
           git commit -m 'fix: employee security and planning access'
