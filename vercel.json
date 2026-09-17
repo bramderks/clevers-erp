@@ -9,5 +9,5 @@
       "schedule": "0 * * * *"
     }
   ],
-  "buildCommand": "node scripts/apply-security-fix.mjs && node scripts/migrate-vercel.mjs && npm run prisma:generate && next build"
+  "buildCommand": "node scripts/apply-security-fix.mjs && node scripts/fix-medewerker-access.mjs && node scripts/migrate-vercel.mjs && npm run prisma:generate && next build"
 }
