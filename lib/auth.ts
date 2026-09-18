@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { jwtVerify, SignJWT, type JWTPayload } from "jose";
 import { prisma } from "@/lib/prisma";
 import { roles } from "@/lib/roles";
+import type { Permission } from "@/lib/permissions";
 
 function getAuthSecret() {
   const waarde = process.env.AUTH_SECRET?.trim();
@@ -128,7 +129,7 @@ export async function heeftVestigingToegangBinnenOrganisatie(vestigingId: string
   return heeftExplicieteVestigingToegang(gebruiker, vestigingId, organisatieId);
 }
 
-export async function hasPermission(permission: string, organisatieId?: string) {
+export async function hasPermission(permission: Permission, organisatieId?: string) {
   const gebruiker = await getCurrentUser();
   if (!gebruiker) return false;
   const relaties = gebruiker.organisaties.filter(
@@ -150,7 +151,7 @@ export async function hasPermission(permission: string, organisatieId?: string) 
   return false;
 }
 
-export async function hasPermissionForVestiging(permission: string, vestigingId: string) {
+export async function hasPermissionForVestiging(permission: Permission, vestigingId: string) {
   const gebruiker = await getCurrentUser();
   if (!gebruiker) return false;
   const vestiging = await haalVestiging(vestigingId);
