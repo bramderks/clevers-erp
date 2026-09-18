@@ -83,7 +83,7 @@ type WekenApiResponse = {
 
 const MIN_TIJD = "09:00";
 const MAX_TIJD = "23:00";
-const TIJD_INTERVAL = 30;
+const TIJD_INTERVAL = 15;
 
 /* ============================================================
    DATUMFUNCTIES
@@ -1466,7 +1466,7 @@ export default function BeschikbaarheidWeekSelector({
           (vorige) => ({
             ...vorige,
             [datum]:
-              "Kies geldige tijden tussen 09:00 en 23:00 in stappen van 30 minuten.",
+              "Kies geldige tijden tussen 09:00 en 23:00 in stappen van 15 minuten.",
           }),
         );
 
