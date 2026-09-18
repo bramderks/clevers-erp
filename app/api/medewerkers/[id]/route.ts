@@ -19,7 +19,8 @@ type Section =
   | "algemeen"
   | "contract"
   | "vestigingen"
-  | "verloning";
+  | "verloning"
+  | "status";
 
 type Aanhef =
   | "DHR"
@@ -520,7 +521,8 @@ export async function PATCH(
       sectionValue !== "algemeen" &&
       sectionValue !== "contract" &&
       sectionValue !== "vestigingen" &&
-      sectionValue !== "verloning"
+      sectionValue !== "verloning" &&
+      sectionValue !== "status"
     ) {
       return NextResponse.json(
         {
@@ -541,6 +543,37 @@ export async function PATCH(
         bodyObject.data,
         "De bewerkgegevens hebben een ongeldig formaat.",
       );
+
+    if (section === "status") {
+      if (!isEigenaar || isEigenProfiel) {
+        return NextResponse.json(
+          { error: "Alleen een eigenaar mag de status van een medewerker wijzigen." },
+          { status: 403 },
+        );
+      }
+
+      const actief = data.actief;
+      if (typeof actief !== "boolean") {
+        return NextResponse.json(
+          { error: "actief moet true of false zijn." },
+          { status: 400 },
+        );
+      }
+
+      if (actief) {
+        await medewerkerService.activeer(id, gebruiker.id);
+      } else {
+        await medewerkerService.deactiveer(id);
+      }
+
+      return NextResponse.json({
+        id,
+        actief,
+        melding: actief
+          ? "De medewerker is opnieuw actief."
+          : "De medewerker is inactief gezet.",
+      });
+    }
 
     if (section === "algemeen") {
       const updateData = {
