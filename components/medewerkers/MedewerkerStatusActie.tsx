@@ -22,6 +22,28 @@ export default function MedewerkerStatusActie({ medewerkerId, actief, naam }: { 
         body: JSON.stringify({ section: "status", data: { actief: doelActief } }),
       });
       const data = await response.json();
+
+      if (response.status === 409 && data?.bevestigingVereist && doelActief === false) {
+        const doorgaan = window.confirm(
+          (data.waarschuwing ?? "Deze medewerker staat nog op toekomstige diensten.") +
+            "\n\nWil je de medewerker toch inactief zetten?",
+        );
+        if (!doorgaan) {
+          setLaden(false);
+          return;
+        }
+
+        const forceResponse = await fetch("/api/medewerkers/" + medewerkerId, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ section: "status", data: { actief: false, force: true } }),
+        });
+        const forceData = await forceResponse.json();
+        if (!forceResponse.ok) throw new Error(forceData.error ?? "De status kon niet worden gewijzigd.");
+        window.location.reload();
+        return;
+      }
+
       if (!response.ok) throw new Error(data.error ?? "De status kon niet worden gewijzigd.");
       window.location.reload();
     } catch (error) {
