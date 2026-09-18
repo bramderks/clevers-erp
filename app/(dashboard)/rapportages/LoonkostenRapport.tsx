@@ -197,13 +197,28 @@ export default function LoonkostenRapport(p: {
           ["Gem. uurloon", euro(p.gemiddeldUurloon)],
           ["Omzet", euro(p.omzet)],
         ].map(([label, value]) => (
-          <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <button key={label} type="button" onClick={() => setDetail(label === "Geplande uren" ? "uren" : label === "Loonkosten" ? "kosten" : label === "Gem. uurloon" ? "loon" : "omzet")} className="group rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
             <p className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{value}</p>
-          </div>
+          </button>
         ))}
       </div>
 
+
+      <button type="button" onClick={() => setDetail("omzet")} className="w-full rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:border-slate-300 hover:shadow-md">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Seizoensomzet</p>
+            <h2 className="mt-1 text-lg font-bold text-slate-900">Omzet tot nu toe en verwachting einde seizoen</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Afgesloten: <strong className="text-slate-800">{euro(p.seizoenOmzetAfgesloten)}</strong>
+              {" · "}verwacht seizoen: <strong className="text-slate-800">{euro(p.seizoenOmzetVerwacht)}</strong>
+              {" · "}vorig seizoen: <strong className="text-slate-800">{euro(p.vorigSeizoenOmzet)}</strong>
+            </p>
+          </div>
+          <span className="shrink-0 text-sm font-semibold text-slate-500">Bekijk per week →</span>
+        </div>
+      </button>
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -396,6 +411,59 @@ export default function LoonkostenRapport(p: {
           <button onClick={afsluiten} disabled={busy || !p.weekBestaat} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">
             <Lock size={17} /> Week afsluiten
           </button>
+        </div>
+      )}
+
+      {detail === "uren" && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 sm:items-center sm:p-6" onMouseDown={() => setDetail(null)}>
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl" onMouseDown={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><h2 className="text-lg font-bold text-slate-900">Geplande uren · wie wanneer</h2><button onClick={() => setDetail(null)} className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X size={20}/></button></div>
+            <div className="max-h-[calc(90vh-73px)] overflow-y-auto p-5 space-y-3">
+              {p.diensten.map((dienst, i) => (
+                <div key={i} className="rounded-2xl border border-slate-200 p-4">
+                  <div className="flex justify-between gap-3"><div><p className="font-semibold text-slate-900">{datum(dienst.datum.slice(0,10))}</p><p className="text-sm text-slate-500">{new Date(dienst.begintijd).toLocaleTimeString("nl-NL",{hour:"2-digit",minute:"2-digit"})} – {new Date(dienst.eindtijd).toLocaleTimeString("nl-NL",{hour:"2-digit",minute:"2-digit"})}</p></div><span className="text-sm text-slate-500">{dienst.medewerkers.length} medewerker{dienst.medewerkers.length === 1 ? "" : "s"}</span></div>
+                  <div className="mt-3 space-y-2">{dienst.medewerkers.map(m => <div key={m.medewerkerId} className="flex justify-between rounded-xl bg-slate-50 px-3 py-2 text-sm"><span>{m.naam}</span><span className="text-slate-500">{((new Date(dienst.eindtijd).getTime()-new Date(dienst.begintijd).getTime())/3600000).toFixed(1).replace(".",",")} uur</span></div>)}</div>
+                </div>
+              ))}
+              {!p.diensten.length && <p className="text-sm text-slate-500">Geen diensten opgeslagen voor deze week.</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {detail === "kosten" && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 sm:items-center sm:p-6" onMouseDown={() => setDetail(null)}>
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl" onMouseDown={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><h2 className="text-lg font-bold text-slate-900">Loonkosten · waar zit de week</h2><button onClick={() => setDetail(null)} className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X size={20}/></button></div>
+            <div className="max-h-[calc(90vh-73px)] overflow-y-auto p-5 space-y-3">
+              {p.dagen.map(d => <div key={d.datum} className="rounded-2xl border border-slate-200 p-4"><div className="flex justify-between"><span className="font-semibold">{datum(d.datum)}</span><span className="font-bold">{euro(d.kosten)}</span></div><div className="mt-2 h-3 rounded-full bg-slate-100"><div className="h-full rounded-full bg-slate-700" style={{width:`${(d.kosten/maxDagKosten)*100}%`}}/></div><p className="mt-2 text-xs text-slate-500">{d.uren.toFixed(1).replace(".",",")} uur gepland</p></div>)}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {detail === "loon" && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 sm:items-center sm:p-6" onMouseDown={() => setDetail(null)}>
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl" onMouseDown={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><h2 className="text-lg font-bold text-slate-900">Gemiddeld uurloon · opbouw per dag</h2><button onClick={() => setDetail(null)} className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X size={20}/></button></div>
+            <div className="max-h-[calc(90vh-73px)] overflow-y-auto p-5 space-y-3">
+              {p.dagen.map(d => <div key={d.datum} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 p-4"><div><p className="font-semibold">{datum(d.datum)}</p><p className="text-xs text-slate-500">{d.uren.toFixed(1).replace(".",",")} uur · {euro(d.kosten)} loonkosten</p></div><span className="text-lg font-bold">{euro(d.gemiddeldUurloon ?? (d.uren-d.ontbrekendUurloon > 0 ? d.kosten/(d.uren-d.ontbrekendUurloon) : 0))}</span></div>)}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {detail === "omzet" && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 sm:items-center sm:p-6" onMouseDown={() => setDetail(null)}>
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl" onMouseDown={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h2 className="text-lg font-bold text-slate-900">Omzet · seizoen per week</h2><p className="text-xs text-slate-500">Afgesloten weken zijn gerealiseerd; overige opgeslagen bedragen zijn verwachtingen.</p></div><button onClick={() => setDetail(null)} className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X size={20}/></button></div>
+            <div className="max-h-[calc(90vh-73px)] overflow-y-auto p-5">
+              <div className="mb-5 grid gap-3 sm:grid-cols-3"><div className="rounded-2xl bg-slate-50 p-4"><p className="text-xs text-slate-500">Afgesloten tot nu toe</p><p className="mt-1 text-xl font-bold">{euro(p.seizoenOmzetAfgesloten)}</p></div><div className="rounded-2xl bg-slate-50 p-4"><p className="text-xs text-slate-500">Verwacht einde seizoen</p><p className="mt-1 text-xl font-bold">{euro(p.seizoenOmzetVerwacht)}</p></div><div className="rounded-2xl bg-slate-50 p-4"><p className="text-xs text-slate-500">Vorig seizoen</p><p className="mt-1 text-xl font-bold">{euro(p.vorigSeizoenOmzet)}</p></div></div>
+              <div className="grid grid-cols-[56px_1fr_1fr] gap-3 px-3 pb-2 text-xs font-semibold uppercase tracking-wide text-slate-400"><span>Week</span><span>Dit seizoen</span><span className="text-right">Vorig seizoen</span></div>
+              <div className="space-y-1">{p.seizoenWeken.map(w => { const vorig=vorigeMap.get(`${w.jaar}-${w.weeknummer}`); return <div key={`${w.jaar}-${w.weeknummer}`} className="grid grid-cols-[56px_1fr_1fr] items-center gap-3 rounded-xl px-3 py-3 text-sm hover:bg-slate-50"><span className="font-semibold">W{w.weeknummer}</span><span>{w.omzet == null ? "—" : euro(w.omzet)} <small className="text-slate-400">{w.afgesloten ? "· afgesloten" : w.omzet != null ? "· verwachting" : ""}</small></span><span className="text-right text-slate-500">{vorig?.omzet == null ? "—" : euro(vorig.omzet)}</span></div>})}</div>
+              {prognoseOntbreekt > 0 && <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">Voor {prognoseOntbreekt} toekomstige week{prognoseOntbreekt === 1 ? "" : "en"} is nog geen omzetverwachting opgeslagen. Die weken zijn niet meegenomen in de prognose.</p>}
+            </div>
+          </div>
         </div>
       )}
     </section>
