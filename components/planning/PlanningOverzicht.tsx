@@ -87,6 +87,10 @@ type PlanningMedewerker = {
   tussenvoegsel: string | null;
   achternaam: string;
 
+  uurloon?: number | null;
+  urenSindsVorigeVerloning?: number;
+  vorigeVerloningEinde?: string | null;
+
   tags: MedewerkerTag[];
 
   beschikbaarheden: Beschikbaarheid[];
@@ -1958,9 +1962,21 @@ export default function PlanningOverzicht({
                                   {medewerker.personeelsnummer && (
                                     <p className="mt-0.5 text-xs text-slate-500">
                                       Personeelsnummer:{" "}
-                                      {
-                                        medewerker.personeelsnummer
-                                      }
+                                      {medewerker.personeelsnummer}
+                                    </p>
+                                  )}
+
+                                  {isEigenaar && medewerker.urenSindsVorigeVerloning !== undefined && (
+                                    <p
+                                      className="mt-1 text-xs text-slate-500"
+                                      title={medewerker.vorigeVerloningEinde
+                                        ? `Sinds einde vorige verloningsperiode: ${new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium" }).format(new Date(medewerker.vorigeVerloningEinde))}`
+                                        : "Sinds het begin van de geregistreerde uren"}
+                                    >
+                                      <span className="font-semibold text-slate-700">
+                                        {medewerker.urenSindsVorigeVerloning.toFixed(2).replace(".", ",")} uur
+                                      </span>{" "}
+                                      sinds vorige verloning
                                     </p>
                                   )}
 
