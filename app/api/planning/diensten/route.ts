@@ -1225,8 +1225,10 @@ export async function POST(
         ),
       );
 
-      for (const bezetting of openBezettingen) {
-        await verstuurDirecteOpenDienstMelding(bezetting.id);
+      if (openBezettingen[0]) {
+        // Eén push per nieuw geopende dienst, ook wanneer er meerdere
+        // open posities voor dezelfde dienst zijn.
+        await verstuurDirecteOpenDienstMelding(openBezettingen[0].id);
       }
     }
 
