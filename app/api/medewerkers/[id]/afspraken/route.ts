@@ -292,15 +292,13 @@ export async function GET(
       );
     }
 
-    if (!toegang.toegestaan) {
+    const isEigenMedewerker =
+      toegang.gebruiker.medewerker?.id === id;
+
+    if (!toegang.toegestaan && !isEigenMedewerker) {
       return NextResponse.json(
-        {
-          error:
-            "Alleen de eigenaar heeft toegang tot afspraken.",
-        },
-        {
-          status: 403,
-        },
+        { error: "Geen toegang tot afspraken." },
+        { status: 403 },
       );
     }
 
