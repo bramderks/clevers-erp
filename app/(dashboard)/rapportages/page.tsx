@@ -413,7 +413,10 @@ export default async function RapportagesPage({
         medewerkers={bron.medewerkers}
         diensten={bron.diensten}
         seizoenWeken={seizoenWekenMetPrognose}
-        vorigSeizoenMap={Array.from(vorigSeizoenMap.entries()).map(([key, value]) => ({ key, ...value }))}
+        vorigSeizoenMap={seizoenWeken.map((w) => ({
+          key: `${w.jaar}-${w.weeknummer}`,
+          ...(vorigSeizoenMap.get(`${w.jaar - 1}-${w.weeknummer}`) ?? { omzet: null, afgesloten: false }),
+        }))}
         seizoenOmzetAfgesloten={seizoenOmzetAfgesloten}
         seizoenOmzetVerwacht={seizoenOmzetVerwacht}
         gemiddeldeSeizoensgroei={gemiddeldeSeizoensgroei}
