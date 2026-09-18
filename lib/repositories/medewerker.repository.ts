@@ -4,12 +4,12 @@ import { absoluteUrl, verstuurMail, webAppUrl } from "@/lib/mail";
 type MedewerkerUpdateData = {
   personeelsnummer?: string | null; aanhef?: "DHR" | "MEVR" | "ANDERS" | "GEEN_OPGAVE"; voornaam?: string; tussenvoegsel?: string | null; achternaam?: string; roepnaam?: string | null; geboortedatum?: Date; email?: string; telefoon?: string; contractType?: "OPROEP" | "VAST" | null; contractUren?: number | null; uurloon?: number | null; datumInDienst?: Date | null; datumUitDienst?: Date | null;
 };
-type FindAllOptions = { organisatieIds?: string[]; vestigingIds?: string[] };
+type FindAllOptions = { organisatieIds?: string[]; vestigingIds?: string[]; includeInactive?: boolean };
 function uniekeIds(ids: string[]) { return Array.from(new Set(ids.filter((id) => typeof id === "string" && id.trim()))); }
 
 export const medewerkerRepository = {
   async findAll(options: FindAllOptions = {}) {
-    const { organisatieIds, vestigingIds } = options;
+    const { organisatieIds, vestigingIds, includeInactive = false } = options;
     const heeftOrganisatieFilter = organisatieIds !== undefined;
     const heeftVestigingFilter = vestigingIds !== undefined;
 
@@ -41,10 +41,13 @@ export const medewerkerRepository = {
       },
     };
 
+    const statusVoorwaarde = includeInactive ? {} : { actief: true };
+
     const where =
       heeftOrganisatieFilter || heeftVestigingFilter
         ? heeftOrganisatieFilter && !heeftVestigingFilter
           ? {
+              ...statusVoorwaarde,
               OR: [
                 vestigingVoorwaarde,
                 ...(geactiveerdeUitnodigingEmails.length > 0
@@ -52,8 +55,8 @@ export const medewerkerRepository = {
                   : []),
               ],
             }
-          : vestigingVoorwaarde
-        : {};
+          : { ...statusVoorwaarde, ...vestigingVoorwaarde }
+        : statusVoorwaarde;
 
     return prisma.medewerker.findMany({
       where,
