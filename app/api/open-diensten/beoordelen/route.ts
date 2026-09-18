@@ -29,7 +29,7 @@ export async function GET() {
       dienst: {
         week: {
           vestiging: {
-            organisatieId: gebruiker.organisatieId,
+            organisatieId: { in: organisatieIds },
           },
         },
       },
