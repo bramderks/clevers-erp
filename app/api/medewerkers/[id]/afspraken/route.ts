@@ -209,7 +209,7 @@ function maakTijd(
       ?.value ?? "GMT";
 
   const match =
-    /^GMT([+-])(\d{2}):?(\d{2})?$/.exec(
+    /^GMT([+-])(\d{1,2}):?(\d{2})?$/.exec(
       offsetTekst,
     );
 
