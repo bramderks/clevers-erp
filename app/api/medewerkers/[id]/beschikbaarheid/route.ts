@@ -465,9 +465,12 @@ async function bepaalToegang(
         relatie.organisatie.actief,
     );
 
+  const isEigenMedewerker =
+    gebruiker.medewerker?.id === medewerkerId;
+
   if (
-    organisatieRelaties.length ===
-    0
+    organisatieRelaties.length === 0 &&
+    !isEigenMedewerker
   ) {
     throw new RouteFout(
       "Je hebt geen toegang tot deze organisatie.",
