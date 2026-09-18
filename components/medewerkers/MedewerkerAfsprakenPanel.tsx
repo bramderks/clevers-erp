@@ -53,6 +53,7 @@ type Props = {
   tags: Tag[];
   dossier: DossierItem[];
   vasteUren: VasteUrenAfspraak[];
+  alleenLezen?: boolean;
 };
 
 const DAGEN = [
@@ -88,6 +89,7 @@ export default function MedewerkerAfsprakenPanel({
   tags,
   dossier,
   vasteUren,
+  alleenLezen = false,
 }: Props) {
   const router =
     useRouter();
@@ -260,6 +262,19 @@ export default function MedewerkerAfsprakenPanel({
     } finally {
       setOpslaan(false);
     }
+  }
+
+  if (alleenLezen) {
+    return (
+      <div className="space-y-6">
+        <Card title="Waarschuwingen en afspraken" description="Afspraken die voor jou gelden, waaronder waarschuwingen en dossierafspraken.">
+          {dossier.length === 0 ? <p className="text-sm text-slate-500">Geen afspraken of waarschuwingen vastgelegd.</p> : <div className="space-y-3">{dossier.map((item) => <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4"><p className="font-semibold text-slate-900">{item.titel}</p><p className="mt-1 text-xs text-slate-500">{formatteerDatum(item.datum)}{item.kanaal ? ` · ${item.kanaal}` : ""}</p>{item.omschrijving && <p className="mt-3 whitespace-pre-wrap text-sm text-slate-700">{item.omschrijving}</p>}{item.documentUrl && <a href={item.documentUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm font-medium text-cyan-700 hover:text-cyan-800">{item.documentNaam || "Document openen"}</a>}</div>)}</div>}
+        </Card>
+        <Card title="Vaste urenafspraken" description="Vaste werkdagen en tijden die voor je planning gelden.">
+          {vasteUren.length === 0 ? <p className="text-sm text-slate-500">Geen vaste urenafspraken vastgelegd.</p> : <div className="space-y-3">{vasteUren.map((afspraak) => <div key={afspraak.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4"><div className="flex flex-wrap items-center gap-2"><span className="font-semibold text-slate-900">{DAGEN[afspraak.dagVanWeek - 1] || "Onbekende dag"}</span><span className="text-sm text-slate-600">{afspraak.begintijd} - {afspraak.eindtijd}</span></div><p className="mt-1 text-sm text-slate-600">{afspraak.vestigingNaam} · {afspraak.tagNaam}</p><p className="mt-1 text-xs text-slate-500">Geldig van {formatteerDatum(afspraak.startDatum)} t/m {formatteerDatum(afspraak.eindDatum)}{afspraak.actief ? " · Actief" : " · Inactief"}</p></div>)}</div>}
+        </Card>
+      </div>
+    );
   }
 
   return (
