@@ -509,10 +509,6 @@ async function bepaalToegang(
   const isBeheerder =
     isEigenaar;
 
-  const isEigenMedewerker =
-    gebruiker.medewerker?.id ===
-    medewerkerId;
-
   if (
     !isBeheerder &&
     !isTeamleider &&
