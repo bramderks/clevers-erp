@@ -54,6 +54,13 @@ export const navigation = [
       },
 
       {
+        title: "Open diensten",
+        href: "/planning/open-diensten",
+        icon: ClipboardClock,
+        ownerOnly: true,
+      },
+
+      {
         title: "Mijn beschikbaarheid",
         href: "/profiel/beschikbaarheid",
         icon: ClipboardClock,
