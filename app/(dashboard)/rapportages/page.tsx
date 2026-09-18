@@ -41,6 +41,8 @@ type SeizoenWeek = {
   startDatum: string;
   afgesloten: boolean;
   omzet: number | null;
+  verwachteOmzet: number | null;
+  prognoseBron: "werkelijk" | "handmatig" | "vorig_seizoen_groei" | null;
 };
 
 type Medewerker = {
@@ -315,6 +317,16 @@ export default async function RapportagesPage({
       })
     : [];
 
+  const tweeSeizoenenTerugWeken = seizoenWeken.length
+    ? await prisma.week.findMany({
+        where: {
+          vestigingId,
+          OR: seizoenWeken.map((w) => ({ jaar: w.jaar - 2, weeknummer: w.weeknummer })),
+        },
+        select: { jaar: true, weeknummer: true, status: true, loonkostenWeek: { select: { omzet: true } } },
+      })
+    : [];
+
   const vorigSeizoenMap = new Map(
     vorigSeizoenWeken.map((w) => [
       `${w.jaar}-${w.weeknummer}`,
@@ -325,8 +337,51 @@ export default async function RapportagesPage({
     ]),
   );
 
-  const seizoenOmzetAfgesloten = seizoenWeken.filter((w) => w.afgesloten).reduce((t, w) => t + (w.omzet ?? 0), 0);
-  const seizoenOmzetVerwacht = seizoenWeken.reduce((t, w) => t + (w.omzet ?? 0), 0);
+  const tweeSeizoenenMap = new Map(
+    tweeSeizoenenTerugWeken.map((w) => [
+      `${w.jaar}-${w.weeknummer}`,
+      w.loonkostenWeek ? Number(w.loonkostenWeek.omzet) : null,
+    ]),
+  );
+
+  // De prognose voor toekomstige weken volgt de gemiddelde week-op-week
+  // seizoen-op-seizoen groei van het vorige seizoen t.o.v. het seizoen daarvoor.
+  const groeipercentages: number[] = [];
+  for (const vorig of vorigSeizoenWeken) {
+    if (vorig.status !== "AFGESLOTEN" || !vorig.loonkostenWeek) continue;
+    const vorigBedrag = Number(vorig.loonkostenWeek.omzet);
+    const tweeTerug = tweeSeizoenenMap.get(`${vorig.jaar - 1}-${vorig.weeknummer}`);
+    if (tweeTerug != null && tweeTerug > 0 && vorigBedrag > 0) {
+      groeipercentages.push((vorigBedrag / tweeTerug) - 1);
+    }
+  }
+  const gemiddeldeSeizoensgroei = groeipercentages.length
+    ? groeipercentages.reduce((t, g) => t + g, 0) / groeipercentages.length
+    : null;
+
+  const seizoenWekenMetPrognose = seizoenWeken.map((w) => {
+    const vorig = vorigSeizoenMap.get(`${w.jaar - 1}-${w.weeknummer}`);
+    const werkelijk = w.afgesloten ? w.omzet : null;
+    const handmatig = !w.afgesloten && w.omzet != null ? w.omzet : null;
+    const automatisch = !w.afgesloten && handmatig == null && vorig?.omzet != null && gemiddeldeSeizoensgroei != null
+      ? vorig.omzet * (1 + gemiddeldeSeizoensgroei)
+      : null;
+
+    return {
+      ...w,
+      verwachteOmzet: werkelijk ?? handmatig ?? automatisch,
+      prognoseBron: werkelijk != null
+        ? "werkelijk" as const
+        : handmatig != null
+          ? "handmatig" as const
+          : automatisch != null
+            ? "vorig_seizoen_groei" as const
+            : null,
+    };
+  });
+
+  const seizoenOmzetAfgesloten = seizoenWekenMetPrognose.filter((w) => w.afgesloten).reduce((t, w) => t + (w.omzet ?? 0), 0);
+  const seizoenOmzetVerwacht = seizoenWekenMetPrognose.reduce((t, w) => t + (w.verwachteOmzet ?? 0), 0);
   const vorigSeizoenOmzet = vorigSeizoenWeken.filter((w) => w.status === "AFGESLOTEN" && w.loonkostenWeek != null).reduce((t, w) => t + (Number(w.loonkostenWeek?.omzet) || 0), 0);
 
   return (
@@ -357,10 +412,11 @@ export default async function RapportagesPage({
         dagen={bron.dagen}
         medewerkers={bron.medewerkers}
         diensten={bron.diensten}
-        seizoenWeken={seizoenWeken}
+        seizoenWeken={seizoenWekenMetPrognose}
         vorigSeizoenMap={Array.from(vorigSeizoenMap.entries()).map(([key, value]) => ({ key, ...value }))}
         seizoenOmzetAfgesloten={seizoenOmzetAfgesloten}
         seizoenOmzetVerwacht={seizoenOmzetVerwacht}
+        gemiddeldeSeizoensgroei={gemiddeldeSeizoensgroei}
         vorigSeizoenOmzet={vorigSeizoenOmzet}
         seizoenStart={seizoenStart?.toISOString() ?? null}
         seizoenEinde={seizoenEinde?.toISOString() ?? null}
