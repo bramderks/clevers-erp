@@ -167,17 +167,107 @@ function maakTijd(
     minuten,
   ] = tijd.split(":").map(Number);
 
-  const resultaat =
-    new Date(datum);
+  /*
+   * Diensten zijn bedrijfstijden in de Nederlandse tijdzone.
+   * Vercel draait doorgaans in UTC; setHours() zou daar 17:00
+   * als 17:00 UTC opslaan en in Nederland als 19:00 tonen.
+   *
+   * Gebruik daarom expliciet Europe/Amsterdam, inclusief zomer-
+   * en wintertijd.
+   */
+  const utcBasis =
+    new Date(
+      Date.UTC(
+        datum.getFullYear(),
+        datum.getMonth(),
+        datum.getDate(),
+        uren,
+        minuten,
+        0,
+        0,
+      ),
+    );
 
-  resultaat.setHours(
-    uren,
-    minuten,
-    0,
-    0,
+  const offsetTekst =
+    new Intl.DateTimeFormat(
+      "en-US",
+      {
+        timeZone:
+          "Europe/Amsterdam",
+        timeZoneName:
+          "longOffset",
+      },
+    )
+      .formatToParts(
+        utcBasis,
+      )
+      .find(
+        (part) =>
+          part.type ===
+          "timeZoneName",
+      )
+      ?.value ?? "GMT";
+
+  const match =
+    /^GMT([+-])(\d{2}):?(\d{2})?$/.exec(
+      offsetTekst,
+    );
+
+  const offsetMinuten =
+    match
+      ? (Number(
+          match[2],
+        ) *
+          60 +
+          Number(
+            match[3] ?? "0",
+          )) *
+        (match[1] ===
+        "+"
+          ? 1
+          : -1)
+      : 0;
+
+  return new Date(
+    utcBasis.getTime() -
+      offsetMinuten *
+        60_000,
+  );
+}
+
+function berekenBeschikbaarheidDeadline(
+  jaar: number,
+  weeknummer: number,
+) {
+  const datum =
+    new Date(
+      Date.UTC(
+        jaar,
+        0,
+        4,
+      ),
+    );
+
+  const dag =
+    datum.getUTCDay() || 7;
+
+  datum.setUTCDate(
+    datum.getUTCDate() -
+      dag +
+      1 +
+      (weeknummer - 1) *
+        7 -
+      29,
   );
 
-  return resultaat;
+  datum.setUTCHours(
+    23,
+    59,
+    59,
+    999,
+  );
+
+  return datum;
 }
 
 async function vereisEigenaarVoorMedewerker(
@@ -649,6 +739,8 @@ export async function POST(
           vestiging: {
             select: {
               actief: true,
+              seizoenStart: true,
+              seizoenEinde: true,
             },
           },
         },
@@ -675,6 +767,43 @@ export async function POST(
     ) {
       throw new Error(
         "De gekozen vestiging is niet actief of niet gekoppeld aan deze medewerker.",
+      );
+    }
+
+    if (
+      !vestiging.vestiging.seizoenEinde
+    ) {
+      throw new Error(
+        "Voor vaste urenafspraken moet eerst het seizoen van deze vestiging zijn ingesteld.",
+      );
+    }
+
+    const seizoenStart =
+      vestiging.vestiging.seizoenStart
+        ? beginDag(
+            vestiging.vestiging.seizoenStart,
+          )
+        : null;
+
+    const seizoenEinde =
+      eindeDag(
+        vestiging.vestiging.seizoenEinde,
+      );
+
+    if (
+      seizoenStart &&
+      startDatum < seizoenStart
+    ) {
+      throw new Error(
+        "De startdatum van een vaste urenafspraak kan niet vóór de start van het seizoen liggen.",
+      );
+    }
+
+    if (
+      eindDatum > seizoenEinde
+    ) {
+      throw new Error(
+        "De einddatum van een vaste urenafspraak kan niet na het einde van het seizoen liggen.",
       );
     }
 
@@ -708,6 +837,7 @@ export async function POST(
     );
 
     let aangemaakt = 0;
+    let aangepast = 0;
     let overgeslagen = 0;
 
     const cursor =
@@ -724,7 +854,7 @@ export async function POST(
         const iso =
           isoWeek(cursor);
 
-        const week =
+        let week =
           await prisma.week.findFirst({
             where: {
               vestigingId,
@@ -738,102 +868,224 @@ export async function POST(
             },
           });
 
+        /*
+         * Een vaste afspraak moet ook werken voor toekomstige weken
+         * die nog niet eerder in de planning zijn geopend.
+         */
         if (!week) {
-          overgeslagen += 1;
-        } else {
-          const begintijd =
-            maakTijd(
-              cursor,
-              body.begintijd,
-            );
-
-          const eindtijd =
-            maakTijd(
-              cursor,
-              body.eindtijd,
-            );
-
-          const bestaandeBezetting =
-            await prisma.dienstBezetting.findFirst({
-              where: {
-                medewerkerId: id,
-                status: {
-                  not: "AFGEZEGD",
-                },
-
-                dienst: {
-                  datum: {
-                    gte:
-                      beginDag(
-                        cursor,
-                      ),
-
-                    lte:
-                      eindeDag(
-                        cursor,
-                      ),
-                  },
-                },
-              },
-
-              include: {
-                dienst: {
-                  select: {
-                    begintijd: true,
-                    eindtijd: true,
-                  },
-                },
-              },
-            });
-
-          const heeftOverlap =
-            bestaandeBezetting !== null &&
-            bestaandeBezetting.dienst
-              .begintijd <
-              eindtijd &&
-            bestaandeBezetting.dienst
-              .eindtijd >
-              begintijd;
-
-          if (heeftOverlap) {
-            overgeslagen += 1;
-          } else {
-            await prisma.dienst.create({
+          week =
+            await prisma.week.create({
               data: {
-                weekId:
-                  week.id,
-
-                datum:
-                  beginDag(
-                    cursor,
+                vestigingId,
+                jaar: iso.jaar,
+                weeknummer:
+                  iso.weeknummer,
+                status: "OPEN",
+                beschikbaarheidDeadline:
+                  berekenBeschikbaarheidDeadline(
+                    iso.jaar,
+                    iso.weeknummer,
                   ),
+              },
+              select: {
+                id: true,
+              },
+            });
+        }
 
-                begintijd,
+        const begintijd =
+          maakTijd(
+            cursor,
+            body.begintijd as string,
+          );
 
-                eindtijd,
+        const eindtijd =
+          maakTijd(
+            cursor,
+            body.eindtijd as string,
+          );
 
-                opmerkingen:
-                  "Automatisch ingevuld vanuit een vaste urenafspraak.",
+        const dagStart =
+          beginDag(cursor);
 
-                tags: {
-                  create: {
-                    tagId,
-                    aantal: 1,
-                  },
+        const dagEinde =
+          new Date(
+            dagStart,
+          );
+
+        dagEinde.setDate(
+          dagEinde.getDate() +
+            1,
+        );
+
+        const bestaandeBezettingen =
+          await prisma.dienstBezetting.findMany({
+            where: {
+              medewerkerId: id,
+              status: {
+                not: "AFGEZEGD",
+              },
+              dienst: {
+                datum: {
+                  gte: dagStart,
+                  lt: dagEinde,
                 },
-
-                bezetting: {
-                  create: {
-                    medewerkerId: id,
-                    status:
-                      "GEPLAND",
+              },
+            },
+            include: {
+              dienst: {
+                include: {
+                  bezetting: {
+                    where: {
+                      status: {
+                        not: "AFGEZEGD",
+                      },
+                    },
+                    select: {
+                      id: true,
+                      medewerkerId: true,
+                    },
                   },
                 },
               },
+            },
+          });
+
+        const overlappende =
+          bestaandeBezettingen.filter(
+            (bezetting) =>
+              bezetting.dienst.begintijd <
+                eindtijd &&
+              bezetting.dienst.eindtijd >
+                begintijd,
+          );
+
+        let dienstAangepast =
+          false;
+
+        /*
+         * De vaste afspraak is leidend voor deze medewerker.
+         * Als de bestaande dienst alleen deze medewerker bevat,
+         * corrigeren we de dienst zelf. Bij een dienst met meerdere
+         * medewerkers halen we deze medewerker uit de oude dienst
+         * en maken we een aparte dienst met de vaste tijden.
+         */
+        for (
+          const bezetting of overlappende
+        ) {
+          const dienst =
+            bezetting.dienst;
+
+          if (
+            !dienstAangepast &&
+            dienst.bezetting.length ===
+              1 &&
+            dienst.bezetting[0]
+              ?.medewerkerId === id
+          ) {
+            await prisma.dienst.update({
+              where: {
+                id: dienst.id,
+              },
+              data: {
+                begintijd,
+                eindtijd,
+              },
             });
 
-            aangemaakt += 1;
+            dienstAangepast =
+              true;
+            aangepast += 1;
+          } else {
+            await prisma.dienstBezetting.delete({
+              where: {
+                id: bezetting.id,
+              },
+            });
           }
+        }
+
+        if (
+          !dienstAangepast &&
+          overlappende.length === 0
+        ) {
+          await prisma.dienst.create({
+            data: {
+              weekId:
+                week.id,
+
+              datum:
+                dagStart,
+
+              begintijd,
+
+              eindtijd,
+
+              opmerkingen:
+                "Automatisch ingevuld vanuit een vaste urenafspraak.",
+
+              tags: {
+                create: {
+                  tagId,
+                  aantal: 1,
+                },
+              },
+
+              bezetting: {
+                create: {
+                  medewerkerId: id,
+                  status:
+                    "GEPLAND",
+                },
+              },
+            },
+          });
+
+          aangemaakt += 1;
+        } else if (
+          !dienstAangepast &&
+          overlappende.length > 0
+        ) {
+          /*
+           * Er was een overlappende dienst met meerdere medewerkers.
+           * Na het loskoppelen van deze medewerker maken we de vaste
+           * dienst alsnog aan.
+           */
+          await prisma.dienst.create({
+            data: {
+              weekId:
+                week.id,
+
+              datum:
+                dagStart,
+
+              begintijd,
+
+              eindtijd,
+
+              opmerkingen:
+                "Automatisch ingevuld vanuit een vaste urenafspraak.",
+
+              tags: {
+                create: {
+                  tagId,
+                  aantal: 1,
+                },
+              },
+
+              bezetting: {
+                create: {
+                  medewerkerId: id,
+                  status:
+                    "GEPLAND",
+                },
+              },
+            },
+          });
+
+          aangemaakt += 1;
+        } else {
+          overgeslagen += 1;
         }
       }
 
@@ -848,7 +1100,7 @@ export async function POST(
       aangemaakt,
       overgeslagen,
       melding:
-        "De vaste urenafspraak is akkoord opgeslagen en in de bestaande planning verwerkt.",
+        "De vaste urenafspraak is akkoord opgeslagen en toegepast op de planning voor de gekozen periode.",
     });
   } catch (error) {
     console.error(
