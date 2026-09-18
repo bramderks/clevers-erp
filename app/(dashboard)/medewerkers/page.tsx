@@ -223,17 +223,13 @@ export default async function MedewerkersPage({
         medewerker.actief,
     ).length;
 
-  const inactieveMedewerkers =
-    medewerkers.length -
-    actieveMedewerkers;
-
   return (
     <PageLayout>
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          title="Medewerkers"
-          value={medewerkers.length}
-          subtitle="Totaal"
+          title="Actieve medewerkers"
+          value={actieveMedewerkers}
+          subtitle="Actief in het systeem"
           icon={<Users size={20} />}
         />
 
@@ -241,13 +237,6 @@ export default async function MedewerkersPage({
           title="Actief"
           value={actieveMedewerkers}
           subtitle="Actieve medewerkers"
-          icon={<Users size={20} />}
-        />
-
-        <StatCard
-          title="Inactief"
-          value={inactieveMedewerkers}
-          subtitle="Niet actief"
           icon={<Users size={20} />}
         />
 
