@@ -639,135 +639,78 @@ function maakGroepen(
  * DIENSTSTATUS
  * ============================================================
  *
- * Groen  = gevuld
- * Rood   = open
- * Blauw  = geruild
- * Geel   = aandachtspunt
+ * Groen = alle benodigde posities gevuld.
+ * Geel  = open positie, maar er is al belangstelling.
+ * Rood  = open positie en binnen 7 dagen nog geen belangstelling.
  */
 
-function bepaalDienstStatus(
-  dienst: PlanningDienst,
-) {
-  const dienstData =
-    dienst as PlanningDienst & {
-      status?: string;
-      planningStatus?: string;
-      isGeruild?: boolean;
-      geruild?: boolean;
-      aandachtspunt?: boolean;
-      heeftAandachtspunt?: boolean;
-    };
+function dagenTotDienst(dienst: PlanningDienst) {
+  const datum = dienstDatum(dienst.datum);
+  if (!datum) return Number.POSITIVE_INFINITY;
 
-  const status =
-    String(
-      dienstData.status ??
-        dienstData.planningStatus ??
-        "",
-    ).toUpperCase();
+  const dienstDatumObject = new Date(`${datum}T23:59:59`);
+  const vandaag = new Date();
 
-  /*
-   * ==========================================================
-   * GERUILD
-   * ==========================================================
-   */
-
-  if (
-    status.includes("RUIL") ||
-    status.includes("GERUILD") ||
-    dienstData.isGeruild === true ||
-    dienstData.geruild === true
-  ) {
-    return "GERUILD";
-  }
-
-  /*
-   * ==========================================================
-   * AANDACHTSPUNT
-   * ==========================================================
-   */
-
-  if (
-    status.includes("AANDACHT") ||
-    status.includes("PROBLEEM") ||
-    dienstData.aandachtspunt === true ||
-    dienstData.heeftAandachtspunt === true
-  ) {
-    return "AANDACHT";
-  }
-
-  const actieveBezetting =
-    dienst.bezetting.filter(
-      (bezetting) =>
-        bezetting.status !==
-          "AFGEZEGD" &&
-        bezetting.medewerker !== null,
-    );
-
-  /*
-   * ==========================================================
-   * OPEN
-   * ==========================================================
-   */
-
-  if (
-    actieveBezetting.length ===
-    0
-  ) {
-    return "OPEN";
-  }
-
-  /*
-   * ==========================================================
-   * GEVULD
-   * ==========================================================
-   */
-
-  return "GEVULD";
+  return Math.ceil(
+    (dienstDatumObject.getTime() - vandaag.getTime()) /
+      (24 * 60 * 60 * 1000),
+  );
 }
 
-function dienstStatusStyling(
-  dienst: PlanningDienst,
-) {
-  const status =
-    bepaalDienstStatus(
-      dienst,
-    );
+function bepaalDienstStatus(dienst: PlanningDienst) {
+  const actieveBezetting = dienst.bezetting.filter(
+    (bezetting) =>
+      bezetting.status !== "AFGEZEGD" &&
+      bezetting.medewerker !== null,
+  );
+
+  const benodigdePosities = dienst.tags.reduce(
+    (totaal, dienstTag) =>
+      totaal + Math.max(1, Number(dienstTag.aantal) || 1),
+    0,
+  );
+
+  const compleet =
+    actieveBezetting.length >= Math.max(1, benodigdePosities);
+
+  if (compleet) {
+    return "GEVULD";
+  }
+
+  const interesseAantal = dienst.openInteresseAantal ?? 0;
+  const binnenEenWeek = dagenTotDienst(dienst) <= 7;
+
+  if (binnenEenWeek && interesseAantal === 0) {
+    return "OPEN_KRITIEK";
+  }
+
+  return "OPEN";
+}
+
+function dienstStatusStyling(dienst: PlanningDienst) {
+  const status = bepaalDienstStatus(dienst);
 
   switch (status) {
-    case "GERUILD":
+    case "OPEN_KRITIEK":
       return {
         kaart:
-          "border-blue-300 bg-blue-50 hover:border-blue-400 hover:bg-blue-100",
-
+          "border-red-300 bg-red-50 hover:border-red-400 hover:bg-red-100",
         badge:
-          "bg-blue-100 text-blue-700",
-
+          "bg-red-100 text-red-700",
         label:
-          "Geruild",
-      };
-
-    case "AANDACHT":
-      return {
-        kaart:
-          "border-yellow-300 bg-yellow-50 hover:border-yellow-400 hover:bg-yellow-100",
-
-        badge:
-          "bg-yellow-100 text-yellow-700",
-
-        label:
-          "Aandachtspunt",
+          "Open · niemand gemeld",
       };
 
     case "OPEN":
       return {
         kaart:
-          "border-red-300 bg-red-50 hover:border-red-400 hover:bg-red-100",
-
+          "border-yellow-300 bg-yellow-50 hover:border-yellow-400 hover:bg-yellow-100",
         badge:
-          "bg-red-100 text-red-700",
-
+          "bg-yellow-100 text-yellow-800",
         label:
-          "Open",
+          dienst.openInteresseAantal && dienst.openInteresseAantal > 0
+            ? `Open · ${dienst.openInteresseAantal} gemeld`
+            : "Open",
       };
 
     case "GEVULD":
@@ -775,12 +718,10 @@ function dienstStatusStyling(
       return {
         kaart:
           "border-emerald-300 bg-emerald-50 hover:border-emerald-400 hover:bg-emerald-100",
-
         badge:
           "bg-emerald-100 text-emerald-700",
-
         label:
-          "Gevuld",
+          "Compleet",
       };
   }
 }
