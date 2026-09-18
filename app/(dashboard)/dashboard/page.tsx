@@ -808,17 +808,6 @@ export default async function DashboardPage() {
       },
     }),
 
-    prisma.dienstBezetting.count({
-      where: {
-        status: { in: ["GEPLAND", "BEVESTIGD"] },
-        medewerker: { actief: false },
-        dienst: {
-          datum: { gte: vandaag },
-          week: { vestiging: { organisatieId: { in: gebruiker.organisaties.filter((r) => r.actief && r.organisatie.actief).map((r) => r.organisatieId) }, actief: true } },
-        },
-      },
-    }),
-
     prisma.verloningsPeriode.findUnique({
       where: {
         jaar_maand: {
@@ -832,6 +821,26 @@ export default async function DashboardPage() {
         status: true,
         jaar: true,
         maand: true,
+      },
+    }),
+
+    prisma.dienstBezetting.count({
+      where: {
+        status: { in: ["GEPLAND", "BEVESTIGD"] },
+        medewerker: { actief: false },
+        dienst: {
+          datum: { gte: vandaag },
+          week: {
+            vestiging: {
+              organisatieId: {
+                in: gebruiker.organisaties
+                  .filter((r) => r.actief && r.organisatie.actief)
+                  .map((r) => r.organisatieId),
+              },
+              actief: true,
+            },
+          },
+        },
       },
     }),
   ]);
