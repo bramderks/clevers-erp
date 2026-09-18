@@ -85,6 +85,9 @@ export type Dienst = {
 
   opmerkingen: string | null;
 
+  /** Aantal medewerkers dat zich voor open posities heeft gemeld. */
+  openInteresseAantal?: number;
+
   tags: DienstTag[];
   bezetting: DienstBezetting[];
 };
