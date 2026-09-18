@@ -834,7 +834,7 @@ export default async function DashboardPage() {
       omschrijving:
         "Er zijn nog open dienstplekken in de planning.",
       aantal: openDienstplekken,
-      href: "/planning",
+      href: "/planning/open-diensten",
       variant: "urgent",
     });
   }
