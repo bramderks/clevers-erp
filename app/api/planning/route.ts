@@ -459,6 +459,7 @@ async function haalPlanningOp(
                   voornaam: true,
                   tussenvoegsel: true,
                   achternaam: true,
+                  uurloon: true,
                   tags: {
                     include: { tag: true },
                     orderBy: { tag: { volgorde: "asc" } },
