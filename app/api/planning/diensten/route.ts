@@ -598,8 +598,56 @@ export async function GET(
         },
       });
 
+    /*
+     * Open dienst statusinformatie voor de planningweergave.
+     *
+     * Een interesse is gekoppeld aan de open bezettingsregel via
+     * AuditLog.recordId. We tellen daarom alle actieve interesse-
+     * meldingen per dienst op, zodat de eigenaar in de weekplanning
+     * direct kan zien of iemand zich al heeft gemeld.
+     */
+    const openBezettingIds = diensten.flatMap((dienst) =>
+      dienst.bezetting
+        .filter((bezetting) => bezetting.status === "OPEN" && !bezetting.medewerkerId)
+        .map((bezetting) => bezetting.id),
+    );
+
+    const interessePerBezetting = new Map<string, number>();
+
+    if (openBezettingIds.length > 0) {
+      const interesses = await prisma.auditLog.groupBy({
+        by: ["recordId"],
+        where: {
+          module: "PLANNING",
+          actie: "INTERESSE_OPEN_DIENST",
+          recordId: { in: openBezettingIds },
+        },
+        _count: { _all: true },
+      });
+
+      for (const interesse of interesses) {
+        if (interesse.recordId) {
+          interessePerBezetting.set(
+            interesse.recordId,
+            interesse._count._all,
+          );
+        }
+      }
+    }
+
+    const dienstenMetInteresse = diensten.map((dienst) => ({
+      ...dienst,
+      openInteresseAantal: dienst.bezetting
+        .filter((bezetting) => bezetting.status === "OPEN" && !bezetting.medewerkerId)
+        .reduce(
+          (totaal, bezetting) =>
+            totaal + (interessePerBezetting.get(bezetting.id) ?? 0),
+          0,
+        ),
+    }));
+
     return NextResponse.json(
-      diensten,
+      dienstenMetInteresse,
     );
   } catch (error) {
     console.error(
