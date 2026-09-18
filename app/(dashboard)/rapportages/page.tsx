@@ -25,6 +25,22 @@ type Dag = {
   uren: number;
   kosten: number;
   ontbrekendUurloon: number;
+  gemiddeldUurloon?: number;
+};
+
+type DienstDetail = {
+  datum: string;
+  begintijd: string;
+  eindtijd: string;
+  medewerkers: { medewerkerId: string; naam: string; uurloon: number | null }[];
+};
+
+type SeizoenWeek = {
+  jaar: number;
+  weeknummer: number;
+  startDatum: string;
+  afgesloten: boolean;
+  omzet: number | null;
 };
 
 type Medewerker = {
@@ -41,6 +57,7 @@ type RapportSnapshot = {
   dagen?: Dag[];
   medewerkers?: Medewerker[];
   ontbrekendUurloon?: number;
+  diensten?: DienstDetail[];
 };
 
 type RapportBron = {
@@ -53,6 +70,7 @@ type RapportBron = {
   ontbrekendUurloon: number;
   dagen: Dag[];
   medewerkers: Medewerker[];
+  diensten: DienstDetail[];
   afgeslotenOp: string | null;
 };
 
@@ -85,6 +103,7 @@ function uitSnapshot(loonkosten: {
     ontbrekendUurloon: Number(snapshot.ontbrekendUurloon ?? 0),
     dagen: snapshot.dagen,
     medewerkers: snapshot.medewerkers,
+    diensten: snapshot.diensten ?? [],
     afgeslotenOp: loonkosten.afgeslotenOp.toISOString(),
   };
 }
@@ -105,7 +124,7 @@ export default async function RapportagesPage({
 
   const vestigingen = await prisma.vestiging.findMany({
     where: { actief: true },
-    select: { id: true, naam: true },
+    select: { id: true, naam: true, seizoenStart: true, seizoenEinde: true },
     orderBy: { naam: "asc" },
   });
 
@@ -199,6 +218,9 @@ export default async function RapportagesPage({
     }
 
     const dagen = Array.from(dagenMap.values()).sort((a, b) => a.datum.localeCompare(b.datum));
+    for (const d of dagen) {
+      d.gemiddeldUurloon = d.uren - d.ontbrekendUurloon > 0 ? d.kosten / (d.uren - d.ontbrekendUurloon) : 0;
+    }
     const medewerkers = Array.from(medewerkersMap.values()).sort((a, b) => b.kosten - a.kosten);
     const totaalUren = regels.reduce((t, r) => t + r.uren, 0);
     const totaalKosten = regels.reduce((t, r) => t + (r.kosten ?? 0), 0);
@@ -217,6 +239,16 @@ export default async function RapportagesPage({
       ontbrekendUurloon: regels.filter((r) => r.kosten == null).length,
       dagen,
       medewerkers,
+      diensten: (week?.diensten ?? []).map((dienst) => ({
+        datum: dienst.datum.toISOString(),
+        begintijd: dienst.begintijd.toISOString(),
+        eindtijd: dienst.eindtijd.toISOString(),
+        medewerkers: dienst.bezetting.filter((b) => b.medewerker).map((b) => ({
+          medewerkerId: b.medewerker!.id,
+          naam: [b.medewerker!.voornaam, b.medewerker!.achternaam].filter(Boolean).join(" "),
+          uurloon: b.medewerker!.uurloon == null ? null : Number(b.medewerker!.uurloon),
+        })),
+      })),
       afgeslotenOp: null,
     };
   }
@@ -237,6 +269,65 @@ export default async function RapportagesPage({
   const vorigeSeizoen = vorigeWeek?.loonkostenWeek
     ? uitSnapshot(vorigeWeek.loonkostenWeek)
     : null;
+
+  const gekozenVestiging = vestigingen.find((v) => v.id === vestigingId);
+  const seizoenStart = gekozenVestiging?.seizoenStart;
+  const seizoenEinde = gekozenVestiging?.seizoenEinde;
+
+  function weekStart(jaarNummer: number, weekNummer: number) {
+    const vierdeJanuari = new Date(Date.UTC(jaarNummer, 0, 4));
+    const dag = vierdeJanuari.getUTCDay() || 7;
+    const maandag = new Date(vierdeJanuari);
+    maandag.setUTCDate(vierdeJanuari.getUTCDate() - dag + 1 + (weekNummer - 1) * 7);
+    return maandag;
+  }
+
+  const seizoenWeken: SeizoenWeek[] = [];
+  if (vestigingId && seizoenStart && seizoenEinde) {
+    const startJaar = seizoenStart.getUTCFullYear();
+    const eindJaar = seizoenEinde.getUTCFullYear();
+    const alleWeken = await prisma.week.findMany({
+      where: { vestigingId, jaar: { gte: startJaar, lte: eindJaar } },
+      orderBy: [{ jaar: "asc" }, { weeknummer: "asc" }],
+      select: { jaar: true, weeknummer: true, status: true, loonkostenWeek: { select: { omzet: true } } },
+    });
+
+    for (const w of alleWeken) {
+      const start = weekStart(w.jaar, w.weeknummer);
+      if (start < seizoenStart || start > seizoenEinde) continue;
+      seizoenWeken.push({
+        jaar: w.jaar,
+        weeknummer: w.weeknummer,
+        startDatum: start.toISOString(),
+        afgesloten: w.status === "AFGESLOTEN" && w.loonkostenWeek != null,
+        omzet: w.loonkostenWeek ? Number(w.loonkostenWeek.omzet) : null,
+      });
+    }
+  }
+
+  const vorigSeizoenWeken = seizoenWeken.length
+    ? await prisma.week.findMany({
+        where: {
+          vestigingId,
+          OR: seizoenWeken.map((w) => ({ jaar: w.jaar - 1, weeknummer: w.weeknummer })),
+        },
+        select: { jaar: true, weeknummer: true, status: true, loonkostenWeek: { select: { omzet: true } } },
+      })
+    : [];
+
+  const vorigSeizoenMap = new Map(
+    vorigSeizoenWeken.map((w) => [
+      `${w.jaar}-${w.weeknummer}`,
+      {
+        omzet: w.loonkostenWeek ? Number(w.loonkostenWeek.omzet) : null,
+        afgesloten: w.status === "AFGESLOTEN" && w.loonkostenWeek != null,
+      },
+    ]),
+  );
+
+  const seizoenOmzetAfgesloten = seizoenWeken.filter((w) => w.afgesloten).reduce((t, w) => t + (w.omzet ?? 0), 0);
+  const seizoenOmzetVerwacht = seizoenWeken.reduce((t, w) => t + (w.omzet ?? 0), 0);
+  const vorigSeizoenOmzet = vorigSeizoenWeken.filter((w) => w.status === "AFGESLOTEN" && w.loonkostenWeek != null).reduce((t, w) => t + (Number(w.loonkostenWeek?.omzet) || 0), 0);
 
   return (
     <main className="space-y-6">
@@ -265,6 +356,14 @@ export default async function RapportagesPage({
         ontbrekendUurloon={bron.ontbrekendUurloon}
         dagen={bron.dagen}
         medewerkers={bron.medewerkers}
+        diensten={bron.diensten}
+        seizoenWeken={seizoenWeken}
+        vorigSeizoenMap={Array.from(vorigSeizoenMap.entries()).map(([key, value]) => ({ key, ...value }))}
+        seizoenOmzetAfgesloten={seizoenOmzetAfgesloten}
+        seizoenOmzetVerwacht={seizoenOmzetVerwacht}
+        vorigSeizoenOmzet={vorigSeizoenOmzet}
+        seizoenStart={seizoenStart?.toISOString() ?? null}
+        seizoenEinde={seizoenEinde?.toISOString() ?? null}
         vorigeSeizoen={vorigeSeizoen}
       />
     </main>
