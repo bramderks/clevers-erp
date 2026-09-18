@@ -391,6 +391,12 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
   const vestigingen = medewerker.vestigingen.map((medewerkerVestiging) => ({
     id: medewerkerVestiging.vestiging.id,
     naam: medewerkerVestiging.vestiging.naam,
+    seizoenStart: medewerkerVestiging.vestiging.seizoenStart
+      ? medewerkerVestiging.vestiging.seizoenStart.toISOString().slice(0, 10)
+      : null,
+    seizoenEinde: medewerkerVestiging.vestiging.seizoenEinde
+      ? medewerkerVestiging.vestiging.seizoenEinde.toISOString().slice(0, 10)
+      : null,
   }));
 
   // Bij een nieuwe medewerker zonder bestaande vestiging moeten in het
@@ -418,6 +424,8 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
         select: {
           id: true,
           naam: true,
+          seizoenStart: true,
+          seizoenEinde: true,
         },
       })
     : vestigingen;
