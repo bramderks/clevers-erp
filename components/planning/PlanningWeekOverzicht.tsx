@@ -6,6 +6,7 @@ import type {
 
 type PlanningWeekOverzichtProps = {
   week: PlanningWeek;
+  isEigenaar?: boolean;
 
   onNieuweDienst?: (
     datum: string,
@@ -657,6 +658,20 @@ function dagenTotDienst(dienst: PlanningDienst) {
   );
 }
 
+function duurInUren(dienst: PlanningDienst) {
+  const begin = new Date(dienst.begintijd).getTime();
+  const einde = new Date(dienst.eindtijd).getTime();
+  if (!Number.isFinite(begin) || !Number.isFinite(einde) || einde <= begin) return 0;
+  return (einde - begin) / 3_600_000;
+}
+
+function berekenLoonkosten(dienst: PlanningDienst) {
+  return dienst.bezetting.reduce((totaal, bezetting) => {
+    if (bezetting.status === "AFGEZEGD" || !bezetting.medewerker || bezetting.medewerker.uurloon == null) return totaal;
+    return totaal + duurInUren(dienst) * Number(bezetting.medewerker.uurloon);
+  }, 0);
+}
+
 function bepaalDienstStatus(dienst: PlanningDienst) {
   const actieveBezetting = dienst.bezetting.filter(
     (bezetting) =>
@@ -734,6 +749,7 @@ function dienstStatusStyling(dienst: PlanningDienst) {
 
 export default function PlanningWeekOverzicht({
   week,
+  isEigenaar = false,
 
   onNieuweDienst,
   onWijzigDienst,
@@ -744,6 +760,20 @@ export default function PlanningWeekOverzicht({
       week.weeknummer,
       week.jaar,
     );
+
+  const weekLoonkosten = week.diensten.reduce(
+    (totaal, dienst) => totaal + berekenLoonkosten(dienst),
+    0,
+  );
+  const weekUren = week.diensten.reduce(
+    (totaal, dienst) =>
+      totaal +
+      dienst.bezetting.filter((b) => b.status !== "AFGEZEGD" && b.medewerker).length *
+        duurInUren(dienst),
+    0,
+  );
+  const weekOmzet = week.loonkostenWeek?.omzet ?? 0;
+  const weekPercentage = weekOmzet > 0 ? (weekLoonkosten / weekOmzet) * 100 : null;
 
   function openDienst(
     dienstId: string,
@@ -821,6 +851,11 @@ export default function PlanningWeekOverzicht({
                               dag.datumObject,
                             )}
                           </p>
+                          {isEigenaar && (
+                            <p className="mt-1 text-xs font-semibold text-slate-600">
+                              Loonkosten: € {dienstenVanDag.reduce((totaal, dienst) => totaal + berekenLoonkosten(dienst), 0).toFixed(2).replace(".", ",")}
+                            </p>
+                          )}
                         </div>
 
                         <span className="flex h-8 min-w-8 items-center justify-center rounded-full bg-slate-100 px-2 text-xs font-bold text-slate-600">
