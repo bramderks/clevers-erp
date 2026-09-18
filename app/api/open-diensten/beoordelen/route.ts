@@ -18,6 +18,10 @@ export async function GET() {
    * De eigenaar moet ALLE nog lege open dienstplekken kunnen nalopen,
    * ook wanneer nog niemand belangstelling heeft gemeld.
    */
+  const organisatieIds = gebruiker.organisaties
+    .filter((relatie) => relatie.actief && relatie.organisatie.actief)
+    .map((relatie) => relatie.organisatieId);
+
   const openDiensten = await prisma.dienstBezetting.findMany({
     where: {
       status: "OPEN",
@@ -154,7 +158,7 @@ export async function POST(request: Request) {
         dienst: {
           week: {
             vestiging: {
-              organisatieId: gebruiker.organisatieId,
+              organisatieId: { in: organisatieIds },
             },
           },
         },
