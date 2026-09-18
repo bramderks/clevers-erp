@@ -159,11 +159,25 @@ export async function POST(request: NextRequest) {
     const gemiddeldUurloon = urenMetLoon ? totaalKosten / urenMetLoon : 0;
     const percentageOmzet = omzet > 0 ? (totaalKosten / omzet) * 100 : null;
 
+    const diensten = week.diensten.map((dienst) => ({
+      datum: dienst.datum.toISOString(),
+      begintijd: dienst.begintijd.toISOString(),
+      eindtijd: dienst.eindtijd.toISOString(),
+      medewerkers: dienst.bezetting
+        .filter((bezetting) => bezetting.medewerker)
+        .map((bezetting) => ({
+          medewerkerId: bezetting.medewerker!.id,
+          naam: [bezetting.medewerker!.voornaam, bezetting.medewerker!.achternaam].filter(Boolean).join(" "),
+          uurloon: bezetting.medewerker!.uurloon == null ? null : Number(bezetting.medewerker!.uurloon),
+        })),
+    }));
+
     const snapshot = {
-      versie: 1,
+      versie: 2,
       vastgelegdOp: new Date().toISOString(),
       dagen,
       medewerkers,
+      diensten,
       ontbrekendUurloon: regels.filter((regel) => regel.kosten == null).length,
     };
 
