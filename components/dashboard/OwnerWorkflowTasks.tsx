@@ -17,10 +17,15 @@ type WorkflowTaak = {
 const EIGENAAR_ACTIES = new Set([
   "MEDEWERKER_ROL_TOEWIJZEN",
   "MEDEWERKER_DOSSIER_INVULLEN",
+  "RUILVERZOEKEN_WACHTEN",
+  "OPEN_DIENSTEN",
+  "INACTIEVE_MEDEWERKERS_PLANNING",
 ]);
 
 function variantKlassen(actie: string) {
-  return actie === "MEDEWERKER_ROL_TOEWIJZEN" ? "bg-red-500" : "bg-blue-500";
+  if (actie === "MEDEWERKER_ROL_TOEWIJZEN" || actie === "INACTIEVE_MEDEWERKERS_PLANNING") return "bg-red-500";
+  if (actie === "RUILVERZOEKEN_WACHTEN") return "bg-amber-500";
+  return "bg-blue-500";
 }
 
 function uniekeActieveTaken(data: WorkflowTaak[]) {
