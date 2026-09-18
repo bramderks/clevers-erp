@@ -1,4 +1,4 @@
-import { permissions } from "./permissions";
+import { permissions, type Permission } from "./permissions";
 
 export const roles = {
   eigenaar: {
