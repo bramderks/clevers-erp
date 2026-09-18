@@ -130,7 +130,9 @@ export default function RuilDienstPaneel({
   const [laden, setLaden] = useState(false);
   const [bezig, setBezig] = useState(false);
   const [kandidaten, setKandidaten] = useState<Kandidaat[]>([]);
+  const [alleMedewerkers, setAlleMedewerkers] = useState<Kandidaat[]>([]);
   const [gekozenId, setGekozenId] = useState("");
+  const [uitnodigingId, setUitnodigingId] = useState("");
   const [fout, setFout] = useState<string | null>(null);
   const [succes, setSucces] = useState<string | null>(null);
 
@@ -141,6 +143,8 @@ export default function RuilDienstPaneel({
     setSucces(null);
     setGekozenId("");
     setKandidaten([]);
+    setAlleMedewerkers([]);
+    setUitnodigingId("");
 
     try {
       const response = await fetch(
@@ -170,7 +174,18 @@ export default function RuilDienstPaneel({
         );
       }
 
-      const geschikt = (data.medewerkers as Kandidaat[])
+      const alle = (data.medewerkers as Kandidaat[])
+        .filter(
+          (medewerker) =>
+            medewerker.id !== huidigeMedewerkerId,
+        )
+        .filter((medewerker) =>
+          heeftAlleTags(medewerker, vereisteTags),
+        );
+
+      setAlleMedewerkers(alle);
+
+      const geschikt = alle
         .filter(
           (medewerker) =>
             medewerker.id !== huidigeMedewerkerId,
@@ -211,8 +226,15 @@ export default function RuilDienstPaneel({
     }
   }
 
-  async function dienRuilverzoekIn(algemeen: boolean) {
-    if (!algemeen && !gekozenId) {
+  async function dienRuilverzoekIn(
+    algemeen: boolean,
+    directUitnodigen = false,
+  ) {
+    const doelId = directUitnodigen
+      ? uitnodigingId
+      : gekozenId;
+
+    if (!algemeen && !doelId) {
       setFout("Kies eerst een medewerker.");
       return;
     }
@@ -232,7 +254,10 @@ export default function RuilDienstPaneel({
           dienstBezettingId,
           ...(algemeen
             ? { algemeen: true }
-            : { ruilMedewerkerId: gekozenId }),
+            : {
+                ruilMedewerkerId: doelId,
+                uitnodigen: directUitnodigen,
+              }),
         }),
       });
 
@@ -299,68 +324,96 @@ export default function RuilDienstPaneel({
             <p className="mt-4 text-sm text-slate-600">
               Beschikbare medewerkers laden...
             </p>
-          ) : kandidaten.length > 0 ? (
+          ) : (
             <>
-              <select
-                value={gekozenId}
-                onChange={(event) =>
-                  setGekozenId(event.target.value)
-                }
-                disabled={bezig}
-                className="mt-4 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900"
-              >
-                <option value="">
-                  Kies een medewerker...
-                </option>
-
-                {kandidaten.map((medewerker) => (
-                  <option
-                    key={medewerker.id}
-                    value={medewerker.id}
+              {kandidaten.length > 0 && (
+                <div>
+                  <p className="mt-4 text-sm font-semibold text-slate-800">
+                    Beschikbare medewerkers
+                  </p>
+                  <select
+                    value={gekozenId}
+                    onChange={(event) =>
+                      setGekozenId(event.target.value)
+                    }
+                    disabled={bezig}
+                    className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900"
                   >
-                    {formatteerNaam(medewerker)}
-                  </option>
-                ))}
-              </select>
+                    <option value="">
+                      Kies een beschikbare medewerker...
+                    </option>
+                    {kandidaten.map((medewerker) => (
+                      <option key={medewerker.id} value={medewerker.id}>
+                        {formatteerNaam(medewerker)}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => void dienRuilverzoekIn(false)}
+                    disabled={bezig || !gekozenId}
+                    className="mt-3 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {bezig ? "Indienen..." : "Deze medewerker uitnodigen"}
+                  </button>
+                </div>
+              )}
 
-              <button
-                type="button"
-                onClick={() =>
-                  void dienRuilverzoekIn(false)
-                }
-                disabled={bezig || !gekozenId}
-                className="mt-4 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {bezig
-                  ? "Indienen..."
-                  : "Ruilverzoek indienen"}
-              </button>
+              {alleMedewerkers.length > 0 && (
+                <div className="mt-5 border-t border-emerald-200 pt-5">
+                  <p className="text-sm font-semibold text-slate-800">
+                    Ken je zelf iemand?
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Je kunt ook rechtstreeks iemand met de juiste functie uitnodigen.
+                    Die persoon hoeft op dit moment niet als beschikbaar te staan.
+                  </p>
+                  <select
+                    value={uitnodigingId}
+                    onChange={(event) =>
+                      setUitnodigingId(event.target.value)
+                    }
+                    disabled={bezig}
+                    className="mt-3 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900"
+                  >
+                    <option value="">Kies een medewerker...</option>
+                    {alleMedewerkers.map((medewerker) => (
+                      <option key={medewerker.id} value={medewerker.id}>
+                        {formatteerNaam(medewerker)}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => void dienRuilverzoekIn(false, true)}
+                    disabled={bezig || !uitnodigingId}
+                    className="mt-3 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {bezig ? "Uitnodigen..." : "Persoon uitnodigen voor ruil"}
+                  </button>
+                </div>
+              )}
+
+              <div className="mt-5 border-t border-emerald-200 pt-5">
+                <p className="text-sm font-semibold text-slate-800">
+                  Dienst algemeen ter ruil aanbieden
+                </p>
+                <p className="mt-1 text-sm text-slate-600">
+                  Iedereen met de juiste functie/tag voor deze dienst krijgt
+                  direct een pushmelding. De eerste medewerker die accepteert
+                  gaat door naar goedkeuring door de eigenaar.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void dienRuilverzoekIn(true)}
+                  disabled={bezig || alleMedewerkers.length === 0}
+                  className="mt-3 rounded-xl border border-amber-300 bg-white px-4 py-2.5 text-sm font-semibold text-amber-900 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {bezig ? "Aanbieden..." : "Algemeen ter ruil aanbieden"}
+                </button>
+              </div>
             </>
-          ) : !fout ? (
-            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
-              <p className="text-sm font-semibold text-amber-900">
-                Niemand met de juiste tags is momenteel beschikbaar.
-              </p>
-              <p className="mt-1 text-sm text-amber-800">
-                Je kunt deze dienst algemeen ter ruil aanbieden.
-                Alle actieve medewerkers met de juiste tags krijgen
-                dan een ruilmelding, ook wanneer zij niet beschikbaar
-                staan.
-              </p>
-              <button
-                type="button"
-                onClick={() =>
-                  void dienRuilverzoekIn(true)
-                }
-                disabled={bezig}
-                className="mt-4 rounded-xl border border-amber-300 bg-white px-4 py-2.5 text-sm font-semibold text-amber-900 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {bezig
-                  ? "Aanbieden..."
-                  : "Algemeen ter ruil aanbieden"}
-              </button>
-            </div>
-          ) : null}
+          )
 
           {fout && (
             <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
