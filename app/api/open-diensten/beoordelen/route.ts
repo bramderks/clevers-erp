@@ -14,59 +14,116 @@ export async function GET() {
     return NextResponse.json({ fout: "Alleen eigenaar." }, { status: 403 });
   }
 
-  const interesse = await prisma.auditLog.findMany({
+  /*
+   * De eigenaar moet ALLE nog lege open dienstplekken kunnen nalopen,
+   * ook wanneer nog niemand belangstelling heeft gemeld.
+   */
+  const openDiensten = await prisma.dienstBezetting.findMany({
     where: {
-      module: "PLANNING",
-      actie: "INTERESSE_OPEN_DIENST",
+      status: "OPEN",
+      medewerkerId: null,
+      dienst: {
+        week: {
+          vestiging: {
+            organisatieId: gebruiker.organisatieId,
+          },
+        },
+      },
     },
-    orderBy: { aangemaaktOp: "desc" },
-    take: 200,
-    include: {
-      systeemGebruiker: {
+    orderBy: [
+      { dienst: { datum: "asc" } },
+      { dienst: { begintijd: "asc" } },
+      { aangemaaktOp: "asc" },
+    ],
+    select: {
+      id: true,
+      dienst: {
         select: {
           id: true,
-          naam: true,
-          medewerker: {
-            select: { id: true },
+          datum: true,
+          begintijd: true,
+          eindtijd: true,
+          tags: {
+            select: {
+              aantal: true,
+              tag: { select: { id: true, naam: true } },
+            },
+          },
+          week: {
+            select: {
+              jaar: true,
+              weeknummer: true,
+              vestiging: { select: { naam: true } },
+            },
           },
         },
       },
     },
   });
 
-  const resultaat = [];
-
-  for (const item of interesse) {
-    const bezetting = await prisma.dienstBezetting.findUnique({
-      where: { id: item.recordId ?? "__geen_record__" },
-      select: {
-        id: true,
-        status: true,
-        medewerkerId: true,
-        dienst: {
-          select: {
-            datum: true,
-            begintijd: true,
-            eindtijd: true,
-            week: { select: { vestiging: { select: { naam: true } } } },
+  const ids = openDiensten.map((item) => item.id);
+  const interesseLogs =
+    ids.length === 0
+      ? []
+      : await prisma.auditLog.findMany({
+          where: {
+            module: "PLANNING",
+            actie: "INTERESSE_OPEN_DIENST",
+            recordId: { in: ids },
           },
-        },
-      },
-    });
+          orderBy: { aangemaaktOp: "asc" },
+          select: {
+            id: true,
+            recordId: true,
+            aangemaaktOp: true,
+            systeemGebruiker: {
+              select: {
+                id: true,
+                naam: true,
+                medewerker: { select: { id: true } },
+              },
+            },
+          },
+        });
 
-    if (bezetting?.status === "OPEN" && !bezetting.medewerkerId && item.systeemGebruiker) {
-      resultaat.push({
-        interesseId: item.id,
-        dienstBezettingId: bezetting.id,
-        medewerkerId: item.systeemGebruiker.medewerker?.id ?? null,
-        medewerkerNaam: item.systeemGebruiker.naam,
-        aangemeldOp: item.aangemaaktOp,
-        dienst: bezetting.dienst!,
+  const interessesPerDienst = new Map<
+    string,
+    {
+      interesseId: string;
+      medewerkerId: string | null;
+      medewerkerNaam: string;
+      aangemeldOp: Date;
+    }[]
+  >();
+
+  for (const log of interesseLogs) {
+    if (!log.recordId || !log.systeemGebruiker) continue;
+
+    const lijst = interessesPerDienst.get(log.recordId) ?? [];
+    const medewerkerId = log.systeemGebruiker.medewerker?.id ?? null;
+
+    if (
+      medewerkerId &&
+      !lijst.some((item) => item.medewerkerId === medewerkerId)
+    ) {
+      lijst.push({
+        interesseId: log.id,
+        medewerkerId,
+        medewerkerNaam: log.systeemGebruiker.naam,
+        aangemeldOp: log.aangemaaktOp,
       });
     }
+
+    interessesPerDienst.set(log.recordId, lijst);
   }
 
-  return NextResponse.json(resultaat);
+  return NextResponse.json(
+    openDiensten.map((item) => ({
+      dienstBezettingId: item.id,
+      dienst: item.dienst,
+      interesses: interessesPerDienst.get(item.id) ?? [],
+    })),
+  );
 }
 
 export async function POST(request: Request) {
