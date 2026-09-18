@@ -13,6 +13,8 @@ import {
   prisma,
 } from "@/lib/prisma";
 
+import { verstuurDirecteOpenDienstMelding } from "@/lib/push/open-diensten";
+
 const DATUM_FOUT =
   "Datum moet een geldige datum zijn.";
 
