@@ -145,6 +145,10 @@ export async function POST(request: Request) {
   const dienstBezettingId = String(body.dienstBezettingId ?? "");
   const medewerkerId = String(body.medewerkerId ?? "");
 
+  const organisatieIds = gebruiker.organisaties
+    .filter((relatie) => relatie.actief && relatie.organisatie.actief)
+    .map((relatie) => relatie.organisatieId);
+
   if (!dienstBezettingId || !medewerkerId) {
     return NextResponse.json({ fout: "Dienst of medewerker ontbreekt." }, { status: 400 });
   }
@@ -184,7 +188,7 @@ export async function POST(request: Request) {
         vestigingen: {
           some: {
             vestigingId: openDienst.dienst.week.vestigingId,
-            vestiging: { organisatieId: gebruiker.organisatieId, actief: true },
+            vestiging: { organisatieId: { in: organisatieIds }, actief: true },
           },
         },
         AND: openDienst.dienst.tags.map((tag) => ({
