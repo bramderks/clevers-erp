@@ -450,6 +450,7 @@ async function haalPlanningOp(
     },
     orderBy: [{ jaar: "desc" }, { weeknummer: "desc" }],
     include: {
+      loonkostenWeek: true,
       diensten: {
         orderBy: [{ datum: "asc" }, { begintijd: "asc" }],
         include: {
@@ -518,6 +519,12 @@ async function haalPlanningOp(
 
   return weken.map((week) => ({
     ...week,
+    loonkostenWeek: magFinancieel && week.loonkostenWeek
+      ? {
+          omzet: Number(week.loonkostenWeek.omzet),
+          doelPercentage: Number(week.loonkostenWeek.doelPercentage),
+        }
+      : null,
     diensten: week.diensten.map((dienst) => ({
       ...dienst,
       bezetting: dienst.bezetting.map((bezetting) => ({
