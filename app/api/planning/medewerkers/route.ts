@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import {
   getCurrentUser,
   hasPermissionForVestiging,
+  isEigenaar,
 } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
@@ -131,6 +132,14 @@ export async function GET(
 
     const huidigeMedewerkerId =
       gebruiker.medewerker?.id ?? null;
+
+    const vestiging = await prisma.vestiging.findUnique({
+      where: { id: vestigingId },
+      select: { organisatieId: true },
+    });
+    const magFinancielePlanningInzien = vestiging
+      ? await isEigenaar(vestiging.organisatieId)
+      : false;
 
     const medewerkers =
       await prisma.medewerker.findMany({
@@ -309,16 +318,18 @@ export async function GET(
           achternaam:
             medewerker.achternaam,
 
-          uurloon:
-            medewerker.uurloon !== null
-              ? Number(medewerker.uurloon)
-              : null,
-
-          urenSindsVorigeVerloning:
-            Math.round((urenPerMedewerker.get(medewerker.id) ?? 0) * 100) / 100,
-
-          vorigeVerloningEinde:
-            vorigeVerloning?.periodeEinde?.toISOString() ?? null,
+          ...(magFinancielePlanningInzien
+            ? {
+                uurloon:
+                  medewerker.uurloon !== null
+                    ? Number(medewerker.uurloon)
+                    : null,
+                urenSindsVorigeVerloning:
+                  Math.round((urenPerMedewerker.get(medewerker.id) ?? 0) * 100) / 100,
+                vorigeVerloningEinde:
+                  vorigeVerloning?.periodeEinde?.toISOString() ?? null,
+              }
+            : {}),
 
           tags:
             medewerker.tags.map(
