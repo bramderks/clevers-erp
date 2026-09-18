@@ -116,6 +116,8 @@ function fout(
 const RUIL_SELECT = {
   id: true,
   status: true,
+  aanvragerId: true,
+  ruilMedewerkerId: true,
   aangevraagdOp: true,
   medewerkerGeaccepteerdOp: true,
   eigenaarBeoordeeldOp: true,
