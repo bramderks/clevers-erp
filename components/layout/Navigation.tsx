@@ -72,6 +72,13 @@ export default function Navigation({
       return false;
     }
 
+    // Iedere medewerker heeft toegang tot het dashboard,
+    // ook wanneer de organisatie-relatie geen dashboard.view
+    // bevat. Het dashboard is een basisfunctie van een medewerker.
+    if (item.href === "/dashboard" && isMedewerker) {
+      return true;
+    }
+
     if (!item.permission) {
       return true;
     }
