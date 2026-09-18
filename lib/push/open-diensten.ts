@@ -81,9 +81,9 @@ export async function verstuurOpenDienstMeldingen() {
         vestigingen: {
           some: { vestigingId: dienst.week.vestigingId },
         },
-        tags: {
-          some: { tagId: { in: tagIds } },
-        },
+        AND: tagIds.map((tagId) => ({
+          tags: { some: { tagId } },
+        })),
       },
       select: {
         id: true,
@@ -176,7 +176,7 @@ export async function verstuurOpenDienstMeldingen() {
 /**
  * Stuur direct na het publiceren van een nieuwe open dienst
  * een pushmelding naar alle actieve medewerkers die minimaal
- * één van de planningstags van de dienst hebben.
+ * alle planningstags van de dienst hebben.
  */
 export async function verstuurDirecteOpenDienstMelding(
   dienstBezettingId: string,
@@ -211,7 +211,9 @@ export async function verstuurDirecteOpenDienstMelding(
       actief: true,
       systeemGebruikerId: { not: null },
       vestigingen: { some: { vestigingId: bezetting.dienst.week.vestigingId } },
-      tags: { some: { tagId: { in: tagIds } } },
+      AND: tagIds.map((tagId) => ({
+        tags: { some: { tagId } },
+      })),
     },
     select: { systeemGebruikerId: true },
   });
