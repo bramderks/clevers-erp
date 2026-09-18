@@ -553,6 +553,7 @@ export async function PATCH(
       }
 
       const actief = data.actief;
+      const force = data.force === true;
       if (typeof actief !== "boolean") {
         return NextResponse.json(
           { error: "actief moet true of false zijn." },
@@ -563,6 +564,26 @@ export async function PATCH(
       if (actief) {
         await medewerkerService.activeer(id, gebruiker.id);
       } else {
+        const toekomstigeDiensten = await prisma.dienstBezetting.count({
+          where: {
+            medewerkerId: id,
+            status: { in: ["GEPLAND", "BEVESTIGD"] },
+            dienst: { datum: { gte: new Date() } },
+          },
+        });
+
+        if (toekomstigeDiensten > 0 && !force) {
+          return NextResponse.json(
+            {
+              error: "Deze medewerker staat nog op toekomstige diensten.",
+              waarschuwing: `Er staan nog ${toekomstigeDiensten} toekomstige dienst(en) op deze medewerker. De diensten blijven behouden in de planning; controleer deze na het inactief zetten.`,
+              toekomstigeDiensten,
+              bevestigingVereist: true,
+            },
+            { status: 409 },
+          );
+        }
+
         await medewerkerService.deactiveer(id);
       }
 
