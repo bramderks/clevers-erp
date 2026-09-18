@@ -28,7 +28,7 @@ type EigenGegevensUpdateData = {
   telefoon?: string;
 };
 
-type MedewerkerFilter = { vestigingIds?: string[] };
+type MedewerkerFilter = { vestigingIds?: string[]; includeInactive?: boolean };
 
 function trimNullable(value: string | null | undefined) {
   if (value === undefined) return undefined;
@@ -88,12 +88,13 @@ export const medewerkerService = {
     const actieveOrganisatieIds = await haalActieveOrganisatieIds(organisatieIds);
     if (!actieveOrganisatieIds.length) return [];
     const gevraagdeVestigingIds = filter.vestigingIds;
+    const includeInactive = filter.includeInactive === true;
     let actieveVestigingIds: string[] | undefined;
     if (gevraagdeVestigingIds !== undefined) {
       actieveVestigingIds = await haalActieveVestigingIds(gevraagdeVestigingIds, actieveOrganisatieIds);
       if (!actieveVestigingIds.length) return [];
     }
-    return medewerkerRepository.findAll({ organisatieIds: actieveOrganisatieIds, vestigingIds: actieveVestigingIds });
+    return medewerkerRepository.findAll({ organisatieIds: actieveOrganisatieIds, vestigingIds: actieveVestigingIds, includeInactive });
   },
 
   async getById(id: string) {
