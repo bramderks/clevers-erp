@@ -788,6 +788,7 @@ export default async function DashboardPage() {
     openRuilverzoeken,
     teControlerenUren,
     verloningsPeriode,
+    inactievePlanningDiensten,
   ] = await Promise.all([
     prisma.dienstBezetting.count({
       where: {
@@ -804,6 +805,17 @@ export default async function DashboardPage() {
     prisma.urenRegistratie.count({
       where: {
         status: "TE_CONTROLEREN",
+      },
+    }),
+
+    prisma.dienstBezetting.count({
+      where: {
+        status: { in: ["GEPLAND", "BEVESTIGD"] },
+        medewerker: { actief: false },
+        dienst: {
+          datum: { gte: vandaag },
+          week: { vestiging: { organisatieId: { in: gebruiker.organisaties.filter((r) => r.actief && r.organisatie.actief).map((r) => r.organisatieId) }, actief: true } },
+        },
       },
     }),
 
@@ -860,6 +872,17 @@ export default async function DashboardPage() {
       aantal: teControlerenUren,
       href: "/planning",
       variant: "warning",
+    });
+  }
+
+  if (inactievePlanningDiensten > 0) {
+    taken.push({
+      id: "inactieve-planning",
+      titel: "Inactieve medewerkers in planning",
+      omschrijving: "Er staan nog toekomstige diensten op inactieve medewerkers. Controleer de planning.",
+      aantal: inactievePlanningDiensten,
+      href: "/medewerkers?status=inactief",
+      variant: "urgent",
     });
   }
 
