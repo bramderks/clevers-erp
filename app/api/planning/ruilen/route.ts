@@ -1196,6 +1196,26 @@ export async function PATCH(
             );
           }
 
+          const actueleRuilMedewerker =
+            await tx.medewerker.findUnique({
+              where: { id: ruilverzoek.ruilMedewerkerId },
+              select: {
+                actief: true,
+                vestigingen: {
+                  where: { vestigingId: vestiging.id },
+                  select: { id: true },
+                },
+              },
+            });
+
+          if (!actueleRuilMedewerker?.actief) {
+            throw new Error("RUILMEDEWERKER_INACTIEF");
+          }
+
+          if (actueleRuilMedewerker.vestigingen.length === 0) {
+            throw new Error("RUILMEDEWERKER_NIET_MEER_GEGEVENS");
+          }
+
           const bestaandeBezetting =
             await tx.dienstBezetting.findFirst(
               {
@@ -1360,6 +1380,18 @@ export async function PATCH(
         case "MEDEWERKER_HEEFT_OVERLAP":
           return fout(
             "De medewerker heeft een overlappende dienst.",
+            409,
+          );
+
+        case "RUILMEDEWERKER_INACTIEF":
+          return fout(
+            "De medewerker die de dienst zou overnemen is inmiddels inactief.",
+            409,
+          );
+
+        case "RUILMEDEWERKER_NIET_MEER_GEGEVENS":
+          return fout(
+            "De medewerker die de dienst zou overnemen is niet meer aan deze vestiging gekoppeld.",
             409,
           );
       }
