@@ -19,10 +19,12 @@ function vapidInstellen() {
   return true;
 }
 
-function binnenVenster(nu: Date, doel: Date, minuten: number) {
-  const verschil = doel.getTime() - nu.getTime();
-  const venster = minuten * 60_000;
-  return verschil <= venster && verschil >= -(5 * 60_000);
+function binnenVenster(nu: Date, doel: Date) {
+  // De cron draait ieder uur. Een melding is verschuldigd
+  // vanaf het doelmoment tot 65 minuten daarna, zodat een
+  // exacte 72/48/24-uursgrens niet gemist kan worden.
+  const verschil = nu.getTime() - doel.getTime();
+  return verschil >= 0 && verschil < 65 * 60_000;
 }
 
 export async function verstuurOpenDienstMeldingen() {
@@ -32,7 +34,7 @@ export async function verstuurOpenDienstMeldingen() {
 
   const nu = new Date();
   const zoekVanaf = new Date(nu.getTime() - 5 * 60_000);
-  const zoekTot = new Date(nu.getTime() + 72 * 60 * 60 * 1000 + 5 * 60_000);
+  const zoekTot = new Date(nu.getTime() + 72 * 60 * 60 * 1000 + 65 * 60_000);
 
   const openDiensten = await prisma.dienstBezetting.findMany({
     where: {
@@ -93,7 +95,7 @@ export async function verstuurOpenDienstMeldingen() {
     for (const venster of VENSTERS) {
       gecontroleerd += 1;
       const doel = new Date(begint.getTime() - venster.minuten * 60_000);
-      if (!binnenVenster(nu, doel, venster.minuten)) continue;
+      if (!binnenVenster(nu, doel)) continue;
 
       for (const medewerker of medewerkers) {
         if (!medewerker.systeemGebruikerId) continue;
