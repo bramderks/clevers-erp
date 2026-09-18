@@ -853,6 +853,7 @@ export async function PATCH(
                   week: {
                     select: {
                       vestigingId: true,
+                      status: true,
 
                       vestiging: {
                         select: {
@@ -886,6 +887,13 @@ export async function PATCH(
       return fout(
         "Deze vestiging is niet actief.",
         400,
+      );
+    }
+
+    if (ruilverzoek.dienstBezetting.dienst.week.status === "AFGESLOTEN") {
+      return fout(
+        "Een afgesloten planningweek kan niet meer worden geruild.",
+        409,
       );
     }
 
@@ -969,6 +977,33 @@ export async function PATCH(
 
           select: RUIL_SELECT,
         });
+
+      const eigenaarGebruikers =
+        await prisma.organisatieGebruiker.findMany({
+          where: {
+            organisatieId: vestiging.organisatieId,
+            actief: true,
+            rol: {
+              naam: {
+                equals: "eigenaar",
+                mode: "insensitive",
+              },
+            },
+          },
+          select: { systeemGebruikerId: true },
+        });
+
+      for (const eigenaar of eigenaarGebruikers) {
+        await stuurPush(
+          eigenaar.systeemGebruikerId,
+          "RUIL_WACHT_OP_EIGENAAR",
+          `ruil-eigenaar:${ruilverzoek.id}`,
+          "Clevers — ruilverzoek",
+          "Er is een ruilverzoek ingediend en wacht op jouw goedkeuring.",
+          "/app/ruilen",
+          ruilverzoek.dienstBezettingId,
+        );
+      }
 
       return NextResponse.json(
         bijgewerkt,
@@ -1286,33 +1321,6 @@ export async function PATCH(
           });
         },
       );
-
-    const eigenaarGebruikers =
-      await prisma.organisatieGebruiker.findMany({
-        where: {
-          organisatieId: vestiging.organisatieId,
-          actief: true,
-          rol: {
-            naam: {
-              equals: "eigenaar",
-              mode: "insensitive",
-            },
-          },
-        },
-        select: { systeemGebruikerId: true },
-      });
-
-    for (const eigenaar of eigenaarGebruikers) {
-      await stuurPush(
-        eigenaar.systeemGebruikerId,
-        "RUIL_WACHT_OP_EIGENAAR",
-        `ruil-eigenaar:${ruilverzoek.id}`,
-        "Clevers — ruilverzoek",
-        "Er is een ruilverzoek ingediend en wacht op jouw goedkeuring.",
-        "/dashboard",
-        ruilverzoek.dienstBezettingId,
-      );
-    }
 
     return NextResponse.json(resultaat);
   } catch (error) {
