@@ -147,18 +147,74 @@ export async function POST(request: Request) {
 
   const resultaat = await prisma.$transaction(async (tx) => {
     const openDienst = await tx.dienstBezetting.findFirst({
-      where: { id: dienstBezettingId, status: "OPEN", medewerkerId: null },
-      select: { id: true, dienstId: true },
+      where: {
+        id: dienstBezettingId,
+        status: "OPEN",
+        medewerkerId: null,
+        dienst: {
+          week: {
+            vestiging: {
+              organisatieId: gebruiker.organisatieId,
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+        dienstId: true,
+        dienst: {
+          select: {
+            tags: { select: { tagId: true } },
+            week: { select: { vestigingId: true } },
+          },
+        },
+      },
     });
 
     if (!openDienst) return null;
 
-    const medewerker = await tx.medewerker.findUnique({
-      where: { id: medewerkerId },
+    const medewerker = await tx.medewerker.findFirst({
+      where: {
+        id: medewerkerId,
+        actief: true,
+        vestigingen: {
+          some: {
+            vestigingId: openDienst.dienst.week.vestigingId,
+            vestiging: { organisatieId: gebruiker.organisatieId, actief: true },
+          },
+        },
+        tags: {
+          // Een medewerker mag alleen een functie uitvoeren waarvoor
+          // de diensttag ook aan hem/haar is gekoppeld.
+          every: {
+            tagId: {
+              in: openDienst.dienst.tags.map((tag) => tag.tagId),
+            },
+          },
+        },
+      },
       select: { id: true },
     });
 
-    if (!medewerker) throw new Error("Medewerker niet gevonden.");
+    if (!medewerker) {
+      throw new Error("Deze medewerker hoort niet bij de vestiging of heeft niet de juiste planningstags.");
+    }
+
+    const heeftInteresse = await tx.auditLog.findFirst({
+      where: {
+        module: "PLANNING",
+        actie: "INTERESSE_OPEN_DIENST",
+        recordId: openDienst.id,
+        systeemGebruiker: {
+          medewerker: { id: medewerkerId },
+        },
+      },
+      select: { id: true },
+    });
+
+    if (!heeftInteresse) {
+      throw new Error("Deze medewerker heeft zich niet voor deze open dienst gemeld.");
+    }
 
     const bezetting = await tx.dienstBezetting.update({
       where: { id: openDienst.id },
