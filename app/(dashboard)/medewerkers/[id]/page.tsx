@@ -29,6 +29,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 
 import MedewerkerTabBewerken from "@/components/medewerkers/MedewerkerTabBewerken";
+import MedewerkerStatusActie from "@/components/medewerkers/MedewerkerStatusActie";
 
 import BeschikbaarheidPanel from "@/components/medewerkers/beschikbaarheid/components/BeschikbaarheidPanel";
 import VakantiePlanningPanel from "@/components/medewerkers/VakantiePlanningPanel";
@@ -539,12 +540,21 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
       <PageToolbar
         title={volledigeNaam}
         actions={
-          <Link href="/medewerkers">
-            <Button>
-              <ArrowLeft size={18} />
-              Terug naar medewerkers
-            </Button>
-          </Link>
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            {isEigenaar && !isEigenProfiel && (
+              <MedewerkerStatusActie
+                medewerkerId={medewerker.id}
+                actief={medewerker.actief}
+                naam={volledigeNaam}
+              />
+            )}
+            <Link href="/medewerkers">
+              <Button>
+                <ArrowLeft size={18} />
+                Terug naar medewerkers
+              </Button>
+            </Link>
+          </div>
         }
       />
 
