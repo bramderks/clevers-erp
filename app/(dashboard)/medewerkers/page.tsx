@@ -23,6 +23,7 @@ import { vereisPermission } from "@/lib/requirePermission";
 type PageProps = {
   searchParams: Promise<{
     vestigingId?: string;
+    status?: string;
   }>;
 };
 
@@ -171,9 +172,7 @@ export default async function MedewerkersPage({
    * We accepteren hem uitsluitend wanneer
    * hij daadwerkelijk toegankelijk is.
    */
-  const {
-    vestigingId,
-  } = await searchParams;
+  const { vestigingId, status } = await searchParams;
 
   const gekozenVestiging =
     vestigingId &&
@@ -208,20 +207,21 @@ export default async function MedewerkersPage({
         ? undefined
         : toegestaneVestigingIds;
 
-  const medewerkers =
-    await medewerkerService.getAll(
-      organisatieIds,
-      {
-        vestigingIds:
-          filterVestigingIds,
-      },
-    );
+  const toonInactief = isEigenaar && status === "inactief";
 
-  const actieveMedewerkers =
-    medewerkers.filter(
-      (medewerker) =>
-        medewerker.actief,
-    ).length;
+  const medewerkers = await medewerkerService.getAll(
+    organisatieIds,
+    {
+      vestigingIds: filterVestigingIds,
+      includeInactive: isEigenaar,
+    },
+  );
+
+  const actieveMedewerkers = medewerkers.filter((medewerker) => medewerker.actief).length;
+  const inactieveMedewerkers = medewerkers.filter((medewerker) => !medewerker.actief).length;
+  const zichtbareMedewerkers = toonInactief
+    ? medewerkers.filter((medewerker) => !medewerker.actief)
+    : medewerkers.filter((medewerker) => medewerker.actief);
 
   return (
     <PageLayout>
@@ -229,16 +229,18 @@ export default async function MedewerkersPage({
         <StatCard
           title="Actieve medewerkers"
           value={actieveMedewerkers}
-          subtitle="Actief in het systeem"
-          icon={<Users size={20} />}
-        />
-
-        <StatCard
-          title="Actief"
-          value={actieveMedewerkers}
           subtitle="Actieve medewerkers"
           icon={<Users size={20} />}
         />
+
+        {isEigenaar && (
+          <StatCard
+            title="Inactief"
+            value={inactieveMedewerkers}
+            subtitle="In het archief"
+            icon={<Users size={20} />}
+          />
+        )}
 
         <StatCard
           title="Vestigingen"
@@ -247,6 +249,13 @@ export default async function MedewerkersPage({
           icon={<Users size={20} />}
         />
       </div>
+
+      {isEigenaar && (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+          <Link href={gekozenVestiging ? "/medewerkers?vestigingId=" + encodeURIComponent(gekozenVestiging) : "/medewerkers"} className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${!toonInactief ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"}`}>Actieve medewerkers</Link>
+          <Link href={gekozenVestiging ? "/medewerkers?vestigingId=" + encodeURIComponent(gekozenVestiging) + "&status=inactief" : "/medewerkers?status=inactief"} className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${toonInactief ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"}`}>Inactieve medewerkers</Link>
+        </div>
+      )}
 
       <PageToolbar
         title="Medewerkers"
@@ -342,7 +351,7 @@ export default async function MedewerkersPage({
       )}
 
       <DataGrid
-        data={medewerkers}
+        data={zichtbareMedewerkers}
         columns={[
           {
             key: "voornaam",
