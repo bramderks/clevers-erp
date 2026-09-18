@@ -1,5 +1,6 @@
 import {
   LayoutDashboard,
+  UserRound,
   Users,
   CalendarDays,
   ClipboardClock,
@@ -25,6 +26,12 @@ export const navigation = [
         href: "/dashboard",
         icon: LayoutDashboard,
         permission: permissions.dashboard.view,
+      },
+      {
+        title: "Mijn profiel",
+        href: "/profiel",
+        icon: UserRound,
+        medewerkerOnly: true,
       },
     ],
   },
