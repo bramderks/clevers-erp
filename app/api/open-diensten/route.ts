@@ -19,7 +19,10 @@ export async function GET() {
       dienst: {
         datum: { gte: new Date() },
         week: { vestiging: { medewerkers: { some: { medewerkerId } } } },
-        tags: { some: { tag: { medewerkers: { some: { medewerkerId } } } } },
+        tags: {
+          some: { tag: { medewerkers: { some: { medewerkerId } } } },
+          every: { tag: { medewerkers: { some: { medewerkerId } } } },
+        },
       },
     },
     orderBy: { dienst: { datum: "asc" } },
@@ -81,7 +84,10 @@ export async function POST(request: Request) {
       dienst: {
         datum: { gte: new Date() },
         week: { vestiging: { medewerkers: { some: { medewerkerId } } } },
-        tags: { some: { tag: { medewerkers: { some: { medewerkerId } } } } },
+        tags: {
+          some: { tag: { medewerkers: { some: { medewerkerId } } } },
+          every: { tag: { medewerkers: { some: { medewerkerId } } } },
+        },
       },
     },
     select: { id: true, dienst: { select: { week: { select: { vestigingId: true } } } } },
