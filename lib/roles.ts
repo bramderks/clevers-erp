@@ -44,8 +44,6 @@ export const roles = {
       permissions.medewerkers.view,
 
       permissions.planning.view,
-      permissions.planning.create,
-      permissions.planning.update,
 
       permissions.producten.view,
 
