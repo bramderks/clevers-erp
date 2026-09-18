@@ -652,6 +652,7 @@ export async function POST(
       eindtijd,
       opmerkingen,
       tags,
+      openDienst,
     } = body;
 
     /*
@@ -1202,6 +1203,32 @@ export async function POST(
           },
         },
       });
+
+    if (openDienst === true) {
+      // Een open dienst heeft één of meer lege posities. De aantallen
+      // van de planningstags bepalen hoeveel posities worden aangeboden.
+      const aantalOpenPosities = Math.max(
+        1,
+        dienstTags.reduce((totaal, tag) => totaal + Math.max(1, Number(tag.aantal) || 1), 0),
+      );
+
+      const openBezettingen = await prisma.$transaction(
+        Array.from({ length: aantalOpenPosities }, () =>
+          prisma.dienstBezetting.create({
+            data: {
+              dienstId: dienst.id,
+              medewerkerId: null,
+              status: "OPEN",
+            },
+            select: { id: true },
+          }),
+        ),
+      );
+
+      for (const bezetting of openBezettingen) {
+        await verstuurDirecteOpenDienstMelding(bezetting.id);
+      }
+    }
 
     /*
      * ========================================================
