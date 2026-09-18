@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import webpush from "web-push";
 
 import {
   getCurrentUser,
@@ -21,6 +22,82 @@ type RuilActie =
   | "ACCEPTEREN"
   | "AFWIJZEN"
   | "GOEDKEUREN";
+
+function configureerPush() {
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  const subject = process.env.VAPID_SUBJECT;
+  if (!publicKey || !privateKey || !subject) return false;
+  webpush.setVapidDetails(subject, publicKey, privateKey);
+  return true;
+}
+
+async function stuurPush(
+  systeemGebruikerId: string,
+  type: string,
+  sleutel: string,
+  titel: string,
+  body: string,
+  href: string,
+  dienstBezettingId?: string,
+) {
+  if (!configureerPush()) return;
+  const subscriptions = await prisma.pushSubscription.findMany({
+    where: { systeemGebruikerId, actief: true },
+  });
+  for (const subscription of subscriptions) {
+    const meldingSleutel = `${sleutel}:${subscription.id}`;
+    const bestaande = await prisma.pushMelding.findUnique({
+      where: { sleutel: meldingSleutel },
+      select: { id: true },
+    });
+    if (bestaande) continue;
+    const melding = await prisma.pushMelding.create({
+      data: {
+        type,
+        sleutel: meldingSleutel,
+        pushSubscriptionId: subscription.id,
+        systeemGebruikerId,
+        dienstBezettingId,
+        geplandVoor: new Date(),
+      },
+    });
+    try {
+      await webpush.sendNotification(
+        {
+          endpoint: subscription.endpoint,
+          keys: {
+            p256dh: subscription.p256dh,
+            auth: subscription.auth,
+          },
+        },
+        JSON.stringify({ title: titel, body, href }),
+      );
+      await prisma.pushMelding.update({
+        where: { id: melding.id },
+        data: { verstuurdOp: new Date(), foutmelding: null },
+      });
+    } catch (error) {
+      const statusCode =
+        typeof error === "object" && error !== null && "statusCode" in error
+          ? Number((error as { statusCode?: unknown }).statusCode)
+          : null;
+      await prisma.pushMelding.update({
+        where: { id: melding.id },
+        data: {
+          foutmelding:
+            error instanceof Error ? error.message : "Onbekende pushfout.",
+        },
+      });
+      if (statusCode === 404 || statusCode === 410) {
+        await prisma.pushSubscription.update({
+          where: { id: subscription.id },
+          data: { actief: false, laatsteFoutOp: new Date() },
+        });
+      }
+    }
+  }
+}
 
 function fout(
   tekst: string,
@@ -328,6 +405,9 @@ export async function POST(
     const algemeen =
       body?.algemeen === true;
 
+    const uitnodigen =
+      body?.uitnodigen === true;
+
     if (
       typeof dienstBezettingId !==
         "string" ||
@@ -464,6 +544,25 @@ export async function POST(
         ),
       );
 
+      for (const ruilverzoek of ruilverzoeken) {
+        const ontvanger =
+          await prisma.medewerker.findUnique({
+            where: { id: ruilverzoek.ruilMedewerkerId },
+            select: { systeemGebruikerId: true },
+          });
+        if (ontvanger?.systeemGebruikerId) {
+          await stuurPush(
+            ontvanger.systeemGebruikerId,
+            "RUIL_AANBOD",
+            `ruil-aanbod:${dienstBezettingId}:${ruilverzoek.ruilMedewerkerId}`,
+            "Clevers — dienst ter ruil",
+            "Er is een dienst ter ruil aangeboden voor jouw functie.",
+            `/planning/dienst/${bezetting.dienst.id}`,
+            dienstBezettingId,
+          );
+        }
+      }
+
       return NextResponse.json(
         { algemeen: true, aantal: ruilverzoeken.length },
         { status: 201 },
@@ -556,7 +655,7 @@ export async function POST(
             new Date(bezetting.dienst.eindtijd).getTime(),
       );
 
-    if (!volledigBeschikbaar) {
+    if (!volledigBeschikbaar && !uitnodigen) {
       return fout(
         "Deze medewerker is niet beschikbaar gedurende de volledige dienst.",
         400,
@@ -637,25 +736,32 @@ export async function POST(
       await prisma.ruilverzoek.create({
         data: {
           dienstBezettingId,
-
-          aanvragerId:
-            eigenMedewerkerId,
-
+          aanvragerId: eigenMedewerkerId,
           ruilMedewerkerId,
-
-          status:
-            "AANGEVRAAGD",
+          status: "AANGEVRAAGD",
         },
-
         select: RUIL_SELECT,
       });
 
-    return NextResponse.json(
-      ruilverzoek,
-      {
-        status: 201,
-      },
-    );
+    const ontvanger =
+      await prisma.medewerker.findUnique({
+        where: { id: ruilMedewerkerId },
+        select: { systeemGebruikerId: true },
+      });
+
+    if (ontvanger?.systeemGebruikerId) {
+      await stuurPush(
+        ontvanger.systeemGebruikerId,
+        "RUIL_UITNODIGING",
+        `ruil-uitnodiging:${ruilverzoek.id}`,
+        "Clevers — ruilverzoek",
+        "Je bent uitgenodigd om een dienst over te nemen.",
+        `/planning/dienst/${bezetting.dienst.id}`,
+        dienstBezettingId,
+      );
+    }
+
+    return NextResponse.json(ruilverzoek, { status: 201 });
   } catch (error) {
     console.error(
       "Fout bij aanvragen ruil:",
@@ -810,6 +916,28 @@ export async function PATCH(
       ) {
         return fout(
           "Dit ruilverzoek wacht niet meer op acceptatie.",
+          409,
+        );
+      }
+
+      const actueleAndereDienst =
+        await prisma.dienstBezetting.findFirst({
+          where: {
+            medewerkerId,
+            status: { notIn: ["AFGEZEGD"] },
+            dienst: {
+              id: { not: ruilverzoek.dienstBezetting.dienst.id },
+              datum: ruilverzoek.dienstBezetting.dienst.datum,
+              begintijd: { lt: ruilverzoek.dienstBezetting.dienst.eindtijd },
+              eindtijd: { gt: ruilverzoek.dienstBezetting.dienst.begintijd },
+            },
+          },
+          select: { id: true },
+        });
+
+      if (actueleAndereDienst) {
+        return fout(
+          "Je hebt inmiddels een overlappende dienst en kunt deze ruil niet accepteren.",
           409,
         );
       }
@@ -1157,9 +1285,34 @@ export async function PATCH(
         },
       );
 
-    return NextResponse.json(
-      resultaat,
-    );
+    const eigenaarGebruikers =
+      await prisma.organisatieGebruiker.findMany({
+        where: {
+          organisatieId: vestiging.organisatieId,
+          actief: true,
+          rol: {
+            naam: {
+              equals: "eigenaar",
+              mode: "insensitive",
+            },
+          },
+        },
+        select: { systeemGebruikerId: true },
+      });
+
+    for (const eigenaar of eigenaarGebruikers) {
+      await stuurPush(
+        eigenaar.systeemGebruikerId,
+        "RUIL_WACHT_OP_EIGENAAR",
+        `ruil-eigenaar:${ruilverzoek.id}`,
+        "Clevers — ruilverzoek",
+        "Er is een ruilverzoek ingediend en wacht op jouw goedkeuring.",
+        "/dashboard",
+        ruilverzoek.dienstBezettingId,
+      );
+    }
+
+    return NextResponse.json(resultaat);
   } catch (error) {
     console.error(
       "Fout bij verwerken ruilverzoek:",
