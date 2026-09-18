@@ -408,6 +408,14 @@ export async function POST(
       );
     }
 
+    const huidigeMedewerker = await prisma.medewerker.findUnique({
+      where: { id: gebruiker.medewerker.id },
+      select: { actief: true },
+    });
+    if (!huidigeMedewerker?.actief) {
+      return fout("Je medewerkeraccount is niet actief.", 403);
+    }
+
     const body =
       await request.json();
 
