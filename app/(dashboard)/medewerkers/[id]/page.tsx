@@ -422,7 +422,7 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
       })
     : vestigingen;
 
-  const [dossierItems, vasteUrenAfspraken] = isEigenaar
+  const [dossierItems, vasteUrenAfspraken] = (isEigenaar || isEigenProfiel)
     ? await Promise.all([
         prisma.$queryRawUnsafe<
           Array<{
@@ -545,7 +545,7 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
           <div className="flex gap-1 overflow-x-auto">
             {TABS.filter(
               (tabItem) =>
-                tabItem.id !== "afspraken" || isEigenaar,
+                tabItem.id !== "afspraken" || isEigenaar || isEigenProfiel,
             ).map((tabItem) => {
               const actief = actieveTab === tabItem.id;
               return (
@@ -820,12 +820,13 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
             </div>
           )}
 
-          {actieveTab === "afspraken" && isEigenaar && (
+          {actieveTab === "afspraken" && (isEigenaar || isEigenProfiel) && (
             <MedewerkerAfsprakenPanel
               medewerkerId={medewerker.id}
               vestigingen={vestigingen}
               tags={beschikbareTags}
               dossier={dossierItems.map((item) => ({ ...item, datum: item.datum.toISOString() }))}
+              alleenLezen={isEigenProfiel && !isEigenaar}
               vasteUren={vasteUrenAfspraken.map((afspraak) => ({
                 ...afspraak,
                 startDatum: afspraak.startDatum.toISOString(),
