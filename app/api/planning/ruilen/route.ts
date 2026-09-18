@@ -1363,6 +1363,20 @@ export async function PATCH(
         },
       );
 
+    await prisma.auditLog.create({
+      data: {
+        systeemGebruikerId: gebruiker.id,
+        module: "PLANNING",
+        actie: "RUIL_UITGEVOERD",
+        recordId: ruilverzoek.dienstBezettingId,
+        details: {
+          aanvragerId: ruilverzoek.aanvragerId,
+          ruilMedewerkerId: ruilverzoek.ruilMedewerkerId,
+          ruilverzoekId: ruilverzoek.id,
+        },
+      },
+    });
+
     return NextResponse.json(resultaat);
   } catch (error) {
     console.error(
