@@ -4,7 +4,22 @@ import { useState } from "react";
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, Lock, Users, X } from "lucide-react";
 
 type Vestiging = { id: string; naam: string };
-type Dag = { datum: string; uren: number; kosten: number; ontbrekendUurloon: number };
+type Dag = { datum: string; uren: number; kosten: number; ontbrekendUurloon: number; gemiddeldUurloon?: number };
+type DienstDetail = {
+  datum: string;
+  begintijd: string;
+  eindtijd: string;
+  medewerkers: { medewerkerId: string; naam: string; uurloon: number | null }[];
+};
+type SeizoenWeek = {
+  jaar: number;
+  weeknummer: number;
+  startDatum: string;
+  afgesloten: boolean;
+  omzet: number | null;
+  verwachteOmzet: number | null;
+  prognoseBron: "werkelijk" | "handmatig" | "vorig_seizoen_groei" | null;
+};
 type Medewerker = { medewerkerId: string; naam: string; uren: number; kosten: number; uurloon: number | null };
 
 const euro = (n: number) =>
@@ -44,6 +59,15 @@ export default function LoonkostenRapport(p: {
   ontbrekendUurloon: number;
   dagen: Dag[];
   medewerkers: Medewerker[];
+  diensten: DienstDetail[];
+  seizoenWeken: SeizoenWeek[];
+  vorigSeizoenMap: { key: string; omzet: number | null; afgesloten: boolean }[];
+  seizoenOmzetAfgesloten: number;
+  seizoenOmzetVerwacht: number;
+  gemiddeldeSeizoensgroei: number | null;
+  vorigSeizoenOmzet: number;
+  seizoenStart: string | null;
+  seizoenEinde: string | null;
   vorigeSeizoen: {
     omzet: number;
     doelPercentage: number;
@@ -67,6 +91,13 @@ export default function LoonkostenRapport(p: {
   const meter = Math.min(100, Math.max(0, p.percentageOmzet ?? 0));
   const maxDagKosten = Math.max(...p.dagen.map((d) => d.kosten), 1);
   const zichtbareMedewerkers = p.medewerkers.slice(0, 5);
+  const [detail, setDetail] = useState<"uren" | "kosten" | "loon" | "omzet" | null>(null);
+  const vorigeMap = new Map(
+    p.vorigSeizoenMap.map((item) => [item.key, item]),
+  );
+  const prognoseOntbreekt = p.seizoenWeken.filter(
+    (week) => !week.afgesloten && week.verwachteOmzet == null,
+  ).length;
 
   const parseNummer = (waarde: string) =>
     Number(waarde.replace(/\s/g, "").replace(",", ".")) || 0;
