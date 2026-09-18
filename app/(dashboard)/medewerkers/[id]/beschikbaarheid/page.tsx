@@ -17,7 +17,7 @@ export default async function BeschikbaarheidPage({
   const gebruiker =
     await getCurrentUser();
 
-  if (!gebruiker) {
+  if (!gebruiker || !gebruiker.actief) {
     redirect("/login");
   }
 
