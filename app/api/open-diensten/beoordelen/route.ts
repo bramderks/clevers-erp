@@ -183,15 +183,9 @@ export async function POST(request: Request) {
             vestiging: { organisatieId: gebruiker.organisatieId, actief: true },
           },
         },
-        tags: {
-          // Een medewerker mag alleen een functie uitvoeren waarvoor
-          // de diensttag ook aan hem/haar is gekoppeld.
-          every: {
-            tagId: {
-              in: openDienst.dienst.tags.map((tag) => tag.tagId),
-            },
-          },
-        },
+        AND: openDienst.dienst.tags.map((tag) => ({
+          tags: { some: { tagId: tag.tagId } },
+        })),
       },
       select: { id: true },
     });
