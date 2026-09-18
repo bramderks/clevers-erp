@@ -303,6 +303,8 @@ export default async function RapportagesPage({
         startDatum: start.toISOString(),
         afgesloten: w.status === "AFGESLOTEN" && w.loonkostenWeek != null,
         omzet: w.loonkostenWeek ? Number(w.loonkostenWeek.omzet) : null,
+        verwachteOmzet: null,
+        prognoseBron: null,
       });
     }
   }
