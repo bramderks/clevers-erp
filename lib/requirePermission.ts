@@ -5,6 +5,7 @@ import {
   hasPermission,
   isEigenaar,
 } from "@/lib/auth";
+import type { Permission } from "@/lib/permissions";
 
 export async function vereisInloggen() {
   const gebruiker = await getCurrentUser();
@@ -17,7 +18,7 @@ export async function vereisInloggen() {
 }
 
 export async function vereisPermission(
-  permission: string,
+  permission: Permission,
   organisatieId?: string,
 ) {
   const gebruiker =
