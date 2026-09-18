@@ -17,7 +17,6 @@ type WorkflowTaak = {
 const EIGENAAR_ACTIES = new Set([
   "MEDEWERKER_ROL_TOEWIJZEN",
   "MEDEWERKER_DOSSIER_INVULLEN",
-  "INACTIEVE_MEDEWERKERS_PLANNING",
 ]);
 
 function variantKlassen(actie: string) {
