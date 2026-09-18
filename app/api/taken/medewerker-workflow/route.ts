@@ -189,30 +189,6 @@ export async function GET() {
       }
     }
 
-    const inactieveMetToekomstigeDiensten = await prisma.dienstBezetting.count({
-      where: {
-        status: { in: ["GEPLAND", "BEVESTIGD"] },
-        medewerker: { actief: false },
-        dienst: {
-          datum: { gte: new Date() },
-          week: { vestiging: { organisatieId: { in: organisatieIds }, actief: true } },
-        },
-      },
-    });
-
-    if (inactieveMetToekomstigeDiensten > 0) {
-      taken.push({
-        id: "eigenaar-inactieve-planning",
-        type: "INACTIEVE_MEDEWERKERS_PLANNING",
-        categorie: "Medewerkers",
-        titel: "Inactieve medewerkers in planning",
-        omschrijving: `${inactieveMetToekomstigeDiensten} toekomstige dienst(en) staan nog op een inactieve medewerker.`,
-        actie: "INACTIEVE_MEDEWERKERS_PLANNING",
-        aangemaaktOp: new Date(),
-        gegevens: { href: "/medewerkers?status=inactief" },
-      });
-    }
-
     const eigenaarMedewerkerId = gebruiker.medewerker?.id;
 
     if (eigenaarMedewerkerId) {
