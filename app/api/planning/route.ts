@@ -434,6 +434,14 @@ async function haalPlanningOp(
   jaar?: number,
   weeknummer?: number,
 ) {
+  const vestigingVoorRechten = await prisma.vestiging.findUnique({
+    where: { id: vestigingId },
+    select: { organisatieId: true },
+  });
+  const magFinancieel = vestigingVoorRechten
+    ? await isEigenaar(vestigingVoorRechten.organisatieId)
+    : false;
+
   const weken = await prisma.week.findMany({
     where: {
       vestigingId,
@@ -512,6 +520,23 @@ async function haalPlanningOp(
     ...week,
     diensten: week.diensten.map((dienst) => ({
       ...dienst,
+      bezetting: dienst.bezetting.map((bezetting) => ({
+        ...bezetting,
+        medewerker: bezetting.medewerker
+          ? {
+              ...bezetting.medewerker,
+              ...(magFinancieel
+                ? {
+                    uurloon:
+                      bezetting.medewerker.uurloon !== null
+                        ? Number(bezetting.medewerker.uurloon)
+                        : null,
+                  }
+                : {}),
+              ...(magFinancieel ? {} : { uurloon: undefined }),
+            }
+          : null,
+      })),
       openInteresseAantal: dienst.bezetting
         .filter((bezetting) => bezetting.status === "OPEN" && !bezetting.medewerkerId)
         .reduce(
