@@ -20,6 +20,7 @@ export default function BeschikbaarheidPanel({
   vestigingen,
   isBeheerder,
   isEigenMedewerker = true,
+  bewerkmodus = false,
 }: BeschikbaarheidPanelProps) {
   return (
     <section className="space-y-6">
@@ -39,6 +40,7 @@ export default function BeschikbaarheidPanel({
         medewerkerId={medewerkerId}
         isBeheerder={isBeheerder}
         isEigenMedewerker={isEigenMedewerker}
+        bewerkmodus={bewerkmodus}
         onSelected={() => {
           /*
            * Het weekplanbord wordt volledig
