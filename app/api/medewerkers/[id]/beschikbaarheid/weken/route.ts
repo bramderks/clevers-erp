@@ -272,8 +272,13 @@ export async function GET(
           relatie.organisatie.actief,
       );
 
+    const isEigenMedewerker =
+      gebruiker.medewerker?.id ===
+      medewerkerId;
+
     if (
-      organisatieRelaties.length === 0
+      organisatieRelaties.length === 0 &&
+      !isEigenMedewerker
     ) {
       return jsonError(
         "Je hebt geen toegang tot deze organisatie.",
@@ -302,10 +307,6 @@ export async function GET(
     const isBeheerder =
       isEigenaar ||
       isTeamleider;
-
-    const isEigenMedewerker =
-      gebruiker.medewerker?.id ===
-      medewerkerId;
 
     if (
       !isBeheerder &&
