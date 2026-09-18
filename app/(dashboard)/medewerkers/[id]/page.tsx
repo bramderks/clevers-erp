@@ -311,9 +311,24 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
     await vereisPermission(permissions.medewerkers.view);
   }
 
+  const auditLogs = await prisma.auditLog.findMany({
+    where: {
+      recordId: id,
+    },
+    orderBy: { aangemaaktOp: "desc" },
+    take: 20,
+    select: {
+      id: true,
+      module: true,
+      actie: true,
+      aangemaaktOp: true,
+      systeemGebruiker: { select: { naam: true } },
+    },
+  });
+
   const actieveTab: TabId =
     isTabId(tab) &&
-    (tab !== "afspraken" || isEigenaar)
+    (tab !== "afspraken" || isEigenaar || isEigenProfiel)
       ? tab
       : "algemeen";
 
@@ -727,6 +742,24 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
                 </>
               )}
             </div>
+          )}
+
+          {auditLogs.length > 0 && (
+            <Card title="Historie" description="Recente geregistreerde wijzigingen en acties op dit medewerkerprofiel.">
+              <div className="space-y-0">
+                {auditLogs.map((log) => (
+                  <div key={log.id} className="flex gap-3 border-l-2 border-slate-200 py-3 pl-4 first:pt-0">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-slate-800">{log.actie.replaceAll("_", " ")}</p>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium", timeStyle: "short" }).format(new Date(log.aangemaaktOp))}
+                        {log.systeemGebruiker?.naam ? ` · ${log.systeemGebruiker.naam}` : ""}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
           )}
 
           {actieveTab === "contract" && (
