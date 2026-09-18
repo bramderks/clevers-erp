@@ -583,6 +583,11 @@ export default function DienstForm({
   ] = useState(false);
 
   const [
+    alsOpenDienst,
+    setAlsOpenDienst,
+  ] = useState(false);
+
+  const [
     opmerkingen,
     setOpmerkingen,
   ] = useState("");
@@ -1413,6 +1418,11 @@ export default function DienstForm({
       return;
     }
 
+    if (alsOpenDienst && Object.values(geselecteerdeMedewerkers).some(Boolean)) {
+      setFout("Een open dienst kan nog geen medewerker bevatten. Laat de medewerkerselectie leeg.");
+      return;
+    }
+
     try {
       setLaden(true);
 
@@ -1454,6 +1464,8 @@ export default function DienstForm({
               opmerkingen:
                 opmerkingen.trim() ||
                 null,
+
+              openDienst: alsOpenDienst,
 
               tags: Object.entries(
                 geselecteerdeTags,
@@ -1499,6 +1511,7 @@ export default function DienstForm({
       setBegintijd("");
       setEindtijd("");
       setTotSluit(false);
+      setAlsOpenDienst(false);
       setOpmerkingen("");
       setGeselecteerdeTags({});
       setGeselecteerdeMedewerkers(
@@ -1685,6 +1698,35 @@ export default function DienstForm({
             </span>
           </label>
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            checked={alsOpenDienst}
+            onChange={(event) => {
+              const aangevinkt = event.target.checked;
+              setAlsOpenDienst(aangevinkt);
+              if (aangevinkt) setGeselecteerdeMedewerkers({});
+            }}
+            disabled={laden}
+            className="mt-1"
+          />
+          <span>
+            <span className="block text-sm font-semibold text-slate-900">
+              Deze dienst als open dienst aanbieden
+            </span>
+            <span className="mt-1 block text-xs leading-5 text-slate-600">
+              De dienst blijft open in de planning. Medewerkers met de juiste planningstag krijgen een pushmelding en kunnen hun interesse doorgeven. De eigenaar bepaalt daarna wie wordt ingepland.
+            </span>
+          </span>
+        </label>
+        {alsOpenDienst && (
+          <p className="mt-3 rounded-xl bg-white/70 px-3 py-2 text-xs font-medium text-amber-800">
+            Laat de medewerkerselectie leeg: een open dienst wordt eerst als OPEN positie aangemaakt.
+          </p>
+        )}
       </div>
 
       <div>
