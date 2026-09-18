@@ -47,12 +47,16 @@ export const medewerkerRepository = {
       heeftOrganisatieFilter || heeftVestigingFilter
         ? heeftOrganisatieFilter && !heeftVestigingFilter
           ? {
-              ...statusVoorwaarde,
-              OR: [
-                vestigingVoorwaarde,
-                ...(geactiveerdeUitnodigingEmails.length > 0
-                  ? [{ email: { in: geactiveerdeUitnodigingEmails } }]
-                  : []),
+              AND: [
+                statusVoorwaarde,
+                {
+                  OR: [
+                    vestigingVoorwaarde,
+                    ...(geactiveerdeUitnodigingEmails.length > 0
+                      ? [{ email: { in: geactiveerdeUitnodigingEmails } }]
+                      : []),
+                  ],
+                },
               ],
             }
           : { ...statusVoorwaarde, ...vestigingVoorwaarde }
