@@ -151,6 +151,7 @@ export async function GET(
           voornaam: true,
           tussenvoegsel: true,
           achternaam: true,
+          uurloon: true,
 
           tags: {
             where: {
@@ -259,6 +260,35 @@ export async function GET(
         ],
       });
 
+    const nu = new Date();
+    const vorigeVerloning = await prisma.verloningsPeriode.findFirst({
+      where: { periodeEinde: { lte: nu } },
+      orderBy: { periodeEinde: "desc" },
+      select: { periodeEinde: true },
+    });
+
+    const urenSindsVorigeVerloning = await prisma.urenRegistratie.findMany({
+      where: {
+        medewerkerId: { in: medewerkers.map((medewerker) => medewerker.id) },
+        status: "DEFINITIEF",
+        datum: vorigeVerloning
+          ? { gt: vorigeVerloning.periodeEinde, lte: nu }
+          : { lte: nu },
+      },
+      select: {
+        medewerkerId: true,
+        gewerkteUren: true,
+      },
+    });
+
+    const urenPerMedewerker = new Map<string, number>();
+    for (const registratie of urenSindsVorigeVerloning) {
+      urenPerMedewerker.set(
+        registratie.medewerkerId,
+        (urenPerMedewerker.get(registratie.medewerkerId) ?? 0) + Number(registratie.gewerkteUren),
+      );
+    }
+
     const resultaat =
       medewerkers.map(
         (medewerker) => ({
@@ -278,6 +308,17 @@ export async function GET(
 
           achternaam:
             medewerker.achternaam,
+
+          uurloon:
+            medewerker.uurloon !== null
+              ? Number(medewerker.uurloon)
+              : null,
+
+          urenSindsVorigeVerloning:
+            Math.round((urenPerMedewerker.get(medewerker.id) ?? 0) * 100) / 100,
+
+          vorigeVerloningEinde:
+            vorigeVerloning?.periodeEinde?.toISOString() ?? null,
 
           tags:
             medewerker.tags.map(
