@@ -582,7 +582,7 @@ export default function MedewerkerAfsprakenPanel({
           </div>
 
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Met <strong>Akkoord en opslaan</strong> wordt deze vaste afspraak definitief vastgelegd en direct toegepast op de bestaande planning. Bestaande overlappende diensten van deze medewerker worden niet overschreven.
+            Met <strong>Akkoord en opslaan</strong> wordt deze vaste afspraak definitief vastgelegd en toegepast op de planning voor de hele gekozen periode. Een bestaande overlappende dienst van deze medewerker wordt waar mogelijk aangepast naar deze vaste tijden.
           </div>
 
           <Button
