@@ -434,58 +434,21 @@ async function haalPlanningOp(
   jaar?: number,
   weeknummer?: number,
 ) {
-  return prisma.week.findMany({
+  const weken = await prisma.week.findMany({
     where: {
       vestigingId,
-
-      ...(jaar !== undefined
-        ? {
-            jaar,
-          }
-        : {}),
-
-      ...(weeknummer !== undefined
-        ? {
-            weeknummer,
-          }
-        : {}),
+      ...(jaar !== undefined ? { jaar } : {}),
+      ...(weeknummer !== undefined ? { weeknummer } : {}),
     },
-
-    orderBy: [
-      {
-        jaar: "desc",
-      },
-
-      {
-        weeknummer: "desc",
-      },
-    ],
-
+    orderBy: [{ jaar: "desc" }, { weeknummer: "desc" }],
     include: {
       diensten: {
-        orderBy: [
-          {
-            datum: "asc",
-          },
-
-          {
-            begintijd: "asc",
-          },
-        ],
-
+        orderBy: [{ datum: "asc" }, { begintijd: "asc" }],
         include: {
           tags: {
-            include: {
-              tag: true,
-            },
-
-            orderBy: {
-              tag: {
-                volgorde: "asc",
-              },
-            },
+            include: { tag: true },
+            orderBy: { tag: { volgorde: "asc" } },
           },
-
           bezetting: {
             include: {
               medewerker: {
@@ -496,42 +459,67 @@ async function haalPlanningOp(
                   voornaam: true,
                   tussenvoegsel: true,
                   achternaam: true,
-
                   tags: {
-                    include: {
-                      tag: true,
-                    },
-
-                    orderBy: {
-                      tag: {
-                        volgorde: "asc",
-                      },
-                    },
+                    include: { tag: true },
+                    orderBy: { tag: { volgorde: "asc" } },
                   },
                 },
               },
             },
-
-            orderBy: {
-              aangemaaktOp: "asc",
-            },
+            orderBy: { aangemaaktOp: "asc" },
           },
         },
       },
-
       beschikbaarheden: {
-        orderBy: [
-          {
-            datum: "asc",
-          },
-
-          {
-            begintijd: "asc",
-          },
-        ],
+        orderBy: [{ datum: "asc" }, { begintijd: "asc" }],
       },
     },
   });
+
+  const openBezettingIds = weken.flatMap((week) =>
+    week.diensten.flatMap((dienst) =>
+      dienst.bezetting
+        .filter((bezetting) => bezetting.status === "OPEN" && !bezetting.medewerkerId)
+        .map((bezetting) => bezetting.id),
+    ),
+  );
+
+  const interessePerBezetting = new Map<string, number>();
+
+  if (openBezettingIds.length > 0) {
+    const interesses = await prisma.auditLog.groupBy({
+      by: ["recordId"],
+      where: {
+        module: "PLANNING",
+        actie: "INTERESSE_OPEN_DIENST",
+        recordId: { in: openBezettingIds },
+      },
+      _count: { _all: true },
+    });
+
+    for (const interesse of interesses) {
+      if (interesse.recordId) {
+        interessePerBezetting.set(
+          interesse.recordId,
+          interesse._count._all,
+        );
+      }
+    }
+  }
+
+  return weken.map((week) => ({
+    ...week,
+    diensten: week.diensten.map((dienst) => ({
+      ...dienst,
+      openInteresseAantal: dienst.bezetting
+        .filter((bezetting) => bezetting.status === "OPEN" && !bezetting.medewerkerId)
+        .reduce(
+          (totaal, bezetting) =>
+            totaal + (interessePerBezetting.get(bezetting.id) ?? 0),
+          0,
+        ),
+    })),
+  }));
 }
 
 /*
