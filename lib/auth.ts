@@ -40,12 +40,13 @@ export async function getCurrentUser() {
 }
 
 export async function isAuthenticated() {
-  return (await getCurrentUser()) !== null;
+  const gebruiker = await getCurrentUser();
+  return gebruiker?.actief === true;
 }
 
 export async function heeftRol(rolNaam: string, organisatieId?: string) {
   const gebruiker = await getCurrentUser();
-  if (!gebruiker) return false;
+  if (!gebruiker || !gebruiker.actief) return false;
   return gebruiker.organisaties.some(
     (relatie) => relatie.actief && relatie.organisatie.actief && (!organisatieId || relatie.organisatieId === organisatieId) && relatie.rol.naam.toLowerCase() === rolNaam.toLowerCase(),
   );
@@ -57,7 +58,7 @@ export async function isEigenaar(organisatieId?: string) {
 
 export async function heeftOrganisatieToegang(organisatieId: string) {
   const gebruiker = await getCurrentUser();
-  if (!gebruiker) return false;
+  if (!gebruiker || !gebruiker.actief) return false;
   return gebruiker.organisaties.some(
     (relatie) => relatie.organisatieId === organisatieId && relatie.actief && relatie.organisatie.actief,
   );
@@ -131,7 +132,7 @@ export async function heeftVestigingToegangBinnenOrganisatie(vestigingId: string
 
 export async function hasPermission(permission: Permission, organisatieId?: string) {
   const gebruiker = await getCurrentUser();
-  if (!gebruiker) return false;
+  if (!gebruiker || !gebruiker.actief) return false;
   const relaties = gebruiker.organisaties.filter(
     (relatie) => relatie.actief && relatie.organisatie.actief && (!organisatieId || relatie.organisatieId === organisatieId),
   );
@@ -153,7 +154,7 @@ export async function hasPermission(permission: Permission, organisatieId?: stri
 
 export async function hasPermissionForVestiging(permission: Permission, vestigingId: string) {
   const gebruiker = await getCurrentUser();
-  if (!gebruiker) return false;
+  if (!gebruiker || !gebruiker.actief) return false;
   const vestiging = await haalVestiging(vestigingId);
   if (!vestiging?.actief) return false;
 
