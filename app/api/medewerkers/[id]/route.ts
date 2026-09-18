@@ -587,6 +587,16 @@ export async function PATCH(
         await medewerkerService.deactiveer(id);
       }
 
+      await prisma.auditLog.create({
+        data: {
+          systeemGebruikerId: gebruiker.id,
+          module: "MEDEWERKERS",
+          actie: actief ? "MEDEWERKER_GEACTIVEERD" : "MEDEWERKER_GEDEACTIVEERD",
+          recordId: id,
+          details: { medewerkerId: id },
+        },
+      });
+
       return NextResponse.json({
         id,
         actief,
