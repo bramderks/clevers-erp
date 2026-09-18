@@ -151,7 +151,10 @@ export async function POST(request: NextRequest) {
       medewerkersMap.set(regel.medewerkerId, medewerker);
     }
 
-    const dagen = Array.from(dagenMap.values()).sort((a, b) => a.datum.localeCompare(b.datum));
+    const dagen = Array.from(dagenMap.values()).sort((a, b) => a.datum.localeCompare(b.datum)).map((dag) => ({
+      ...dag,
+      gemiddeldUurloon: dag.uren - dag.ontbrekendUurloon > 0 ? dag.kosten / (dag.uren - dag.ontbrekendUurloon) : 0,
+    }));
     const medewerkers = Array.from(medewerkersMap.values()).sort((a, b) => b.kosten - a.kosten);
     const totaalUren = regels.reduce((totaal, regel) => totaal + regel.uren, 0);
     const totaalKosten = regels.reduce((totaal, regel) => totaal + (regel.kosten ?? 0), 0);
