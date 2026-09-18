@@ -785,7 +785,7 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
                 {!isBewerken && magBeschikbaarheidBewerken && <WijzigenKnop href={`/medewerkers/${medewerker.id}?tab=beschikbaarheid&edit=1`} />}
                 {isBewerken && <AnnuleerBewerkenKnop href={`/medewerkers/${medewerker.id}?tab=beschikbaarheid`} />}
               </div>
-              <BeschikbaarheidPanel medewerkerId={medewerker.id} vestigingen={vestigingen} isBeheerder={magBeschikbaarheidBewerken} isEigenMedewerker={false} bewerkmodus={isBewerken} />
+              <BeschikbaarheidPanel medewerkerId={medewerker.id} vestigingen={vestigingen} isBeheerder={magBeschikbaarheidBewerken} isEigenMedewerker={isEigenProfiel} bewerkmodus={isBewerken} />
             </div>
           )}
 
