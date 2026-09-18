@@ -1661,6 +1661,7 @@ export default function PlanningOverzicht({
 
         <PlanningWeekOverzicht
           week={huidigeWeek}
+          isEigenaar={isEigenaar}
           onNieuweDienst={
             isEigenaar
               ? openNieuweDienst
