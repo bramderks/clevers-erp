@@ -10,6 +10,14 @@ export async function GET() {
     return NextResponse.json({ fout: "Geen medewerkeraccount." }, { status: 403 });
   }
 
+  const huidigeMedewerker = await prisma.medewerker.findUnique({
+    where: { id: gebruiker.medewerker.id },
+    select: { actief: true },
+  });
+  if (!huidigeMedewerker?.actief) {
+    return NextResponse.json({ fout: "Je medewerkeraccount is niet actief." }, { status: 403 });
+  }
+
   const medewerkerId = gebruiker.medewerker.id;
 
   const diensten = await prisma.dienstBezetting.findMany({
@@ -70,6 +78,14 @@ export async function POST(request: Request) {
 
   if (!gebruiker?.medewerker?.id) {
     return NextResponse.json({ fout: "Geen medewerkeraccount." }, { status: 403 });
+  }
+
+  const actieveMedewerker = await prisma.medewerker.findUnique({
+    where: { id: gebruiker.medewerker.id },
+    select: { actief: true },
+  });
+  if (!actieveMedewerker?.actief) {
+    return NextResponse.json({ fout: "Je medewerkeraccount is niet actief." }, { status: 403 });
   }
 
   const body = await request.json().catch(() => null);
