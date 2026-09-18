@@ -14,6 +14,8 @@ import Input from "@/components/ui/Input";
 type Vestiging = {
   id: string;
   naam: string;
+  seizoenStart?: string | null;
+  seizoenEinde?: string | null;
 };
 
 type Tag = {
@@ -143,7 +145,13 @@ export default function MedewerkerAfsprakenPanel({
     begintijd: "09:00",
     eindtijd: "17:00",
     startDatum: vandaag,
-    eindDatum: vandaag,
+    eindDatum:
+      vestigingen[0]?.seizoenEinde ??
+      vandaag,
+    heleSeizoen:
+      Boolean(
+        vestigingen[0]?.seizoenEinde,
+      ),
   });
 
   async function verstuur(
@@ -321,13 +329,27 @@ export default function MedewerkerAfsprakenPanel({
                 value={
                   urenForm.vestigingId
                 }
-                onChange={(event) =>
+                onChange={(event) => {
+                  const vestiging =
+                    vestigingen.find(
+                      (item) =>
+                        item.id ===
+                        event.target.value,
+                    );
+
                   setUrenForm({
                     ...urenForm,
                     vestigingId:
                       event.target.value,
-                  })
-                }
+                    eindDatum:
+                      vestiging?.seizoenEinde ??
+                      urenForm.eindDatum,
+                    heleSeizoen:
+                      Boolean(
+                        vestiging?.seizoenEinde,
+                      ),
+                  });
+                }}
                 className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900"
               >
                 {vestigingen.map(
@@ -448,6 +470,22 @@ export default function MedewerkerAfsprakenPanel({
               value={
                 urenForm.startDatum
               }
+              min={
+                vestigingen.find(
+                  (item) =>
+                    item.id ===
+                    urenForm.vestigingId,
+                )?.seizoenStart ??
+                undefined
+              }
+              max={
+                vestigingen.find(
+                  (item) =>
+                    item.id ===
+                    urenForm.vestigingId,
+                )?.seizoenEinde ??
+                undefined
+              }
               onChange={(event) =>
                 setUrenForm({
                   ...urenForm,
@@ -458,21 +496,89 @@ export default function MedewerkerAfsprakenPanel({
               required
             />
 
-            <Input
-              label="Einddatum"
-              type="date"
-              value={
-                urenForm.eindDatum
-              }
-              onChange={(event) =>
-                setUrenForm({
-                  ...urenForm,
-                  eindDatum:
-                    event.target.value,
-                })
-              }
-              required
-            />
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Geldigheid
+              </label>
+              <select
+                value={
+                  urenForm.heleSeizoen
+                    ? "seizoen"
+                    : "periode"
+                }
+                onChange={(event) => {
+                  const heleSeizoen =
+                    event.target.value ===
+                    "seizoen";
+                  const seizoenEinde =
+                    vestigingen.find(
+                      (item) =>
+                        item.id ===
+                        urenForm.vestigingId,
+                    )?.seizoenEinde ??
+                    null;
+
+                  setUrenForm({
+                    ...urenForm,
+                    heleSeizoen,
+                    eindDatum:
+                      heleSeizoen &&
+                      seizoenEinde
+                        ? seizoenEinde
+                        : urenForm.eindDatum,
+                  });
+                }}
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900"
+              >
+                <option
+                  value="seizoen"
+                  disabled={
+                    !vestigingen.find(
+                      (item) =>
+                        item.id ===
+                        urenForm.vestigingId,
+                    )?.seizoenEinde
+                  }
+                >
+                  Tot einde seizoen
+                </option>
+                <option value="periode">
+                  Eigen periode
+                </option>
+              </select>
+              {urenForm.heleSeizoen ? (
+                <p className="mt-2 text-xs text-slate-500">
+                  Deze afspraak loopt automatisch door tot het einde van het seizoen.
+                </p>
+              ) : (
+                <Input
+                  label="Einddatum"
+                  type="date"
+                  value={
+                    urenForm.eindDatum
+                  }
+                  min={
+                    urenForm.startDatum
+                  }
+                  max={
+                    vestigingen.find(
+                      (item) =>
+                        item.id ===
+                        urenForm.vestigingId,
+                    )?.seizoenEinde ??
+                    undefined
+                  }
+                  onChange={(event) =>
+                    setUrenForm({
+                      ...urenForm,
+                      eindDatum:
+                        event.target.value,
+                    })
+                  }
+                  required
+                />
+              )}
+            </div>
           </div>
 
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
