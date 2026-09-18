@@ -804,6 +804,25 @@ export default function PlanningWeekOverzicht({
           </p>
         </div>
 
+        {isEigenaar && (
+          <div className="border-b border-slate-200 px-4 py-3 sm:px-6">
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs">
+              <span className="font-semibold text-slate-700">
+                Geplande uren: {weekUren.toFixed(2).replace(".", ",")}
+              </span>
+              <span className="font-semibold text-slate-700">
+                Loonkosten: € {weekLoonkosten.toFixed(2).replace(".", ",")}
+              </span>
+              {weekOmzet > 0 && (
+                <span className={`font-semibold ${weekPercentage !== null && weekPercentage > (week.loonkostenWeek?.doelPercentage ?? 20) ? "text-red-600" : "text-emerald-700"}`}>
+                  Loonkosten %: {weekPercentage?.toFixed(1).replace(".", ",")}%
+                  {" · "}doel {week.loonkostenWeek?.doelPercentage ?? 20}%
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ======================================================
             HORIZONTALE SCROLL CONTAINER
             ====================================================== */}
