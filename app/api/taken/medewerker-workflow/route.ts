@@ -189,55 +189,6 @@ export async function GET() {
       }
     }
 
-    const wachtendeRuilverzoeken = await prisma.ruilverzoek.count({
-      where: {
-        status: "WACHT_OP_EIGENAAR",
-        dienstBezetting: {
-          dienst: {
-            datum: { gte: new Date() },
-            week: { vestiging: { organisatieId: { in: organisatieIds }, actief: true } },
-          },
-        },
-      },
-    });
-
-    if (wachtendeRuilverzoeken > 0) {
-      taken.push({
-        id: "eigenaar-ruilverzoeken",
-        type: "RUILVERZOEKEN_WACHTEN",
-        categorie: "Planning",
-        titel: "Ruilverzoeken wachten op goedkeuring",
-        omschrijving: `${wachtendeRuilverzoeken} ruilverzoek(en) wachten op jouw controle.`,
-        actie: "RUILVERZOEKEN_WACHTEN",
-        aangemaaktOp: new Date(),
-        gegevens: { href: "/app/ruilen" },
-      });
-    }
-
-    const openDienstAantal = await prisma.dienstBezetting.count({
-      where: {
-        status: "OPEN",
-        medewerkerId: null,
-        dienst: {
-          datum: { gte: new Date() },
-          week: { vestiging: { organisatieId: { in: organisatieIds }, actief: true } },
-        },
-      },
-    });
-
-    if (openDienstAantal > 0) {
-      taken.push({
-        id: "eigenaar-open-diensten",
-        type: "OPEN_DIENSTEN",
-        categorie: "Planning",
-        titel: "Open diensten controleren",
-        omschrijving: `${openDienstAantal} open dienst(en) hebben nog geen medewerker.`,
-        actie: "OPEN_DIENSTEN",
-        aangemaaktOp: new Date(),
-        gegevens: { href: "/planning" },
-      });
-    }
-
     const inactieveMetToekomstigeDiensten = await prisma.dienstBezetting.count({
       where: {
         status: { in: ["GEPLAND", "BEVESTIGD"] },
