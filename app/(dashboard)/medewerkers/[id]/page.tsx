@@ -541,7 +541,30 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
       />
 
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-4 pt-4">
+        <div className="border-b border-slate-200 px-4 py-3 md:hidden">
+          <label htmlFor="medewerker-profiel-tab" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Onderdeel
+          </label>
+          <select
+            id="medewerker-profiel-tab"
+            value={actieveTab}
+            onChange={(event) => {
+              window.location.href = `/medewerkers/${medewerker.id}?tab=${event.target.value}`;
+            }}
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm font-semibold text-slate-900 outline-none focus:border-slate-400"
+          >
+            {TABS.filter(
+              (tabItem) =>
+                tabItem.id !== "afspraken" || isEigenaar || isEigenProfiel,
+            ).map((tabItem) => (
+              <option key={tabItem.id} value={tabItem.id}>
+                {tabItem.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="hidden border-b border-slate-200 px-4 pt-4 md:block">
           <div className="flex gap-1 overflow-x-auto">
             {TABS.filter(
               (tabItem) =>
