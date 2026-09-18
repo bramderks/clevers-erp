@@ -788,7 +788,6 @@ export default async function DashboardPage() {
     openRuilverzoeken,
     teControlerenUren,
     verloningsPeriode,
-    inactievePlanningDiensten,
   ] = await Promise.all([
     prisma.dienstBezetting.count({
       where: {
@@ -824,26 +823,27 @@ export default async function DashboardPage() {
       },
     }),
 
-    prisma.dienstBezetting.count({
-      where: {
-        status: { in: ["GEPLAND", "BEVESTIGD"] },
-        medewerker: { actief: false },
-        dienst: {
-          datum: { gte: vandaag },
-          week: {
-            vestiging: {
-              organisatieId: {
-                in: gebruiker.organisaties
-                  .filter((r) => r.actief && r.organisatie.actief)
-                  .map((r) => r.organisatieId),
-              },
-              actief: true,
+  ]);
+
+  const inactievePlanningDiensten = await prisma.dienstBezetting.count({
+    where: {
+      status: { in: ["GEPLAND", "BEVESTIGD"] },
+      medewerker: { actief: false },
+      dienst: {
+        datum: { gte: vandaag },
+        week: {
+          vestiging: {
+            organisatieId: {
+              in: gebruiker.organisaties
+                .filter((r) => r.actief && r.organisatie.actief)
+                .map((r) => r.organisatieId),
             },
+            actief: true,
           },
         },
       },
-    }),
-  ]);
+    },
+  });
 
   const taken: DashboardTaak[] =
     [];
