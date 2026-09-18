@@ -51,5 +51,7 @@ export const permissions = {
   },
 } as const;
 
-export type Permission =
-  (typeof permissions)[keyof typeof permissions][keyof (typeof permissions)[keyof typeof permissions]];
+export type Permission = {
+  [K in keyof typeof permissions]:
+    (typeof permissions)[K][keyof (typeof permissions)[K]]
+}[keyof typeof permissions];
