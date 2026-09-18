@@ -542,26 +542,30 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
 
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-4 py-3 md:hidden">
-          <label htmlFor="medewerker-profiel-tab" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Onderdeel
-          </label>
-          <select
-            id="medewerker-profiel-tab"
-            value={actieveTab}
-            onChange={(event) => {
-              window.location.href = `/medewerkers/${medewerker.id}?tab=${event.target.value}`;
-            }}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm font-semibold text-slate-900 outline-none focus:border-slate-400"
-          >
-            {TABS.filter(
-              (tabItem) =>
-                tabItem.id !== "afspraken" || isEigenaar || isEigenProfiel,
-            ).map((tabItem) => (
-              <option key={tabItem.id} value={tabItem.id}>
-                {tabItem.label}
-              </option>
-            ))}
-          </select>
+          <details className="group">
+            <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm font-semibold text-slate-900">
+              <span>{TABS.find((tabItem) => tabItem.id === actieveTab)?.label ?? "Onderdeel"}</span>
+              <span className="text-slate-400 transition group-open:rotate-180">⌄</span>
+            </summary>
+            <div className="mt-2 grid gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+              {TABS.filter(
+                (tabItem) =>
+                  tabItem.id !== "afspraken" || isEigenaar || isEigenProfiel,
+              ).map((tabItem) => (
+                <Link
+                  key={tabItem.id}
+                  href={`/medewerkers/${medewerker.id}?tab=${tabItem.id}`}
+                  className={`rounded-lg px-3 py-2.5 text-sm font-medium ${
+                    actieveTab === tabItem.id
+                      ? "bg-slate-100 text-slate-900"
+                      : "text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  {tabItem.label}
+                </Link>
+              ))}
+            </div>
+          </details>
         </div>
 
         <div className="hidden border-b border-slate-200 px-4 pt-4 md:block">
