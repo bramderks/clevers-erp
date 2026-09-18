@@ -14,18 +14,30 @@ const globalForPrisma = globalThis as unknown as {
   prismaPool?: Pool;
 };
 
-const maxConnections = Number.parseInt(
-  process.env.DATABASE_POOL_MAX ?? "2",
+const configuredMax = Number.parseInt(
+  process.env.DATABASE_POOL_MAX ?? "",
   10,
 );
+
+/*
+ * Vercel draait meerdere serverless instances naast elkaar.
+ * Een pool van 2 per instance kan bij gelijktijdige requests
+ * onnodig snel tegen de database connection limit aanlopen.
+ *
+ * Daarom standaard 1 verbinding op Vercel en 2 lokaal.
+ * DATABASE_POOL_MAX kan dit expliciet overschrijven.
+ */
+const maxConnections = Number.isFinite(configuredMax)
+  ? Math.max(1, configuredMax)
+  : process.env.VERCEL
+    ? 1
+    : 2;
 
 const prismaPool =
   globalForPrisma.prismaPool ??
   new Pool({
     connectionString: databaseUrl,
-    max: Number.isFinite(maxConnections)
-      ? Math.max(1, maxConnections)
-      : 2,
+    max: maxConnections,
     idleTimeoutMillis: 10_000,
     connectionTimeoutMillis: 10_000,
   });
