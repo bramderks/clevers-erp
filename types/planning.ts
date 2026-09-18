@@ -106,6 +106,12 @@ export type PlanningWeek = {
 
   beschikbaarheidDeadline: string | null;
 
+  /** Financiële planninginformatie, uitsluitend gevuld voor Eigenaar. */
+  loonkostenWeek?: {
+    omzet: number;
+    doelPercentage: number;
+  } | null;
+
   diensten: Dienst[];
   beschikbaarheden: Beschikbaarheid[];
 };
