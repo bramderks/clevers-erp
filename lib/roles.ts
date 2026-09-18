@@ -33,7 +33,7 @@ export const roles = {
 
       permissions.instellingen.view,
       permissions.instellingen.update,
-    ],
+    ] as Permission[],
   },
 
   teamleider: {
@@ -56,7 +56,7 @@ export const roles = {
       permissions.leveringen.view,
 
       permissions.rapportages.view,
-    ],
+    ] as Permission[],
   },
 
   medewerker: {
@@ -64,7 +64,7 @@ export const roles = {
     permissions: [
       permissions.dashboard.view,
       permissions.planning.view,
-    ],
+    ] as Permission[],
   },
 
   accountant: {
@@ -72,7 +72,7 @@ export const roles = {
     permissions: [
       permissions.dashboard.view,
       permissions.rapportages.view,
-    ],
+    ] as Permission[],
   },
 } as const;
 
