@@ -338,3 +338,16 @@ model VerloningsRegel {
 
   @@index([vestigingId, medewerkerNaam])
 }
+
+/// Geplande loonkosten en omzet per planningweek.
+model LoonkostenWeek {
+  id String @id @default(cuid())
+
+  weekId String @unique
+  omzet Decimal @default(0) @db.Decimal(12, 2)
+
+  week Week @relation(fields: [weekId], references: [id], onDelete: Cascade)
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+}
