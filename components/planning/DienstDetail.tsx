@@ -1,6 +1,7 @@
   "use client";
 
   import {
+    useEffect,
     useMemo,
     useState,
   } from "react";
@@ -209,6 +210,14 @@
     const [ruilOpen, setRuilOpen] =
       useState(false);
 
+    const [auditLogs, setAuditLogs] = useState<Array<{
+      id: string;
+      module: string;
+      actie: string;
+      aangemaaktOp: string;
+      systeemGebruiker?: { naam: string } | null;
+    }>>([]);
+
     const [ruilLaden, setRuilLaden] =
       useState(false);
 
@@ -230,6 +239,29 @@
 
     const [ruilFout, setRuilFout] =
       useState<string | null>(null);
+
+    useEffect(() => {
+      if (!bewerkbaar) return;
+      let actief = true;
+      fetch(`/api/auditlog?recordId=${encodeURIComponent(dienst.id)}&vestigingId=${encodeURIComponent(vestigingId)}`, {
+        cache: "no-store",
+        credentials: "include",
+      })
+        .then(async (response) => {
+          if (!response.ok) return [];
+          const data = await response.json();
+          return Array.isArray(data) ? data : [];
+        })
+        .then((data) => {
+          if (actief) setAuditLogs(data);
+        })
+        .catch(() => {
+          if (actief) setAuditLogs([]);
+        });
+      return () => {
+        actief = false;
+      };
+    }, [bewerkbaar, dienst.id, vestigingId]);
 
     const geplandeBezettingen =
       useMemo(
@@ -832,6 +864,20 @@
             <p className="mt-2 text-[11px] text-slate-500">
               {dienst.opmerkingen}
             </p>
+          )}
+
+          {bewerkbaar && auditLogs.length > 0 && (
+            <div className="mt-2 border-t border-black/5 pt-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Historie</p>
+              <div className="mt-1 space-y-1">
+                {auditLogs.slice(0, 5).map((log) => (
+                  <p key={log.id} className="text-[10px] text-slate-500">
+                    {log.actie.replaceAll("_", " ")} · {new Intl.DateTimeFormat("nl-NL", { dateStyle: "short", timeStyle: "short" }).format(new Date(log.aangemaaktOp))}
+                    {log.systeemGebruiker?.naam ? ` · ${log.systeemGebruiker.naam}` : ""}
+                  </p>
+                ))}
+              </div>
+            </div>
           )}
 
           {/* ====================================================
