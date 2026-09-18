@@ -244,6 +244,19 @@ export async function GET(
     const { searchParams } =
       new URL(request.url);
 
+    await prisma.ruilverzoek.updateMany({
+      where: {
+        status: { in: ["AANGEVRAAGD", "WACHT_OP_EIGENAAR"] },
+        dienstBezetting: {
+          dienst: { datum: { lt: new Date() } },
+        },
+      },
+      data: {
+        status: "AFGEWEZEN_DOOR_EIGENAAR",
+        eigenaarBeoordeeldOp: new Date(),
+      },
+    });
+
     const status =
       searchParams.get("status");
 
