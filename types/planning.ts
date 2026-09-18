@@ -63,6 +63,9 @@ export type PlanningMedewerker = {
   tussenvoegsel: string | null;
   achternaam: string;
 
+  /** Alleen voor Eigenaar in financiële planningweergave. */
+  uurloon?: number | null;
+
   tags: MedewerkerTag[];
 };
 
