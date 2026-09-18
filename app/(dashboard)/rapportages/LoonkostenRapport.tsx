@@ -14,7 +14,7 @@ const compactEuro = (n: number) =>
   new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
 const percentage = (n: number | null) =>
-  n == null ? "—" : \`\${n.toFixed(1).replace(".", ",")}%\`;
+  n == null ? "—" : `${n.toFixed(1).replace(".", ",")}%`;
 
 const datum = (s: string) =>
   new Intl.DateTimeFormat("nl-NL", {
@@ -192,7 +192,7 @@ export default function LoonkostenRapport(p: {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          ["Geplande uren", \`\${p.totaalUren.toFixed(1).replace(".", ",")} uur\`],
+          ["Geplande uren", `${p.totaalUren.toFixed(1).replace(".", ",")} uur`],
           ["Loonkosten", euro(p.totaalKosten)],
           ["Gem. uurloon", euro(p.gemiddeldUurloon)],
           ["Omzet", euro(p.omzet)],
@@ -214,10 +214,10 @@ export default function LoonkostenRapport(p: {
           <div className="w-full max-w-xl">
             <div className="relative h-4 overflow-hidden rounded-full bg-slate-100">
               <div
-                className={\`h-full rounded-full transition-all \${bovenNorm ? "bg-red-400" : "bg-emerald-400"}\`}
-                style={{ width: \`\${meter}%\` }}
+                className={`h-full rounded-full transition-all ${bovenNorm ? "bg-red-400" : "bg-emerald-400"}`}
+                style={{ width: `${meter}%` }}
               />
-              <div className="absolute inset-y-0 w-0.5 bg-slate-900" style={{ left: \`\${Math.min(100, p.doelPercentage)}%\` }} />
+              <div className="absolute inset-y-0 w-0.5 bg-slate-900" style={{ left: `${Math.min(100, p.doelPercentage)}%` }} />
             </div>
             <div className="mt-2 flex justify-between text-xs text-slate-400">
               <span>0%</span>
@@ -227,11 +227,11 @@ export default function LoonkostenRapport(p: {
           </div>
         </div>
         {p.percentageOmzet != null && (
-          <div className={\`mt-4 flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium \${bovenNorm ? "bg-red-50 text-red-800" : "bg-emerald-50 text-emerald-800"}\`}>
+          <div className={`mt-4 flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium ${bovenNorm ? "bg-red-50 text-red-800" : "bg-emerald-50 text-emerald-800"}`}>
             {bovenNorm ? <X size={17} /> : <Check size={17} />}
             {bovenNorm
-              ? \`De geplande loonkosten liggen \${percentage(p.percentageOmzet - p.doelPercentage)} boven de norm.\`
-              : \`De geplande loonkosten liggen \${percentage(p.doelPercentage - p.percentageOmzet)} onder de norm.\`}
+              ? `De geplande loonkosten liggen ${percentage(p.percentageOmzet - p.doelPercentage)} boven de norm.`
+              : `De geplande loonkosten liggen ${percentage(p.doelPercentage - p.percentageOmzet)} onder de norm.`}
           </div>
         )}
       </div>
@@ -250,11 +250,11 @@ export default function LoonkostenRapport(p: {
                   <span className="font-semibold text-slate-900">{compactEuro(dag.kosten)}</span>
                 </div>
                 <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
-                  <div className="h-full rounded-full bg-slate-700" style={{ width: \`\${(dag.kosten / maxDagKosten) * 100}%\` }} />
+                  <div className="h-full rounded-full bg-slate-700" style={{ width: `${(dag.kosten / maxDagKosten) * 100}%` }} />
                 </div>
                 <p className="mt-1 text-xs text-slate-400">
                   {dag.uren.toFixed(1).replace(".", ",")} uur
-                  {dag.ontbrekendUurloon > 0 ? \` · \${dag.ontbrekendUurloon.toFixed(1).replace(".", ",")} uur zonder uurloon\` : ""}
+                  {dag.ontbrekendUurloon > 0 ? ` · ${dag.ontbrekendUurloon.toFixed(1).replace(".", ",")} uur zonder uurloon` : ""}
                 </p>
               </div>
             ))}
@@ -280,7 +280,7 @@ export default function LoonkostenRapport(p: {
                     <span className="shrink-0 font-semibold text-slate-900">{compactEuro(medewerker.kosten)}</span>
                   </div>
                   <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-full rounded-full bg-slate-500" style={{ width: \`\${mix}%\` }} />
+                    <div className="h-full rounded-full bg-slate-500" style={{ width: `${mix}%` }} />
                   </div>
                   <p className="mt-1 text-xs text-slate-400">{percentage(mix)} · {medewerker.uren.toFixed(1).replace(".", ",")} uur</p>
                 </div>
@@ -354,7 +354,7 @@ export default function LoonkostenRapport(p: {
             {[
               ["Omzet", euro(p.omzet), euro(p.vorigeSeizoen.omzet), verschil(p.omzet, p.vorigeSeizoen.omzet)],
               ["Loonkosten", euro(p.totaalKosten), euro(p.vorigeSeizoen.totaalKosten), verschil(p.totaalKosten, p.vorigeSeizoen.totaalKosten)],
-              ["Uren", \`\${p.totaalUren.toFixed(1).replace(".", ",")} uur\`, \`\${p.vorigeSeizoen.totaalUren.toFixed(1).replace(".", ",")} uur\`, verschil(p.totaalUren, p.vorigeSeizoen.totaalUren)],
+              ["Uren", `${p.totaalUren.toFixed(1).replace(".", ",")} uur`, `${p.vorigeSeizoen.totaalUren.toFixed(1).replace(".", ",")} uur`, verschil(p.totaalUren, p.vorigeSeizoen.totaalUren)],
               ["Loonkosten %", percentage(p.percentageOmzet), percentage(p.vorigeSeizoen.percentageOmzet), p.percentageOmzet != null && p.vorigeSeizoen.percentageOmzet != null ? p.percentageOmzet - p.vorigeSeizoen.percentageOmzet : 0],
             ].map(([label, huidig, vorig, delta]) => (
               <div key={String(label)} className="rounded-xl bg-slate-50 p-4">
@@ -365,7 +365,7 @@ export default function LoonkostenRapport(p: {
                     <p className="text-xs text-slate-500">{p.jaar - 1}: {vorig}</p>
                   </div>
                   <span className="text-xs font-semibold text-slate-500">
-                    {label === "Loonkosten %" ? \`\${Number(delta).toFixed(1).replace(".", ",")} pp\` : \`\${Number(delta) >= 0 ? "+" : ""}\${Number(delta).toFixed(1).replace(".", ",")}\`}
+                    {label === "Loonkosten %" ? `${Number(delta).toFixed(1).replace(".", ",")} pp` : `${Number(delta) >= 0 ? "+" : ""}${Number(delta).toFixed(1).replace(".", ",")}`}
                   </span>
                 </div>
               </div>
