@@ -84,6 +84,7 @@ model Week {
 
   diensten Dienst[]
   beschikbaarheden Beschikbaarheid[]
+  loonkostenWeek LoonkostenWeek?
 
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt
