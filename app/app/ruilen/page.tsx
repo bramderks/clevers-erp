@@ -7,6 +7,9 @@ type Ruil = {
   id: string;
   status: string;
   aangevraagdOp: string;
+  medewerkerGeaccepteerdOp?: string | null;
+  eigenaarBeoordeeldOp?: string | null;
+  uitgevoerdOp?: string | null;
   dienstBezetting: {
     id: string;
     dienst: {
@@ -171,7 +174,15 @@ export default function AppRuilenPage() {
                 <p className="mt-1 text-sm text-slate-500">
                   {item.dienstBezetting.dienst.week.vestiging.naam} · {naam(item.aanvrager)} → {naam(item.ruilMedewerker)}
                 </p>
-                <p className="mt-3 text-sm font-semibold text-slate-700">Status: {item.status}</p>
+                <div className="mt-3 rounded-2xl bg-slate-50 p-3">
+                  <p className="text-sm font-semibold text-slate-700">Status: {item.status}</p>
+                  <div className="mt-2 space-y-1 text-xs text-slate-500">
+                    <p>Aangevraagd: {new Intl.DateTimeFormat("nl-NL", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.aangevraagdOp))}</p>
+                    {item.medewerkerGeaccepteerdOp && <p>Medewerker geaccepteerd: {new Intl.DateTimeFormat("nl-NL", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.medewerkerGeaccepteerdOp))}</p>}
+                    {item.eigenaarBeoordeeldOp && <p>Eigenaar beoordeeld: {new Intl.DateTimeFormat("nl-NL", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.eigenaarBeoordeeldOp))}</p>}
+                    {item.uitgevoerdOp && <p>Ruil uitgevoerd: {new Intl.DateTimeFormat("nl-NL", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.uitgevoerdOp))}</p>}
+                  </div>
+                </div>
 
                 {item.status === "AANGEVRAAGD" && (
                   <div className="mt-4 grid grid-cols-2 gap-3">
