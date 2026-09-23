@@ -619,6 +619,7 @@ async function bepaalToegang(
     deadline,
     gesloten,
     isEigenaar,
+    isSuperAdmin,
     isTeamleider,
     isBeheerder,
     isEigenMedewerker,
