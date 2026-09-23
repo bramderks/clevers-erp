@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import DashboardCollapsibleCard from "@/components/dashboard/DashboardCollapsibleCard";
 
 type ChecklistItem = { key: string; label: string; klaar: boolean };
 type WorkflowTaak = {
@@ -36,7 +37,7 @@ function uniekeActieveTaken(data: WorkflowTaak[]) {
   });
 }
 
-export default function OwnerWorkflowTasks() {
+export default function OwnerWorkflowTasks({ gebruikerId }: { gebruikerId: string }) {
   const [taken, setTaken] = useState<WorkflowTaak[]>([]);
 
   useEffect(() => {
@@ -60,11 +61,12 @@ export default function OwnerWorkflowTasks() {
 
   return (
     <section>
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-5">
-          <h2 className="text-lg font-semibold text-slate-900">Openstaande medewerkerstaken</h2>
-          <p className="mt-1 text-sm text-slate-500">Nieuwe medewerkers die nog een actie van de eigenaar nodig hebben.</p>
-        </div>
+      <DashboardCollapsibleCard
+        storageKey={`owner-medewerkerstaken-${gebruikerId}`}
+        title="Openstaande medewerkerstaken"
+        description="Nieuwe medewerkers die nog een actie van de eigenaar nodig hebben."
+        count={taken.length}
+      >
         <div className="divide-y divide-slate-100">
           {taken.map((taak) => {
             const href = taak.gegevens?.href;
@@ -102,7 +104,7 @@ export default function OwnerWorkflowTasks() {
             );
           })}
         </div>
-      </div>
+      </DashboardCollapsibleCard>
     </section>
   );
 }
