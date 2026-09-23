@@ -140,11 +140,6 @@ export async function GET() {
           klaar: m.vestigingen.some((v) => v.vestiging.actief),
         },
         {
-          key: "personeelsnummer",
-          label: "Personeelsnummer ingevuld",
-          klaar: Boolean(m.personeelsnummer),
-        },
-        {
           key: "contract",
           label: "Contracttype ingevuld",
           klaar: Boolean(m.contractType),
