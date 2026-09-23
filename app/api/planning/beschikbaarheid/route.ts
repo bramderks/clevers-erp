@@ -569,6 +569,37 @@ if (
   );
 }
 
+if (
+  definitieveBegintijd !== null &&
+  definitieveEindtijd !== null
+) {
+  const beginMinuten =
+    definitieveBegintijd.getHours() * 60 +
+    definitieveBegintijd.getMinutes();
+  const eindMinuten =
+    definitieveEindtijd.getHours() * 60 +
+    definitieveEindtijd.getMinutes();
+
+  if (
+    beginMinuten < 9 * 60 ||
+    beginMinuten > 23 * 60 ||
+    eindMinuten < 9 * 60 ||
+    eindMinuten > 23 * 60 ||
+    beginMinuten % 30 !== 0 ||
+    eindMinuten % 30 !== 0
+  ) {
+    return NextResponse.json(
+      {
+        fout:
+          "Beschikbaarheidstijden moeten tussen 09:00 en 23:00 liggen en in stappen van 30 minuten worden opgegeven.",
+      },
+      {
+        status: 400,
+      },
+    );
+  }
+}
+
     /*
      * --------------------------------------------------------
      * STATUS
