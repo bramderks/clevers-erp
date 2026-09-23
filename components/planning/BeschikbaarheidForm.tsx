@@ -446,18 +446,7 @@ export default function BeschikbaarheidForm({
   }
 
   async function maakAltijdBeschikbaar() {
-    const altijdBeschikbaarKnop = (
-    <button
-      type="button"
-      onClick={() => void maakAltijdBeschikbaar()}
-      disabled={laden}
-      className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
-    >
-      {laden ? "Opslaan..." : "Altijd beschikbaar deze week"}
-    </button>
-  );
-
-  if (invoerGeblokkeerd) {
+    if (invoerGeblokkeerd) {
       setFout("De deadline voor deze beschikbaarheid is verstreken.");
       return;
     }
@@ -923,15 +912,26 @@ export default function BeschikbaarheidForm({
           </p>
         </div>
 
-        <button
-          type="submit"
-          disabled={laden}
-          className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => void maakAltijdBeschikbaar()}
+            disabled={laden}
+            className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {laden ? "Opslaan..." : "Altijd beschikbaar deze week"}
+          </button>
+
+          <button
+            type="submit"
+            disabled={laden}
+            className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
           {laden
             ? "Week opslaan..."
             : "Beschikbaarheid opslaan"}
-        </button>
+          </button>
+        </div>
       </div>
     </form>
   );
