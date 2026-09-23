@@ -255,7 +255,7 @@ function eindeVanISOWeek(
 }
 
 const BESCHIKBAARHEID_TEST_EINDDATUM = new Date(
-  "2027-03-01T23:59:59.999Z",
+  "2027-03-01T00:00:00.000Z",
 );
 
 function volgendeWeekStart(): Date {
