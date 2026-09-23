@@ -103,12 +103,57 @@ function eindeVanISOWeek(
  * BESCHIKBAARHEIDSDEADLINE
  * ============================================================
  *
- * Standaard:
+ * Normaal:
  * 28 dagen vóór de maandag van de planningweek.
  *
- * De deadline eindigt op die maandag om 23:59:59.999.
+ * Tijdelijke testperiode:
+ * vanaf volgende week t/m 28 februari 2027 mogen medewerkers
+ * hun beschikbaarheid voor alle toekomstige weken doorgeven.
+ * Vanaf 1 maart 2027 geldt automatisch weer de normale
+ * deadline van 28 dagen vóór de planningweek.
  * ============================================================
  */
+
+const BESCHIKBAARHEID_TEST_EINDDATUM = new Date(
+  "2027-03-01T23:59:59.999Z",
+);
+
+function volgendeWeekStart(): Date {
+  const nu = new Date();
+  const vandaag = new Date(
+    Date.UTC(
+      nu.getUTCFullYear(),
+      nu.getUTCMonth(),
+      nu.getUTCDate(),
+      0,
+      0,
+      0,
+      0,
+    ),
+  );
+
+  const dag = vandaag.getUTCDay() || 7;
+  vandaag.setUTCDate(
+    vandaag.getUTCDate() + (8 - dag),
+  );
+
+  return vandaag;
+}
+
+function beschikbaarheidTestOpen(
+  jaar: number,
+  weeknummer: number,
+): boolean {
+  const weekStart = beginVanISOWeek(
+    jaar,
+    weeknummer,
+  );
+
+  return (
+    new Date() < BESCHIKBAARHEID_TEST_EINDDATUM &&
+    weekStart >= volgendeWeekStart()
+  );
+}
 
 function berekenBeschikbaarheidDeadline(
   jaar: number,
@@ -397,12 +442,20 @@ export async function GET(
               week.weeknummer,
             );
 
-          const deadline =
+          const standaardDeadline =
             week.beschikbaarheidDeadline ??
             berekenBeschikbaarheidDeadline(
               week.jaar,
               week.weeknummer,
             );
+
+          const deadline =
+            beschikbaarheidTestOpen(
+              week.jaar,
+              week.weeknummer,
+            )
+              ? BESCHIKBAARHEID_TEST_EINDDATUM
+              : standaardDeadline;
 
           return {
             id: week.id,
@@ -433,6 +486,19 @@ export async function GET(
            */
           if (isBeheerder) {
             return true;
+          }
+
+          const weekStart = new Date(
+            week.startdatum,
+          );
+
+          if (
+            new Date() <
+              BESCHIKBAARHEID_TEST_EINDDATUM
+          ) {
+            return (
+              weekStart >= volgendeWeekStart()
+            );
           }
 
           return (
