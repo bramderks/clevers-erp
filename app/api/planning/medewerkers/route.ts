@@ -159,6 +159,19 @@ export async function GET(
       (item) => item.systeemGebruikerId,
     );
 
+    const organisatieVestigingen =
+      vestiging
+        ? await prisma.vestiging.findMany({
+            where: {
+              organisatieId: vestiging.organisatieId,
+            },
+            select: { id: true },
+          })
+        : [];
+
+    const organisatieVestigingIds =
+      organisatieVestigingen.map((item) => item.id);
+
     const medewerkers =
       await prisma.medewerker.findMany({
         where: {
@@ -251,8 +264,8 @@ export async function GET(
                 },
 
                 week: {
-                  vestiging: {
-                    organisatieId: vestiging.organisatieId,
+                  vestigingId: {
+                    in: organisatieVestigingIds,
                   },
                 },
               },
