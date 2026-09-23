@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { verstuurNieuweTaakMeldingen } from "@/lib/push/open-diensten";
 
 function fout(
   bericht: string,
@@ -653,6 +654,21 @@ export async function GET() {
           b.aangemaaktOp,
         ).getTime(),
     );
+
+    // Nieuwe persoonlijke taken krijgen éénmalig een pushmelding.
+    // De sleutel in PushMelding voorkomt dubbele meldingen bij iedere dashboard-refresh.
+    try {
+      await verstuurNieuweTaakMeldingen(
+        gebruiker.id,
+        taken.map((taak) => ({
+          id: taak.id,
+          titel: taak.titel,
+          actie: taak.actie,
+        })),
+      );
+    } catch (error) {
+      console.error("Fout bij pushmelding nieuwe taak:", error);
+    }
 
     return NextResponse.json(
       taken,
