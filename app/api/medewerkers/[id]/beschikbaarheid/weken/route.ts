@@ -243,12 +243,23 @@ export async function GET(
     const medewerkerVestiging =
       medewerker.vestigingen[0];
 
-    if (
-      !medewerkerVestiging ||
-      !medewerkerVestiging.vestiging.actief
-    ) {
+    if (!medewerkerVestiging) {
       return jsonError(
-        "Voor deze vestiging kan je geen beschikbaarheid doorgeven. Controleer of je aan deze vestiging bent gekoppeld.",
+        "Je bent niet gekoppeld aan deze vestiging. Laat de eigenaar je aan deze vestiging koppelen.",
+        403,
+      );
+    }
+
+    if (!medewerkerVestiging.vestiging) {
+      return jsonError(
+        "De gekozen vestiging kon niet worden gevonden.",
+        404,
+      );
+    }
+
+    if (!medewerkerVestiging.vestiging.actief) {
+      return jsonError(
+        "Deze vestiging is niet actief. Je kunt hier geen beschikbaarheid doorgeven.",
         403,
       );
     }
