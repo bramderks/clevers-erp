@@ -496,8 +496,13 @@ export async function POST(
             bezetting.dienst.week.vestiging.id !==
             dienst.week.vestigingId;
 
-          const buffer =
-            andereVestiging ? 60 * 60 * 1000 : 0;
+          if (!andereVestiging) {
+            // Meerdere functies op dezelfde locatie mogen bewust overlappen.
+            // De centrale urenberekening voorkomt dubbele uren.
+            return false;
+          }
+
+          const buffer = 60 * 60 * 1000;
 
           return (
             dienst.begintijd.getTime() <
@@ -541,57 +546,8 @@ export async function POST(
         );
       }
 
-      /*
-       * Controleer of deze medewerker
-       * op hetzelfde moment al een andere
-       * actieve dienst heeft.
-       */
-      const overlappendeDienst =
-        await prisma.dienstBezetting.findFirst(
-          {
-            where: {
-              medewerkerId,
-
-              status: {
-                notIn: [
-                  "AFGEZEGD",
-                ],
-              },
-
-              dienst: {
-                id: {
-                  not: dienstId,
-                },
-
-                datum: dienst.datum,
-
-                begintijd: {
-                  lt: dienst.eindtijd,
-                },
-
-                eindtijd: {
-                  gt: dienst.begintijd,
-                },
-              },
-            },
-
-            select: {
-              id: true,
-            },
-          },
-        );
-
-      if (overlappendeDienst) {
-        return NextResponse.json(
-          {
-            fout:
-              "Deze medewerker heeft al een overlappende dienst.",
-          },
-          {
-            status: 409,
-          },
-        );
-      }
+      // Overlap op dezelfde vestiging is toegestaan voor meerdere functies.
+      // Overlap tussen vestigingen wordt hierboven met één uur reistijd geblokkeerd.
     }
 
     const bezetting =
