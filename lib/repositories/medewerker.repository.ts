@@ -42,27 +42,31 @@ export const medewerkerRepository = {
     };
 
     const statusVoorwaarde = includeInactive ? {} : { actief: true };
-    // Eigenaren en Super Admins kunnen óók als medewerker worden ingezet.
-    // Als hun medewerkersdossier al gekoppeld is aan het systeemaccount,
-    // mag het dossier zichtbaar blijven, ook wanneer het nog niet actief
-    // of nog niet aan een vestiging gekoppeld is.
-    const organisatieBeheerderVoorwaarde = heeftOrganisatieFilter
-      ? {
-          systeemGebruiker: {
-            organisaties: {
-              some: {
-                organisatieId: { in: organisatieIds ?? [] },
-                actief: true,
-                rol: {
-                  naam: {
-                    in: ["Eigenaar", "Super Admin", "eigenaar", "super admin"],
-                  },
-                },
-              },
+
+    // Een eigenaar/Super Admin kan óók als medewerker worden ingezet.
+    // We halen de systeemaccounts eerst op en koppelen daarna alleen
+    // bestaande medewerkersdossiers aan deze uitzondering.
+    let organisatieBeheerderIds: string[] = [];
+    if (heeftOrganisatieFilter && (organisatieIds?.length ?? 0) > 0) {
+      const beheerders = await prisma.organisatieGebruiker.findMany({
+        where: {
+          organisatieId: { in: organisatieIds ?? [] },
+          actief: true,
+          rol: {
+            naam: {
+              in: ["Eigenaar", "Super Admin", "eigenaar", "super admin"],
             },
           },
-        }
-      : {};
+        },
+        select: { systeemGebruikerId: true },
+      });
+      organisatieBeheerderIds = beheerders.map((item) => item.systeemGebruikerId);
+    }
+
+    const organisatieBeheerderVoorwaarde =
+      organisatieBeheerderIds.length > 0
+        ? { systeemGebruikerId: { in: organisatieBeheerderIds } }
+        : null;
 
 
     const where =
@@ -75,7 +79,7 @@ export const medewerkerRepository = {
                   vestigingVoorwaarde,
                 ],
               },
-              ...(heeftOrganisatieFilter
+              ...(organisatieBeheerderVoorwaarde
                 ? [organisatieBeheerderVoorwaarde]
                 : []),
               ...(heeftOrganisatieFilter &&
