@@ -445,6 +445,66 @@ export default function BeschikbaarheidForm({
     }
   }
 
+  async function maakAltijdBeschikbaar() {
+    const altijdBeschikbaarKnop = (
+    <button
+      type="button"
+      onClick={() => void maakAltijdBeschikbaar()}
+      disabled={laden}
+      className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {laden ? "Opslaan..." : "Altijd beschikbaar deze week"}
+    </button>
+  );
+
+  if (invoerGeblokkeerd) {
+      setFout("De deadline voor deze beschikbaarheid is verstreken.");
+      return;
+    }
+
+    if (!weekId || !medewerkerId || dagen.length !== 7) {
+      setFout("Planningweek en medewerker zijn verplicht.");
+      return;
+    }
+
+    try {
+      setLaden(true);
+      setFout(null);
+
+      const altijdBeschikbaar = Object.fromEntries(
+        dagen.map((dag) => [
+          dag.datum,
+          {
+            status: "BESCHIKBAAR" as const,
+            begintijd: MIN_TIJD,
+            eindtijd: MAX_TIJD,
+            opmerking: "Altijd beschikbaar",
+            actief: true,
+          },
+        ]),
+      );
+
+      setInvoer(altijdBeschikbaar);
+
+      await Promise.all(
+        dagen.map((dag) =>
+          slaDagOp(dag.datum, altijdBeschikbaar[dag.datum]),
+        ),
+      );
+
+      onAangemaakt?.();
+    } catch (error) {
+      console.error("Fout bij instellen altijd beschikbaar:", error);
+      setFout(
+        error instanceof Error
+          ? error.message
+          : "De beschikbaarheid kon niet worden opgeslagen.",
+      );
+    } finally {
+      setLaden(false);
+    }
+  }
+
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
   ) {
