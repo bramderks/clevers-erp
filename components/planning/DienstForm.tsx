@@ -14,6 +14,7 @@ import type {
 
 type PlanningMedewerker = {
   id: string;
+  isBeheerder?: boolean;
   personeelsnummer: string | null;
   aanhef:
     | "DHR"
@@ -239,6 +240,10 @@ function beschikbaarheidsNiveau(
   begintijd: string,
   eindtijd: string | null,
 ) {
+  if (medewerker.isBeheerder) {
+    return "groen" as const;
+  }
+
   const beschikbaarheden =
     medewerker.beschikbaarheden.filter(
       (beschikbaarheid) =>
