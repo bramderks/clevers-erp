@@ -396,8 +396,13 @@ export async function GET(
                 status:
                   bezetting.status,
 
-                dienst:
-                  bezetting.dienst,
+                dienst: {
+                  ...bezetting.dienst,
+                  vestigingId:
+                    bezetting.dienst.week.vestigingId,
+                  vestigingNaam:
+                    bezetting.dienst.week.vestiging.naam,
+                },
               }),
             ),
         }),
