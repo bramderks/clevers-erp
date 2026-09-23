@@ -34,8 +34,8 @@ type DagInvoer = {
   actief: boolean;
 };
 
-const MIN_TIJD = "09:00";
-const MAX_TIJD = "23:00";
+const MIN_TIJD = "11:30";
+const MAX_TIJD = "21:00";
 const TIJD_INTERVAL = 15;
 
 function parseDatum(
@@ -164,8 +164,8 @@ function maakTijden(): string[] {
   const tijden: string[] = [];
 
   for (
-    let minuten = 9 * 60;
-    minuten <= 23 * 60;
+    let minuten = 11 * 60 + 30;
+    minuten <= 21 * 60;
     minuten += TIJD_INTERVAL
   ) {
     const uren =
@@ -211,9 +211,9 @@ function tijdenBinnenInterval(
 
   return (
     totaalMinuten >=
-      9 * 60 &&
+      11 * 60 + 30 &&
     totaalMinuten <=
-      23 * 60 &&
+      21 * 60 &&
     totaalMinuten %
         TIJD_INTERVAL ===
       0
@@ -388,7 +388,7 @@ export default function BeschikbaarheidForm({
         )
       ) {
         throw new Error(
-          "Tijden moeten tussen 09:00 en 23:00 liggen en in stappen van 30 minuten worden gekozen.",
+          "Tijden moeten tussen 11:30 en 21:00 liggen en in stappen van 15 minuten worden gekozen.",
         );
       }
 
