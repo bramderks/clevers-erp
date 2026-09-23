@@ -81,9 +81,9 @@ type WekenApiResponse = {
    CONSTANTEN
    ============================================================ */
 
-const MIN_TIJD = "09:00";
-const MAX_TIJD = "23:00";
-const TIJD_INTERVAL = 30;
+const MIN_TIJD = "11:30";
+const MAX_TIJD = "21:00";
+const TIJD_INTERVAL = 15;
 
 /* ============================================================
    DATUMFUNCTIES
@@ -1466,7 +1466,7 @@ export default function BeschikbaarheidWeekSelector({
           (vorige) => ({
             ...vorige,
             [datum]:
-              "Kies geldige tijden tussen 09:00 en 23:00 in stappen van 30 minuten.",
+              "Kies geldige tijden tussen 11:30 en 21:00 in stappen van 15 minuten.",
           }),
         );
 
@@ -1627,6 +1627,140 @@ export default function BeschikbaarheidWeekSelector({
       );
     } finally {
       setOpslaanDatum(null);
+    }
+  }
+
+  async function zetAltijdBeschikbaarDezeWeek() {
+    const week = geselecteerdeWeek;
+
+    if (!week || !wijzigingToegestaan) {
+      return;
+    }
+
+    try {
+      setError(null);
+      setLoadingDagen(true);
+
+      const start = bepaalWeekStart(week);
+      if (!start) {
+        throw new Error("De weekdatum kon niet worden bepaald.");
+      }
+
+      for (let index = 0; index < 7; index += 1) {
+        const datum = new Date(start);
+        datum.setDate(start.getDate() + index);
+        datum.setHours(12, 0, 0, 0);
+
+        const datumSleutel = formatteerDatumSleutel(datum);
+        const beginDatum = new Date(`${datumSleutel}T11:30:00`);
+        const eindDatum = new Date(`${datumSleutel}T21:00:00`);
+
+        const response = await fetch(
+          `/api/medewerkers/${encodeURIComponent(medewerkerId)}/beschikbaarheid`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              weekId: week.id,
+              datum: datum.toISOString(),
+              begintijd: beginDatum.toISOString(),
+              eindtijd: eindDatum.toISOString(),
+              status: "BESCHIKBAAR",
+              opmerking: "Altijd beschikbaar deze week",
+            }),
+          },
+        );
+
+        const resultaat = await leesJsonResponse<{
+          fout?: string;
+          error?: string;
+        }>(response);
+
+        if (!response.ok) {
+          throw new Error(
+            resultaat.fout ??
+              resultaat.error ??
+              "De week kon niet als altijd beschikbaar worden ingesteld.",
+          );
+        }
+      }
+
+      await laadBeschikbaarheid(week.id);
+      setWeekStatussen((vorige) => ({
+        ...vorige,
+        [week.id]: "DOORGEGEVEN",
+      }));
+    } catch (error) {
+      console.error("Altijd beschikbaar instellen mislukt:", error);
+      setError(
+        error instanceof Error
+          ? error.message
+          : "De week kon niet als altijd beschikbaar worden ingesteld.",
+      );
+    } finally {
+      setLoadingDagen(false);
+    }
+  }
+
+  async function zetAltijdBeschikbaarSeizoen() {
+    const week = geselecteerdeWeek;
+
+    if (!week || !isBeheerder || !isEigenMedewerker) {
+      return;
+    }
+
+    try {
+      setError(null);
+      setLoadingDagen(true);
+
+      const response = await fetch(
+        `/api/medewerkers/${encodeURIComponent(medewerkerId)}/beschikbaarheid`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            weekId: week.id,
+            datum: week.startdatum,
+            status: "BESCHIKBAAR",
+            altijdBeschikbaarSeizoen: true,
+          }),
+        },
+      );
+
+      const resultaat = await leesJsonResponse<{
+        fout?: string;
+        error?: string;
+        weken?: number;
+        dagen?: number;
+      }>(response);
+
+      if (!response.ok) {
+        throw new Error(
+          resultaat.fout ??
+            resultaat.error ??
+            "De beschikbaarheid voor het seizoen kon niet worden ingesteld.",
+        );
+      }
+
+      setError(null);
+      setWeekStatussen((vorige) => {
+        const volgende = { ...vorige };
+        for (const item of weken) {
+          volgende[item.id] = "DOORGEGEVEN";
+        }
+        return volgende;
+      });
+
+      await laadBeschikbaarheid(week.id);
+    } catch (error) {
+      console.error("Altijd beschikbaar seizoen instellen mislukt:", error);
+      setError(
+        error instanceof Error
+          ? error.message
+          : "De beschikbaarheid voor het seizoen kon niet worden ingesteld.",
+      );
+    } finally {
+      setLoadingDagen(false);
     }
   }
 
