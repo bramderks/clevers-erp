@@ -403,7 +403,14 @@ function medewerkerHeeftDienstOverlap(
     const nieuweEinde = new Date(`${datum}T${eindtijd ?? "23:00"}`).getTime();
     if ([bestaandeStart, bestaandeEinde, nieuweStart, nieuweEinde].some(Number.isNaN)) return false;
     const isAndereVestiging = bezetting.dienst.vestigingId !== huidigeVestigingId;
-    const buffer = isAndereVestiging ? 60 * 60 * 1000 : 0;
+
+    if (!isAndereVestiging) {
+      // Meerdere functies op dezelfde vestiging mogen overlappen.
+      // Uren worden centraal maar één keer geteld.
+      return false;
+    }
+
+    const buffer = 60 * 60 * 1000;
     return nieuweStart < bestaandeEinde + buffer && nieuweEinde > bestaandeStart - buffer;
   });
 }
