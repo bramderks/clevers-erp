@@ -151,6 +151,17 @@ export const medewerkerService = {
     // De gebruikte activatie-uitnodiging is dan de organisatiebron.
     const medewerkerOrganisatieIds = Array.from(new Set(medewerker.vestigingen.map((relatie) => relatie.vestiging.organisatieId).filter(Boolean)));
 
+    // Eigenaren en Super Admins kunnen ook een eigen medewerkerprofiel hebben
+    // zonder MedewerkerVestiging. Hun OrganisatieGebruiker-relatie is dan de
+    // geldige organisatiebron voor het koppelen van vestigingen.
+    if (!medewerkerOrganisatieIds.length && medewerker.systeemGebruikerId) {
+      const organisatieRelaties = await prisma.organisatieGebruiker.findMany({
+        where: { systeemGebruikerId: medewerker.systeemGebruikerId, actief: true, organisatie: { actief: true } },
+        select: { organisatieId: true },
+      });
+      medewerkerOrganisatieIds.push(...organisatieRelaties.map((relatie) => relatie.organisatieId));
+    }
+
     if (!medewerkerOrganisatieIds.length) {
       const uitnodiging = await prisma.medewerkerUitnodiging.findFirst({
         where: { email: medewerker.email.trim().toLowerCase(), gebruiktOp: { not: null } },
