@@ -53,7 +53,9 @@ export default async function ProfielPage() {
       (relatie) =>
         relatie.actief &&
         relatie.organisatie.actief &&
-        relatie.rol.naam.trim().toLowerCase() === "eigenaar",
+        ["eigenaar", "super admin"].includes(
+          relatie.rol.naam.trim().toLowerCase(),
+        ),
     );
 
     if (isEigenaar && gebruiker.email) {
