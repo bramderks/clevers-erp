@@ -176,6 +176,16 @@ function controleerTijden(
       400,
     );
   }
+
+  if (
+    begin.totaal % 30 !== 0 ||
+    einde.totaal % 30 !== 0
+  ) {
+    throw new RouteFout(
+      "Beschikbaarheidstijden moeten in stappen van 30 minuten worden opgegeven.",
+      400,
+    );
+  }
 }
 
 /*
