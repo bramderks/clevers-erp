@@ -52,6 +52,8 @@ type PlanningMedewerker = {
       datum: string;
       begintijd: string;
       eindtijd: string | null;
+      vestigingId: string;
+      vestigingNaam: string;
       tags: {
         tag: {
           id: string;
@@ -391,68 +393,27 @@ function medewerkerIsBhv(
 }
 
 function medewerkerHeeftDienstOverlap(
-  medewerker: PlanningMedewerker,
-  datum: string,
-  begintijd: string,
-  eindtijd: string | null,
+  medewerker: PlanningMedewerker, datum: string, begintijd: string, eindtijd: string | null, huidigeVestigingId: string,
 ) {
-  return medewerker.diensten.some(
-    (bezetting) => {
-      if (
-        bezetting.status ===
-        "AFGEZEGD"
-      ) {
-        return false;
-      }
+  return medewerker.diensten.some((bezetting) => {
+    if (bezetting.status === "AFGEZEGD") return false;
+    const bestaandeStart = new Date(bezetting.dienst.begintijd).getTime();
+    const bestaandeEinde = new Date(bezetting.dienst.eindtijd ?? `${datum}T23:00:00`).getTime();
+    const nieuweStart = new Date(`${datum}T${begintijd}`).getTime();
+    const nieuweEinde = new Date(`${datum}T${eindtijd ?? "23:00"}`).getTime();
+    if ([bestaandeStart, bestaandeEinde, nieuweStart, nieuweEinde].some(Number.isNaN)) return false;
+    const isAndereVestiging = bezetting.dienst.vestigingId !== huidigeVestigingId;
+    const buffer = isAndereVestiging ? 60 * 60 * 1000 : 0;
+    return nieuweStart < bestaandeEinde + buffer && nieuweEinde > bestaandeStart - buffer;
+  });
+}
 
-      const bestaandeStart =
-        new Date(
-          bezetting.dienst.begintijd,
-        ).getTime();
-
-      const bestaandeEinde =
-        new Date(
-          bezetting.dienst.eindtijd ??
-            `${datum}T23:00:00`,
-        ).getTime();
-
-      const nieuweStart =
-        new Date(
-          `${datum}T${begintijd}`,
-        ).getTime();
-
-      const nieuweEinde =
-        new Date(
-          `${datum}T${
-            eindtijd ?? "23:00"
-          }`,
-        ).getTime();
-
-      if (
-        Number.isNaN(
-          bestaandeStart,
-        ) ||
-        Number.isNaN(
-          bestaandeEinde,
-        ) ||
-        Number.isNaN(
-          nieuweStart,
-        ) ||
-        Number.isNaN(
-          nieuweEinde,
-        )
-      ) {
-        return false;
-      }
-
-      return (
-        nieuweStart <
-          bestaandeEinde &&
-        nieuweEinde >
-          bestaandeStart
-      );
-    },
-  );
+function medewerkerHeeftDienstOpAndereVestiging(
+  medewerker: PlanningMedewerker, datum: string, huidigeVestigingId: string,
+) {
+  return medewerker.diensten.find((bezetting) =>
+    bezetting.status !== "AFGEZEGD" && bezetting.dienst.vestigingId !== huidigeVestigingId && new Date(bezetting.dienst.datum).toISOString().slice(0, 10) === datum
+  ) ?? null;
 }
 
 function dienstHeeftTag(
@@ -1987,6 +1948,14 @@ export default function DienstForm({
                     datum,
                     begintijd,
                     eindtijd,
+                    vestigingId,
+                  );
+
+                const andereVestigingDienst =
+                  medewerkerHeeftDienstOpAndereVestiging(
+                    medewerker,
+                    datum,
+                    vestigingId,
                   );
 
                 const beschikbaarheden =
@@ -2056,13 +2025,18 @@ export default function DienstForm({
                         }`}
                       >
                         {heeftOverlap
-                          ? "Heeft al een overlappende dienst"
+                          ? andereVestigingDienst
+                            ? `Al ingepland in ${andereVestigingDienst.dienst.vestigingNaam}; inclusief 1 uur reistijd niet beschikbaar.`
+                            : "Heeft al een overlappende dienst"
                           : statusTekst}
 
                         {heeftVoorkeur &&
                           !heeftOverlap &&
                           " · voorkeur"}
 
+                        {andereVestigingDienst &&
+                          !heeftOverlap &&
+                          ` · al dienst in ${andereVestigingDienst.dienst.vestigingNaam} die dag`}
                         {heeftBhv &&
                           " · ✓ BHV"}
                       </p>
