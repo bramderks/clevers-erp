@@ -438,16 +438,96 @@ export async function POST(
           where: {
             dienstId,
             medewerkerId,
+            status: { not: "AFGEZEGD" },
+          },
+          select: { id: true },
+        });
 
-            status: {
-              not: "AFGEZEGD",
+      if (bestaandeBezetting) {
+        return NextResponse.json(
+          { fout: "Deze medewerker staat al op deze dienst." },
+          { status: 409 },
+        );
+      }
+
+      /*
+       * Een medewerker mag niet op twee vestigingen
+       * van dezelfde organisatie worden ingepland.
+       * Tussen vestigingen houden we standaard 1 uur reistijd
+       * vrij. De controle geldt dus één uur vóór en één uur ná
+       * een bestaande dienst.
+       */
+      const medewerkerDienstenZelfdeOrganisatie =
+        await prisma.dienstBezetting.findMany({
+          where: {
+            medewerkerId,
+            status: { not: "AFGEZEGD" },
+            dienst: {
+              id: { not: dienstId },
+              datum: dienst.datum,
+              week: {
+                vestiging: {
+                  organisatieId:
+                    dienst.week.vestiging.organisatieId,
+                },
+              },
             },
           },
-
           select: {
-            id: true,
+            dienst: {
+              select: {
+                begintijd: true,
+                eindtijd: true,
+                week: {
+                  select: {
+                    vestiging: {
+                      select: { id: true, naam: true },
+                    },
+                  },
+                },
+              },
+            },
           },
         });
+
+      const conflict = medewerkerDienstenZelfdeOrganisatie.find(
+        (bezetting) => {
+          const andereVestiging =
+            bezetting.dienst.week.vestiging.id !==
+            dienst.week.vestigingId;
+
+          const buffer =
+            andereVestiging ? 60 * 60 * 1000 : 0;
+
+          return (
+            dienst.begintijd.getTime() <
+              bezetting.dienst.eindtijd.getTime() + buffer &&
+            dienst.eindtijd.getTime() >
+              bezetting.dienst.begintijd.getTime() - buffer
+          );
+        },
+      );
+
+      if (conflict) {
+        const vestigingNaam =
+          conflict.dienst.week.vestiging.naam;
+
+        const andereVestiging =
+          conflict.dienst.week.vestiging.id !==
+          dienst.week.vestigingId;
+
+        return NextResponse.json(
+          {
+            fout: andereVestiging
+              ? `Deze medewerker heeft op dezelfde dag al een dienst in ${vestigingNaam}. Tussen vestigingen is 1 uur reistijd gereserveerd.`
+              : "Deze medewerker heeft al een overlappende dienst.",
+            code: andereVestiging
+              ? "ANDERE_VESTIGING_ZELFDE_DAG"
+              : "OVERLAPPENDE_DIENST",
+          },
+          { status: 409 },
+        );
+      }
 
       if (bestaandeBezetting) {
         return NextResponse.json(
