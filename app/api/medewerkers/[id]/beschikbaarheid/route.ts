@@ -916,6 +916,62 @@ export async function POST(
       );
 
     /*
+     * Een teamleider mag via de expliciete knop
+     * "Altijd beschikbaar deze week" een volledige
+     * week als beschikbaar instellen. Gewone dagelijkse
+     * wijzigingen blijven voor de teamleider geblokkeerd.
+     */
+    if (body.altijdBeschikbaarWeek === true) {
+      if (!toegang.isTeamleider && !toegang.isEigenaar && !toegang.isSuperAdmin && !toegang.isEigenMedewerker) {
+        return fout("Je hebt geen toestemming om deze week als altijd beschikbaar in te stellen.", 403);
+      }
+
+      const weekStart = beginVanISOWeek(toegang.week.jaar, toegang.week.weeknummer);
+      const transacties = Array.from({ length: 7 }, (_, index) => {
+        const dag = new Date(weekStart);
+        dag.setUTCDate(dag.getUTCDate() + index);
+        const begintijd = new Date(dag);
+        begintijd.setUTCHours(11, 30, 0, 0);
+        const eindtijd = new Date(dag);
+        eindtijd.setUTCHours(21, 0, 0, 0);
+
+        return prisma.beschikbaarheid.upsert({
+          where: {
+            weekId_medewerkerId_datum: {
+              weekId: weekId,
+              medewerkerId,
+              datum: dag,
+            },
+          },
+          update: {
+            datum: dag,
+            begintijd,
+            eindtijd,
+            status: "BESCHIKBAAR",
+            opmerking: "Altijd beschikbaar — deze week",
+          },
+          create: {
+            weekId,
+            medewerkerId,
+            datum: dag,
+            begintijd,
+            eindtijd,
+            status: "BESCHIKBAAR",
+            opmerking: "Altijd beschikbaar — deze week",
+          },
+        });
+      });
+
+      await prisma.$transaction(transacties);
+
+      return NextResponse.json({
+        success: true,
+        week: true,
+        dagen: 7,
+      });
+    }
+
+    /*
      * Alleen Eigenaar of de medewerker
      * zelf vóór de deadline mag wijzigen.
      *
