@@ -71,7 +71,7 @@ export async function POST(request: Request) {
         uitnodigingId = uitnodiging.id;
 
         const activationUrl = absoluteUrl(`/account/activeren?token=${encodeURIComponent(token)}`);
-        const text = `Beste ${medewerker.voornaam},\\n\\nJe bent uitgenodigd om je Clevers ERP-account te activeren. Gebruik de volgende link om je account te activeren:\\n${activationUrl}\\n\\nDe uitnodiging is 7 dagen geldig. Tijdens de activatie vul je je algemene gegevens in en kies je een sterk wachtwoord. Na goedkeuring van je rol ontvang je een tweede e-mail zodra je toegang tot Clevers ERP actief is.\\n\\nMet vriendelijke groet,\\nClevers`;
+        const text = `Beste ${medewerker.voornaam},\n\nJe bent uitgenodigd om je Clevers ERP-account te activeren. Gebruik de volgende link om je account te activeren:\n${activationUrl}\n\nDe uitnodiging is 7 dagen geldig. Tijdens de activatie vul je je algemene gegevens in en kies je een sterk wachtwoord. Na goedkeuring van je rol ontvang je een tweede e-mail zodra je toegang tot Clevers ERP actief is.\n\nMet vriendelijke groet,\nClevers`;
         const html = `<p>Beste ${medewerker.voornaam},</p><p>Je bent uitgenodigd om je <strong>Clevers ERP-account</strong> te activeren.</p><p><a href="${activationUrl}">Account activeren</a></p><p>De uitnodiging is 7 dagen geldig. Tijdens de activatie vul je de algemene gegevens en een sterk wachtwoord in.</p><p>Met vriendelijke groet,<br>Clevers</p>`;
         await verstuurMail({ to: medewerker.email, subject: "Uitnodiging om je Clevers ERP-account te activeren", html, text });
 
