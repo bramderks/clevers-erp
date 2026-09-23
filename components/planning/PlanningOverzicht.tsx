@@ -81,6 +81,7 @@ type MedewerkerDienst = {
 
 type PlanningMedewerker = {
   id: string;
+  isBeheerder?: boolean;
   personeelsnummer: string | null;
   aanhef: string | null;
   voornaam: string;
@@ -471,10 +472,13 @@ function bepaalBeschikbaarheidsStatus(
     );
 
   if (
-    beschikbaarheden.length ===
-    0
+    beschikbaarheden.length === 0
   ) {
-    return "GEEN_BESCHIKBAARHEID";
+    // Eigenaar en Super Admin mogen altijd worden ingepland,
+    // ook wanneer zij geen gewone beschikbaarheid hebben ingevuld.
+    return medewerker.isBeheerder
+      ? "BESCHIKBAAR"
+      : "GEEN_BESCHIKBAARHEID";
   }
 
   /*
