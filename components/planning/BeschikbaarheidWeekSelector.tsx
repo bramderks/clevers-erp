@@ -2106,6 +2106,47 @@ export default function BeschikbaarheidWeekSelector({
               </div>
             </div>
 
+            {isBeheerder && isEigenMedewerker && (
+              <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+                <p className="text-sm font-semibold text-emerald-900">
+                  Altijd beschikbaar voor het hele seizoen
+                </p>
+                <p className="mt-1 text-sm text-emerald-800">
+                  Je hoeft voor jezelf geen wekelijkse beschikbaarheid door te geven.
+                  Met deze knop word je voor alle planningweken binnen het seizoen
+                  van deze vestiging als altijd beschikbaar ingesteld.
+                </p>
+                <button
+                  type="button"
+                  disabled={loadingDagen}
+                  onClick={() => void zetAltijdBeschikbaarSeizoen()}
+                  className="mt-4 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {loadingDagen ? "Seizoen instellen..." : "Altijd beschikbaar voor heel seizoen"}
+                </button>
+              </div>
+            )}
+
+            {!isBeheerder && magBewerken && (
+              <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+                <p className="text-sm font-semibold text-emerald-900">
+                  Altijd beschikbaar deze week
+                </p>
+                <p className="mt-1 text-sm text-emerald-800">
+                  Hiermee zet je maandag t/m zondag in deze geselecteerde week
+                  automatisch op beschikbaar van 11:30 tot 21:00.
+                </p>
+                <button
+                  type="button"
+                  disabled={loadingDagen || !wijzigingToegestaan}
+                  onClick={() => void zetAltijdBeschikbaarDezeWeek()}
+                  className="mt-4 rounded-xl border border-emerald-300 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {loadingDagen ? "Week instellen..." : "Altijd beschikbaar deze week"}
+                </button>
+              </div>
+            )}
+
             {!magBewerken &&
               deadlineVerstreken && (
                 <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
@@ -2121,7 +2162,17 @@ export default function BeschikbaarheidWeekSelector({
                 </div>
               )}
 
-            {loadingDagen ? (
+            {isBeheerder && isEigenMedewerker ? (
+              <div className="rounded-2xl border border-dashed border-emerald-300 bg-emerald-50 p-8 text-center">
+                <p className="text-base font-semibold text-emerald-900">
+                  Wekelijkse beschikbaarheid is niet nodig
+                </p>
+                <p className="mt-2 text-sm text-emerald-800">
+                  Je bent voor dit seizoen ingesteld als altijd beschikbaar.
+                </p>
+              </div>
+            ) : (
+              
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center">
                 <p className="text-sm font-medium text-slate-600">
                   Beschikbaarheid van deze week laden...
@@ -2477,6 +2528,9 @@ export default function BeschikbaarheidWeekSelector({
                   </div>
                 </div>
               </div>
+            )}
+
+
             )}
 
             <div className="mt-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
