@@ -144,13 +144,33 @@ export async function GET(
     const medewerkers =
       await prisma.medewerker.findMany({
         where: {
-          actief: true,
-
-          vestigingen: {
-            some: {
-              vestigingId,
+          OR: [
+            {
+              actief: true,
+              vestigingen: {
+                some: {
+                  vestigingId,
+                },
+              },
             },
-          },
+            // Eigenaar/Super Admin kan ook als medewerker worden gepland.
+            // Het gekoppelde medewerkersdossier mag nog geen vestigingskoppeling hebben.
+            {
+              systeemGebruiker: {
+                organisaties: {
+                  some: {
+                    organisatieId: vestiging.organisatieId,
+                    actief: true,
+                    rol: {
+                      naam: {
+                        in: ["Eigenaar", "Super Admin", "eigenaar", "super admin"],
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          ],
         },
 
         select: {
