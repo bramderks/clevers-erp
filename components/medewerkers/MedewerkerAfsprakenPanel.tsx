@@ -114,10 +114,17 @@ export default function MedewerkerAfsprakenPanel({
       null,
     );
 
-  const [
-    opslaan,
-    setOpslaan,
-  ] = useState(false);
+  const [opslaan, setOpslaan] = useState(false);
+  const [bewerkenId, setBewerkenId] = useState<string | null>(null);
+  const [bewerkenForm, setBewerkenForm] = useState({
+    vestigingId: "",
+    tagId: "",
+    dagVanWeek: "1",
+    begintijd: "09:00",
+    eindtijd: "17:00",
+    startDatum: vandaag,
+    eindDatum: vandaag,
+  });
 
   const [
     dossierForm,
@@ -210,6 +217,32 @@ export default function MedewerkerAfsprakenPanel({
     } finally {
       setOpslaan(false);
     }
+  }
+
+  function startBewerken(afspraak: VasteUrenAfspraak) {
+    setBewerkenId(afspraak.id);
+    setBewerkenForm({
+      vestigingId: afspraak.vestigingId,
+      tagId: afspraak.tagId,
+      dagVanWeek: String(afspraak.dagVanWeek),
+      begintijd: afspraak.begintijd,
+      eindtijd: afspraak.eindtijd,
+      startDatum: afspraak.startDatum.slice(0, 10),
+      eindDatum: afspraak.eindDatum.slice(0, 10),
+    });
+    setFout(null);
+    setMelding(null);
+  }
+
+  async function slaBewerkingOp() {
+    if (!bewerkenId) return;
+    await verstuur({
+      type: "vaste-uren-bewerken",
+      afspraakId: bewerkenId,
+      ...bewerkenForm,
+      dagVanWeek: Number(bewerkenForm.dagVanWeek),
+    });
+    setBewerkenId(null);
   }
 
   async function verwijder(
@@ -657,19 +690,41 @@ export default function MedewerkerAfsprakenPanel({
                       </p>
                     </div>
 
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      disabled={opslaan}
-                      onClick={() =>
-                        void verwijder(
-                          "vaste-uren",
-                          afspraak.id,
-                        )
-                      }
-                    >
-                      Verwijderen
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={opslaan}
+                        onClick={() => startBewerken(afspraak)}
+                      >
+                        Wijzigen
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        disabled={opslaan}
+                        onClick={() => void verwijder("vaste-uren", afspraak.id)}
+                      >
+                        Verwijderen
+                      </Button>
+                    </div>
+                    {bewerkenId === afspraak.id && (
+                      <div className="mt-4 w-full rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                          <div><label className="mb-2 block text-sm font-medium text-slate-700">Vestiging</label><select value={bewerkenForm.vestigingId} onChange={e => setBewerkenForm({...bewerkenForm, vestigingId:e.target.value})} className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900">{vestigingen.map(v => <option key={v.id} value={v.id}>{v.naam}</option>)}</select></div>
+                          <div><label className="mb-2 block text-sm font-medium text-slate-700">Planningstag</label><select value={bewerkenForm.tagId} onChange={e => setBewerkenForm({...bewerkenForm, tagId:e.target.value})} className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900">{tags.map(t => <option key={t.id} value={t.id}>{t.naam}</option>)}</select></div>
+                          <div><label className="mb-2 block text-sm font-medium text-slate-700">Vaste dag</label><select value={bewerkenForm.dagVanWeek} onChange={e => setBewerkenForm({...bewerkenForm, dagVanWeek:e.target.value})} className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900">{DAGEN.map((d,i)=><option key={d} value={i+1}>{d}</option>)}</select></div>
+                          <Input label="Begintijd" type="time" value={bewerkenForm.begintijd} onChange={e=>setBewerkenForm({...bewerkenForm,begintijd:e.target.value})} required />
+                          <Input label="Eindtijd" type="time" value={bewerkenForm.eindtijd} onChange={e=>setBewerkenForm({...bewerkenForm,eindtijd:e.target.value})} required />
+                          <Input label="Startdatum" type="date" value={bewerkenForm.startDatum} onChange={e=>setBewerkenForm({...bewerkenForm,startDatum:e.target.value})} required />
+                          <Input label="Einddatum" type="date" value={bewerkenForm.eindDatum} onChange={e=>setBewerkenForm({...bewerkenForm,eindDatum:e.target.value})} required />
+                        </div>
+                        <div className="mt-4 flex justify-end gap-2">
+                          <Button type="button" variant="secondary" size="sm" onClick={()=>setBewerkenId(null)} disabled={opslaan}>Annuleren</Button>
+                          <Button type="button" size="sm" onClick={()=>void slaBewerkingOp()} disabled={opslaan}>{opslaan ? "Opslaan..." : "Wijziging opslaan"}</Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ),
               )}
