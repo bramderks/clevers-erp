@@ -5,7 +5,7 @@ import {
 } from "@/lib/verloning/pauze";
 import {
   datumSleutelVoorUren,
-  uniekeUrenPerRegistratie,
+  mergeTijdIntervallen,
 } from "@/lib/verloning/overlappendeUren";
 
 type GenereerVerloningResultaat = {
@@ -373,32 +373,68 @@ export async function genereerVerloning(
    * ==========================================================
    *
    * Eén medewerker kan meerdere functies tegelijk uitvoeren.
-   * Alle urenregistraties blijven afzonderlijk zichtbaar,
-   * maar voor verloning wordt overlappende tijd per medewerker
-   * en kalenderdag slechts één keer meegeteld.
+   * Binnen dezelfde vestiging en kalenderdag wordt de tijd eerst
+   * samengevoegd. De pauzeregel wordt vervolgens één keer op
+   * iedere samengevoegde werkperiode toegepast.
+   *
+   * De totale unieke uren worden aan de eerste registratie van
+   * die medewerker/vestiging/dag gekoppeld; de overige registraties
+   * blijven zichtbaar maar dragen geen extra uren aan de verloning bij.
    */
-  const registratiesPerDag = new Map<string, typeof gecontroleerdeUren>();
+  const registratiesPerDagEnVestiging =
+    new Map<string, typeof gecontroleerdeUren>();
 
   for (const registratie of gecontroleerdeUren) {
-    const sleutel = `${registratie.medewerkerId}:${datumSleutelVoorUren(registratie.datum)}`;
-    const lijst = registratiesPerDag.get(sleutel) ?? [];
+    const sleutel = [
+      registratie.medewerkerId,
+      registratie.vestigingId,
+      datumSleutelVoorUren(registratie.datum),
+    ].join(":");
+
+    const lijst =
+      registratiesPerDagEnVestiging.get(sleutel) ?? [];
+
     lijst.push(registratie);
-    registratiesPerDag.set(sleutel, lijst);
+    registratiesPerDagEnVestiging.set(sleutel, lijst);
   }
 
-  const uniekeUrenPerRegistratieId = new Map<string, number>();
+  const uniekeUrenPerRegistratieId =
+    new Map<string, number>();
 
-  for (const lijst of registratiesPerDag.values()) {
-    const unieke = uniekeUrenPerRegistratie(
+  for (const lijst of registratiesPerDagEnVestiging.values()) {
+    const samengevoegd = mergeTijdIntervallen(
       lijst.map((registratie) => ({
-        id: registratie.id,
         begintijd: registratie.werkelijkeBegintijd,
         eindtijd: registratie.werkelijkeEindtijd,
       })),
     );
 
-    for (const [registratieId, uren] of unieke) {
-      uniekeUrenPerRegistratieId.set(registratieId, uren);
+    const uniekeUren = samengevoegd.reduce(
+      (totaal, interval) =>
+        totaal +
+        berekenGewerkteUren(
+          interval.begintijd,
+          interval.eindtijd,
+        ).gewerkteUren,
+      0,
+    );
+
+    const eersteRegistratie = [...lijst].sort(
+      (a, b) =>
+        a.werkelijkeBegintijd.getTime() -
+          b.werkelijkeBegintijd.getTime() ||
+        a.werkelijkeEindtijd.getTime() -
+          b.werkelijkeEindtijd.getTime() ||
+        a.id.localeCompare(b.id),
+    )[0];
+
+    for (const registratie of lijst) {
+      uniekeUrenPerRegistratieId.set(
+        registratie.id,
+        registratie.id === eersteRegistratie?.id
+          ? uniekeUren
+          : 0,
+      );
     }
   }
 
