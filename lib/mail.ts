@@ -31,6 +31,6 @@ export function absoluteUrl(path: string) {
 }
 
 export function webAppUrl(path = "/") {
-  const base = (process.env.NEXT_PUBLIC_WEBAPP_URL || "https://app.iselto.nl").replace(/\/$/, "");
+  const base = (process.env.NEXT_PUBLIC_WEBAPP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://erp.iselto.nl").replace(/\/$/, "");
   return `${base}${path.startsWith("/") ? path : `/${path}`}`;
 }
