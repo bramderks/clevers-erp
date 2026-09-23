@@ -364,6 +364,7 @@ export async function POST(
           select: {
             id: true,
             actief: true,
+            systeemGebruikerId: true,
 
             vestigingen: {
               where: {
@@ -402,19 +403,34 @@ export async function POST(
         );
       }
 
-      if (
-        medewerker.vestigingen.length ===
-        0
-      ) {
-        return NextResponse.json(
-          {
-            fout:
-              "Deze medewerker hoort niet bij deze vestiging.",
-          },
-          {
-            status: 400,
-          },
-        );
+      if (medewerker.vestigingen.length === 0) {
+        const beheerder = medewerker.systeemGebruikerId
+          ? await prisma.organisatieGebruiker.findFirst({
+              where: {
+                systeemGebruikerId: medewerker.systeemGebruikerId,
+                organisatieId: dienst.week.vestiging.organisatieId,
+                actief: true,
+                rol: {
+                  naam: {
+                    in: ["Eigenaar", "Super Admin", "eigenaar", "super admin"],
+                  },
+                },
+              },
+              select: { id: true },
+            })
+          : null;
+
+        if (!beheerder) {
+          return NextResponse.json(
+            {
+              fout:
+                "Deze medewerker hoort niet bij deze vestiging.",
+            },
+            {
+              status: 400,
+            },
+          );
+        }
       }
 
       const bestaandeBezetting =
