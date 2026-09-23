@@ -14,7 +14,12 @@ id: string;
 };
 
 function formatTime(date: Date) {
-return format(date, "HH");
+return new Intl.DateTimeFormat("nl-NL", {
+timeZone: "Europe/Amsterdam",
+hour: "2-digit",
+minute: "2-digit",
+hourCycle: "h23",
+}).format(date);
 }
 
 function formatDate(date: Date) {
