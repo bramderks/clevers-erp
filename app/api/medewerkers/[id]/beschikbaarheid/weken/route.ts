@@ -248,7 +248,7 @@ export async function GET(
       !medewerkerVestiging.vestiging.actief
     ) {
       return jsonError(
-        "De medewerker is niet gekoppeld aan deze vestiging.",
+        "Voor deze vestiging kan je geen beschikbaarheid doorgeven. Controleer of je aan deze vestiging bent gekoppeld.",
         403,
       );
     }
