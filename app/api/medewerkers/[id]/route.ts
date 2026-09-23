@@ -381,6 +381,7 @@ export async function PATCH(
           select: {
             id: true,
             email: true,
+            systeemGebruikerId: true,
             vestigingen: {
               select: {
                 vestiging: {
@@ -409,6 +410,7 @@ export async function PATCH(
     }
 
     const isEigenProfiel =
+      medewerker.systeemGebruikerId === gebruiker.id ||
       gebruiker.medewerker?.id === id;
 
     const organisatieIds =
@@ -448,7 +450,9 @@ export async function PATCH(
             (relatie) =>
               relatie.actief &&
               relatie.organisatie.actief &&
-              relatie.rol.naam.trim().toLowerCase() === "eigenaar",
+              ["eigenaar", "super admin"].includes(
+              relatie.rol.naam.trim().toLowerCase(),
+            ),
           )
           .map((relatie) => relatie.organisatieId)
       : [];
@@ -486,10 +490,9 @@ export async function PATCH(
               relatie.actief &&
               relatie.organisatie.actief &&
               relatie.organisatieId === organisatieId &&
-              relatie.rol.naam
-                .trim()
-                .toLowerCase() ===
-                "eigenaar",
+              ["eigenaar", "super admin"].includes(
+                relatie.rol.naam.trim().toLowerCase(),
+              ),
           ),
       );
 
