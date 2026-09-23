@@ -1553,9 +1553,7 @@ export default function DienstForm({
         </h3>
 
         <p className="mt-1 text-sm text-gray-600">
-          Maak de dienst aan en
-          plan medewerkers
-          direct in.
+          Maak een normale dienst aan en plan medewerkers direct in, of publiceer hem als open dienst zodat passende medewerkers direct een pushmelding krijgen.
         </p>
 
         {initialTagNaam &&
@@ -2113,8 +2111,12 @@ export default function DienstForm({
           className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {laden
-            ? "Dienst opslaan..."
-            : "Dienst aanmaken"}
+            ? alsOpenDienst
+              ? "Open dienst publiceren..."
+              : "Dienst opslaan..."
+            : alsOpenDienst
+              ? "Open dienst publiceren"
+              : "Dienst aanmaken"}
         </button>
       </div>
     </form>
