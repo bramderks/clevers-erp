@@ -159,20 +159,20 @@ function controleerTijden(
 
   if (
     begin.totaal <
-    9 * 60
+    11 * 60 + 30
   ) {
     throw new RouteFout(
-      "Beschikbaarheid kan niet eerder dan 09:00 beginnen.",
+      "Beschikbaarheid kan niet eerder dan 11:30 beginnen.",
       400,
     );
   }
 
   if (
     einde.totaal >
-    23 * 60
+    21 * 60
   ) {
     throw new RouteFout(
-      "Beschikbaarheid kan niet later dan 23:00 eindigen.",
+      "Beschikbaarheid kan niet later dan 21:00 eindigen.",
       400,
     );
   }
