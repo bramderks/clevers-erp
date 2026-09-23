@@ -53,7 +53,15 @@ export async function heeftRol(rolNaam: string, organisatieId?: string) {
 }
 
 export async function isEigenaar(organisatieId?: string) {
-  return heeftRol("Eigenaar", organisatieId);
+  const gebruiker = await getCurrentUser();
+  if (!gebruiker || !gebruiker.actief) return false;
+  return gebruiker.organisaties.some(
+    (relatie) =>
+      relatie.actief &&
+      relatie.organisatie.actief &&
+      (!organisatieId || relatie.organisatieId === organisatieId) &&
+      ["eigenaar", "super admin"].includes(relatie.rol.naam.trim().toLowerCase()),
+  );
 }
 
 export async function heeftOrganisatieToegang(organisatieId: string) {
@@ -78,7 +86,7 @@ function heeftActieveOrganisatieRelatie(gebruiker: Awaited<ReturnType<typeof get
 function isEigenaarVanOrganisatie(gebruiker: Awaited<ReturnType<typeof getCurrentUser>>, organisatieId: string) {
   if (!gebruiker) return false;
   return gebruiker.organisaties.some(
-    (relatie) => relatie.organisatieId === organisatieId && relatie.actief && relatie.organisatie.actief && relatie.rol.naam.trim().toLowerCase() === "eigenaar",
+    (relatie) => relatie.organisatieId === organisatieId && relatie.actief && relatie.organisatie.actief && ["eigenaar", "super admin"].includes(relatie.rol.naam.trim().toLowerCase()),
   );
 }
 
@@ -136,7 +144,7 @@ export async function hasPermission(permission: Permission, organisatieId?: stri
   const relaties = gebruiker.organisaties.filter(
     (relatie) => relatie.actief && relatie.organisatie.actief && (!organisatieId || relatie.organisatieId === organisatieId),
   );
-  if (relaties.some((relatie) => relatie.rol.naam.trim().toLowerCase() === "eigenaar")) {
+  if (relaties.some((relatie) => ["eigenaar", "super admin"].includes(relatie.rol.naam.trim().toLowerCase()))) {
     return roles.eigenaar.permissions.includes(permission);
   }
   const resultaat = relaties.some((relatie) => {
@@ -169,7 +177,7 @@ export async function hasPermissionForVestiging(permission: Permission, vestigin
 
   const heeftPermission = organisatieRelaties.some((relatie) => {
     const rolNaam = relatie.rol.naam.trim().toLowerCase();
-    if (rolNaam === "eigenaar") return roles.eigenaar.permissions.includes(permission);
+    if (["eigenaar", "super admin"].includes(rolNaam)) return roles.eigenaar.permissions.includes(permission);
     const rol = Object.values(roles).find((item) => item.naam.trim().toLowerCase() === rolNaam);
     return rol?.permissions.includes(permission) ?? false;
   });
