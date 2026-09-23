@@ -275,7 +275,9 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
       ).map((uitnodiging) => uitnodiging.organisatieId)
     : [];
 
-  const isEigenProfiel = gebruiker.medewerker?.id === id;
+  const isEigenProfiel =
+    medewerker.systeemGebruikerId === gebruiker.id ||
+    gebruiker.medewerker?.id === id;
 
   // Een eigenaar is organisatiebreed bevoegd. Ook wanneer het eigen
   // medewerkerprofiel nog geen vestiging heeft, moet de eigenaar het
@@ -284,7 +286,9 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
     ? actieveRelaties
         .filter(
           (relatie) =>
-            relatie.rol.naam.trim().toLowerCase() === "eigenaar",
+            ["eigenaar", "super admin"].includes(
+            relatie.rol.naam.trim().toLowerCase(),
+          ),
         )
         .map((relatie) => relatie.organisatieId)
     : [];
@@ -303,7 +307,9 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
       actieveRelaties.some(
         (relatie) =>
           relatie.organisatieId === organisatieId &&
-          relatie.rol.naam.trim().toLowerCase() === "eigenaar",
+          ["eigenaar", "super admin"].includes(
+            relatie.rol.naam.trim().toLowerCase(),
+          ),
       ),
     );
 
@@ -424,7 +430,9 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
         .filter(
           (relatie) =>
             toegestaneOrganisatieIds.includes(relatie.organisatieId) &&
-            relatie.rol.naam.trim().toLowerCase() === "eigenaar",
+            ["eigenaar", "super admin"].includes(
+            relatie.rol.naam.trim().toLowerCase(),
+          ),
         )
         .map((relatie) => relatie.organisatieId),
     ),
