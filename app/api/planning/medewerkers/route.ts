@@ -185,6 +185,7 @@ export async function GET(
 
         select: {
           id: true,
+          systeemGebruikerId: true,
           personeelsnummer: true,
           aanhef: true,
           voornaam: true,
@@ -332,6 +333,8 @@ export async function GET(
       medewerkers.map(
         (medewerker) => ({
           id: medewerker.id,
+
+          isBeheerder: beheerderSysteemGebruikerIds.includes(medewerker.systeemGebruikerId ?? ""),
 
           personeelsnummer:
             medewerker.personeelsnummer,
