@@ -581,17 +581,17 @@ if (
     definitieveEindtijd.getMinutes();
 
   if (
-    beginMinuten < 9 * 60 ||
-    beginMinuten > 23 * 60 ||
-    eindMinuten < 9 * 60 ||
-    eindMinuten > 23 * 60 ||
+    beginMinuten < 11 * 60 + 30 ||
+    beginMinuten > 21 * 60 ||
+    eindMinuten < 11 * 60 + 30 ||
+    eindMinuten > 21 * 60 ||
     beginMinuten % 15 !== 0 ||
     eindMinuten % 15 !== 0
   ) {
     return NextResponse.json(
       {
         fout:
-          "Beschikbaarheidstijden moeten tussen 09:00 en 23:00 liggen en in stappen van 15 minuten worden opgegeven.",
+          "Beschikbaarheidstijden moeten tussen 11:30 en 21:00 liggen en in stappen van 15 minuten worden opgegeven.",
       },
       {
         status: 400,
