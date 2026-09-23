@@ -42,13 +42,40 @@ export const medewerkerRepository = {
     };
 
     const statusVoorwaarde = includeInactive ? {} : { actief: true };
+    // Eigenaren en Super Admins kunnen óók als medewerker worden ingezet.
+    // Als hun medewerkersdossier al gekoppeld is aan het systeemaccount,
+    // mag het dossier zichtbaar blijven, ook wanneer het nog niet actief
+    // of nog niet aan een vestiging gekoppeld is.
+    const organisatieBeheerderVoorwaarde = heeftOrganisatieFilter
+      ? {
+          systeemGebruiker: {
+            organisaties: {
+              some: {
+                organisatieId: { in: organisatieIds ?? [] },
+                actief: true,
+                rol: {
+                  naam: {
+                    in: ["Eigenaar", "Super Admin", "eigenaar", "super admin"],
+                  },
+                },
+              },
+            },
+          },
+        }
+      : {};
+
 
     const where =
       heeftOrganisatieFilter || heeftVestigingFilter
         ? heeftOrganisatieFilter && !heeftVestigingFilter
           ? {
               AND: [
-                statusVoorwaarde,
+                {
+                  OR: [
+                    statusVoorwaarde,
+                    organisatieBeheerderVoorwaarde,
+                  ],
+                },
                 {
                   OR: [
                     vestigingVoorwaarde,
@@ -59,7 +86,13 @@ export const medewerkerRepository = {
                 },
               ],
             }
-          : { ...statusVoorwaarde, ...vestigingVoorwaarde }
+          : {
+              OR: [
+                statusVoorwaarde,
+                organisatieBeheerderVoorwaarde,
+              ],
+              AND: [vestigingVoorwaarde],
+            }
         : statusVoorwaarde;
 
     return prisma.medewerker.findMany({
