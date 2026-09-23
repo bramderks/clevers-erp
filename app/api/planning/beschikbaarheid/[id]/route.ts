@@ -567,6 +567,57 @@ export async function PATCH(
       );
     }
 
+    if (
+      definitieveBegintijd !== null &&
+      definitieveEindtijd !== null
+    ) {
+      const beginTotaal =
+        definitieveBegintijd.getHours() * 60 +
+        definitieveBegintijd.getMinutes();
+      const eindTotaal =
+        definitieveEindtijd.getHours() * 60 +
+        definitieveEindtijd.getMinutes();
+
+      if (
+        definitieveBegintijd.getMinutes() % 30 !== 0 ||
+        definitieveEindtijd.getMinutes() % 30 !== 0
+      ) {
+        return NextResponse.json(
+          {
+            fout:
+              "Beschikbaarheid moet in stappen van 30 minuten worden ingevoerd.",
+          },
+          {
+            status: 400,
+          },
+        );
+      }
+
+      if (beginTotaal < 9 * 60) {
+        return NextResponse.json(
+          {
+            fout:
+              "Beschikbaarheid kan niet eerder dan 09:00 beginnen.",
+          },
+          {
+            status: 400,
+          },
+        );
+      }
+
+      if (eindTotaal > 23 * 60) {
+        return NextResponse.json(
+          {
+            fout:
+              "Beschikbaarheid kan niet later dan 23:00 eindigen.",
+          },
+          {
+            status: 400,
+          },
+        );
+      }
+    }
+
     /*
      * ============================================================
      * STATUS
