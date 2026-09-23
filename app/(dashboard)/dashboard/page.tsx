@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 
 import Card from "@/components/ui/Card";
 import PageHeader from "@/components/ui/PageHeader";
+import OwnerWorkflowTasks from "@/components/dashboard/OwnerWorkflowTasks";
+import OwnerUpcomingServices from "@/components/dashboard/OwnerUpcomingServices";
 
 import { permissions } from "@/lib/permissions";
 import { vereisPermission } from "@/lib/requirePermission";
@@ -120,6 +122,16 @@ export default async function DashboardPage() {
 
   const isMedewerker =
     gebruiker.medewerker?.id != null;
+
+  const isEigenaarOfSuperAdmin =
+    gebruiker.organisaties.some(
+      (relatie) =>
+        relatie.actief &&
+        relatie.organisatie.actief &&
+        ["eigenaar", "super admin"].includes(
+          relatie.rol.naam.trim().toLowerCase(),
+        ),
+    );
 
   /*
    * ============================================================
@@ -912,6 +924,13 @@ export default async function DashboardPage() {
   return (
     <main className="space-y-8">
       <PageHeader title="Dashboard" />
+
+      {isEigenaarOfSuperAdmin && (
+        <>
+          <OwnerWorkflowTasks />
+          <OwnerUpcomingServices />
+        </>
+      )}
 
       <section>
         <Card
