@@ -251,7 +251,9 @@ export async function GET(
                 },
 
                 week: {
-                  vestigingId,
+                  vestiging: {
+                    organisatieId: vestiging.organisatieId,
+                  },
                 },
               },
             },
@@ -267,6 +269,16 @@ export async function GET(
                   datum: true,
                   begintijd: true,
                   eindtijd: true,
+                  week: {
+                    select: {
+                      vestigingId: true,
+                      vestiging: {
+                        select: {
+                          naam: true,
+                        },
+                      },
+                    },
+                  },
 
                   tags: {
                     select: {
