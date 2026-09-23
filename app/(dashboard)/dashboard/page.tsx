@@ -415,6 +415,7 @@ export default async function DashboardPage() {
      * ============================================================
      */
 
+    if (!isEigenaarOfSuperAdmin) {
     for (
       const week of beschikbaarheidWeken
     ) {
@@ -489,6 +490,8 @@ export default async function DashboardPage() {
         href: `/profiel/beschikbaarheid?week=${week.jaar}-${week.weeknummer}&datum=${datumParameter}`,
         variant: "warning",
       });
+    }
+
     }
 
     const openVerloningsControles =
