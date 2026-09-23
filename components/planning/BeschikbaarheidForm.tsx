@@ -353,6 +353,7 @@ export default function BeschikbaarheidForm({
   async function slaDagOp(
     datum: string,
     dagInvoer: DagInvoer,
+    altijdBeschikbaarWeek = false,
   ) {
     const datumWaarde =
       new Date(
@@ -429,6 +430,7 @@ export default function BeschikbaarheidForm({
             opmerking:
               dagInvoer.opmerking.trim() ||
               null,
+            altijdBeschikbaarWeek,
           }),
         },
       );
@@ -477,7 +479,7 @@ export default function BeschikbaarheidForm({
 
       await Promise.all(
         dagen.map((dag) =>
-          slaDagOp(dag.datum, altijdBeschikbaar[dag.datum]),
+          slaDagOp(dag.datum, altijdBeschikbaar[dag.datum], true),
         ),
       );
 
