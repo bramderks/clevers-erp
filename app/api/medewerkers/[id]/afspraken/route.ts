@@ -476,6 +476,76 @@ export async function GET(
   }
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: RouteContext,
+) {
+  try {
+    const { id } = await params;
+    const toegang = await vereisEigenaarVoorMedewerker(id);
+    if (!toegang || !toegang.medewerker) return NextResponse.json({ error: "Medewerker niet gevonden." }, { status: 404 });
+    if (!toegang.toegestaan) return NextResponse.json({ error: "Alleen de eigenaar kan afspraken wijzigen." }, { status: 403 });
+
+    const body = await request.json() as Record<string, unknown>;
+    if (body.type !== "vaste-uren-bewerken" || typeof body.afspraakId !== "string") {
+      return NextResponse.json({ error: "Ongeldige wijziging." }, { status: 400 });
+    }
+
+    const afspraakId = body.afspraakId;
+    const vestigingId = typeof body.vestigingId === "string" ? body.vestigingId : "";
+    const tagId = typeof body.tagId === "string" ? body.tagId : "";
+    const weekdag = Number(body.dagVanWeek);
+    const begintijd = typeof body.begintijd === "string" ? body.begintijd : "";
+    const eindtijd = typeof body.eindtijd === "string" ? body.eindtijd : "";
+    const startDatumText = body.startDatum;
+    const eindDatumText = body.eindDatum;
+
+    if (!Number.isInteger(weekdag) || weekdag < 1 || weekdag > 7 ||
+        !isGeldigeDatum(startDatumText) || !isGeldigeDatum(eindDatumText) ||
+        !isGeldigeTijd(begintijd) || !isGeldigeTijd(eindtijd) ||
+        begintijd >= eindtijd) {
+      return NextResponse.json({ error: "Controleer dag, data en tijden." }, { status: 400 });
+    }
+
+    const afspraak = await prisma.$queryRawUnsafe<Array<{
+      id: string; medewerkerId: string; vestigingId: string; tagId: string; dagVanWeek: number;
+      begintijd: string; eindtijd: string; startDatum: Date; eindDatum: Date;
+    }>>(
+      `SELECT "id","medewerkerId","vestigingId","tagId","dagVanWeek","begintijd","eindtijd","startDatum","eindDatum"
+       FROM "VasteUrenAfspraak" WHERE "id"=$1 AND "medewerkerId"=$2 LIMIT 1`,
+      afspraakId, id,
+    );
+    if (!afspraak[0]) return NextResponse.json({ error: "Vaste urenafspraak niet gevonden." }, { status: 404 });
+
+    const startDatum = new Date(`${startDatumText}T00:00:00`);
+    const eindDatum = new Date(`${eindDatumText}T23:59:59.999`);
+    if (eindDatum < startDatum) return NextResponse.json({ error: "De einddatum kan niet vóór de startdatum liggen." }, { status: 400 });
+
+    const [vestiging, tagRelatie] = await Promise.all([
+      prisma.medewerkerVestiging.findFirst({ where:{ medewerkerId:id, vestigingId }, select:{ vestigingId:true, vestiging:{select:{actief:true,seizoenStart:true,seizoenEinde:true}} } }),
+      prisma.medewerkerTag.findFirst({ where:{ medewerkerId:id, tagId, tag:{actief:true} }, select:{tagId:true} }),
+    ]);
+    if (!vestiging?.vestiging.actief || !tagRelatie) return NextResponse.json({ error: "Vestiging of planningstag is niet geldig voor deze medewerker." }, { status: 400 });
+    if (!vestiging.vestiging.seizoenEinde) return NextResponse.json({ error: "Voor vaste urenafspraken moet eerst het seizoen zijn ingesteld." }, { status: 400 });
+
+    const seizoenStart = vestiging.vestiging.seizoenStart ? beginDag(vestiging.vestiging.seizoenStart) : null;
+    const seizoenEinde = eindeDag(vestiging.vestiging.seizoenEinde);
+    if ((seizoenStart && startDatum < seizoenStart) || eindDatum > seizoenEinde) return NextResponse.json({ error: "De afspraak moet binnen het seizoen vallen." }, { status: 400 });
+
+    await prisma.$executeRawUnsafe(
+      `UPDATE "VasteUrenAfspraak"
+       SET "vestigingId"=$1,"tagId"=$2,"dagVanWeek"=$3,"begintijd"=$4,"eindtijd"=$5,"startDatum"=$6,"eindDatum"=$7,"gewijzigdOp"=CURRENT_TIMESTAMP
+       WHERE "id"=$8 AND "medewerkerId"=$9`,
+      vestigingId, tagId, weekdag, begintijd, eindtijd, startDatum, eindDatum, afspraakId, id,
+    );
+
+    return NextResponse.json({ melding: "De vaste urenafspraak is gewijzigd." });
+  } catch (error) {
+    console.error("Vaste urenafspraak wijzigen mislukt:", error);
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Wijzigen is mislukt." }, { status: 400 });
+  }
+}
+
 export async function POST(
   request: NextRequest,
   { params }: RouteContext,
