@@ -200,6 +200,43 @@ function eindeVanISOWeek(
   return einde;
 }
 
+const BESCHIKBAARHEID_TEST_EINDDATUM = new Date(
+  "2027-03-01T23:59:59.999Z",
+);
+
+function volgendeWeekStart(): Date {
+  const nu = new Date();
+  const vandaag = new Date(
+    Date.UTC(
+      nu.getUTCFullYear(),
+      nu.getUTCMonth(),
+      nu.getUTCDate(),
+      0,
+      0,
+      0,
+      0,
+    ),
+  );
+
+  const dag = vandaag.getUTCDay() || 7;
+  vandaag.setUTCDate(
+    vandaag.getUTCDate() + (8 - dag),
+  );
+
+  return vandaag;
+}
+
+function isTestOpenVoorWeek(
+  jaar: number,
+  weeknummer: number,
+): boolean {
+  return (
+    new Date() < BESCHIKBAARHEID_TEST_EINDDATUM &&
+    beginVanISOWeek(jaar, weeknummer) >=
+      volgendeWeekStart()
+  );
+}
+
 function berekenDeadline(
   jaar: number,
   weeknummer: number,
@@ -590,7 +627,7 @@ async function bepaalToegang(
     gebruiker.medewerker?.id ===
     medewerkerId;
 
-  const deadline =
+  const standaardDeadline =
     beschikbaarheid.week
       .beschikbaarheidDeadline ??
     berekenDeadline(
@@ -598,6 +635,14 @@ async function bepaalToegang(
       beschikbaarheid.week
         .weeknummer,
     );
+
+  const deadline =
+    isTestOpenVoorWeek(
+      beschikbaarheid.week.jaar,
+      beschikbaarheid.week.weeknummer,
+    )
+      ? BESCHIKBAARHEID_TEST_EINDDATUM
+      : standaardDeadline;
 
   const gesloten =
     deadlineVerstreken(
