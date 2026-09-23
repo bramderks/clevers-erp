@@ -3,6 +3,10 @@ import { prisma } from "@/lib/prisma";
 import {
   berekenGewerkteUren,
 } from "@/lib/verloning/pauze";
+import {
+  datumSleutelVoorUren,
+  uniekeUrenPerRegistratie,
+} from "@/lib/verloning/overlappendeUren";
 
 type GenereerVerloningResultaat = {
   periodeId: string;
@@ -365,6 +369,41 @@ export async function genereerVerloning(
 
   /*
    * ==========================================================
+   * OVERLAPPENDE DIENSTEN NOOIT DUBBEL TELLEN
+   * ==========================================================
+   *
+   * Eén medewerker kan meerdere functies tegelijk uitvoeren.
+   * Alle urenregistraties blijven afzonderlijk zichtbaar,
+   * maar voor verloning wordt overlappende tijd per medewerker
+   * en kalenderdag slechts één keer meegeteld.
+   */
+  const registratiesPerDag = new Map<string, typeof gecontroleerdeUren>();
+
+  for (const registratie of gecontroleerdeUren) {
+    const sleutel = `${registratie.medewerkerId}:${datumSleutelVoorUren(registratie.datum)}`;
+    const lijst = registratiesPerDag.get(sleutel) ?? [];
+    lijst.push(registratie);
+    registratiesPerDag.set(sleutel, lijst);
+  }
+
+  const uniekeUrenPerRegistratieId = new Map<string, number>();
+
+  for (const lijst of registratiesPerDag.values()) {
+    const unieke = uniekeUrenPerRegistratie(
+      lijst.map((registratie) => ({
+        id: registratie.id,
+        begintijd: registratie.werkelijkeBegintijd,
+        eindtijd: registratie.werkelijkeEindtijd,
+      })),
+    );
+
+    for (const [registratieId, uren] of unieke) {
+      uniekeUrenPerRegistratieId.set(registratieId, uren);
+    }
+  }
+
+  /*
+   * ==========================================================
    * GROEPEREN PER MEDEWERKER EN VESTIGING
    * ==========================================================
    */
@@ -418,7 +457,7 @@ export async function genereerVerloning(
     );
 
     groep.gewerkteUren +=
-      registratie.berekendeGewerkteUren;
+      uniekeUrenPerRegistratieId.get(registratie.id) ?? 0;
   }
 
   if (groepen.size === 0) {
