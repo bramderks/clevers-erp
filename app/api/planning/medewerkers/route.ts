@@ -141,6 +141,24 @@ export async function GET(
       ? await isEigenaar(vestiging.organisatieId)
       : false;
 
+    const beheerders = vestiging
+      ? await prisma.organisatieGebruiker.findMany({
+          where: {
+            organisatieId: vestiging.organisatieId,
+            actief: true,
+            rol: {
+              naam: {
+                in: ["Eigenaar", "Super Admin", "eigenaar", "super admin"],
+              },
+            },
+          },
+          select: { systeemGebruikerId: true },
+        })
+      : [];
+    const beheerderSysteemGebruikerIds = beheerders.map(
+      (item) => item.systeemGebruikerId,
+    );
+
     const medewerkers =
       await prisma.medewerker.findMany({
         where: {
@@ -153,23 +171,15 @@ export async function GET(
                 },
               },
             },
-            // Eigenaar/Super Admin kan ook als medewerker worden gepland.
-            // Het gekoppelde medewerkersdossier mag nog geen vestigingskoppeling hebben.
-            {
-              systeemGebruiker: {
-                organisaties: {
-                  some: {
-                    organisatieId: vestiging.organisatieId,
-                    actief: true,
-                    rol: {
-                      naam: {
-                        in: ["Eigenaar", "Super Admin", "eigenaar", "super admin"],
-                      },
+            ...(beheerderSysteemGebruikerIds.length > 0
+              ? [
+                  {
+                    systeemGebruikerId: {
+                      in: beheerderSysteemGebruikerIds,
                     },
                   },
-                },
-              },
-            },
+                ]
+              : []),
           ],
         },
 
