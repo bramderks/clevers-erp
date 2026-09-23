@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, FileSpreadsheet, Loader2, Upload, X, AlertCircle } from "lucide-react";
 import PageLayout from "@/components/ui/PageLayout";
@@ -23,6 +23,16 @@ type ImportResultaat = {
   fouten: { rij: number; melding: string }[];
 };
 
+type ActivatieHistorie = {
+  id: string;
+  voornaam: string;
+  achternaam: string;
+  email: string;
+  verstuurdOp: string;
+  verlooptOp: string;
+  gebruiktOp: string | null;
+};
+
 export default function NieuweMedewerkerPage() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -36,6 +46,33 @@ export default function NieuweMedewerkerPage() {
   const [melding, setMelding] = useState("");
   const [error, setError] = useState("");
   const [verzendResultaat, setVerzendResultaat] = useState<Array<{ voornaam: string; achternaam: string; email: string; ok: boolean; melding?: string }>>([]);
+  const [activatieHistorie, setActivatieHistorie] = useState<ActivatieHistorie[]>([]);
+  const [historieBezig, setHistorieBezig] = useState(true);
+
+  useEffect(() => {
+    let actief = true;
+    fetch("/api/medewerkers/nieuw/importeren/historie")
+      .then((response) => response.json())
+      .then((data) => {
+        if (actief && Array.isArray(data.activaties)) setActivatieHistorie(data.activaties);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (actief) setHistorieBezig(false);
+      });
+    return () => {
+      actief = false;
+    };
+  }, []);
+
+  function verversActivatieHistorie() {
+    fetch("/api/medewerkers/nieuw/importeren/historie")
+      .then((response) => response.json())
+      .then((data) => {
+        if (Array.isArray(data.activaties)) setActivatieHistorie(data.activaties);
+      })
+      .catch(() => {});
+  }
 
   async function verstuurUitnodiging(event: React.FormEvent) {
     event.preventDefault();
@@ -90,6 +127,7 @@ export default function NieuweMedewerkerPage() {
       if (!response.ok) throw new Error(data.error || "De activaties konden niet worden verstuurd.");
       const resultaten = Array.isArray(data.resultaten) ? data.resultaten : [];
       setVerzendResultaat(resultaten);
+      verversActivatieHistorie();
       const verstuurd = resultaten.filter((r: { ok: boolean }) => r.ok).length;
       const mislukt = resultaten.length - verstuurd;
       setMelding(mislukt > 0 ? `${verstuurd} activatie-uitnodiging(en) verstuurd, ${mislukt} niet verstuurd.` : `${verstuurd} activatie-uitnodiging(en) zijn verstuurd.`);
@@ -138,6 +176,37 @@ export default function NieuweMedewerkerPage() {
                 <p className="text-sm font-semibold text-slate-900">Excel-indeling</p>
                 <p className="mt-1 text-sm text-slate-500">Gebruik drie kolommen: <strong>voornaam</strong>, <strong>achternaam</strong> en <strong>email</strong>. Eén medewerker per regel.</p>
               </div>
+
+              {activatieHistorie.length > 0 && (
+                <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="font-semibold text-slate-900">Eerder verzonden activaties</p>
+                      <p className="mt-1 text-sm text-slate-500">Hier zie je welke medewerkers eerder vanuit deze organisatie een activatie-uitnodiging hebben ontvangen.</p>
+                    </div>
+                    <span className="text-xs font-medium text-slate-500">{activatieHistorie.length} recente uitnodigingen</span>
+                  </div>
+                  <div className="mt-4 overflow-x-auto rounded-xl border border-slate-100">
+                    <div className="grid min-w-[680px] grid-cols-[1.1fr_1.5fr_1fr_120px] gap-3 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase text-slate-500">
+                      <span>Medewerker</span><span>E-mail</span><span>Verzonden</span><span>Status</span>
+                    </div>
+                    {activatieHistorie.map((activatie) => (
+                      <div key={activatie.id} className="grid min-w-[680px] grid-cols-[1.1fr_1.5fr_1fr_120px] gap-3 border-t border-slate-100 px-4 py-3 text-sm">
+                        <span className="font-medium text-slate-800">{activatie.voornaam} {activatie.achternaam}</span>
+                        <span className="truncate text-slate-600">{activatie.email}</span>
+                        <span className="text-slate-500">{new Date(activatie.verstuurdOp).toLocaleString("nl-NL")}</span>
+                        <span className={activatie.gebruiktOp ? "font-medium text-emerald-700" : new Date(activatie.verlooptOp) < new Date() ? "font-medium text-red-600" : "font-medium text-amber-700"}>
+                          {activatie.gebruiktOp ? "Geactiveerd" : new Date(activatie.verlooptOp) < new Date() ? "Verlopen" : "Verstuurd"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {historieBezig && (
+                <p className="text-xs text-slate-400">Activatiehistorie laden...</p>
+              )}
 
               {!bestand ? (
                 <label htmlFor="nieuw-medewerkers-bestand" className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center hover:border-slate-400 hover:bg-slate-100">
