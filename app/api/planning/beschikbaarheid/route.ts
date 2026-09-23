@@ -585,13 +585,13 @@ if (
     beginMinuten > 23 * 60 ||
     eindMinuten < 9 * 60 ||
     eindMinuten > 23 * 60 ||
-    beginMinuten % 30 !== 0 ||
-    eindMinuten % 30 !== 0
+    beginMinuten % 15 !== 0 ||
+    eindMinuten % 15 !== 0
   ) {
     return NextResponse.json(
       {
         fout:
-          "Beschikbaarheidstijden moeten tussen 09:00 en 23:00 liggen en in stappen van 30 minuten worden opgegeven.",
+          "Beschikbaarheidstijden moeten tussen 09:00 en 23:00 liggen en in stappen van 15 minuten worden opgegeven.",
       },
       {
         status: 400,
