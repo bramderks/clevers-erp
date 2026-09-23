@@ -1,6 +1,3 @@
-import OwnerWorkflowTasks from "@/components/dashboard/OwnerWorkflowTasks";
-import OwnerUpcomingServices from "@/components/dashboard/OwnerUpcomingServices";
-
 type Props = {
   title: string;
   subtitle?: string;
@@ -33,13 +30,6 @@ export default function PageHeader({
           </div>
         )}
       </div>
-
-      {title === "Dashboard" && (
-        <>
-          <OwnerWorkflowTasks />
-          <OwnerUpcomingServices />
-        </>
-      )}
     </>
   );
 }
