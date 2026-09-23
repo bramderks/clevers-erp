@@ -35,7 +35,7 @@ export default async function MedewerkerAppBeschikbaarheidPage() {
     (relatie) =>
       relatie.actief &&
       relatie.organisatie.actief &&
-      ["eigenaar", "teamleider"].includes(
+      ["eigenaar", "super admin"].includes(
         relatie.rol.naam.trim().toLowerCase(),
       ),
   );
