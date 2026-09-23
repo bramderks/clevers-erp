@@ -20,6 +20,7 @@ type RequestBody = {
   eindtijd?: string | null;
   status?: BeschikbaarheidStatus;
   opmerking?: string | null;
+  altijdBeschikbaarSeizoen?: boolean;
 };
 
 class RouteFout extends Error {
@@ -534,6 +535,15 @@ async function bepaalToegang(
         "eigenaar",
     );
 
+  const isSuperAdmin =
+    organisatieRelaties.some(
+      (relatie) =>
+        relatie.rol.naam
+          .trim()
+          .toLowerCase() ===
+        "super admin",
+    );
+
   const isTeamleider =
     organisatieRelaties.some(
       (relatie) =>
@@ -554,7 +564,7 @@ async function bepaalToegang(
    * beschikbaarheid.
    */
   const isBeheerder =
-    isEigenaar;
+    isEigenaar || isSuperAdmin;
 
   if (
     !isBeheerder &&
@@ -803,6 +813,9 @@ export async function GET(
         isEigenaar:
           toegang.isEigenaar,
 
+        isSuperAdmin:
+          toegang.isSuperAdmin,
+
         isTeamleider:
           toegang.isTeamleider,
 
@@ -933,6 +946,100 @@ export async function POST(
       toegang.week.jaar,
       toegang.week.weeknummer,
     );
+
+    if (body.altijdBeschikbaarSeizoen === true) {
+      if (!toegang.isEigenaar && !toegang.isSuperAdmin) {
+        return fout(
+          "Alleen eigenaar of Super Admin kan iemand voor het hele seizoen altijd beschikbaar zetten.",
+          403,
+        );
+      }
+
+      const vestiging = await prisma.vestiging.findUnique({
+        where: { id: toegang.week.vestigingId },
+        select: {
+          seizoenStart: true,
+          seizoenEinde: true,
+        },
+      });
+
+      if (!vestiging?.seizoenStart || !vestiging.seizoenEinde) {
+        return fout(
+          "Voor deze vestiging is geen seizoen ingesteld.",
+          400,
+        );
+      }
+
+      const weken = await prisma.week.findMany({
+        where: {
+          vestigingId: toegang.week.vestigingId,
+          OR: [
+            {
+              AND: [
+                { jaar: { gte: vestiging.seizoenStart.getUTCFullYear() } },
+                { jaar: { lte: vestiging.seizoenEinde.getUTCFullYear() } },
+              ],
+            },
+          ],
+        },
+        select: {
+          id: true,
+          jaar: true,
+          weeknummer: true,
+        },
+        orderBy: [
+          { jaar: "asc" },
+          { weeknummer: "asc" },
+        ],
+      });
+
+      const relevanteWeken = weken.filter((week) => {
+        const start = beginVanISOWeek(week.jaar, week.weeknummer);
+        const einde = eindeVanISOWeek(week.jaar, week.weeknummer);
+        return start <= vestiging.seizoenEinde! && einde >= vestiging.seizoenStart!;
+      });
+
+      const transacties = relevanteWeken.flatMap((week) => {
+        const weekStart = beginVanISOWeek(week.jaar, week.weeknummer);
+        return Array.from({ length: 7 }, (_, index) => {
+          const datum = new Date(weekStart);
+          datum.setUTCDate(datum.getUTCDate() + index);
+          return prisma.beschikbaarheid.upsert({
+            where: {
+              weekId_medewerkerId_datum: {
+                weekId: week.id,
+                medewerkerId,
+                datum,
+              },
+            },
+            update: {
+              begintijd: new Date(`${datum.toISOString().slice(0, 10)}T11:30:00.000Z`),
+              eindtijd: new Date(`${datum.toISOString().slice(0, 10)}T21:00:00.000Z`),
+              status: "BESCHIKBAAR",
+              opmerking: "Altijd beschikbaar — hele seizoen",
+            },
+            create: {
+              weekId: week.id,
+              medewerkerId,
+              datum,
+              begintijd: new Date(`${datum.toISOString().slice(0, 10)}T11:30:00.000Z`),
+              eindtijd: new Date(`${datum.toISOString().slice(0, 10)}T21:00:00.000Z`),
+              status: "BESCHIKBAAR",
+              opmerking: "Altijd beschikbaar — hele seizoen",
+            },
+          });
+        });
+      });
+
+      await prisma.$transaction(transacties);
+
+      return NextResponse.json({
+        success: true,
+        seizoen: true,
+        weken: relevanteWeken.length,
+        dagen: relevanteWeken.length * 7,
+      });
+    }
 
     const status =
       body.status ??
