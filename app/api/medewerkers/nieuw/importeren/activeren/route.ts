@@ -32,7 +32,8 @@ export async function POST(request: Request) {
       geldig.push({ voornaam, achternaam, email });
     }
 
-    const uitnodigingen: Array<{ medewerker: Medewerker; token: string }> = [];
+    const resultaten: Array<{ voornaam: string; achternaam: string; email: string; ok: boolean; melding?: string }> = [];
+
     for (const medewerker of geldig) {
       const bestaat = await prisma.systeemGebruiker.findUnique({ where: { email: medewerker.email }, select: { id: true } });
       const bestaatMedewerker = await prisma.medewerker.findUnique({ where: { email: medewerker.email }, select: { id: true } });
@@ -40,35 +41,51 @@ export async function POST(request: Request) {
         where: { organisatieId: eigenaar.organisatieId, email: medewerker.email, gebruiktOp: null, verlooptOp: { gt: new Date() } },
         select: { id: true },
       });
-      if (bestaat || bestaatMedewerker || openstaand) continue;
+
+      if (bestaat || bestaatMedewerker || openstaand) {
+        resultaten.push({
+          ...medewerker,
+          ok: false,
+          melding: bestaatMedewerker || bestaat ? "Medewerker of account bestaat al." : "Er staat al een openstaande activatie-uitnodiging.",
+        });
+        continue;
+      }
 
       const token = crypto.randomBytes(32).toString("base64url");
       const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
-      await prisma.medewerkerUitnodiging.create({
-        data: {
-          organisatieId: eigenaar.organisatieId,
-          voornaam: medewerker.voornaam,
-          achternaam: medewerker.achternaam,
-          email: medewerker.email,
-          tokenHash,
-          verlooptOp: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-          aangemaaktDoorId: gebruiker.id,
-        },
-      });
-      uitnodigingen.push({ medewerker, token });
-    }
+      let uitnodigingId: string | null = null;
 
-    const resultaten: Array<{ email: string; ok: boolean; melding?: string }> = [];
-    for (const { medewerker, token } of uitnodigingen) {
       try {
+        const uitnodiging = await prisma.medewerkerUitnodiging.create({
+          data: {
+            organisatieId: eigenaar.organisatieId,
+            voornaam: medewerker.voornaam,
+            achternaam: medewerker.achternaam,
+            email: medewerker.email,
+            tokenHash,
+            verlooptOp: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            aangemaaktDoorId: gebruiker.id,
+          },
+          select: { id: true },
+        });
+        uitnodigingId = uitnodiging.id;
+
         const activationUrl = absoluteUrl(`/account/activeren?token=${encodeURIComponent(token)}`);
-        const text = `Beste ${medewerker.voornaam},\n\nJe bent uitgenodigd om je Clevers ERP-account te activeren. Gebruik de volgende link om je account te activeren:\n${activationUrl}\n\nDe uitnodiging is 7 dagen geldig. Tijdens de activatie vul je je algemene gegevens in en kies je een sterk wachtwoord. Na goedkeuring van je rol ontvang je een tweede e-mail zodra je toegang tot Clevers ERP actief is.\n\nMet vriendelijke groet,\nClevers`;
+        const text = `Beste ${medewerker.voornaam},\\n\\nJe bent uitgenodigd om je Clevers ERP-account te activeren. Gebruik de volgende link om je account te activeren:\\n${activationUrl}\\n\\nDe uitnodiging is 7 dagen geldig. Tijdens de activatie vul je je algemene gegevens in en kies je een sterk wachtwoord. Na goedkeuring van je rol ontvang je een tweede e-mail zodra je toegang tot Clevers ERP actief is.\\n\\nMet vriendelijke groet,\\nClevers`;
         const html = `<p>Beste ${medewerker.voornaam},</p><p>Je bent uitgenodigd om je <strong>Clevers ERP-account</strong> te activeren.</p><p><a href="${activationUrl}">Account activeren</a></p><p>De uitnodiging is 7 dagen geldig. Tijdens de activatie vul je de algemene gegevens en een sterk wachtwoord in.</p><p>Met vriendelijke groet,<br>Clevers</p>`;
         await verstuurMail({ to: medewerker.email, subject: "Uitnodiging om je Clevers ERP-account te activeren", html, text });
-        resultaten.push({ email: medewerker.email, ok: true });
+
+        resultaten.push({ ...medewerker, ok: true });
       } catch (error) {
         console.error("Activatiemail mislukt:", error);
-        resultaten.push({ email: medewerker.email, ok: false, melding: "E-mail kon niet worden verstuurd." });
+        if (uitnodigingId) {
+          try {
+            await prisma.medewerkerUitnodiging.delete({ where: { id: uitnodigingId } });
+          } catch (deleteError) {
+            console.error("Mislukte activatie-uitnodiging kon niet worden opgeruimd:", deleteError);
+          }
+        }
+        resultaten.push({ ...medewerker, ok: false, melding: "E-mail kon niet worden verstuurd." });
       }
     }
 
