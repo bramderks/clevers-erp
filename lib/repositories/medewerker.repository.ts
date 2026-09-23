@@ -111,13 +111,13 @@ export const medewerkerRepository = {
       if (medewerker.systeemGebruikerId) await prisma.systeemGebruiker.update({ where: { id: medewerker.systeemGebruikerId }, data: { actief: true } });
 
       if (medewerker.systeemGebruiker && medewerker.systeemGebruiker.actief === false) {
-        const erp = absoluteUrl("/login");
         const app = webAppUrl();
+        const erp = absoluteUrl("/login");
         await verstuurMail({
           to: medewerker.email,
           subject: "Je Clevers ERP-toegang is actief",
-          text: `Beste ${medewerker.voornaam},\n\nJe rol is toegewezen en je toegang tot Clevers ERP is nu actief.\n\nERP: ${erp}\nWebapp: ${app}\n\nLog in met je e-mailadres en het wachtwoord dat je bij de activatie hebt gekozen.\n\nMet vriendelijke groet,\nClevers`,
-          html: `<p>Beste ${medewerker.voornaam},</p><p>Je rol is toegewezen en je <strong>Clevers ERP-toegang is nu actief</strong>.</p><p><a href="${erp}">Open Clevers ERP</a><br><a href="${app}">Open de webapp</a></p><p>Log in met je e-mailadres en het wachtwoord dat je bij de activatie hebt gekozen.</p><p>Met vriendelijke groet,<br>Clevers</p>`,
+          text: `Beste ${medewerker.voornaam},\n\nJe toegang tot Clevers ERP is nu actief.\n\nOpen de medewerkersomgeving: ${app}\n\nLog in met je e-mailadres en het wachtwoord dat je bij de activatie hebt gekozen.\n\nMaak van Clevers een app op je telefoon:\n- iPhone/iPad: open de link in Safari, tik op de deelknop en kies “Zet op beginscherm”.\n- Android: open de link in Chrome, tik op het menu (⋮) en kies “Toevoegen aan startscherm” of “App installeren”.\n\nVoor de volledige ERP-omgeving: ${erp}\n\nMet vriendelijke groet,\nClevers`,
+          html: `<p>Beste ${medewerker.voornaam},</p><p>Je <strong>Clevers ERP-toegang is nu actief</strong>.</p><p><a href="${app}"><strong>Open de medewerkersomgeving</strong></a></p><p>Log in met je e-mailadres en het wachtwoord dat je bij de activatie hebt gekozen.</p><p><strong>Maak van Clevers een app op je telefoon</strong></p><ul><li><strong>iPhone/iPad:</strong> open de link in Safari, tik op de deelknop en kies <strong>Zet op beginscherm</strong>.</li><li><strong>Android:</strong> open de link in Chrome, tik op het menu (⋮) en kies <strong>Toevoegen aan startscherm</strong> of <strong>App installeren</strong>.</li></ul><p>Voor de volledige ERP-omgeving kun je <a href="${erp}">hier inloggen</a>.</p><p>Met vriendelijke groet,<br>Clevers</p>`,
         });
       }
     } else {
