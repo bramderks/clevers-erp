@@ -67,32 +67,24 @@ export const medewerkerRepository = {
 
     const where =
       heeftOrganisatieFilter || heeftVestigingFilter
-        ? heeftOrganisatieFilter && !heeftVestigingFilter
-          ? {
-              AND: [
-                {
-                  OR: [
-                    statusVoorwaarde,
-                    organisatieBeheerderVoorwaarde,
-                  ],
-                },
-                {
-                  OR: [
-                    vestigingVoorwaarde,
-                    ...(geactiveerdeUitnodigingEmails.length > 0
-                      ? [{ email: { in: geactiveerdeUitnodigingEmails } }]
-                      : []),
-                  ],
-                },
-              ],
-            }
-          : {
-              OR: [
-                statusVoorwaarde,
-                organisatieBeheerderVoorwaarde,
-              ],
-              AND: [vestigingVoorwaarde],
-            }
+        ? {
+            OR: [
+              {
+                AND: [
+                  statusVoorwaarde,
+                  vestigingVoorwaarde,
+                ],
+              },
+              ...(heeftOrganisatieFilter
+                ? [organisatieBeheerderVoorwaarde]
+                : []),
+              ...(heeftOrganisatieFilter &&
+              !heeftVestigingFilter &&
+              geactiveerdeUitnodigingEmails.length > 0
+                ? [{ email: { in: geactiveerdeUitnodigingEmails } }]
+                : []),
+            ],
+          }
         : statusVoorwaarde;
 
     return prisma.medewerker.findMany({
