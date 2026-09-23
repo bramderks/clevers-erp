@@ -43,7 +43,7 @@ export async function GET() {
     (r) =>
       r.actief &&
       r.organisatie.actief &&
-      r.rol.naam.trim().toLowerCase() === "eigenaar",
+      ["eigenaar", "super admin"].includes(r.rol.naam.trim().toLowerCase()),
   );
   const organisatieIds = eigenaarRelaties.map((r) => r.organisatieId);
 
@@ -161,12 +161,32 @@ export async function GET() {
         },
       ];
 
+      const rolOntbreekt = !checklist.find((item) => item.key === "rol")?.klaar;
       const dossierKlaar = checklist
         .filter((item) => item.key !== "rol")
         .every((item) => item.klaar);
 
+      if (rolOntbreekt) {
+        taken.push({
+          id: `rol-${m.id}`,
+          type: "MEDEWERKER_ROL_TOEWIJZEN",
+          categorie: "Medewerkers",
+          titel: "Rol aan medewerker toewijzen",
+          omschrijving: `${m.voornaam} ${m.achternaam} · Rol is nog niet toegewezen.`,
+          actie: "MEDEWERKER_ROL_TOEWIJZEN",
+          aangemaaktOp: m.aangemaaktOp,
+          gegevens: {
+            href: `/medewerkers/${m.id}?tab=algemeen&edit=1`,
+            medewerkerId: m.id,
+            checklist,
+          },
+        });
+      }
+
       if (!dossierKlaar) {
-        const eersteOpenItem = checklist.find((item) => !item.klaar);
+        const eersteOpenItem = checklist.find(
+          (item) => item.key !== "rol" && !item.klaar,
+        );
         taken.push({
           id: `dossier-${m.id}`,
           type: "MEDEWERKER_DOSSIER_INVULLEN",
