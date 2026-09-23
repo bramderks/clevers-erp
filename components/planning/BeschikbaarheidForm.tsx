@@ -36,7 +36,7 @@ type DagInvoer = {
 
 const MIN_TIJD = "09:00";
 const MAX_TIJD = "23:00";
-const TIJD_INTERVAL = 30;
+const TIJD_INTERVAL = 15;
 
 function parseDatum(
   waarde: string | Date | null | undefined,
