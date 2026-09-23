@@ -7,6 +7,10 @@ import {
 } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import {
+  datumSleutelVoorUren,
+  urenVanSamengevoegdeIntervallen,
+} from "@/lib/verloning/overlappendeUren";
 
 function datumTekstNaarBeginVanDag(
   datum: string,
@@ -342,15 +346,35 @@ export async function GET(
       },
       select: {
         medewerkerId: true,
-        gewerkteUren: true,
+        datum: true,
+        werkelijkeBegintijd: true,
+        werkelijkeEindtijd: true,
       },
     });
 
-    const urenPerMedewerker = new Map<string, number>();
+    const registratiesPerDag = new Map<string, typeof urenSindsVorigeVerloning>();
     for (const registratie of urenSindsVorigeVerloning) {
+      const sleutel = `${registratie.medewerkerId}:${datumSleutelVoorUren(registratie.datum)}`;
+      const lijst = registratiesPerDag.get(sleutel) ?? [];
+      lijst.push(registratie);
+      registratiesPerDag.set(sleutel, lijst);
+    }
+
+    const urenPerMedewerker = new Map<string, number>();
+    for (const lijst of registratiesPerDag.values()) {
+      const medewerkerId = lijst[0]?.medewerkerId;
+      if (!medewerkerId) continue;
+
+      const uren = urenVanSamengevoegdeIntervallen(
+        lijst.map((registratie) => ({
+          begintijd: registratie.werkelijkeBegintijd,
+          eindtijd: registratie.werkelijkeEindtijd,
+        })),
+      );
+
       urenPerMedewerker.set(
-        registratie.medewerkerId,
-        (urenPerMedewerker.get(registratie.medewerkerId) ?? 0) + Number(registratie.gewerkteUren),
+        medewerkerId,
+        (urenPerMedewerker.get(medewerkerId) ?? 0) + uren,
       );
     }
 
