@@ -35,6 +35,7 @@ export default function NieuweMedewerkerPage() {
   const [bezig, setBezig] = useState(false);
   const [melding, setMelding] = useState("");
   const [error, setError] = useState("");
+  const [verzendResultaat, setVerzendResultaat] = useState<Array<{ voornaam: string; achternaam: string; email: string; ok: boolean; melding?: string }>>([]);
 
   async function verstuurUitnodiging(event: React.FormEvent) {
     event.preventDefault();
@@ -56,7 +57,7 @@ export default function NieuweMedewerkerPage() {
 
   function kiesBestand(event: ChangeEvent<HTMLInputElement>) {
     setBestand(event.target.files?.[0] ?? null);
-    setControle(null); setError(""); setMelding("");
+    setControle(null); setVerzendResultaat([]); setError(""); setMelding("");
   }
 
   async function controleerImport() {
@@ -78,7 +79,7 @@ export default function NieuweMedewerkerPage() {
     if (!controle) return;
     const toeTeVoegen = controle.medewerkers.filter((m) => m.status === "TOEVOEGEN");
     if (!toeTeVoegen.length) return;
-    setBezig(true); setError(""); setMelding("");
+    setBezig(true); setError(""); setMelding(""); setVerzendResultaat([]);
     try {
       const response = await fetch("/api/medewerkers/nieuw/importeren/activeren", {
         method: "POST",
@@ -87,8 +88,11 @@ export default function NieuweMedewerkerPage() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "De activaties konden niet worden verstuurd.");
-      setMelding(`${data.verstuurd ?? 0} activatie-uitnodiging(en) zijn verstuurd.`);
-      setTimeout(() => router.push("/medewerkers"), 1400);
+      const resultaten = Array.isArray(data.resultaten) ? data.resultaten : [];
+      setVerzendResultaat(resultaten);
+      const verstuurd = resultaten.filter((r: { ok: boolean }) => r.ok).length;
+      const mislukt = resultaten.length - verstuurd;
+      setMelding(mislukt > 0 ? `${verstuurd} activatie-uitnodiging(en) verstuurd, ${mislukt} niet verstuurd.` : `${verstuurd} activatie-uitnodiging(en) zijn verstuurd.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "De activaties konden niet worden verstuurd.");
     } finally { setBezig(false); }
@@ -170,7 +174,7 @@ export default function NieuweMedewerkerPage() {
                     </div>
                   </div>
 
-                  <div className="overflow-hidden rounded-2xl border border-slate-200">
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200">
                     <div className="grid grid-cols-[60px_1fr_1fr_1.4fr_120px] gap-3 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase text-slate-500">
                       <span>Rij</span><span>Voornaam</span><span>Achternaam</span><span>E-mail</span><span>Status</span>
                     </div>
@@ -194,18 +198,35 @@ export default function NieuweMedewerkerPage() {
                     </div>
                   )}
 
+                  {verzendResultaat.length > 0 && (
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                      <p className="font-semibold text-slate-900">Resultaat activaties</p>
+                      <div className="mt-3 space-y-2">
+                        {verzendResultaat.map((r) => (
+                          <div key={r.email} className="flex flex-col gap-1 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+                            <span className="font-medium text-slate-800">{r.voornaam} {r.achternaam} <span className="font-normal text-slate-500">({r.email})</span></span>
+                            <span className={r.ok ? "font-medium text-emerald-700" : "font-medium text-red-600"}>{r.ok ? "Verstuurd" : (r.melding ?? "Niet verstuurd")}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 flex justify-end"><Button type="button" variant="secondary" onClick={() => router.push("/medewerkers")}>Terug naar medewerkers</Button></div>
+                    </div>
+                  )}
+
                   {controle.fouten.length > 0 && (
                     <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                       {controle.fouten.map((f) => <div key={`${f.rij}-${f.melding}`}>Rij {f.rij}: {f.melding}</div>)}
                     </div>
                   )}
 
-                  <div className="flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:justify-end">
-                    <Button type="button" variant="secondary" onClick={() => { setBestand(null); setControle(null); }}>Ander bestand kiezen</Button>
-                    <Button type="button" onClick={verstuurActivaties} disabled={bezig || toevoegen.length === 0}>
-                      {bezig ? <><Loader2 size={18} className="animate-spin" /> Activaties versturen...</> : `Verstuur activatie naar ${toevoegen.length} medewerker${toevoegen.length === 1 ? "" : "s"}`}
-                    </Button>
-                  </div>
+                  {verzendResultaat.length === 0 && (
+                    <div className="flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:justify-end">
+                      <Button type="button" variant="secondary" onClick={() => { setBestand(null); setControle(null); }}>Ander bestand kiezen</Button>
+                      <Button type="button" onClick={verstuurActivaties} disabled={bezig || toevoegen.length === 0}>
+                        {bezig ? <><Loader2 size={18} className="animate-spin" /> Activaties versturen...</> : `Verstuur activatie naar ${toevoegen.length} medewerker${toevoegen.length === 1 ? "" : "s"}`}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
