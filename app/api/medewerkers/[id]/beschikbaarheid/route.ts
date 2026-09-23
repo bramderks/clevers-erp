@@ -21,6 +21,7 @@ type RequestBody = {
   status?: BeschikbaarheidStatus;
   opmerking?: string | null;
   altijdBeschikbaarSeizoen?: boolean;
+  altijdBeschikbaarWeek?: boolean;
 };
 
 class RouteFout extends Error {
