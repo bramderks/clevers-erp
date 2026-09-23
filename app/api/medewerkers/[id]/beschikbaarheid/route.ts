@@ -178,11 +178,11 @@ function controleerTijden(
   }
 
   if (
-    begin.totaal % 30 !== 0 ||
-    einde.totaal % 30 !== 0
+    begin.totaal % 15 !== 0 ||
+    einde.totaal % 15 !== 0
   ) {
     throw new RouteFout(
-      "Beschikbaarheidstijden moeten in stappen van 30 minuten worden opgegeven.",
+      "Beschikbaarheidstijden moeten in stappen van 15 minuten worden opgegeven.",
       400,
     );
   }
