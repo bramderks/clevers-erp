@@ -2529,9 +2529,6 @@ export default function BeschikbaarheidWeekSelector({
               </div>
             )}
 
-
-            )}
-
             <div className="mt-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-2">
