@@ -351,6 +351,15 @@ export async function GET(
           "eigenaar",
       );
 
+    const isSuperAdmin =
+      organisatieRelaties.some(
+        (relatie) =>
+          relatie.rol.naam
+            .trim()
+            .toLowerCase() ===
+          "super admin",
+      );
+
     const isTeamleider =
       organisatieRelaties.some(
         (relatie) =>
@@ -362,7 +371,7 @@ export async function GET(
 
     const isBeheerder =
       isEigenaar ||
-      isTeamleider;
+      isSuperAdmin;
 
     if (
       !isBeheerder &&
@@ -538,6 +547,8 @@ export async function GET(
       isEigenaar,
 
       isTeamleider,
+
+      isSuperAdmin,
 
       isBeheerder,
     });
