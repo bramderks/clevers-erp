@@ -282,6 +282,16 @@ function controleerTijden(
       400,
     );
   }
+
+  if (
+    begintijd.getMinutes() % 30 !== 0 ||
+    eindtijd.getMinutes() % 30 !== 0
+  ) {
+    throw new RouteFout(
+      "Beschikbaarheid moet in stappen van 30 minuten worden ingevoerd.",
+      400,
+    );
+  }
 }
 
 /*
