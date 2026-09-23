@@ -1685,7 +1685,25 @@ export default function BeschikbaarheidWeekSelector({
         }
       }
 
-      await laadBeschikbaarheid(week.id);
+      setDagenInvoer((vorige) => {
+        const volgende = { ...vorige };
+        const start = bepaalWeekStart(week)!;
+        for (let index = 0; index < 7; index += 1) {
+          const datum = new Date(start);
+          datum.setDate(start.getDate() + index);
+          datum.setHours(12, 0, 0, 0);
+          const sleutel = formatteerDatumSleutel(datum);
+          volgende[sleutel] = {
+            datum: sleutel,
+            status: "BESCHIKBAAR",
+            begintijd: "11:30",
+            eindtijd: "21:00",
+            opmerking: "Altijd beschikbaar deze week",
+            opgeslagen: true,
+          };
+        }
+        return volgende;
+      });
       setWeekStatussen((vorige) => ({
         ...vorige,
         [week.id]: "DOORGEGEVEN",
@@ -1751,7 +1769,25 @@ export default function BeschikbaarheidWeekSelector({
         return volgende;
       });
 
-      await laadBeschikbaarheid(week.id);
+      setDagenInvoer((vorige) => {
+        const volgende = { ...vorige };
+        const start = bepaalWeekStart(week)!;
+        for (let index = 0; index < 7; index += 1) {
+          const datum = new Date(start);
+          datum.setDate(start.getDate() + index);
+          datum.setHours(12, 0, 0, 0);
+          const sleutel = formatteerDatumSleutel(datum);
+          volgende[sleutel] = {
+            datum: sleutel,
+            status: "BESCHIKBAAR",
+            begintijd: "11:30",
+            eindtijd: "21:00",
+            opmerking: "Altijd beschikbaar — hele seizoen",
+            opgeslagen: true,
+          };
+        }
+        return volgende;
+      });
     } catch (error) {
       console.error("Altijd beschikbaar seizoen instellen mislukt:", error);
       setError(
