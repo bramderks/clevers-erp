@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import DashboardCollapsibleCard from "@/components/dashboard/DashboardCollapsibleCard";
 
 type Dienst = {
   id: string;
@@ -30,7 +31,7 @@ function tijd(datum: string) {
   }).format(new Date(datum));
 }
 
-export default function OwnerUpcomingServices() {
+export default function OwnerUpcomingServices({ gebruikerId }: { gebruikerId: string }) {
   const [diensten, setDiensten] = useState<Dienst[]>([]);
 
   useEffect(() => {
@@ -55,11 +56,12 @@ export default function OwnerUpcomingServices() {
 
   return (
     <section className="mb-8">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-5">
-          <h2 className="text-lg font-semibold text-slate-900">Mijn aankomende diensten</h2>
-          <p className="mt-1 text-sm text-slate-500">Je eigen ingeplande diensten als eigenaar.</p>
-        </div>
+      <DashboardCollapsibleCard
+        storageKey={`owner-aankomende-diensten-${gebruikerId}`}
+        title="Mijn aankomende diensten"
+        description="Je eigen ingeplande diensten als eigenaar."
+        count={diensten.length}
+      >
         <div className="divide-y divide-slate-100">
           {diensten.map((dienst) => (
             <a key={dienst.id} href={`/planning/dienst/${dienst.id}`} className="group flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0">
@@ -72,7 +74,7 @@ export default function OwnerUpcomingServices() {
             </a>
           ))}
         </div>
-      </div>
+      </DashboardCollapsibleCard>
     </section>
   );
 }
