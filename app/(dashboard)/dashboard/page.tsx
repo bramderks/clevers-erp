@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-import Card from "@/components/ui/Card";
+import DashboardCollapsibleCard from "@/components/dashboard/DashboardCollapsibleCard";
 import PageHeader from "@/components/ui/PageHeader";
 import OwnerWorkflowTasks from "@/components/dashboard/OwnerWorkflowTasks";
 import OwnerUpcomingServices from "@/components/dashboard/OwnerUpcomingServices";
@@ -565,7 +565,8 @@ export default async function DashboardPage() {
 
         {laatsteEigenVerloning && (
           <section>
-            <Card
+            <DashboardCollapsibleCard
+              storageKey={`medewerker-verloning-${gebruiker.id}`}
               title="Mijn verloning"
               description="Overzicht van jouw meest recente gewerkte dagen en uren"
             >
@@ -606,14 +607,16 @@ export default async function DashboardPage() {
                   </p>
                 </div>
               </a>
-            </Card>
+            </DashboardCollapsibleCard>
           </section>
         )}
 
         <section>
-          <Card
+          <DashboardCollapsibleCard
+            storageKey={`medewerker-taken-${gebruiker.id}`}
             title="Mijn openstaande taken"
             description="Acties en informatie die voor jou relevant zijn"
+            count={taken.length}
           >
             {taken.length === 0 ? (
               <div className="flex min-h-32 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50">
@@ -669,13 +672,15 @@ export default async function DashboardPage() {
                 )}
               </div>
             )}
-          </Card>
+          </DashboardCollapsibleCard>
         </section>
 
         <section>
-          <Card
+          <DashboardCollapsibleCard
+            storageKey={`medewerker-diensten-${gebruiker.id}`}
             title="Mijn aankomende diensten"
             description="Al je toekomstige ingeplande diensten tot het einde van het seizoen"
+            count={aankomendeDiensten.length}
           >
             {aankomendeDiensten.length ===
             0 ? (
@@ -770,7 +775,7 @@ export default async function DashboardPage() {
                 )}
               </div>
             )}
-          </Card>
+          </DashboardCollapsibleCard>
         </section>
       </main>
     );
@@ -927,15 +932,17 @@ export default async function DashboardPage() {
 
       {isEigenaarOfSuperAdmin && (
         <>
-          <OwnerWorkflowTasks />
-          <OwnerUpcomingServices />
+          <OwnerWorkflowTasks gebruikerId={gebruiker.id} />
+          <OwnerUpcomingServices gebruikerId={gebruiker.id} />
         </>
       )}
 
       <section>
-        <Card
+        <DashboardCollapsibleCard
+          storageKey={`beheer-taken-${gebruiker.id}`}
           title="Openstaande taken"
           description="Acties die nog aandacht nodig hebben"
+          count={taken.length}
         >
           {taken.length === 0 ? (
             <div className="flex min-h-32 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50">
@@ -991,7 +998,7 @@ export default async function DashboardPage() {
               )}
             </div>
           )}
-        </Card>
+        </DashboardCollapsibleCard>
       </section>
     </main>
   );
