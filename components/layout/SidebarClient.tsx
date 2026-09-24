@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import Logo from "./Logo";
@@ -33,6 +33,17 @@ export default function SidebarClient({
 
   const [mobileOpen, setMobileOpen] =
     useState(false);
+
+  async function handleLogout() {
+    try {
+      await fetch("/api/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } finally {
+      window.location.href = "/login";
+    }
+  }
 
   const gebruikerstype =
     isEigenaar
@@ -195,6 +206,15 @@ export default function SidebarClient({
                   </div>
                 </div>
 
+                <button
+                  type="button"
+                  onClick={() => void handleLogout()}
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+                >
+                  <LogOut size={17} />
+                  Uitloggen
+                </button>
+
                 <div
                   className="mt-4 flex justify-between border-t pt-4 text-xs"
                   style={{
@@ -343,6 +363,17 @@ export default function SidebarClient({
                   </div>
                 )}
               </div>
+
+              {hovered && (
+                <button
+                  type="button"
+                  onClick={() => void handleLogout()}
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-white/10 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
+                >
+                  <LogOut size={16} />
+                  Uitloggen
+                </button>
+              )}
 
               {hovered && (
                 <div
