@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 
 type DagNaam =
   | "maandag"
@@ -86,14 +87,7 @@ function maakTijden() {
 
 const TIJDEN = maakTijden();
 
-function formatteerDatum(datum: string) {
-  const waarde = new Date(datum);
-
-  return new Intl.DateTimeFormat("nl-NL", {
-    day: "numeric",
-    month: "short",
-  }).format(waarde);
-}
+function formatteerDatum(datum: string) { return formatDienstDatum(datum); }
 
 function maakLegeWeek(startdatum: string) {
   const start = new Date(startdatum);

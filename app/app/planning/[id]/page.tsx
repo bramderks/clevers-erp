@@ -11,18 +11,9 @@ type RouteProps = {
   }>;
 };
 
-function formatDatum(datum: Date) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(datum);
-}
+function formatDatum(datum: Date) { return formatDienstDatum(datum); }
 
-function formatTijd(datum: Date) {
-  return formatDienstTijd(datum);
-}
+function formatTijd(datum: Date) { return formatDienstTijd(datum); }
 
 function statusLabel(status: string) {
   switch (status) {

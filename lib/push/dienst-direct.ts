@@ -1,5 +1,6 @@
 import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
+import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 
 function vapidInstellen() {
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -30,14 +31,9 @@ export async function verstuurDirecteDienstMelding(dienstBezettingId: string) {
     where: { systeemGebruikerId, actief: true },
   });
 
-  const datum = new Intl.DateTimeFormat("nl-NL", {
-    weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Amsterdam",
-  }).format(new Date(bezetting.dienst.datum));
-  const tijdFormatter = new Intl.DateTimeFormat("nl-NL", {
-    hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Europe/Amsterdam",
-  });
-  const begintijd = tijdFormatter.format(new Date(bezetting.dienst.begintijd));
-  const eindtijd = tijdFormatter.format(new Date(bezetting.dienst.eindtijd));
+  const datum = formatDienstDatum(bezetting.dienst.datum);
+  const begintijd = formatDienstTijd(bezetting.dienst.begintijd);
+  const eindtijd = formatDienstTijd(bezetting.dienst.eindtijd);
 
   let verstuurd = 0;
   let fouten = 0;
