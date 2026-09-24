@@ -1384,14 +1384,14 @@ export default function DienstForm({
     }
 
     if (
-      startMinuten % 15 !== 0 ||
+      startMinuten % 30 !== 0 ||
       (
         eindeMinuten !== null &&
-        eindeMinuten % 15 !== 0
+        eindeMinuten % 30 !== 0
       )
     ) {
       setFout(
-        "Diensten kunnen alleen per 15 minuten worden gepland.",
+        "Diensten kunnen alleen per 30 minuten worden gepland.",
       );
 
       return;
