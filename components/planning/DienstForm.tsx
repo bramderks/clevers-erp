@@ -87,57 +87,6 @@ type DienstFormProps = {
   onAangemaakt?: () => void;
 };
 
-const START_MINUTEN = 9 * 60;
-const EINDE_MINUTEN = 23 * 60;
-
-function minutenNaarTijd(minuten: number) {
-  const uren = Math.floor(minuten / 60);
-  const minutenDeel = minuten % 60;
-
-  return `${String(uren).padStart(
-    2,
-    "0",
-  )}:${String(minutenDeel).padStart(
-    2,
-    "0",
-  )}`;
-}
-
-function maakTijden(
-  vanaf: number,
-  tot: number,
-) {
-  const tijden: string[] = [];
-
-  for (
-    let minuten = vanaf;
-    minuten <= tot;
-    minuten += 30
-  ) {
-    tijden.push(
-      minutenNaarTijd(minuten),
-    );
-  }
-
-  return tijden;
-}
-
-function tijdNaarMinuten(
-  tijd: string,
-) {
-  const [uren, minuten] =
-    tijd.split(":").map(Number);
-
-  if (
-    Number.isNaN(uren) ||
-    Number.isNaN(minuten)
-  ) {
-    return null;
-  }
-
-  return uren * 60 + minuten;
-}
-
 function volledigeNaam(
   medewerker: PlanningMedewerker,
 ) {
