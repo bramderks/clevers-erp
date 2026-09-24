@@ -1,27 +1,11 @@
 import { NextResponse } from "next/server";
 
-import {
-  getCurrentUser,
-  logout,
-} from "@/lib/auth";
+import { logout } from "@/lib/auth";
 
 export async function POST() {
   try {
-    const gebruiker =
-      await getCurrentUser();
-
-    if (!gebruiker) {
-      return NextResponse.json(
-        {
-          error:
-            "Je bent niet ingelogd.",
-        },
-        {
-          status: 401,
-        },
-      );
-    }
-
+    // Uitloggen is idempotent: ook als de sessie al verlopen is,
+    // moet de gebruiker altijd terug naar de loginpagina kunnen.
     await logout();
 
     return NextResponse.json({
