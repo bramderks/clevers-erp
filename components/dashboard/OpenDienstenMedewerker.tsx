@@ -13,13 +13,9 @@ export type OpenDienstDashboardItem = {
   interesseGemeld: boolean;
 };
 
-function datum(datum: string) {
-  return formatDienstDatum(datum);
-}
+function datum(datum: string) { return formatDienstDatum(datum); }
 
-function tijd(datum: string) {
-  return formatDienstTijd(datum);
-}
+function tijd(datum: string) { return formatDienstTijd(datum); }
 
 export default function OpenDienstenMedewerker({
   diensten,
