@@ -25,7 +25,7 @@ const MINIMALE_STARTTIJD_MINUTEN =
   9 * 60;
 
 const TIJDSTAP_MINUTEN =
-  15;
+  30;
 
 /*
  * ============================================================
