@@ -14,6 +14,7 @@ import {
 } from "date-fns";
 
 import PlanningWeekOverzicht from "@/components/planning/PlanningWeekOverzicht";
+import DienstForm from "@/components/planning/DienstForm";
 
 import type {
   PlanningWeek,
@@ -2110,7 +2111,47 @@ export default function PlanningOverzicht({
             </div>
           </div>
         </div>
+      {nieuweDienstDatum && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/50 p-4">
+          <div className="flex min-h-full items-center justify-center py-8">
+            <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl">
+              <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">
+                    Nieuwe dienst
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Plan direct een medewerker in, meerdere functies op dezelfde dienst,
+                    of bied de dienst aan als open dienst.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setNieuweDienstDatum(null)}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-xl text-slate-500 transition hover:bg-slate-100"
+                  aria-label="Venster sluiten"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="p-5">
+                <DienstForm
+                  key={nieuweDienstDatum}
+                  weekId={huidigeWeek.id}
+                  vestigingId={vestigingId}
+                  initialDatum={nieuweDienstDatum}
+                  onAangemaakt={() => {
+                    setNieuweDienstDatum(null);
+                    onGewijzigd?.();
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       )}
+
     </>
   );
 }
