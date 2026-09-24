@@ -2,6 +2,8 @@ export const START_MINUTEN = 9 * 60;
 export const EINDE_MINUTEN = 23 * 60;
 export const TIJD_INTERVAL = 30;
 
+// Centrale planningformattering: datum = kalenderdatum, tijden = Nederlandse tijdzone.
+
 export function minutenNaarTijd(minuten: number): string {
   if (!Number.isFinite(minuten) || minuten < 0 || minuten > 24 * 60) {
     throw new Error("Ongeldig aantal minuten.");
