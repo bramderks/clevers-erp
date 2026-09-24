@@ -131,6 +131,36 @@ function haalNederlandseTijd(
   };
 }
 
+function maakNederlandseDatum(
+  datum: string,
+  tijd: string,
+): Date | null {
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(datum) || !/^\\d{2}:\\d{2}$/.test(tijd)) {
+    return null;
+  }
+
+  const basis = new Date(`${datum}T${tijd}:00.000Z`);
+  if (Number.isNaN(basis.getTime())) {
+    return null;
+  }
+
+  const delen = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Amsterdam",
+    timeZoneName: "shortOffset",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(basis);
+
+  const zone = delen.find((deel) => deel.type === "timeZoneName")?.value ?? "GMT+0";
+  const match = zone.match(/^GMT([+-])(\\d{1,2})(?::(\\d{2}))?$/);
+  const offsetMinuten = match
+    ? (Number(match[2]) * 60 + Number(match[3] ?? 0)) * (match[1] === "-" ? -1 : 1)
+    : 0;
+
+  return new Date(basis.getTime() - offsetMinuten * 60_000);
+}
+
 function controleerTijden(
   begintijd: Date,
   eindtijd: Date,
@@ -985,6 +1015,127 @@ export async function POST(
           : "Je hebt geen toestemming om deze beschikbaarheid te wijzigen.",
         403,
       );
+    }
+
+    /*
+     * De weekkalender slaat alle zeven dagen in één POST op.
+     * Ondersteun dat formaat expliciet naast het oudere formaat
+     * voor één dag.
+     */
+    if (Array.isArray((body as RequestBody & { beschikbaarheden?: unknown[] }).beschikbaarheden)) {
+      const items = (body as RequestBody & {
+        beschikbaarheden: Array<{
+          datum?: unknown;
+          beschikbaar?: unknown;
+          van?: unknown;
+          tot?: unknown;
+        }>;
+      }).beschikbaarheden;
+
+      if (items.length !== 7) {
+        return fout("Er moeten precies 7 dagen worden opgeslagen.", 400);
+      }
+
+      const transacties = [];
+
+      for (const item of items) {
+        const datum = parseDatum(item.datum);
+        if (!datum) {
+          return fout("Een van de gekozen datums is ongeldig.", 400);
+        }
+
+        controleerDatumBinnenWeek(
+          datum,
+          toegang.week.jaar,
+          toegang.week.weeknummer,
+        );
+
+        const beschikbaar = item.beschikbaar === true;
+
+        if (!beschikbaar) {
+          transacties.push(
+            prisma.beschikbaarheid.upsert({
+              where: {
+                weekId_medewerkerId_datum: {
+                  weekId,
+                  medewerkerId,
+                  datum,
+                },
+              },
+              update: {
+                datum,
+                begintijd: null,
+                eindtijd: null,
+                status: "NIET_BESCHIKBAAR",
+                opmerking: null,
+              },
+              create: {
+                weekId,
+                medewerkerId,
+                datum,
+                begintijd: null,
+                eindtijd: null,
+                status: "NIET_BESCHIKBAAR",
+                opmerking: null,
+              },
+            }),
+          );
+          continue;
+        }
+
+        const van = typeof item.van === "string" ? item.van : "";
+        const tot = typeof item.tot === "string" ? item.tot : "";
+        const begintijd = maakNederlandseDatum(
+          datum.toISOString().slice(0, 10),
+          van,
+        );
+        const eindtijd = maakNederlandseDatum(
+          datum.toISOString().slice(0, 10),
+          tot,
+        );
+
+        if (!begintijd || !eindtijd) {
+          return fout("Een van de beschikbaarheidstijden is ongeldig.", 400);
+        }
+
+        controleerTijden(begintijd, eindtijd);
+
+        transacties.push(
+          prisma.beschikbaarheid.upsert({
+            where: {
+              weekId_medewerkerId_datum: {
+                weekId,
+                medewerkerId,
+                datum,
+              },
+            },
+            update: {
+              datum,
+              begintijd,
+              eindtijd,
+              status: "BESCHIKBAAR",
+              opmerking: null,
+            },
+            create: {
+              weekId,
+              medewerkerId,
+              datum,
+              begintijd,
+              eindtijd,
+              status: "BESCHIKBAAR",
+              opmerking: null,
+            },
+          }),
+        );
+      }
+
+      await prisma.$transaction(transacties);
+
+      return NextResponse.json({
+        success: true,
+        week: true,
+        dagen: transacties.length,
+      });
     }
 
     const datum =
