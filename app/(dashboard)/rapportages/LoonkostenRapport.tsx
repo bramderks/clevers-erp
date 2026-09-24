@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, Lock, Users, X } from "lucide-react";
+import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 
 type Vestiging = { id: string; naam: string };
 type Dag = { datum: string; uren: number; kosten: number; ontbrekendUurloon: number; gemiddeldUurloon?: number };
