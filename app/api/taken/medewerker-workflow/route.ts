@@ -60,44 +60,167 @@ export async function GET() {
       gebruikteUitnodigingen.map((i) => i.email.trim().toLowerCase()),
     );
 
-    const geregistreerdeMedewerkers = await prisma.medewerker.findMany({
-      where: {
-        actief: false,
-        status: {
-          module: "MEDEWERKER",
-          code: "AANGEMELD",
-        },
-        systeemGebruiker: { isNot: null },
-      },
-      include: {
-        systeemGebruiker: { select: { email: true } },
-        status: true,
-        vestigingen: { include: { vestiging: true } },
-      },
-      orderBy: { aangemaaktOp: "asc" },
-    });
+    const gebruikteEmails = Array.from(geregistreerdeEmails);
+
+    /*
+     * Een nieuw geactiveerd account is bewust nog INACTIEF.
+     * De medewerker heeft op dat moment nog geen vestiging of rol
+     * en kan daardoor niet via de normale vestigingsrelaties worden
+     * gevonden. Koppel daarom de workflow expliciet aan de gebruikte
+     * uitnodiging/e-mail van de organisatie.
+     */
+    const geregistreerdeMedewerkers =
+      gebruikteEmails.length > 0
+        ? await prisma.medewerker.findMany({
+            where: {
+              actief: false,
+              email: {
+                in: gebruikteEmails,
+              },
+              systeemGebruiker: {
+                isNot: null,
+              },
+            },
+            include: {
+              systeemGebruiker: {
+                select: {
+                  email: true,
+                },
+              },
+              status: true,
+              vestigingen: {
+                include: {
+                  vestiging: true,
+                },
+              },
+              rollen: {
+                include: {
+                  rol: true,
+                },
+              },
+              tags: {
+                include: {
+                  tag: true,
+                },
+              },
+            },
+            orderBy: {
+              aangemaaktOp: "asc",
+            },
+          })
+        : [];
 
     for (const m of geregistreerdeMedewerkers) {
-      const email = m.systeemGebruiker?.email?.trim().toLowerCase();
-      if (!email || !geregistreerdeEmails.has(email)) continue;
+      const email =
+        m.email.trim().toLowerCase();
 
-      const uitnodiging = gebruikteUitnodigingen.find(
-        (i) => i.email.trim().toLowerCase() === email,
-      );
+      const uitnodiging =
+        gebruikteUitnodigingen.find(
+          (i) =>
+            i.email.trim().toLowerCase() ===
+            email,
+        );
 
-      taken.push({
-        id: `registratie-${m.id}`,
-        type: "MEDEWERKER_GEREGISTREERD",
-        categorie: "Medewerkers",
-        titel: "Nieuwe medewerker heeft zich geregistreerd",
-        omschrijving: `${m.voornaam} ${m.achternaam} · De medewerker heeft het account geactiveerd en wacht op toewijzing van een rol.`,
-        actie: "MEDEWERKER_ROL_TOEWIJZEN",
-        aangemaaktOp: uitnodiging?.gebruiktOp ?? m.aangemaaktOp,
-        gegevens: {
-          href: `/medewerkers/${m.id}?tab=algemeen&edit=1`,
-          medewerkerId: m.id,
+      const checklist: ChecklistItem[] = [
+        {
+          key: "rol",
+          label: "Rol toegewezen",
+          klaar: m.rollen.length > 0,
         },
-      });
+        {
+          key: "vestiging",
+          label: "Vestiging gekoppeld",
+          klaar: m.vestigingen.some(
+            (v) => v.vestiging.actief,
+          ),
+        },
+        {
+          key: "contract",
+          label: "Contracttype ingevuld",
+          klaar: Boolean(m.contractType),
+        },
+        {
+          key: "datumInDienst",
+          label: "Datum in dienst ingevuld",
+          klaar: Boolean(m.datumInDienst),
+        },
+        {
+          key: "uurloon",
+          label: "Uurloon ingevuld",
+          klaar: m.uurloon !== null,
+        },
+        {
+          key: "planningstags",
+          label: "Planningstags toegewezen",
+          klaar: m.tags.length > 0,
+        },
+      ];
+
+      const rolOntbreekt =
+        !checklist.find(
+          (item) => item.key === "rol",
+        )?.klaar;
+
+      const dossierKlaar =
+        checklist
+          .filter(
+            (item) => item.key !== "rol",
+          )
+          .every(
+            (item) => item.klaar,
+          );
+
+      /*
+       * Een zojuist geregistreerde medewerker moet altijd
+       * minimaal als roltaak zichtbaar zijn zolang de medewerker
+       * nog inactief is.
+       */
+      if (rolOntbreekt) {
+        taken.push({
+          id: `rol-${m.id}`,
+          type: "MEDEWERKER_ROL_TOEWIJZEN",
+          categorie: "Medewerkers",
+          titel: "Rol aan medewerker toewijzen",
+          omschrijving:
+            `${m.voornaam} ${m.achternaam} · De medewerker heeft zich geregistreerd en wacht op toewijzing van een rol.`,
+          actie: "MEDEWERKER_ROL_TOEWIJZEN",
+          aangemaaktOp:
+            uitnodiging?.gebruiktOp ??
+            m.aangemaaktOp,
+          gegevens: {
+            href: `/medewerkers/${m.id}?tab=algemeen&edit=1`,
+            medewerkerId: m.id,
+            checklist,
+          },
+        });
+      }
+
+      if (!dossierKlaar) {
+        const eersteOpenItem =
+          checklist.find(
+            (item) =>
+              item.key !== "rol" &&
+              !item.klaar,
+          );
+
+        taken.push({
+          id: `dossier-${m.id}`,
+          type: "MEDEWERKER_DOSSIER_INVULLEN",
+          categorie: "Medewerkers",
+          titel: "Medewerkerprofiel aanvullen",
+          omschrijving:
+            `${m.voornaam} ${m.achternaam} · ${eersteOpenItem?.label ?? "Profiel verder aanvullen"}.`,
+          actie: "MEDEWERKER_DOSSIER_INVULLEN",
+          aangemaaktOp:
+            uitnodiging?.gebruiktOp ??
+            m.aangemaaktOp,
+          gegevens: {
+            href: `/medewerkers/${m.id}?tab=algemeen`,
+            medewerkerId: m.id,
+            checklist,
+          },
+        });
+      }
     }
 
     const actieveMedewerkers = await prisma.medewerker.findMany({
