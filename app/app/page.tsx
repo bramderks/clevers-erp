@@ -22,13 +22,7 @@ function formatUren(uren: number) {
   return uren.toFixed(2).replace(".", ",");
 }
 
-function formatDatum(datum: Date) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(datum);
-}
+function formatDatum(datum: Date) {\n  return formatDienstDatum(datum);\n}
 
 export default async function MedewerkerAppPage() {
   const gebruiker = await getCurrentUser();
