@@ -8,18 +8,11 @@ type DienstRijProps = {
 };
 
 function formatteerDatum(datum: string) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(new Date(datum));
+  return formatDienstDatum(datum);
 }
 
 function formatteerTijd(datum: string) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(datum));
+  return formatDienstTijd(datum);
 }
 
 function medewerkerNaam(

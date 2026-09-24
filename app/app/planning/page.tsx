@@ -6,22 +6,14 @@ import { CalendarPlus } from "lucide-react";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 
 function formatDatum(datum: Date) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(datum);
+  return formatDienstDatum(datum);
 }
 
 function formatTijd(datum: Date) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "Europe/Amsterdam",
-  }).format(datum);
+  return formatDienstTijd(datum);
 }
 
 export default async function AppPlanningPage() {

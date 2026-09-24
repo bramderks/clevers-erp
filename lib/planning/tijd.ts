@@ -46,3 +46,32 @@ export function maakTijden(vanaf: number, tot: number, interval = TIJD_INTERVAL)
 export function tijdenOverlappen(startA: number, eindeA: number, startB: number, eindeB: number): boolean {
   return startA < eindeB && eindeA > startB;
 }
+
+
+export function formatDienstDatum(datum: Date | string): string {
+  return new Intl.DateTimeFormat("nl-NL", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "UTC",
+  }).format(new Date(datum));
+}
+
+export function formatDienstDatumKort(datum: Date | string): string {
+  return new Intl.DateTimeFormat("nl-NL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(datum));
+}
+
+export function formatDienstTijd(datum: Date | string | null | undefined): string {
+  if (!datum) return "—";
+  return new Intl.DateTimeFormat("nl-NL", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Europe/Amsterdam",
+  }).format(new Date(datum));
+}

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 
 type RouteProps = {
   params: Promise<{
@@ -20,12 +21,7 @@ function formatDatum(datum: Date) {
 }
 
 function formatTijd(datum: Date) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "Europe/Amsterdam",
-  }).format(datum);
+  return formatDienstTijd(datum);
 }
 
 function statusLabel(status: string) {

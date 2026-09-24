@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatDienstDatum } from "@/lib/planning/tijd";
 import Link from "next/link";
 
 type Ruil = {
@@ -30,11 +31,7 @@ function naam(persoon: Ruil["aanvrager"]) {
 }
 
 function fmtDatum(value: string) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(new Date(value));
+  return formatDienstDatum(value);
 }
 
 export default function AppRuilenPage() {

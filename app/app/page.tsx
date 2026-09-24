@@ -16,6 +16,7 @@ import {
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 import PushNotificationButton from "@/components/app/PushNotificationButton";
 
 function formatUren(uren: number) {
@@ -23,11 +24,7 @@ function formatUren(uren: number) {
 }
 
 function formatDatum(datum: Date) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(datum);
+  return formatDienstDatum(datum);
 }
 
 export default async function MedewerkerAppPage() {
@@ -369,6 +366,9 @@ export default async function MedewerkerAppPage() {
                     )}
                   </p>
                   <p className="mt-1 text-sm text-slate-600">
+                    {formatDienstTijd(bezetting.dienst.begintijd)} - {formatDienstTijd(bezetting.dienst.eindtijd)}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">
                     {bezetting.dienst.week.vestiging.naam}
                   </p>
                 </div>

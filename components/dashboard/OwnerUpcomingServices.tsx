@@ -17,18 +17,11 @@ type WorkflowTaak = {
 };
 
 function datum(datum: string) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(new Date(datum));
+  return formatDienstDatum(datum);
 }
 
 function tijd(datum: string) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(datum));
+  return formatDienstTijd(datum);
 }
 
 export default function OwnerUpcomingServices({ gebruikerId }: { gebruikerId: string }) {
