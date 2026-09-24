@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { getCurrentUser, isEigenaar } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { formatDienstTijd } from "@/lib/planning/tijd";
+import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 import { berekenGewerkteUren } from "@/lib/verloning/pauze";
 
 function formatDatum(datum: Date) { return formatDienstDatum(datum); }
