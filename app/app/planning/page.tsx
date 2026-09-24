@@ -6,10 +6,15 @@ import { CalendarPlus } from "lucide-react";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 
-function formatDatum(datum: Date) {\n  return formatDienstDatum(datum);\n}
+function formatDatum(datum: Date) {
+  return formatDienstDatum(datum);
+}
 
-function formatTijd(datum: Date) {\n  return formatDienstTijd(datum);\n}
+function formatTijd(datum: Date) {
+  return formatDienstTijd(datum);
+}
 
 export default async function AppPlanningPage() {
   const gebruiker = await getCurrentUser();
