@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 
 type RouteProps = {
   params: Promise<{
@@ -19,7 +20,9 @@ function formatDatum(datum: Date) {
   }).format(datum);
 }
 
-function formatTijd(datum: Date) {\n  return formatDienstTijd(datum);\n}
+function formatTijd(datum: Date) {
+  return formatDienstTijd(datum);
+}
 
 function statusLabel(status: string) {
   switch (status) {
