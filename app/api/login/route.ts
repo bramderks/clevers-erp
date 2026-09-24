@@ -101,6 +101,20 @@ export async function POST(request: Request) {
       data: { laatsteLoginOp: new Date() },
     });
 
+    try {
+      await prisma.auditLog.create({
+        data: {
+          systeemGebruikerId: gebruiker.id,
+          module: "AUTH",
+          actie: "LOGIN_SUCCES",
+          recordId: gebruiker.id,
+          details: { requestId },
+        },
+      });
+    } catch (auditError) {
+      console.warn("Login-audit kon niet worden opgeslagen:", { requestId, auditError });
+    }
+
     return NextResponse.json({ success: true }, { headers: { "Cache-Control": "private, no-store", "X-Request-Id": requestId } });
   } catch (error) {
     console.error("Login mislukt:", { requestId, error });
