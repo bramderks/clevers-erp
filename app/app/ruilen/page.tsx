@@ -29,7 +29,9 @@ function naam(persoon: Ruil["aanvrager"]) {
     .join(" ");
 }
 
-function fmtDatum(value: string) {\n  return formatDienstDatum(value);\n}
+function fmtDatum(value: string) {
+  return formatDienstDatum(value);
+}
 
 export default function AppRuilenPage() {
   const [dienstBezettingId, setDienstBezettingId] = useState<string | null>(null);
