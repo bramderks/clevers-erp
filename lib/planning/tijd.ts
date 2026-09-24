@@ -54,7 +54,7 @@ export function formatDienstDatum(datum: Date | string): string {
     day: "numeric",
     month: "long",
     timeZone: "UTC",
-  }).format(new Date(datum));
+  }).format(datum instanceof Date ? datum : new Date(datum));
 }
 
 export function formatDienstDatumKort(datum: Date | string): string {
@@ -63,7 +63,7 @@ export function formatDienstDatumKort(datum: Date | string): string {
     month: "2-digit",
     year: "numeric",
     timeZone: "UTC",
-  }).format(new Date(datum));
+  }).format(datum instanceof Date ? datum : new Date(datum));
 }
 
 export function formatDienstTijd(datum: Date | string | null | undefined): string {
@@ -73,5 +73,5 @@ export function formatDienstTijd(datum: Date | string | null | undefined): strin
     minute: "2-digit",
     hour12: false,
     timeZone: "Europe/Amsterdam",
-  }).format(new Date(datum));
+  }).format(datum instanceof Date ? datum : new Date(datum));
 }
