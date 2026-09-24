@@ -7,13 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { formatDienstTijd } from "@/lib/planning/tijd";
 import { berekenGewerkteUren } from "@/lib/verloning/pauze";
 
-function formatDatum(datum: Date) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-  }).format(datum);
-}
+function formatDatum(datum: Date) { return formatDienstDatum(datum); }
 
 function tijdWaarde(datum: Date) {
   return formatDienstTijd(datum);
