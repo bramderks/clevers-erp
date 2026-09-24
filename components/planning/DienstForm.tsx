@@ -1089,6 +1089,37 @@ export default function DienstForm({
   const bhvGedekt =
     aantalGeselecteerdeBhv > 0;
 
+  const maximaalAantalMedewerkers =
+    Object.values(geselecteerdeTags).reduce(
+      (totaal, aantal) => totaal + Math.max(1, Number(aantal) || 1),
+      0,
+    );
+
+  const aantalGeselecteerdeMedewerkers =
+    Object.values(geselecteerdeMedewerkers).filter(Boolean).length;
+
+  useEffect(() => {
+    if (maximaalAantalMedewerkers < 1) return;
+
+    setGeselecteerdeMedewerkers((huidig) => {
+      const geselecteerd = Object.entries(huidig).filter(([, waarde]) => waarde);
+      if (geselecteerd.length <= maximaalAantalMedewerkers) return huidig;
+
+      const toegestaan = new Set(
+        geselecteerd
+          .slice(0, maximaalAantalMedewerkers)
+          .map(([medewerkerId]) => medewerkerId),
+      );
+
+      return Object.fromEntries(
+        Object.keys(huidig).map((medewerkerId) => [
+          medewerkerId,
+          toegestaan.has(medewerkerId),
+        ]),
+      );
+    });
+  }, [maximaalAantalMedewerkers]);
+
   /*
    * ======================================================
    * TIJDEN
@@ -1194,6 +1225,16 @@ export default function DienstForm({
   function toggleMedewerker(
     medewerkerId: string,
   ) {
+    const alGeselecteerd =
+      geselecteerdeMedewerkers[medewerkerId] === true;
+
+    if (
+      !alGeselecteerd &&
+      aantalGeselecteerdeMedewerkers >= maximaalAantalMedewerkers
+    ) {
+      return;
+    }
+
     setGeselecteerdeMedewerkers(
       (huidig) => ({
         ...huidig,
@@ -2055,7 +2096,11 @@ export default function DienstForm({
                         geselecteerd
                       }
                       disabled={
-                        heeftOverlap
+                        heeftOverlap ||
+                        alsOpenDienst ||
+                        (!geselecteerd &&
+                          aantalGeselecteerdeMedewerkers >=
+                            maximaalAantalMedewerkers)
                       }
                       onChange={() =>
                         toggleMedewerker(
@@ -2081,14 +2126,12 @@ export default function DienstForm({
 
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs text-gray-500">
-          Geselecteerde
-          medewerkers:{" "}
-          {
-            Object.values(
-              geselecteerdeMedewerkers,
-            ).filter(Boolean)
-              .length
-          }
+          Geselecteerde medewerkers: {aantalGeselecteerdeMedewerkers} / {maximaalAantalMedewerkers}
+          {aantalGeselecteerdeMedewerkers >= maximaalAantalMedewerkers && !alsOpenDienst && (
+            <span className="ml-1 font-medium text-gray-700">
+              · maximum bereikt op basis van de planningstags
+            </span>
+          )}
         </p>
 
         <button
