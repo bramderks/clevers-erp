@@ -139,14 +139,23 @@ function formatteerDatum(datum: Date | null | undefined) {
   }).format(new Date(datum));
 }
 
-function formatteerDatumTijd(datum: Date | null | undefined) {
+function formatteerDienstDatum(datum: Date | null | undefined) {
   if (!datum) return "—";
   return new Intl.DateTimeFormat("nl-NL", {
     weekday: "long",
     day: "numeric",
     month: "long",
+    timeZone: "UTC",
+  }).format(new Date(datum));
+}
+
+function formatteerDienstTijd(datum: Date | null | undefined) {
+  if (!datum) return "—";
+  return new Intl.DateTimeFormat("nl-NL", {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
+    timeZone: "Europe/Amsterdam",
   }).format(new Date(datum));
 }
 
@@ -882,13 +891,13 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
                     {aankomendeDiensten.map((bezetting) => {
                       const dienst = bezetting.dienst;
                       const datum = new Date(dienst.datum);
-                      const beginTijd = new Intl.DateTimeFormat("nl-NL", { hour: "2-digit", minute: "2-digit" }).format(new Date(dienst.begintijd));
-                      const eindTijd = new Intl.DateTimeFormat("nl-NL", { hour: "2-digit", minute: "2-digit" }).format(new Date(dienst.eindtijd));
+                      const beginTijd = formatteerDienstTijd(dienst.begintijd);
+                      const eindTijd = formatteerDienstTijd(dienst.eindtijd);
                       return (
                         <div key={bezetting.id} className="rounded-xl border border-slate-200 bg-white p-4">
                           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                             <div>
-                              <p className="text-sm font-semibold capitalize text-slate-900">{formatteerDatumTijd(datum)}</p>
+                              <p className="text-sm font-semibold capitalize text-slate-900">{formatteerDienstDatum(datum)}</p>
                               <p className="mt-1 text-sm text-slate-600">{beginTijd} - {eindTijd}</p>
                               <p className="mt-1 text-sm text-slate-600">{dienst.tags?.map((dienstTag) => dienstTag.tag.naam).join(" · ") || "Geen planningstag"}</p>
                               {dienst.opmerkingen && <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2"><p className="text-xs font-medium text-slate-500">Opmerking</p><p className="mt-1 text-sm text-slate-700">{dienst.opmerkingen}</p></div>}
