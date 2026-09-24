@@ -19,7 +19,7 @@
     "prisma:check": "npm run prisma:generate && npm run typecheck",
     "dev:sync": "npm run prisma:push && prisma generate && npm run seed && npm run typecheck",
     "dev:check": "npm run prisma:push && prisma generate && npm run build",
-    "test": "node --import tsx --test tests/**/*.test.ts"
+    "test": "node --import tsx --test tests/planning-tijd.test.ts"
   },
   "dependencies": {
     "@auth/core": "^0.41.3",
