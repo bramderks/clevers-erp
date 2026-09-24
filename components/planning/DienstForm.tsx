@@ -106,7 +106,7 @@ function maakTijden(
   for (
     let minuten = vanaf;
     minuten <= tot;
-    minuten += 15
+    minuten += 30
   ) {
     tijden.push(
       minutenNaarTijd(minuten),
