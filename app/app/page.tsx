@@ -16,13 +16,16 @@ import {
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 import PushNotificationButton from "@/components/app/PushNotificationButton";
 
 function formatUren(uren: number) {
   return uren.toFixed(2).replace(".", ",");
 }
 
-function formatDatum(datum: Date) {\n  return formatDienstDatum(datum);\n}
+function formatDatum(datum: Date) {
+  return formatDienstDatum(datum);
+}
 
 export default async function MedewerkerAppPage() {
   const gebruiker = await getCurrentUser();
@@ -363,6 +366,9 @@ export default async function MedewerkerAppPage() {
                     )}
                   </p>
                   <p className="mt-1 text-sm text-slate-600">
+                    {formatDienstTijd(bezetting.dienst.begintijd)} - {formatDienstTijd(bezetting.dienst.eindtijd)}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">
                     {bezetting.dienst.week.vestiging.naam}
                   </p>
                 </div>
