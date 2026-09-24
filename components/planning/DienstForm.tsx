@@ -1155,7 +1155,7 @@ export default function DienstForm({
       }
 
       return maakTijden(
-        start + 15,
+        start + 30,
         EINDE_MINUTEN,
       );
     }, [begintijd]);
