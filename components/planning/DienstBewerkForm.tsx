@@ -11,13 +11,6 @@ import type {
   Dienst,
   PlanningTag,
 } from "@/types/planning";
-import {
-  EINDE_MINUTEN,
-  START_MINUTEN,
-  TIJD_INTERVAL,
-  maakTijden,
-  tijdNaarMinuten,
-} from "@/lib/planning/tijd";
 
 type PlanningBeschikbaarheid = {
   id: string;
@@ -101,6 +94,99 @@ type DienstBewerkFormProps = {
  * - eindigen uiterlijk om 23:00
  * - gebruiken intervallen van 30 minuten
  */
+
+const START_MINUTEN = 9 * 60;
+const EINDE_MINUTEN = 23 * 60;
+const TIJD_INTERVAL = 30;
+
+function minutenNaarTijd(
+  minuten: number,
+): string {
+  const uren = Math.floor(
+    minuten / 60,
+  );
+
+  const minutenDeel =
+    minuten % 60;
+
+  return `${String(uren).padStart(
+    2,
+    "0",
+  )}:${String(minutenDeel).padStart(
+    2,
+    "0",
+  )}`;
+}
+
+function maakTijden(
+  vanaf: number,
+  tot: number,
+): string[] {
+  const tijden: string[] = [];
+
+  for (
+    let minuten = vanaf;
+    minuten <= tot;
+    minuten += TIJD_INTERVAL
+  ) {
+    tijden.push(
+      minutenNaarTijd(minuten),
+    );
+  }
+
+  return tijden;
+}
+
+function tijdNaarMinuten(
+  tijd: string | null | undefined,
+): number | null {
+  if (!tijd) {
+    return null;
+  }
+
+  const directeTijd =
+    /^(\d{1,2}):(\d{2})/.exec(
+      tijd,
+    );
+
+  if (!directeTijd) {
+    const datum = new Date(tijd);
+
+    if (
+      Number.isNaN(
+        datum.getTime(),
+      )
+    ) {
+      return null;
+    }
+
+    return (
+      datum.getHours() * 60 +
+      datum.getMinutes()
+    );
+  }
+
+  const uren = Number(
+    directeTijd[1],
+  );
+
+  const minuten = Number(
+    directeTijd[2],
+  );
+
+  if (
+    Number.isNaN(uren) ||
+    Number.isNaN(minuten) ||
+    uren < 0 ||
+    uren > 23 ||
+    minuten < 0 ||
+    minuten > 59
+  ) {
+    return null;
+  }
+
+  return uren * 60 + minuten;
+}
 
 function datumNaarInput(
   waarde: string | null | undefined,
