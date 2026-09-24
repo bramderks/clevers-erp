@@ -35,7 +35,7 @@ function formatDatum(datum: string) {
 }
 
 function formatTijd(waarde: string) {
-  const match = /^(\\d{1,2}):(\\d{2})/.exec(waarde);
+  const match = /^(\d{1,2}):(\d{2})/.exec(waarde);
   if (match) return `${match[1].padStart(2, "0")}:${match[2]}`;
   return formatDienstTijd(waarde);
 }
