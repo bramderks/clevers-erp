@@ -14,6 +14,7 @@ import {
 } from "@/lib/prisma";
 
 import { verstuurDirecteOpenDienstMelding } from "@/lib/push/open-diensten";
+import { TIJD_INTERVAL } from "@/lib/planning/tijd";
 
 const DATUM_FOUT =
   "Datum moet een geldige datum zijn.";
@@ -24,8 +25,7 @@ const TIJD_FOUT =
 const MINIMALE_STARTTIJD_MINUTEN =
   9 * 60;
 
-const TIJDSTAP_MINUTEN =
-  30;
+const TIJDSTAP_MINUTEN = TIJD_INTERVAL;
 
 /*
  * ============================================================
