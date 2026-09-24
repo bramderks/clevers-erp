@@ -4,6 +4,7 @@ import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: Request) {
+  const requestId = crypto.randomUUID();
   try {
     const gebruiker = await getCurrentUser();
     if (!gebruiker) return NextResponse.json({ fout: "Je moet ingelogd zijn." }, { status: 401 });
@@ -33,9 +34,9 @@ export async function GET(request: Request) {
       },
     });
 
-    return NextResponse.json(logs);
+    return NextResponse.json(logs, { headers: { "Cache-Control": "private, no-store", "X-Request-Id": requestId } });
   } catch (error) {
-    console.error("Fout bij auditlog:", error);
+    console.error("Fout bij auditlog:", { requestId, error });
     return NextResponse.json({ fout: "De historie kon niet worden opgehaald." }, { status: 500 });
   }
 }
