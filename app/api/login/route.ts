@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { maakToken } from "@/lib/auth";
 
 export async function POST(request: Request) {
+  const requestId = crypto.randomUUID();
   try {
     const body = await request.json();
     const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
@@ -100,9 +101,9 @@ export async function POST(request: Request) {
       data: { laatsteLoginOp: new Date() },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, { headers: { "Cache-Control": "private, no-store", "X-Request-Id": requestId } });
   } catch (error) {
-    console.error("Login mislukt:", error);
+    console.error("Login mislukt:", { requestId, error });
     return NextResponse.json(
       { message: "Er is een interne fout opgetreden." },
       { status: 500 },
