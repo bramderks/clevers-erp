@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 
 import { hasPermissionForVestiging, isEigenaar } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
@@ -620,6 +621,11 @@ export async function POST(
      * is al opgeslagen en blijft bestaan wanneer push niet lukt.
      */
     if (typeof medewerkerId === "string") {
+      // Ververs de medewerkerweergaven direct na een nieuwe bezetting.
+      revalidatePath("/app");
+      revalidatePath("/app/planning");
+      revalidatePath(`/medewerkers/${medewerkerId}`);
+
       try {
         await verstuurDirecteDienstMelding(bezetting.id);
       } catch (pushError) {
