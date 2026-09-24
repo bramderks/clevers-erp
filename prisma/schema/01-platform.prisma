@@ -181,6 +181,8 @@ model AuditLog {
   aangemaaktOp DateTime @default(now())
 
   @@index([module])
+  @@index([recordId, aangemaaktOp])
+  @@index([systeemGebruikerId, aangemaaktOp])
   @@index([aangemaaktOp])
 }
 
