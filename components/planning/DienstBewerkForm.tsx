@@ -11,6 +11,12 @@ import type {
   Dienst,
   PlanningTag,
 } from "@/types/planning";
+import {
+  EINDE_MINUTEN,
+  START_MINUTEN,
+  maakTijden,
+  tijdNaarMinuten,
+} from "@/lib/planning/tijd";
 
 type PlanningBeschikbaarheid = {
   id: string;
