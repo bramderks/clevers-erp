@@ -623,6 +623,7 @@ export async function POST(
     if (typeof medewerkerId === "string") {
       revalidatePath("/app");
       revalidatePath("/app/planning");
+      revalidatePath("/dashboard");
       revalidatePath(`/medewerkers/${medewerkerId}`);
 
       try {
