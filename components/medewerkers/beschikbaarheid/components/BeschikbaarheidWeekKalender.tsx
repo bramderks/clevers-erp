@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
+import { formatDienstDatum } from "@/lib/planning/tijd";
 
 type DagNaam =
   | "maandag"
