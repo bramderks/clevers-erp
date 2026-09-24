@@ -19,14 +19,7 @@ function formatDatum(datum: Date) {
   }).format(datum);
 }
 
-function formatTijd(datum: Date) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "Europe/Amsterdam",
-  }).format(datum);
-}
+function formatTijd(datum: Date) {\n  return formatDienstTijd(datum);\n}
 
 function statusLabel(status: string) {
   switch (status) {
