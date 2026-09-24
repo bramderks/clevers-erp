@@ -7,22 +7,9 @@ import { CalendarPlus } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-function formatDatum(datum: Date) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(datum);
-}
+function formatDatum(datum: Date) {\n  return formatDienstDatum(datum);\n}
 
-function formatTijd(datum: Date) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "Europe/Amsterdam",
-  }).format(datum);
-}
+function formatTijd(datum: Date) {\n  return formatDienstTijd(datum);\n}
 
 export default async function AppPlanningPage() {
   const gebruiker = await getCurrentUser();
