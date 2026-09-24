@@ -37,19 +37,7 @@ function formatDatum(datum: string) {
   }).format(new Date(datum));
 }
 
-function formatTijd(waarde: string) {
-  const match = /^(\d{1,2}):(\d{2})/.exec(waarde);
-  if (match) return `${match[1].padStart(2, "0")}:${match[2]}`;
-
-  const datum = new Date(waarde);
-  if (Number.isNaN(datum.getTime())) return waarde;
-
-  return new Intl.DateTimeFormat("nl-NL", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(datum);
-}
+function formatTijd(waarde: string) {\n  const match = /^(\\d{1,2}):(\\d{2})/.exec(waarde);\n  if (match) return `${match[1].padStart(2, "0")}:${match[2]}`;\n  return formatDienstTijd(waarde);\n}
 
 function dagenTotDienst(datum: string) {
   const dag = new Date(datum);
