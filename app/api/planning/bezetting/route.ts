@@ -35,6 +35,12 @@ async function haalDienstOp(
       begintijd: true,
       eindtijd: true,
 
+      tags: {
+        select: {
+          aantal: true,
+        },
+      },
+
       week: {
         select: {
           vestigingId: true,
@@ -355,6 +361,34 @@ export async function POST(
           : "OPEN";
 
     if (medewerkerId) {
+      const maximaalAantalMedewerkers = Math.max(
+        1,
+        dienst.tags.reduce(
+          (totaal, tag) => totaal + Math.max(1, Number(tag.aantal) || 1),
+          0,
+        ),
+      );
+
+      const huidigAantalMedewerkers =
+        await prisma.dienstBezetting.count({
+          where: {
+            dienstId,
+            medewerkerId: { not: null },
+            status: { not: "AFGEZEGD" },
+          },
+        });
+
+      if (huidigAantalMedewerkers >= maximaalAantalMedewerkers) {
+        return NextResponse.json(
+          {
+            fout:
+              `Deze dienst heeft ruimte voor maximaal ${maximaalAantalMedewerkers} medewerker(s), op basis van de aantallen bij de planningstags.`,
+            code: "MAXIMAAL_AANTAL_MEDEWERKERS_BEREIKT",
+          },
+          { status: 409 },
+        );
+      }
+
       const medewerker =
         await prisma.medewerker.findUnique({
           where: {
