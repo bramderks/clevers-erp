@@ -16,20 +16,9 @@ type WorkflowTaak = {
   gegevens?: { diensten?: Dienst[] };
 };
 
-function datum(datum: string) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(new Date(datum));
-}
+function datum(datum: string) {\n  return formatDienstDatum(datum);\n}
 
-function tijd(datum: string) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(datum));
-}
+function tijd(datum: string) {\n  return formatDienstTijd(datum);\n}
 
 export default function OwnerUpcomingServices({ gebruikerId }: { gebruikerId: string }) {
   const [diensten, setDiensten] = useState<Dienst[]>([]);
