@@ -6,9 +6,13 @@ type DienstOverzichtProps = {
   diensten: Dienst[];
 };
 
-function formatteerDatum(datum: string) {\n  return formatDienstDatum(datum);\n}
+function formatteerDatum(datum: string) {
+  return formatDienstDatum(datum);
+}
 
-function formatteerTijd(datum: string) {\n  return formatDienstTijd(datum);\n}
+function formatteerTijd(datum: string) {
+  return formatDienstTijd(datum);
+}
 
 function naamMedewerker(
   medewerker: Dienst["bezetting"][number]["medewerker"],
