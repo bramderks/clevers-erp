@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { getCurrentUser, isEigenaar } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 import { berekenGewerkteUren } from "@/lib/verloning/pauze";
 
 function formatDatum(datum: Date) {
@@ -15,11 +16,7 @@ function formatDatum(datum: Date) {
 }
 
 function tijdWaarde(datum: Date) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(datum);
+  return formatDienstTijd(datum);
 }
 
 function combineerDatumEnTijd(
