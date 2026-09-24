@@ -21,10 +21,7 @@ function datum(datum: string) {
 }
 
 function tijd(datum: string) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(datum));
+  return formatDienstTijd(datum);
 }
 
 export default function OpenDienstenMedewerker({
