@@ -6,20 +6,9 @@ type DienstOverzichtProps = {
   diensten: Dienst[];
 };
 
-function formatteerDatum(datum: string) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(new Date(datum));
-}
+function formatteerDatum(datum: string) {\n  return formatDienstDatum(datum);\n}
 
-function formatteerTijd(datum: string) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(datum));
-}
+function formatteerTijd(datum: string) {\n  return formatDienstTijd(datum);\n}
 
 function naamMedewerker(
   medewerker: Dienst["bezetting"][number]["medewerker"],
