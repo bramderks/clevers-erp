@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import DashboardCollapsibleCard from "@/components/dashboard/DashboardCollapsibleCard";
+import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 
 type Dienst = {
   id: string;
