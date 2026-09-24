@@ -19,14 +19,6 @@ import DienstForm from "@/components/planning/DienstForm";
 import type {
   PlanningWeek,
 } from "@/types/planning";
-import {
-  EINDE_MINUTEN,
-  START_MINUTEN,
-  TIJD_INTERVAL,
-  maakTijden,
-  minutenNaarTijd,
-  tijdNaarMinuten,
-} from "@/lib/planning/tijd";
 
 type PlanningOverzichtProps = {
   weken: PlanningWeek[];
@@ -114,6 +106,113 @@ type MedewerkerBeschikbaarheidsStatus =
   | "NIET_BESCHIKBAAR"
   | "GEEN_BESCHIKBAARHEID"
   | "OVERLAPPENDE_DIENST";
+
+const START_MINUTEN = 9 * 60;
+const EINDE_MINUTEN = 23 * 60;
+const TIJD_INTERVAL = 30;
+
+/*
+ * ============================================================
+ * WEEK
+ * ============================================================
+ */
+
+function vindHuidigeWeekIndex(
+  weken: PlanningWeek[],
+) {
+  const vandaag = new Date();
+
+  const weeknummer =
+    getISOWeek(vandaag);
+
+  const jaar =
+    getISOWeekYear(vandaag);
+
+  const index =
+    weken.findIndex(
+      (week) =>
+        week.weeknummer ===
+          weeknummer &&
+        week.jaar === jaar,
+    );
+
+  return index >= 0
+    ? index
+    : 0;
+}
+
+/*
+ * ============================================================
+ * TIJD
+ * ============================================================
+ */
+
+function minutenNaarTijd(
+  minuten: number,
+) {
+  const uren =
+    Math.floor(minuten / 60);
+
+  const minutenDeel =
+    minuten % 60;
+
+  return `${String(uren).padStart(
+    2,
+    "0",
+  )}:${String(minutenDeel).padStart(
+    2,
+    "0",
+  )}`;
+}
+
+function maakTijden(
+  vanaf = START_MINUTEN,
+  tot = EINDE_MINUTEN,
+) {
+  const tijden: string[] = [];
+
+  for (
+    let minuten = vanaf;
+    minuten <= tot;
+    minuten += TIJD_INTERVAL
+  ) {
+    tijden.push(
+      minutenNaarTijd(
+        minuten,
+      ),
+    );
+  }
+
+  return tijden;
+}
+
+function tijdNaarMinuten(
+  tijd: string,
+) {
+  const delen =
+    tijd.split(":");
+
+  if (
+    delen.length < 2
+  ) {
+    return null;
+  }
+
+  const uren =
+    Number(delen[0]);
+
+  const minuten =
+    Number(delen[1]);
+
+  if (
+    Number.isNaN(uren) ||
+    Number.isNaN(minuten)
+  ) {
+    return null;
+  }
+
+  return uren * 60 + minuten;
+}
 
 function maakDatumTijd(
   datum: string,
