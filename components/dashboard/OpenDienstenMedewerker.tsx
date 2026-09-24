@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 
 export type OpenDienstDashboardItem = {
   id: string;
@@ -13,11 +14,7 @@ export type OpenDienstDashboardItem = {
 };
 
 function datum(datum: string) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(new Date(datum));
+  return formatDienstDatum(datum);
 }
 
 function tijd(datum: string) {
