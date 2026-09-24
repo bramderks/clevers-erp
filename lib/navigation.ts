@@ -64,7 +64,6 @@ export const navigation = [
         title: "Mijn beschikbaarheid",
         href: "/profiel/beschikbaarheid",
         icon: ClipboardClock,
-        permission: permissions.planning.view,
         medewerkerOnly: true,
       },
 
