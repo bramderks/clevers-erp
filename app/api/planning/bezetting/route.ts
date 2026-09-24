@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { hasPermissionForVestiging, isEigenaar } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { verstuurDirecteDienstMelding } from "@/lib/push/dienst-direct";
 
 const TOEGESTANE_STATUSSEN = [
   "OPEN",
@@ -612,6 +613,22 @@ export async function POST(
           },
         },
       });
+
+    /*
+     * Een rechtstreeks ingeplande medewerker krijgt direct een
+     * persoonlijke pushmelding. Push is aanvullend: de bezetting
+     * is al opgeslagen en blijft bestaan wanneer push niet lukt.
+     */
+    if (typeof medewerkerId === "string") {
+      try {
+        await verstuurDirecteDienstMelding(bezetting.id);
+      } catch (pushError) {
+        console.error(
+          "Directe dienstpush kon niet worden verwerkt:",
+          pushError,
+        );
+      }
+    }
 
     /*
      * BHV wordt nooit door de planner
