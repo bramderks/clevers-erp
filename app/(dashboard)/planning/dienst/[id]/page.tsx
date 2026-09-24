@@ -3,6 +3,7 @@ import { format } from "date-fns";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 
 import DienstBewerkToggle from "@/components/planning/DienstBewerkToggle";
 import RuilDienstPaneel from "@/components/planning/RuilDienstPaneel";
@@ -13,11 +14,12 @@ id: string;
 }>;
 };
 
-function formatTime(date: Date) { return formatDienstTijd(date); }).format(date);
+function formatTime(date: Date) {
+  return formatDienstTijd(date);
 }
 
 function formatDate(date: Date) {
-return format(date, "dd MMMM yyyy");
+  return formatDienstDatum(date);
 }
 
 function formatName(medewerker: {
