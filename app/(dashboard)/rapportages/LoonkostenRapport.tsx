@@ -32,12 +32,7 @@ const compactEuro = (n: number) =>
 const percentage = (n: number | null) =>
   n == null ? "—" : `${n.toFixed(1).replace(".", ",")}%`;
 
-const datum = (s: string) =>
-  new Intl.DateTimeFormat("nl-NL", {
-    weekday: "short",
-    day: "2-digit",
-    month: "2-digit",
-  }).format(new Date(s + "T12:00:00"));
+const datum = (s: string) => formatDienstDatum(s);
 
 function verschil(a: number, b: number) {
   return a - b;

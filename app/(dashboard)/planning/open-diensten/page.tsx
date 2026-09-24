@@ -31,11 +31,7 @@ type OpenDienst = {
 };
 
 function formatDatum(datum: string) {
-  return new Intl.DateTimeFormat("nl-NL", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(new Date(datum));
+  return formatDienstDatum(datum);
 }
 
 function formatTijd(waarde: string) {
