@@ -14,6 +14,7 @@ import type {
 import {
   EINDE_MINUTEN,
   START_MINUTEN,
+  TIJD_INTERVAL,
   maakTijden,
   tijdNaarMinuten,
 } from "@/lib/planning/tijd";
