@@ -37,7 +37,11 @@ function formatDatum(datum: string) {
   }).format(new Date(datum));
 }
 
-function formatTijd(waarde: string) {\n  const match = /^(\\d{1,2}):(\\d{2})/.exec(waarde);\n  if (match) return `${match[1].padStart(2, "0")}:${match[2]}`;\n  return formatDienstTijd(waarde);\n}
+function formatTijd(waarde: string) {
+  const match = /^(\\d{1,2}):(\\d{2})/.exec(waarde);
+  if (match) return `${match[1].padStart(2, "0")}:${match[2]}`;
+  return formatDienstTijd(waarde);
+}
 
 function dagenTotDienst(datum: string) {
   const dag = new Date(datum);
