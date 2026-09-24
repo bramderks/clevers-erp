@@ -692,6 +692,16 @@ function bepaalDienstStatus(dienst: PlanningDienst) {
     return "GEVULD";
   }
 
+  const isOpenDienst = dienst.bezetting.some(
+    (bezetting) =>
+      bezetting.status === "OPEN" &&
+      bezetting.medewerker === null,
+  );
+
+  if (!isOpenDienst) {
+    return "NOG_NIET_INGEDEELD";
+  }
+
   const interesseAantal = dienst.openInteresseAantal ?? 0;
   const binnenEenWeek = dagenTotDienst(dienst) <= 7;
 
@@ -706,6 +716,16 @@ function dienstStatusStyling(dienst: PlanningDienst) {
   const status = bepaalDienstStatus(dienst);
 
   switch (status) {
+    case "NOG_NIET_INGEDEELD":
+      return {
+        kaart:
+          "border-slate-300 bg-slate-50 hover:border-slate-400 hover:bg-slate-100",
+        badge:
+          "bg-slate-200 text-slate-700",
+        label:
+          "Nog niet ingedeeld",
+      };
+
     case "OPEN_KRITIEK":
       return {
         kaart:
