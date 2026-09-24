@@ -1,6 +1,7 @@
 "use client";
 
 import type { Dienst } from "@/types/planning";
+import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 
 type DienstRijProps = {
   dienst: Dienst;

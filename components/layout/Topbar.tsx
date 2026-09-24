@@ -22,6 +22,7 @@ import {
   pageTitles,
 } from "@/lib/pageTitles";
 import { theme } from "@/lib/theme";
+import { formatDienstTijd } from "@/lib/planning/tijd";
 
 type TopbarGebruiker = {
   naam: string;
