@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 
 import type { Beschikbaarheid } from "@/types/planning";
 
