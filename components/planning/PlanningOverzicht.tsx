@@ -19,6 +19,14 @@ import DienstForm from "@/components/planning/DienstForm";
 import type {
   PlanningWeek,
 } from "@/types/planning";
+import {
+  EINDE_MINUTEN,
+  START_MINUTEN,
+  TIJD_INTERVAL,
+  maakTijden,
+  minutenNaarTijd,
+  tijdNaarMinuten,
+} from "@/lib/planning/tijd";
 
 type PlanningOverzichtProps = {
   weken: PlanningWeek[];
