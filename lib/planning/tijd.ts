@@ -17,16 +17,20 @@ export function tijdNaarMinuten(tijd: string | null | undefined): number | null 
   if (!tijd) return null;
 
   const match = /^(\d{1,2}):(\d{2})/.exec(tijd);
-  if (!match) return null;
+  if (match) {
+    const uren = Number(match[1]);
+    const minuten = Number(match[2]);
 
-  const uren = Number(match[1]);
-  const minuten = Number(match[2]);
+    if (!Number.isInteger(uren) || !Number.isInteger(minuten) || uren < 0 || uren > 23 || minuten < 0 || minuten > 59) {
+      return null;
+    }
 
-  if (!Number.isInteger(uren) || !Number.isInteger(minuten) || uren < 0 || uren > 23 || minuten < 0 || minuten > 59) {
-    return null;
+    return uren * 60 + minuten;
   }
 
-  return uren * 60 + minuten;
+  const datum = new Date(tijd);
+  if (Number.isNaN(datum.getTime())) return null;
+  return datum.getHours() * 60 + datum.getMinutes();
 }
 
 export function maakTijden(vanaf: number, tot: number, interval = TIJD_INTERVAL): string[] {
