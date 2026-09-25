@@ -307,8 +307,63 @@ function datumUitWaarde(
  * en eventueel bestaande ISO-datums.
  */
 
+function amsterdamOffsetMinuten(
+  datum: Date,
+): number {
+  const referentie = new Date(
+    Date.UTC(
+      datum.getFullYear(),
+      datum.getMonth(),
+      datum.getDate(),
+      12,
+      0,
+      0,
+      0,
+    ),
+  );
+
+  const delen =
+    new Intl.DateTimeFormat(
+      "en-US",
+      {
+        timeZone:
+          "Europe/Amsterdam",
+        timeZoneName: "longOffset",
+      },
+    ).formatToParts(referentie);
+
+  const offset =
+    delen.find(
+      (deel) =>
+        deel.type ===
+        "timeZoneName",
+    )?.value ?? "GMT";
+
+  const match =
+    /^GMT([+-])(\d{2}):?(\d{2})?$/.exec(
+      offset,
+    );
+
+  if (!match) {
+    return 0;
+  }
+
+  const uren = Number(match[2]);
+  const minuten = Number(
+    match[3] ?? "00",
+  );
+
+  const totaal =
+    uren * 60 + minuten;
+
+  return match[1] === "+"
+    ? totaal
+    : -totaal;
+}
+
 function tijdUitWaarde(
   waarde: unknown,
+  datum: Date,
 ): Date | null {
   if (typeof waarde !== "string") {
     return null;
@@ -334,24 +389,37 @@ function tijdUitWaarde(
       return null;
     }
 
+    const utcMinuten =
+      uren * 60 +
+      minuten -
+      amsterdamOffsetMinuten(datum);
+
     return new Date(
-      2000,
-      0,
-      1,
-      uren,
-      minuten,
-      0,
-      0,
+      Date.UTC(
+        datum.getFullYear(),
+        datum.getMonth(),
+        datum.getDate(),
+        0,
+        utcMinuten,
+        0,
+        0,
+      ),
     );
   }
 
-  const datum = new Date(waarde);
+  const bestaande = new Date(
+    waarde,
+  );
 
-  if (Number.isNaN(datum.getTime())) {
+  if (
+    Number.isNaN(
+      bestaande.getTime(),
+    )
+  ) {
     return null;
   }
 
-  return datum;
+  return bestaande;
 }
 
 /*
@@ -744,6 +812,7 @@ export async function PATCH(
       const begintijd =
         tijdUitWaarde(
           invoer.begintijd,
+          nieuweDatum,
         );
 
       if (!begintijd) {
@@ -775,6 +844,7 @@ export async function PATCH(
       const eindtijd =
         tijdUitWaarde(
           invoer.eindtijd,
+          nieuweDatum,
         );
 
       if (!eindtijd) {
