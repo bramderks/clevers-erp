@@ -794,7 +794,14 @@ export default function PlanningOverzicht({
   const [
     geselecteerdeWeekIndex,
     setGeselecteerdeWeekIndex,
-  ] = useState(0);
+  ] = useState(-1);
+
+  const [
+    geselecteerdeWeekSleutel,
+    setGeselecteerdeWeekSleutel,
+  ] = useState<string | null>(
+    null,
+  );
 
   const [
     nieuweDienstDatum,
@@ -878,18 +885,65 @@ export default function PlanningOverzicht({
       0
     ) {
       setGeselecteerdeWeekIndex(
-        0,
+        -1,
+      );
+      setGeselecteerdeWeekSleutel(
+        null,
       );
 
       return;
     }
 
-    setGeselecteerdeWeekIndex(
+    /*
+     * Bij een refresh van de planning blijven we op de week
+     * waarin de eigenaar aan het werken was. Alleen wanneer het
+     * planbord voor het eerst wordt geopend, bepalen we de huidige
+     * kalenderweek. Na uitloggen wordt de component opnieuw
+     * opgebouwd en valt hij dus weer terug op de huidige week.
+     */
+    if (
+      geselecteerdeWeekSleutel
+    ) {
+      const opgeslagenIndex =
+        gesorteerdeWeken.findIndex(
+          (week) =>
+            `${week.jaar}-${week.weeknummer}` ===
+            geselecteerdeWeekSleutel,
+        );
+
+      if (
+        opgeslagenIndex >= 0
+      ) {
+        setGeselecteerdeWeekIndex(
+          opgeslagenIndex,
+        );
+
+        return;
+      }
+    }
+
+    const huidigeIndex =
       vindHuidigeWeekIndex(
         gesorteerdeWeken,
-      ),
+      );
+
+    const week =
+      gesorteerdeWeken[
+        huidigeIndex
+      ];
+
+    setGeselecteerdeWeekIndex(
+      huidigeIndex,
     );
-  }, [gesorteerdeWeken]);
+    setGeselecteerdeWeekSleutel(
+      week
+        ? `${week.jaar}-${week.weeknummer}`
+        : null,
+    );
+  }, [
+    gesorteerdeWeken,
+    geselecteerdeWeekSleutel,
+  ]);
 
   const huidigeWeek =
     gesorteerdeWeken[
@@ -1236,7 +1290,22 @@ export default function PlanningOverzicht({
     }
 
     setGeselecteerdeWeekIndex(
-      (index) => index - 1,
+      (index) => {
+        const nieuweIndex =
+          index - 1;
+        const week =
+          gesorteerdeWeken[
+            nieuweIndex
+          ];
+
+        if (week) {
+          setGeselecteerdeWeekSleutel(
+            `${week.jaar}-${week.weeknummer}`,
+          );
+        }
+
+        return nieuweIndex;
+      },
     );
   }
 
@@ -1246,7 +1315,22 @@ export default function PlanningOverzicht({
     }
 
     setGeselecteerdeWeekIndex(
-      (index) => index + 1,
+      (index) => {
+        const nieuweIndex =
+          index + 1;
+        const week =
+          gesorteerdeWeken[
+            nieuweIndex
+          ];
+
+        if (week) {
+          setGeselecteerdeWeekSleutel(
+            `${week.jaar}-${week.weeknummer}`,
+          );
+        }
+
+        return nieuweIndex;
+      },
     );
   }
 
@@ -1607,7 +1691,7 @@ export default function PlanningOverzicht({
               disabled={
                 !kanNaarVorigeWeek
               }
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-xl font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border-2 border-slate-700 bg-slate-800 text-3xl font-extrabold text-white shadow-sm transition hover:bg-slate-700 hover:border-slate-800 active:scale-95 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-300 disabled:shadow-none"
             >
               ←
             </button>
