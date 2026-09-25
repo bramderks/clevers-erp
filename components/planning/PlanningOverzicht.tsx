@@ -884,11 +884,11 @@ export default function PlanningOverzicht({
       gesorteerdeWeken.length ===
       0
     ) {
+      // Tijdens een refresh na toevoegen/verwijderen kan de lijst
+      // tijdelijk leeg zijn. Bewaar de gekozen week zodat we na het
+      // opnieuw laden exact op dezelfde week terugkomen.
       setGeselecteerdeWeekIndex(
         -1,
-      );
-      setGeselecteerdeWeekSleutel(
-        null,
       );
 
       return;
