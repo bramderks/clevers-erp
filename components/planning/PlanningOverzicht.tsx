@@ -33,6 +33,7 @@ type PlanningOverzichtProps = {
   huidigeMedewerkerId?: string | null;
 
   onGewijzigd?: () => void;
+  initialWeekSleutel?: string | null;
 };
 
 type PlanningTag = {
@@ -765,6 +766,7 @@ export default function PlanningOverzicht({
   kanVerwijderen = false,
 
   onGewijzigd,
+  initialWeekSleutel = null,
 }: PlanningOverzichtProps) {
   const router = useRouter();
   const gesorteerdeWeken =
@@ -800,7 +802,7 @@ export default function PlanningOverzicht({
     geselecteerdeWeekSleutel,
     setGeselecteerdeWeekSleutel,
   ] = useState<string | null>(
-    null,
+    initialWeekSleutel,
   );
 
   const [
@@ -1584,7 +1586,14 @@ export default function PlanningOverzicht({
   function handleWijzigDienst(
     dienstId: string,
   ) {
-    router.push(`/planning/dienst/${dienstId}`);
+    const weekSleutel = huidigeWeek
+      ? `${huidigeWeek.jaar}-${huidigeWeek.weeknummer}`
+      : null;
+    router.push(
+      weekSleutel
+        ? `/planning/dienst/${dienstId}?week=${encodeURIComponent(weekSleutel)}`
+        : `/planning/dienst/${dienstId}`,
+    );
   }
 
   /*
