@@ -1,5 +1,7 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
+
 import {
   useCallback,
   useEffect,
@@ -30,6 +32,8 @@ export default function PlanningPagina({
   isMedewerker = false,
   huidigeMedewerkerId = null,
 }: PlanningPaginaProps) {
+  const searchParams = useSearchParams();
+  const weekParam = searchParams.get("week");
   const [vestigingId, setVestigingId] = useState<string>(vestigingen[0]?.id ?? "");
   const [weken, setWeken] = useState<PlanningWeek[]>([]);
   const [laden, setLaden] = useState(true);
@@ -131,6 +135,7 @@ export default function PlanningPagina({
         <PlanningOverzicht
           weken={weken}
           vestigingId={vestigingId}
+          initialWeekSleutel={weekParam}
           isEigenaar={isEigenaar}
           isTeamleider={isTeamleider}
           isMedewerker={isMedewerker}
