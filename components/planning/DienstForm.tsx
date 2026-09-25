@@ -1462,9 +1462,11 @@ export default function DienstForm({
             body: JSON.stringify({
               weekId,
 
+              // Een dienstdatum is een kalenderdatum, geen lokaal tijdstip.
+              // Sla deze daarom op om middernacht UTC zodat 30-09 nooit als 29-09 verschuift.
               datum:
                 new Date(
-                  `${datum}T00:00`,
+                  `${datum}T00:00:00Z`,
                 ).toISOString(),
 
               begintijd:
