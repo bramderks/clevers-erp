@@ -1691,7 +1691,7 @@ export default function PlanningOverzicht({
               disabled={
                 !kanNaarVorigeWeek
               }
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border-2 border-slate-700 bg-slate-800 text-3xl font-extrabold text-white shadow-sm transition hover:bg-slate-700 hover:border-slate-800 active:scale-95 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-300 disabled:shadow-none"
+              className="flex h-14 w-28 shrink-0 items-center justify-center rounded-xl border-2 border-slate-700 bg-slate-800 text-3xl font-extrabold text-white shadow-sm transition hover:bg-slate-700 hover:border-slate-800 active:scale-95 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-300 disabled:shadow-none"
             >
               ←
             </button>
@@ -1721,7 +1721,7 @@ export default function PlanningOverzicht({
               disabled={
                 !kanNaarVolgendeWeek
               }
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-xl font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-14 w-28 shrink-0 items-center justify-center rounded-xl border-2 border-slate-700 bg-slate-800 text-3xl font-extrabold text-white shadow-sm transition hover:bg-slate-700 hover:border-slate-800 active:scale-95 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-300 disabled:shadow-none"
             >
               →
             </button>
