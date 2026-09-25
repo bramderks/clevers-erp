@@ -77,3 +77,5 @@ export function formatDienstTijd(datum: Date | string | null | undefined): strin
     timeZone: "Europe/Amsterdam",
   }).format(datum instanceof Date ? datum : new Date(datum));
 }
+
+// Vercel build trigger: planning formatter is canonical.
