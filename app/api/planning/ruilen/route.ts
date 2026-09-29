@@ -14,6 +14,7 @@ const RUIL_STATUSSEN = [
   "AFGEWEZEN_DOOR_MEDEWERKER",
   "WACHT_OP_EIGENAAR",
   "AFGEWEZEN_DOOR_EIGENAAR",
+  "GEANNULEERD",
   "GOEDGEKEURD",
   "UITGEVOERD",
 ] as const;
@@ -21,6 +22,7 @@ const RUIL_STATUSSEN = [
 type RuilActie =
   | "ACCEPTEREN"
   | "AFWIJZEN"
+  | "ANNULEREN"
   | "GOEDKEUREN";
 
 function configureerPush() {
@@ -542,6 +544,24 @@ export async function POST(
                 })),
               }
             : {}),
+          beschikbaarheden: {
+            some: {
+              datum: bezetting.dienst.datum,
+              status: { in: ["BESCHIKBAAR", "VOORKEUR"] },
+              begintijd: { lte: bezetting.dienst.begintijd },
+              eindtijd: { gte: bezetting.dienst.eindtijd },
+            },
+          },
+          diensten: {
+            none: {
+              status: { notIn: ["AFGEZEGD"] },
+              dienst: {
+                datum: bezetting.dienst.datum,
+                begintijd: { lt: bezetting.dienst.eindtijd },
+                eindtijd: { gt: bezetting.dienst.begintijd },
+              },
+            },
+          },
         },
         select: { id: true },
       });
@@ -580,7 +600,7 @@ export async function POST(
             `ruil-aanbod:${dienstBezettingId}:${ruilverzoek.ruilMedewerkerId}`,
             "Clevers — dienst ter ruil",
             "Er is een dienst ter ruil aangeboden voor jouw functie.",
-            `/planning/dienst/${bezetting.dienst.id}`,
+            "/app/ruilen",
             dienstBezettingId,
           );
         }
@@ -837,6 +857,7 @@ export async function PATCH(
     if (
       actie !== "ACCEPTEREN" &&
       actie !== "AFWIJZEN" &&
+      actie !== "ANNULEREN" &&
       actie !== "GOEDKEUREN"
     ) {
       return fout(
@@ -920,6 +941,41 @@ export async function PATCH(
 
     const medewerkerId =
       gebruiker.medewerker?.id;
+
+    if (actie === "ANNULEREN") {
+      if (!medewerkerId || medewerkerId !== ruilverzoek.aanvragerId) {
+        return fout(
+          "Alleen degene die de ruil heeft aangevraagd kan deze annuleren.",
+          403,
+        );
+      }
+
+      if (
+        ruilverzoek.status !== "AANGEVRAAGD" &&
+        ruilverzoek.status !== "WACHT_OP_EIGENAAR"
+      ) {
+        return fout(
+          "Dit ruilverzoek kan niet meer worden geannuleerd.",
+          409,
+        );
+      }
+
+      const resultaat = await prisma.ruilverzoek.updateMany({
+        where: {
+          dienstBezettingId: ruilverzoek.dienstBezettingId,
+          aanvragerId: ruilverzoek.aanvragerId,
+          status: { in: ["AANGEVRAAGD", "WACHT_OP_EIGENAAR"] },
+        },
+        data: {
+          status: "GEANNULEERD",
+        },
+      });
+
+      return NextResponse.json({
+        geannuleerd: true,
+        aantal: resultaat.count,
+      });
+    }
 
     if (
       actie === "ACCEPTEREN"
