@@ -20,13 +20,27 @@ export async function GET() {
 
   const medewerkerId = gebruiker.medewerker.id;
 
+  const isEigenaar = gebruiker.organisaties.some(
+    (relatie) =>
+      relatie.actief &&
+      relatie.organisatie.actief &&
+      ["eigenaar", "super admin"].includes(
+        relatie.rol.naam.trim().toLowerCase(),
+      ),
+  );
+
   const diensten = await prisma.dienstBezetting.findMany({
     where: {
       status: "OPEN",
       medewerkerId: null,
       dienst: {
         datum: { gte: new Date() },
-        week: { status: "GEPUBLICEERD", vestiging: { medewerkers: { some: { medewerkerId } } } },
+        week: {
+          ...(isEigenaar
+            ? {}
+            : { status: "GEPUBLICEERD" }),
+          vestiging: { medewerkers: { some: { medewerkerId } } },
+        },
         tags: {
           some: { tag: { medewerkers: { some: { medewerkerId } } } },
           every: { tag: { medewerkers: { some: { medewerkerId } } } },
