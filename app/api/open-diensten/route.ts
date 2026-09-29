@@ -26,7 +26,7 @@ export async function GET() {
       medewerkerId: null,
       dienst: {
         datum: { gte: new Date() },
-        week: { vestiging: { medewerkers: { some: { medewerkerId } } } },
+        week: { status: "GEPUBLICEERD", vestiging: { medewerkers: { some: { medewerkerId } } } },
         tags: {
           some: { tag: { medewerkers: { some: { medewerkerId } } } },
           every: { tag: { medewerkers: { some: { medewerkerId } } } },
