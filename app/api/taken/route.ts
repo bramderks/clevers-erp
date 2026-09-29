@@ -4,6 +4,16 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { verstuurNieuweTaakMeldingen } from "@/lib/push/open-diensten";
 
+function fout(
+  bericht: string,
+  status: number,
+) {
+  return NextResponse.json(
+    { fout: bericht },
+    { status },
+  );
+}
+
 function naamVanMedewerker(
   medewerker: {
     voornaam: string;
@@ -20,29 +30,29 @@ function naamVanMedewerker(
     .join(" ");
 }
 
-function isOntbrekendeRuilverzoekTabel(error: unknown) {
-  if (typeof error !== "object" || error === null) {
+function isOntbrekendeRuilverzoekTabel(
+  error: unknown,
+) {
+  if (
+    typeof error !== "object" ||
+    error === null
+  ) {
     return false;
   }
 
-  const prismaError = error as {
-    code?: string;
-    meta?: { modelName?: string };
-  };
+  const prismaError =
+    error as {
+      code?: string;
+      meta?: {
+        modelName?: string;
+      };
+      message?: string;
+    };
 
   return (
     prismaError.code === "P2021" &&
-    prismaError.meta?.modelName === "Ruilverzoek"
-  );
-}
-
-function fout(
-  bericht: string,
-  status: number,
-) {
-  return NextResponse.json(
-    { fout: bericht },
-    { status },
+    prismaError.meta?.modelName ===
+      "Ruilverzoek"
   );
 }
 
@@ -321,17 +331,36 @@ export async function GET() {
 
     /*
      * ======================================================
-     * RUILVERZOEKEN
+     * RUILVERZOEKEN VOOR DE MEDEWERKER
      * ======================================================
      *
-     * Ruilverzoeken worden niet meer als taak/card in het
-     * algemene takenoverzicht getoond. Medewerkers ontvangen
-     * hiervoor uitsluitend een notificatie en kunnen het
-     * verzoek openen via de pagina "Ruilverzoeken".
+     * Algemene ruilverzoeken worden niet meer als taak/card
+     * in het centrale Taken-overzicht getoond. De medewerker
+     * ontvangt hiervoor een eenvoudige notificatie en kan
+     * het verzoek openen via "Ruilverzoeken".
      */
- 
-    const ruilverzoekenBeschikbaar = true;
- 
+
+    if (gebruiker.medewerker?.id) {
+      try {
+        await prisma.ruilverzoek.findMany({
+          where: {
+            ruilMedewerkerId: gebruiker.medewerker.id,
+            status: "AANGEVRAAGD",
+          },
+          select: { id: true },
+          take: 1,
+        });
+      } catch (error) {
+        if (
+          isOntbrekendeRuilverzoekTabel(error)
+        ) {
+          ruilverzoekenBeschikbaar = false;
+        } else {
+          throw error;
+        }
+      }
+    }
+
     /*
      * ======================================================
      * RUILVERZOEKEN VOOR DE EIGENAAR
