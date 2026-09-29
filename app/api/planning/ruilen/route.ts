@@ -381,7 +381,12 @@ export async function GET(
       });
 
     return NextResponse.json(
-      ruilverzoeken,
+      ruilverzoeken.map((ruilverzoek) => ({
+        ...ruilverzoek,
+        isAanvrager:
+          medewerkerId !== null &&
+          ruilverzoek.aanvragerId === medewerkerId,
+      })),
     );
   } catch (error) {
     console.error(
