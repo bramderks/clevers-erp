@@ -82,9 +82,6 @@ export default function AppRuilenPage() {
         throw new Error(data.fout ?? "Het ruilverzoek kon niet worden verstuurd.");
       }
 
-      const aantal =
-        typeof data?.aantal === "number" ? data.aantal : 0;
-
       setSucces(
         "Je ruilverzoek is verstuurd naar collega's met de juiste tags.",
       );
