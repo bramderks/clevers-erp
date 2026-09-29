@@ -1253,6 +1253,11 @@ export async function POST(
                   gte: dagStart,
                   lt: dagEinde,
                 },
+                week: {
+                  select: {
+                    status: true,
+                  },
+                },
               },
             },
             include: {
@@ -1267,6 +1272,7 @@ export async function POST(
                     select: {
                       id: true,
                       medewerkerId: true,
+                      status: true,
                     },
                   },
                 },
@@ -1300,6 +1306,15 @@ export async function POST(
             bezetting.dienst;
 
           if (
+            isBeschermdeVasteDienst(
+              bezetting.status,
+              dienst.week.status,
+            )
+          ) {
+            continue;
+          }
+
+          if (
             !dienstAangepast &&
             dienst.bezetting.length ===
               1 &&
@@ -1313,6 +1328,14 @@ export async function POST(
               data: {
                 begintijd,
                 eindtijd,
+                bezetting: {
+                  update: {
+                    where: { id: bezetting.id },
+                    data: {
+                      vasteUrenAfspraakId: afspraakId,
+                    },
+                  },
+                },
               },
             });
 
