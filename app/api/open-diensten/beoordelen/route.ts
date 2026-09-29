@@ -223,6 +223,45 @@ export async function POST(request: Request) {
       data: { medewerkerId, status: "GEPLAND" },
     });
 
+    /*
+     * De open positie die de eigenaar zojuist heeft ingevuld is
+     * definitief bezet. Er mogen alleen nog OPEN-posities blijven
+     * bestaan wanneer de dienst volgens de planningstags nog extra
+     * medewerkers nodig heeft.
+     *
+     * Een eerder aangemaakte overtollige OPEN-positie wordt daarom
+     * verwijderd zodra het benodigde aantal medewerkers al is bereikt.
+     */
+    const benodigdePosities = Math.max(
+      1,
+      openDienst.dienst.tags.reduce(
+        (totaal, tag) => totaal + 1,
+        0,
+      ),
+    );
+
+    const bezettingen = await tx.dienstBezetting.findMany({
+      where: { dienstId: openDienst.dienstId },
+      select: { id: true, medewerkerId: true, status: true },
+      orderBy: { aangemaaktOp: "asc" },
+    });
+
+    const toegewezenAantal = bezettingen.filter(
+      (item) => item.medewerkerId !== null,
+    ).length;
+
+    if (toegewezenAantal >= benodigdePosities) {
+      const overtolligeOpenPosities = bezettingen
+        .filter((item) => item.status === "OPEN" && item.medewerkerId === null)
+        .map((item) => item.id);
+
+      if (overtolligeOpenPosities.length > 0) {
+        await tx.dienstBezetting.deleteMany({
+          where: { id: { in: overtolligeOpenPosities } },
+        });
+      }
+    }
+
     await tx.auditLog.create({
       data: {
         systeemGebruikerId: gebruiker.id,
