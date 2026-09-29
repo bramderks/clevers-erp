@@ -1,16 +1,16 @@
 import { redirect } from "next/navigation";
 import { Bell, Settings } from "lucide-react";
 
-import { getCurrentUser } from "@/lib/auth";
+import { vereisInloggen } from "@/lib/requirePermission";
 import PushNotificationSettings from "@/components/app/PushNotificationSettings";
 
 export const dynamic = "force-dynamic";
 
 export default async function InstellingenPage() {
-  const gebruiker = await getCurrentUser();
+  const gebruiker = await vereisInloggen();
 
-  if (!gebruiker) {
-    redirect("/login?redirect=/instellingen");
+  if (!gebruiker.actief) {
+    redirect("/login");
   }
 
   return (
@@ -25,7 +25,7 @@ export default async function InstellingenPage() {
               Instellingen
             </h1>
             <p className="text-sm text-slate-500">
-              Persoonlijke instellingen voor je Clevers-account.
+              Persoonlijke instellingen voor je eigen Clevers-account.
             </p>
           </div>
         </div>
@@ -38,11 +38,12 @@ export default async function InstellingenPage() {
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="text-lg font-bold text-slate-900">
-              Pushmeldingen
+              Mijn pushmeldingen
             </h2>
             <p className="mt-1 text-sm leading-6 text-slate-500">
-              Ontvang meldingen van Clevers op dit apparaat, bijvoorbeeld over
-              taken, diensten en beschikbaarheidsdeadlines.
+              Beheer alleen de pushmeldingen van jouw eigen account op dit
+              apparaat. Je kunt hiermee geen instellingen van de organisatie,
+              vestigingen of andere medewerkers wijzigen.
             </p>
 
             <div className="mt-5">
