@@ -937,11 +937,11 @@ export default function PlanningOverzicht({
     setGeselecteerdeWeekIndex(
       huidigeIndex,
     );
-    setGeselecteerdeWeekSleutel(
-      week
-        ? `${week.jaar}-${week.weeknummer}`
-        : null,
-    );
+    if (week) {
+      bewaarActieveWeek(week);
+    } else {
+      setGeselecteerdeWeekSleutel(null);
+    }
   }, [
     gesorteerdeWeken,
     geselecteerdeWeekSleutel,
