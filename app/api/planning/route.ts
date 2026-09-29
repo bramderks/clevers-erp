@@ -445,7 +445,6 @@ async function haalPlanningOp(
   const weken = await prisma.week.findMany({
     where: {
       vestigingId,
-      ...(magFinancieel ? {} : { status: "GEPUBLICEERD" }),
       ...(jaar !== undefined ? { jaar } : {}),
       ...(weeknummer !== undefined ? { weeknummer } : {}),
     },
