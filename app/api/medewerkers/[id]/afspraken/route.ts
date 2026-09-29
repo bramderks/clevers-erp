@@ -818,6 +818,175 @@ async function synchroniseerVasteUrenAfspraak(
   }
 }
 
+async function verwijderVasteUrenAfspraakDiensten(
+  afspraak: {
+    id: string;
+    medewerkerId: string;
+    vestigingId: string;
+    dagVanWeek: number;
+    begintijd: string;
+    eindtijd: string;
+    startDatum: Date;
+    eindDatum: Date;
+  },
+) {
+  const gekoppeld =
+    await prisma.$queryRawUnsafe<
+      Array<{
+        bezettingId: string;
+        dienstId: string;
+        status: string;
+        weekStatus: string;
+        actieveBezettingen: number;
+      }>
+    >(
+      `SELECT
+         db."id" AS "bezettingId",
+         d."id" AS "dienstId",
+         db."status" AS "status",
+         w."status" AS "weekStatus",
+         (
+           SELECT COUNT(*)::int
+           FROM "DienstBezetting" db2
+           WHERE db2."dienstId" = d."id"
+             AND db2."status" <> 'AFGEZEGD'
+         ) AS "actieveBezettingen"
+       FROM "DienstBezetting" db
+       INNER JOIN "Dienst" d ON d."id" = db."dienstId"
+       INNER JOIN "Week" w ON w."id" = d."weekId"
+       WHERE db."vasteUrenAfspraakId" = $1
+         AND db."medewerkerId" = $2`,
+      afspraak.id,
+      afspraak.medewerkerId,
+    );
+
+  const teVerwijderen = new Set<string>();
+
+  for (const item of gekoppeld) {
+    if (
+      isBeschermdeVasteDienst(
+        item.status,
+        item.weekStatus,
+      )
+    ) {
+      continue;
+    }
+
+    teVerwijderen.add(item.dienstId);
+
+    if (item.actieveBezettingen <= 1) {
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM "Dienst"
+         WHERE "id"=$1`,
+        item.dienstId,
+      );
+    } else {
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM "DienstBezetting"
+         WHERE "id"=$1`,
+        item.bezettingId,
+      );
+    }
+  }
+
+  const oudeAutomatischeDiensten =
+    await prisma.$queryRawUnsafe<
+      Array<{
+        bezettingId: string;
+        dienstId: string;
+        status: string;
+        weekStatus: string;
+        datum: Date;
+        begintijd: Date;
+        eindtijd: Date;
+        actieveBezettingen: number;
+      }>
+    >(
+      `SELECT
+         db."id" AS "bezettingId",
+         d."id" AS "dienstId",
+         db."status" AS "status",
+         w."status" AS "weekStatus",
+         d."datum" AS "datum",
+         d."begintijd" AS "begintijd",
+         d."eindtijd" AS "eindtijd",
+         (
+           SELECT COUNT(*)::int
+           FROM "DienstBezetting" db2
+           WHERE db2."dienstId" = d."id"
+             AND db2."status" <> 'AFGEZEGD'
+         ) AS "actieveBezettingen"
+       FROM "DienstBezetting" db
+       INNER JOIN "Dienst" d ON d."id" = db."dienstId"
+       INNER JOIN "Week" w ON w."id" = d."weekId"
+       WHERE db."medewerkerId" = $1
+         AND db."vasteUrenAfspraakId" IS NULL
+         AND db."status" <> 'AFGEZEGD'
+         AND w."vestigingId" = $2
+         AND d."opmerkingen" = 'Automatisch ingevuld vanuit een vaste urenafspraak.'
+         AND d."datum" >= $3
+         AND d."datum" <= $4`,
+      afspraak.medewerkerId,
+      afspraak.vestigingId,
+      beginDag(afspraak.startDatum),
+      eindeDag(afspraak.eindDatum),
+    );
+
+  for (const item of oudeAutomatischeDiensten) {
+    if (teVerwijderen.has(item.dienstId)) {
+      continue;
+    }
+
+    if (
+      dagVanWeek(item.datum) !==
+      afspraak.dagVanWeek
+    ) {
+      continue;
+    }
+
+    const verwachtBegin = maakTijd(
+      item.datum,
+      afspraak.begintijd,
+    );
+    const verwachtEinde = maakTijd(
+      item.datum,
+      afspraak.eindtijd,
+    );
+
+    if (
+      item.begintijd.getTime() !==
+        verwachtBegin.getTime() ||
+      item.eindtijd.getTime() !==
+        verwachtEinde.getTime()
+    ) {
+      continue;
+    }
+
+    if (
+      isBeschermdeVasteDienst(
+        item.status,
+        item.weekStatus,
+      )
+    ) {
+      continue;
+    }
+
+    if (item.actieveBezettingen <= 1) {
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM "Dienst"
+         WHERE "id"=$1`,
+        item.dienstId,
+      );
+    } else {
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM "DienstBezetting"
+         WHERE "id"=$1`,
+        item.bezettingId,
+      );
+    }
+  }
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: RouteContext,
@@ -1656,6 +1825,43 @@ export async function DELETE(
         id,
       );
     } else {
+      const afspraak = await prisma.$queryRawUnsafe<
+        Array<{
+          id: string;
+          medewerkerId: string;
+          vestigingId: string;
+          tagId: string;
+          dagVanWeek: number;
+          begintijd: string;
+          eindtijd: string;
+          startDatum: Date;
+          eindDatum: Date;
+        }>
+      >(
+        `SELECT
+           "id",
+           "medewerkerId",
+           "vestigingId",
+           "tagId",
+           "dagVanWeek",
+           "begintijd",
+           "eindtijd",
+           "startDatum",
+           "eindDatum"
+         FROM "VasteUrenAfspraak"
+         WHERE "id"=$1
+           AND "medewerkerId"=$2
+         LIMIT 1`,
+        itemId,
+        id,
+      );
+
+      if (afspraak[0]) {
+        await verwijderVasteUrenAfspraakDiensten(
+          afspraak[0],
+        );
+      }
+
       await prisma.$executeRawUnsafe(
         `DELETE FROM "VasteUrenAfspraak"
          WHERE "id" = $1
