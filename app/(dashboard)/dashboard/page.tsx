@@ -191,6 +191,7 @@ export default async function DashboardPage() {
                 select: {
                   jaar: true,
                   weeknummer: true,
+                  status: true,
 
                   vestiging: {
                     select: {
@@ -292,6 +293,7 @@ export default async function DashboardPage() {
     const aankomendeDiensten =
       toekomstigeDienstenResultaat.filter(
         (bezetting) =>
+          bezetting.dienst.week.status === "GEPUBLICEERD" &&
           isDienstBinnenSeizoen(
             bezetting.dienst.datum,
             bezetting.dienst.week
@@ -685,7 +687,7 @@ export default async function DashboardPage() {
           <DashboardCollapsibleCard
             storageKey={`medewerker-diensten-${gebruiker.id}`}
             title="Mijn aankomende diensten"
-            description="Al je toekomstige ingeplande diensten tot het einde van het seizoen"
+            description="Je toekomstige diensten uit gepubliceerde roosters"
             count={aankomendeDiensten.length}
           >
             {aankomendeDiensten.length ===
