@@ -1360,7 +1360,7 @@ export async function POST(
           !dienstAangepast &&
           overlappende.length === 0
         ) {
-          await prisma.dienst.create({
+          const aangemaakteDienst = await prisma.dienst.create({
             data: {
               weekId:
                 week.id,
@@ -1391,6 +1391,16 @@ export async function POST(
               },
             },
           });
+
+          await prisma.$executeRawUnsafe(
+            `UPDATE "DienstBezetting"
+             SET "vasteUrenAfspraakId"=$1,
+                 "gewijzigdOp"=CURRENT_TIMESTAMP
+             WHERE "dienstId"=$2 AND "medewerkerId"=$3`,
+            afspraakId,
+            aangemaakteDienst.id,
+            id,
+          );
 
           aangemaakt += 1;
         } else if (
@@ -1402,7 +1412,7 @@ export async function POST(
            * Na het loskoppelen van deze medewerker maken we de vaste
            * dienst alsnog aan.
            */
-          await prisma.dienst.create({
+          const aangemaakteDienst = await prisma.dienst.create({
             data: {
               weekId:
                 week.id,
@@ -1433,6 +1443,16 @@ export async function POST(
               },
             },
           });
+
+          await prisma.$executeRawUnsafe(
+            `UPDATE "DienstBezetting"
+             SET "vasteUrenAfspraakId"=$1,
+                 "gewijzigdOp"=CURRENT_TIMESTAMP
+             WHERE "dienstId"=$2 AND "medewerkerId"=$3`,
+            afspraakId,
+            aangemaakteDienst.id,
+            id,
+          );
 
           aangemaakt += 1;
         } else {
