@@ -41,15 +41,6 @@ export async function GET() {
   }
 
   const vanaf = new Date();
-
-  const isEigenaar = gebruiker.organisaties.some(
-    (relatie) =>
-      relatie.actief &&
-      relatie.organisatie.actief &&
-      ["eigenaar", "super admin"].includes(
-        relatie.rol.naam.trim().toLowerCase(),
-      ),
-  );
   vanaf.setHours(0, 0, 0, 0);
 
   const bezettingen = await prisma.dienstBezetting.findMany({
@@ -62,13 +53,6 @@ export async function GET() {
         datum: {
           gte: vanaf,
         },
-        ...(isEigenaar
-          ? {}
-          : {
-              week: {
-                status: "GEPUBLICEERD",
-              },
-            }),
       },
     },
     select: {
