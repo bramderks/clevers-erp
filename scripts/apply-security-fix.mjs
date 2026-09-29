@@ -113,8 +113,17 @@ import OpenDienstenMedewerker from "@/components/dashboard/OpenDienstenMedewerke
         medewerkerId: null,
         dienst: {
           datum: { gte: vandaagBegin },
-          week: { vestiging: { actief: true, medewerkers: { some: { medewerkerId } } } },
-          tags: { some: { tag: { medewerkers: { some: { medewerkerId } } } } },
+          week: {
+            status: "GEPUBLICEERD",
+            vestiging: {
+              actief: true,
+              medewerkers: { some: { medewerkerId } },
+            },
+          },
+          tags: {
+            some: { tag: { medewerkers: { some: { medewerkerId } } } },
+            every: { tag: { medewerkers: { some: { medewerkerId } } } },
+          },
         },
       },
       orderBy: { dienst: { datum: "asc" } },
@@ -127,14 +136,43 @@ import OpenDienstenMedewerker from "@/components/dashboard/OpenDienstenMedewerke
             begintijd: true,
             eindtijd: true,
             tags: { select: { tag: { select: { naam: true } } } },
-            week: { select: { vestiging: { select: { naam: true, seizoenEinde: true } } } },
+            week: {
+              select: {
+                status: true,
+                vestiging: {
+                  select: { naam: true, seizoenEinde: true },
+                },
+              },
+            },
           },
         },
       },
     });
 
+    const gemeldeInteresses = await prisma.auditLog.findMany({
+      where: {
+        systeemGebruikerId: gebruiker.id,
+        module: "PLANNING",
+        actie: "INTERESSE_OPEN_DIENST",
+        recordId: { in: openDienstenResultaat.map((bezetting) => bezetting.id) },
+      },
+      select: { recordId: true },
+    });
+
+    const gemeldeInteresseIds = new Set(
+      gemeldeInteresses.map((item) => item.recordId),
+    );
+
     const openDiensten = openDienstenResultaat
-      .filter((bezetting) => isDienstBinnenSeizoen(bezetting.dienst.datum, bezetting.dienst.week.vestiging.seizoenEinde))
+      .filter(
+        (bezetting) =>
+          bezetting.dienst.week.status === "GEPUBLICEERD" &&
+          !gemeldeInteresseIds.has(bezetting.id) &&
+          isDienstBinnenSeizoen(
+            bezetting.dienst.datum,
+            bezetting.dienst.week.vestiging.seizoenEinde,
+          ),
+      )
       .map((bezetting) => ({
         id: bezetting.id,
         datum: bezetting.dienst.datum.toISOString(),
