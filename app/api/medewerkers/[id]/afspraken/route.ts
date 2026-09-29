@@ -1115,8 +1115,6 @@ export async function POST(
                   medewerkerId: id,
                   status:
                     "GEPLAND",
-                  vasteUrenAfspraakId:
-                    afspraakId,
                 },
               },
             },
@@ -1159,8 +1157,6 @@ export async function POST(
                   medewerkerId: id,
                   status:
                     "GEPLAND",
-                  vasteUrenAfspraakId:
-                    afspraakId,
                 },
               },
             },
