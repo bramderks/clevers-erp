@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 
 import DashboardCollapsibleCard from "@/components/dashboard/DashboardCollapsibleCard";
 import PageHeader from "@/components/ui/PageHeader";
+import { formatDienstTijd } from "@/lib/planning/tijd";
 import OwnerWorkflowTasks from "@/components/dashboard/OwnerWorkflowTasks";
 import OwnerUpcomingServices from "@/components/dashboard/OwnerUpcomingServices";
 
@@ -730,32 +731,12 @@ export default async function DashboardPage() {
                         </p>
 
                         <p className="mt-1 text-sm text-slate-500">
-                          {new Intl.DateTimeFormat(
-                            "nl-NL",
-                            {
-                              hour: "2-digit",
-                              minute:
-                                "2-digit",
-                            },
-                          ).format(
-                            new Date(
-                              bezetting.dienst
-                                .begintijd,
-                            ),
+                          {formatDienstTijd(
+                            bezetting.dienst.begintijd,
                           )}{" "}
                           -{" "}
-                          {new Intl.DateTimeFormat(
-                            "nl-NL",
-                            {
-                              hour: "2-digit",
-                              minute:
-                                "2-digit",
-                            },
-                          ).format(
-                            new Date(
-                              bezetting.dienst
-                                .eindtijd,
-                            ),
+                          {formatDienstTijd(
+                            bezetting.dienst.eindtijd,
                           )}
                         </p>
 
