@@ -14,6 +14,8 @@ export default function PushNotificationButton() {
   const [ondersteund, setOndersteund] = useState(false);
   const [toestemming, setToestemming] =
     useState<NotificationPermission | "unknown">("unknown");
+  const [testBezig, setTestBezig] = useState(false);
+  const [testMelding, setTestMelding] = useState<string | null>(null);
 
   useEffect(() => {
     const beschikbaar =
@@ -78,12 +80,57 @@ export default function PushNotificationButton() {
     return null;
   }
 
+  async function testPush() {
+    if (testBezig) return;
+
+    setTestBezig(true);
+    setTestMelding(null);
+
+    try {
+      const response = await fetch("/api/push/test", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.fout ?? "Testmelding kon niet worden verstuurd.");
+      }
+
+      setTestMelding("Testmelding verstuurd.");
+    } catch (error) {
+      setTestMelding(
+        error instanceof Error
+          ? error.message
+          : "Testmelding kon niet worden verstuurd.",
+      );
+    } finally {
+      setTestBezig(false);
+    }
+  }
+
   if (toestemming === "granted") {
     return (
-      <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
-        <Bell size={15} />
-        Meldingen toegestaan
-      </span>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+          <Bell size={15} />
+          Meldingen toegestaan
+        </span>
+
+        <button
+          type="button"
+          onClick={() => void testPush()}
+          disabled={testBezig}
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm disabled:cursor-wait disabled:opacity-60"
+        >
+          <Bell size={15} />
+          {testBezig ? "Testen..." : "Test pushmelding"}
+        </button>
+
+        {testMelding && (
+          <span className="text-xs text-slate-500">{testMelding}</span>
+        )}
+      </div>
     );
   }
 
