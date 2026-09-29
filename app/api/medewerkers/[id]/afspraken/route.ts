@@ -787,8 +787,8 @@ async function synchroniseerVasteUrenAfspraak(
 
     await prisma.$executeRawUnsafe(
       `INSERT INTO "Dienst"
-        ("id","weekId","datum","begintijd","eindtijd","opmerkingen")
-       VALUES ($1,$2,$3,$4,$5,$6)`,
+        ("id","weekId","datum","begintijd","eindtijd","opmerkingen","aangemaaktOp","gewijzigdOp")
+       VALUES ($1,$2,$3,$4,$5,$6,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
       dienstId,
       week.id,
       beginDag(datum),
