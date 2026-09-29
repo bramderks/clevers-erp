@@ -173,13 +173,6 @@ export default async function DashboardPage() {
             datum: {
               gte: vandaagBegin,
             },
-            ...(isEigenaarOfSuperAdmin
-              ? {}
-              : {
-                  week: {
-                    status: "GEPUBLICEERD",
-                  },
-                }),
           },
         },
 
