@@ -11,6 +11,7 @@ type Ruil = {
   medewerkerGeaccepteerdOp?: string | null;
   eigenaarBeoordeeldOp?: string | null;
   uitgevoerdOp?: string | null;
+  isAanvrager?: boolean;
   dienstBezetting: {
     id: string;
     dienst: {
@@ -85,9 +86,7 @@ export default function AppRuilenPage() {
         typeof data?.aantal === "number" ? data.aantal : 0;
 
       setSucces(
-        aantal > 0
-          ? `Je ruilverzoek is verstuurd naar ${aantal} geschikte medewerker(s).`
-          : "Je ruilverzoek is verstuurd.",
+        "Je ruilverzoek is verstuurd naar collega's met de juiste tags.",
       );
 
       await laad();
@@ -102,7 +101,10 @@ export default function AppRuilenPage() {
     }
   }
 
-  async function actie(ruilverzoekId: string, actie: "ACCEPTEREN" | "AFWIJZEN") {
+  async function actie(
+    ruilverzoekId: string,
+    actie: "ACCEPTEREN" | "AFWIJZEN" | "ANNULEREN",
+  ) {
     const response = await fetch("/api/planning/ruilen", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -114,6 +116,50 @@ export default function AppRuilenPage() {
       return;
     }
     await laad();
+  }
+
+  async function annuleer(ruilverzoekId: string) {
+    if (bezig) return;
+
+    const bevestigd = window.confirm(
+      "Dit ruilverzoek annuleren? Alle nog openstaande verzoeken voor deze dienst worden geannuleerd.",
+    );
+    if (!bevestigd) return;
+
+    setBezig(true);
+    setFout(null);
+    setSucces(null);
+
+    try {
+      const response = await fetch("/api/planning/ruilen", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ruilverzoekId,
+          actie: "ANNULEREN",
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.fout ?? "Het ruilverzoek kon niet worden geannuleerd.",
+        );
+      }
+
+      setSucces(
+        "Het ruilverzoek is geannuleerd. Openstaande verzoeken naar collega's zijn ingetrokken.",
+      );
+      await laad();
+    } catch (error) {
+      setFout(
+        error instanceof Error
+          ? error.message
+          : "Het ruilverzoek kon niet worden geannuleerd.",
+      );
+    } finally {
+      setBezig(false);
+    }
   }
 
   return (
@@ -179,7 +225,7 @@ export default function AppRuilenPage() {
                   </div>
                 </div>
 
-                {item.status === "AANGEVRAAGD" && (
+                {item.status === "AANGEVRAAGD" && !item.isAanvrager && (
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     <button
                       type="button"
@@ -197,6 +243,19 @@ export default function AppRuilenPage() {
                     </button>
                   </div>
                 )}
+
+                {item.isAanvrager &&
+                  (item.status === "AANGEVRAAGD" ||
+                    item.status === "WACHT_OP_EIGENAAR") && (
+                    <button
+                      type="button"
+                      onClick={() => void annuleer(item.id)}
+                      disabled={bezig}
+                      className="mt-4 w-full rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {bezig ? "Annuleren..." : "Ruilverzoek annuleren"}
+                    </button>
+                  )}
               </section>
             ))
           )}
