@@ -1275,6 +1275,37 @@ export default function PlanningOverzicht({
 
   /*
    * ============================================================
+   * ACTIEVE WEEK VASTLEGGEN
+   * ============================================================
+   *
+   * De actieve planweek staat ook in de URL. Daardoor blijft de
+   * selectie behouden wanneer de planning opnieuw wordt geladen
+   * na aanmaken, wijzigen of verwijderen van een dienst.
+   */
+
+  function bewaarActieveWeek(week: PlanningWeek | null) {
+    if (!week) {
+      return;
+    }
+
+    const sleutel = `${week.jaar}-${week.weeknummer}`;
+    setGeselecteerdeWeekSleutel(sleutel);
+
+    const params = new URLSearchParams(
+      typeof window !== "undefined"
+        ? window.location.search
+        : "",
+    );
+    params.set("week", sleutel);
+
+    router.replace(
+      `/planning?${params.toString()}`,
+      { scroll: false },
+    );
+  }
+
+  /*
+   * ============================================================
    * WEEK NAVIGATIE
    * ============================================================
    */
@@ -1301,9 +1332,7 @@ export default function PlanningOverzicht({
           ];
 
         if (week) {
-          setGeselecteerdeWeekSleutel(
-            `${week.jaar}-${week.weeknummer}`,
-          );
+          bewaarActieveWeek(week);
         }
 
         return nieuweIndex;
@@ -1326,9 +1355,7 @@ export default function PlanningOverzicht({
           ];
 
         if (week) {
-          setGeselecteerdeWeekSleutel(
-            `${week.jaar}-${week.weeknummer}`,
-          );
+          bewaarActieveWeek(week);
         }
 
         return nieuweIndex;
