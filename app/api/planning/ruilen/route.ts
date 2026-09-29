@@ -803,8 +803,8 @@ export async function POST(
         "RUIL_UITNODIGING",
         `ruil-uitnodiging:${ruilverzoek.id}`,
         "Clevers — ruilverzoek",
-        "Je bent uitgenodigd om een dienst over te nemen.",
-        `/planning/dienst/${bezetting.dienst.id}`,
+        "Je bent uitgenodigd om een dienst over te nemen. Open Ruilverzoeken om te reageren.",
+        "/app/ruilen",
         dienstBezettingId,
       );
     }
