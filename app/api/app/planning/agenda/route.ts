@@ -53,6 +53,9 @@ export async function GET() {
         datum: {
           gte: vanaf,
         },
+        week: {
+          status: "GEPUBLICEERD",
+        },
       },
     },
     select: {
