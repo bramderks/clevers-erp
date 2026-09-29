@@ -547,11 +547,7 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
     .filter((bezetting) => {
       const datum = new Date(bezetting.dienst.datum);
       datum.setHours(0, 0, 0, 0);
-      return (
-        datum >= vandaag &&
-        (isEigenaar ||
-          bezetting.dienst.week.status === "GEPUBLICEERD")
-      );
+      return datum >= vandaag;
     })
     .slice(0, 50);
 
