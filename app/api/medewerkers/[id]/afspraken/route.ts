@@ -548,20 +548,7 @@ export async function PATCH(
       vestigingId, tagId, weekdag, begintijd, eindtijd, startDatum, eindDatum, afspraakId, id,
     );
 
-    await synchroniseerVasteUrenAfspraak(
-      {
-        id: afspraakId,
-        medewerkerId: id,
-        vestigingId,
-        tagId,
-        dagVanWeek: weekdag,
-        begintijd,
-        eindtijd,
-        startDatum,
-        eindDatum,
-      },
-      oudeTagId,
-    );
+    await synchroniseerVasteUrenAfspraak(afspraakId);
 
     return NextResponse.json({ melding: "De vaste urenafspraak is gewijzigd." });
   } catch (error) {
