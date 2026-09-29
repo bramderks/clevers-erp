@@ -30,32 +30,6 @@ function naamVanMedewerker(
     .join(" ");
 }
 
-function isOntbrekendeRuilverzoekTabel(
-  error: unknown,
-) {
-  if (
-    typeof error !== "object" ||
-    error === null
-  ) {
-    return false;
-  }
-
-  const prismaError =
-    error as {
-      code?: string;
-      meta?: {
-        modelName?: string;
-      };
-      message?: string;
-    };
-
-  return (
-    prismaError.code === "P2021" &&
-    prismaError.meta?.modelName ===
-      "Ruilverzoek"
-  );
-}
-
 export async function GET() {
   try {
     const gebruiker =
@@ -331,130 +305,17 @@ export async function GET() {
 
     /*
      * ======================================================
-     * RUILVERZOEKEN VOOR DE MEDEWERKER
+     * RUILVERZOEKEN
      * ======================================================
      *
-     * Een medewerker ziet uitsluitend ruilverzoeken
-     * die daadwerkelijk aan hem/haar zijn gericht.
+     * Ruilverzoeken worden niet meer als taak/card in het
+     * algemene takenoverzicht getoond. Medewerkers ontvangen
+     * hiervoor uitsluitend een notificatie en kunnen het
+     * verzoek openen via de pagina "Ruilverzoeken".
      */
-
-    if (gebruiker.medewerker?.id) {
-      try {
-        const ruilverzoeken =
-          await prisma.ruilverzoek.findMany(
-            {
-              where: {
-                ruilMedewerkerId:
-                  gebruiker.medewerker.id,
-                status: "AANGEVRAAGD",
-              },
-              include: {
-                dienstBezetting: {
-                  include: {
-                    dienst: {
-                      include: {
-                        week: {
-                          select: {
-                            vestigingId: true,
-                            jaar: true,
-                            weeknummer: true,
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-                aanvrager: {
-                  select: {
-                    id: true,
-                    voornaam: true,
-                    tussenvoegsel: true,
-                    achternaam: true,
-                  },
-                },
-                ruilMedewerker: {
-                  select: {
-                    id: true,
-                    voornaam: true,
-                    tussenvoegsel: true,
-                    achternaam: true,
-                  },
-                },
-              },
-              orderBy: {
-                aangevraagdOp: "asc",
-              },
-            },
-          );
-
-        for (const ruil of ruilverzoeken) {
-          const dienst =
-            ruil.dienstBezetting
-              .dienst;
-
-          const aanvrager =
-            naamVanMedewerker(
-              ruil.aanvrager,
-            );
-
-          taken.push({
-            id: ruil.id,
-            type: "RUIL_ACCEPTEREN",
-            categorie: "Planning",
-            titel:
-              "Dienst ruilen accepteren",
-            omschrijving:
-              `${aanvrager} wil een dienst met jou ruilen.`,
-            aangemaaktOp:
-              ruil.aangevraagdOp,
-            actie:
-              "RUIL_ACCEPTEREN",
-            gegevens: {
-              ruilverzoekId:
-                ruil.id,
-              dienstBezettingId:
-                ruil.dienstBezettingId,
-              dienstId:
-                dienst.id,
-              datum:
-                dienst.datum,
-              begintijd:
-                dienst.begintijd,
-              eindtijd:
-                dienst.eindtijd,
-              vestigingId:
-                dienst.week
-                  .vestigingId,
-              jaar:
-                dienst.week.jaar,
-              weeknummer:
-                dienst.week
-                  .weeknummer,
-              aanvragerId:
-                ruil.aanvrager.id,
-              aanvragerNaam:
-                aanvrager,
-            },
-          });
-        }
-      } catch (error) {
-        if (
-          isOntbrekendeRuilverzoekTabel(
-            error,
-          )
-        ) {
-          ruilverzoekenBeschikbaar =
-            false;
-
-          console.warn(
-            "Ruilverzoek-tabel bestaat nog niet in de huidige database. Ruilverzoeken worden tijdelijk overgeslagen.",
-          );
-        } else {
-          throw error;
-        }
-      }
-    }
-
+ 
+    const ruilverzoekenBeschikbaar = true;
+ 
     /*
      * ======================================================
      * RUILVERZOEKEN VOOR DE EIGENAAR
