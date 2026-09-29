@@ -68,6 +68,9 @@ export async function verstuurDienstHerinneringen() {
           gte: new Date(nu.getTime() - 24 * 60 * 60 * 1000),
           lte: zoekTot,
         },
+        week: {
+          status: "GEPUBLICEERD",
+        },
       },
       medewerker: {
         systeemGebruikerId: { not: null },
