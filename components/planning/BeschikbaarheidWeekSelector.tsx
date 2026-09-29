@@ -2520,7 +2520,8 @@ export default function BeschikbaarheidWeekSelector({
                                 type="button"
                                 disabled={
                                   opslaan ||
-                                  !wijzigingToegestaan
+                                  !wijzigingToegestaan ||
+                                  !bewerken
                                 }
                                 onClick={() =>
                                   void slaDagOp(
