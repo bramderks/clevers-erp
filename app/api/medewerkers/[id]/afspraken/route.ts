@@ -667,7 +667,6 @@ async function synchroniseerVasteUrenAfspraak(
 
     if (actieveBezettingen.length === 1 && actieveBezettingen[0]?.id === bezetting.id) {
       const oudeDatum = new Date(dienst.datum);
-      const oudeTagId = afspraak.tagId === oudeTagId ? oudeTagId : undefined;
 
       await prisma.dienst.update({
         where: { id: dienst.id },
