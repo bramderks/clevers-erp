@@ -1253,16 +1253,16 @@ export async function POST(
                   gte: dagStart,
                   lt: dagEinde,
                 },
-                week: {
-                  select: {
-                    status: true,
-                  },
-                },
               },
             },
             include: {
               dienst: {
                 include: {
+                  week: {
+                    select: {
+                      status: true,
+                    },
+                  },
                   bezetting: {
                     where: {
                       status: {
