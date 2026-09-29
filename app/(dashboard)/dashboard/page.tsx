@@ -191,6 +191,7 @@ export default async function DashboardPage() {
                 select: {
                   jaar: true,
                   weeknummer: true,
+                  status: true,
 
                   vestiging: {
                     select: {
