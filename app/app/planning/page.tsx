@@ -31,6 +31,15 @@ export default async function AppPlanningPage() {
 
   const vandaag = new Date();
 
+  const isEigenaar = gebruiker.organisaties.some(
+    (relatie) =>
+      relatie.actief &&
+      relatie.organisatie.actief &&
+      ["eigenaar", "super admin"].includes(
+        relatie.rol.naam.trim().toLowerCase(),
+      ),
+  );
+
   const diensten =
     await prisma.dienstBezetting.findMany({
       where: {
@@ -42,9 +51,13 @@ export default async function AppPlanningPage() {
           datum: {
             gte: vandaag,
           },
-          week: {
-            status: "GEPUBLICEERD",
-          },
+          ...(isEigenaar
+            ? {}
+            : {
+                week: {
+                  status: "GEPUBLICEERD",
+                },
+              }),
         },
       },
       select: {
