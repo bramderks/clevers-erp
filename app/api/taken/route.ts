@@ -315,6 +315,96 @@ export async function GET() {
 
     /*
      * ======================================================
+     * BESCHIKBAARHEID
+     * ======================================================
+     */
+    if (gebruiker.medewerker?.id) {
+      const medewerkerId = gebruiker.medewerker.id;
+      const vandaag = new Date();
+      const vandaagBegin = new Date(
+        vandaag.getFullYear(),
+        vandaag.getMonth(),
+        vandaag.getDate(),
+      );
+
+      const weken = await prisma.week.findMany({
+        where: {
+          beschikbaarheidDeadline: { gt: vandaag },
+          vestiging: {
+            actief: true,
+            medewerkers: { some: { medewerkerId } },
+            OR: [
+              { seizoenEinde: null },
+              { seizoenEinde: { gte: vandaagBegin } },
+            ],
+          },
+        },
+        select: {
+          id: true,
+          jaar: true,
+          weeknummer: true,
+          beschikbaarheidDeadline: true,
+          vestiging: {
+            select: { id: true, naam: true, seizoenEinde: true },
+          },
+          beschikbaarheden: {
+            where: { medewerkerId },
+            select: { datum: true },
+          },
+        },
+        orderBy: [{ jaar: "asc" }, { weeknummer: "asc" }],
+      });
+
+      for (const week of weken) {
+        const maandag = new Date(week.jaar, 0, 4);
+        const dag = maandag.getDay() || 7;
+        maandag.setDate(
+          maandag.getDate() - dag + 1 + (week.weeknummer - 1) * 7,
+        );
+
+        const zondag = new Date(maandag);
+        zondag.setDate(zondag.getDate() + 6);
+
+        if (zondag < vandaagBegin) continue;
+        if (
+          week.vestiging.seizoenEinde &&
+          maandag > new Date(week.vestiging.seizoenEinde)
+        ) continue;
+
+        const dagen = new Set(
+          week.beschikbaarheden.map((item) =>
+            new Intl.DateTimeFormat("sv-SE").format(new Date(item.datum)),
+          ),
+        );
+
+        if (dagen.size >= 7) continue;
+
+        const datumParameter =
+          new Intl.DateTimeFormat("sv-SE").format(maandag);
+
+        taken.push({
+          id: `beschikbaarheid-${week.id}`,
+          type: "BESCHIKBAARHEID_DOORGEVEN",
+          categorie: "Beschikbaarheid",
+          titel: `Beschikbaarheid doorgeven week ${week.weeknummer}`,
+          omschrijving:
+            `${week.vestiging.naam} · Geef je beschikbaarheid voor deze week door vóór de deadline.`,
+          aangemaaktOp: week.beschikbaarheidDeadline,
+          actie: "BESCHIKBAARHEID_DOORGEVEN",
+          gegevens: {
+            href: `/profiel/beschikbaarheid?week=${week.jaar}-${week.weeknummer}&datum=${datumParameter}`,
+            weekId: week.id,
+            jaar: week.jaar,
+            weeknummer: week.weeknummer,
+            vestigingId: week.vestiging.id,
+            deadline: week.beschikbaarheidDeadline,
+          },
+        });
+      }
+    }
+
+    /*
+     * ======================================================
      * RUILVERZOEKEN
      * ======================================================
      *
