@@ -903,14 +903,26 @@ export default function PlanningOverzicht({
      * kalenderweek. Na uitloggen wordt de component opnieuw
      * opgebouwd en valt hij dus weer terug op de huidige week.
      */
+    const opgeslagenWeekSleutel =
+      geselecteerdeWeekSleutel ??
+      (() => {
+        try {
+          return sessionStorage.getItem(
+            "clevers-erp-planweek:" + vestigingId,
+          );
+        } catch {
+          return null;
+        }
+      })();
+
     if (
-      geselecteerdeWeekSleutel
+      opgeslagenWeekSleutel
     ) {
       const opgeslagenIndex =
         gesorteerdeWeken.findIndex(
           (week) =>
             `${week.jaar}-${week.weeknummer}` ===
-            geselecteerdeWeekSleutel,
+            opgeslagenWeekSleutel,
         );
 
       if (
@@ -937,14 +949,25 @@ export default function PlanningOverzicht({
     setGeselecteerdeWeekIndex(
       huidigeIndex,
     );
-    setGeselecteerdeWeekSleutel(
+    const sleutel =
       week
         ? `${week.jaar}-${week.weeknummer}`
-        : null,
-    );
+        : null;
+    setGeselecteerdeWeekSleutel(sleutel);
+    if (sleutel) {
+      try {
+        sessionStorage.setItem(
+          "clevers-erp-planweek:" + vestigingId,
+          sleutel,
+        );
+      } catch {
+        // Session storage is alleen een extra geheugenlaag.
+      }
+    }
   }, [
     gesorteerdeWeken,
     geselecteerdeWeekSleutel,
+    vestigingId,
   ]);
 
   const huidigeWeek =
@@ -1301,9 +1324,17 @@ export default function PlanningOverzicht({
           ];
 
         if (week) {
-          setGeselecteerdeWeekSleutel(
-            `${week.jaar}-${week.weeknummer}`,
-          );
+          const sleutel =
+            `${week.jaar}-${week.weeknummer}`;
+          setGeselecteerdeWeekSleutel(sleutel);
+          try {
+            sessionStorage.setItem(
+              "clevers-erp-planweek:" + vestigingId,
+              sleutel,
+            );
+          } catch {
+            // Session storage is alleen een extra geheugenlaag.
+          }
         }
 
         return nieuweIndex;
@@ -1326,9 +1357,17 @@ export default function PlanningOverzicht({
           ];
 
         if (week) {
-          setGeselecteerdeWeekSleutel(
-            `${week.jaar}-${week.weeknummer}`,
-          );
+          const sleutel =
+            `${week.jaar}-${week.weeknummer}`;
+          setGeselecteerdeWeekSleutel(sleutel);
+          try {
+            sessionStorage.setItem(
+              "clevers-erp-planweek:" + vestigingId,
+              sleutel,
+            );
+          } catch {
+            // Session storage is alleen een extra geheugenlaag.
+          }
         }
 
         return nieuweIndex;
