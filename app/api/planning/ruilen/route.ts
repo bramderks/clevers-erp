@@ -14,6 +14,7 @@ const RUIL_STATUSSEN = [
   "AFGEWEZEN_DOOR_MEDEWERKER",
   "WACHT_OP_EIGENAAR",
   "AFGEWEZEN_DOOR_EIGENAAR",
+  "GEANNULEERD",
   "GOEDGEKEURD",
   "UITGEVOERD",
 ] as const;
@@ -21,6 +22,7 @@ const RUIL_STATUSSEN = [
 type RuilActie =
   | "ACCEPTEREN"
   | "AFWIJZEN"
+  | "ANNULEREN"
   | "GOEDKEUREN";
 
 function configureerPush() {
@@ -379,7 +381,12 @@ export async function GET(
       });
 
     return NextResponse.json(
-      ruilverzoeken,
+      ruilverzoeken.map((ruilverzoek) => ({
+        ...ruilverzoek,
+        isAanvrager:
+          medewerkerId !== null &&
+          ruilverzoek.aanvragerId === medewerkerId,
+      })),
     );
   } catch (error) {
     console.error(
@@ -542,6 +549,14 @@ export async function POST(
                 })),
               }
             : {}),
+          beschikbaarheden: {
+            some: {
+              datum: bezetting.dienst.datum,
+              status: { in: ["BESCHIKBAAR", "VOORKEUR"] },
+              begintijd: { lte: bezetting.dienst.begintijd },
+              eindtijd: { gte: bezetting.dienst.eindtijd },
+            },
+          },
         },
         select: { id: true },
       });
@@ -553,8 +568,46 @@ export async function POST(
         );
       }
 
+      const conflicten = await prisma.dienstBezetting.findMany({
+        where: {
+          medewerkerId: {
+            in: kandidaten.map((kandidaat) => kandidaat.id),
+          },
+          status: { notIn: ["AFGEZEGD"] },
+          dienst: {
+            datum: bezetting.dienst.datum,
+            begintijd: { lt: bezetting.dienst.eindtijd },
+            eindtijd: { gt: bezetting.dienst.begintijd },
+          },
+        },
+        select: {
+          medewerkerId: true,
+        },
+      });
+
+      const conflicterendeMedewerkerIds = new Set(
+        conflicten
+          .map((conflict) => conflict.medewerkerId)
+          .filter(
+            (medewerkerId): medewerkerId is string =>
+              medewerkerId !== null,
+          ),
+      );
+
+      const geschikteKandidaten = kandidaten.filter(
+        (kandidaat) =>
+          !conflicterendeMedewerkerIds.has(kandidaat.id),
+      );
+
+      if (geschikteKandidaten.length === 0) {
+        return fout(
+          "Er zijn geen beschikbare medewerkers met de juiste tags voor deze dienst.",
+          400,
+        );
+      }
+
       const ruilverzoeken = await prisma.$transaction(
-        kandidaten.map((kandidaat) =>
+        geschikteKandidaten.map((kandidaat) =>
           prisma.ruilverzoek.create({
             data: {
               dienstBezettingId,
@@ -580,7 +633,7 @@ export async function POST(
             `ruil-aanbod:${dienstBezettingId}:${ruilverzoek.ruilMedewerkerId}`,
             "Clevers — dienst ter ruil",
             "Er is een dienst ter ruil aangeboden voor jouw functie.",
-            `/planning/dienst/${bezetting.dienst.id}`,
+            "/app/ruilen",
             dienstBezettingId,
           );
         }
@@ -778,8 +831,8 @@ export async function POST(
         "RUIL_UITNODIGING",
         `ruil-uitnodiging:${ruilverzoek.id}`,
         "Clevers — ruilverzoek",
-        "Je bent uitgenodigd om een dienst over te nemen.",
-        `/planning/dienst/${bezetting.dienst.id}`,
+        "Je bent uitgenodigd om een dienst over te nemen. Open Ruilverzoeken om te reageren.",
+        "/app/ruilen",
         dienstBezettingId,
       );
     }
@@ -837,6 +890,7 @@ export async function PATCH(
     if (
       actie !== "ACCEPTEREN" &&
       actie !== "AFWIJZEN" &&
+      actie !== "ANNULEREN" &&
       actie !== "GOEDKEUREN"
     ) {
       return fout(
@@ -920,6 +974,41 @@ export async function PATCH(
 
     const medewerkerId =
       gebruiker.medewerker?.id;
+
+    if (actie === "ANNULEREN") {
+      if (!medewerkerId || medewerkerId !== ruilverzoek.aanvragerId) {
+        return fout(
+          "Alleen degene die de ruil heeft aangevraagd kan deze annuleren.",
+          403,
+        );
+      }
+
+      if (
+        ruilverzoek.status !== "AANGEVRAAGD" &&
+        ruilverzoek.status !== "WACHT_OP_EIGENAAR"
+      ) {
+        return fout(
+          "Dit ruilverzoek kan niet meer worden geannuleerd.",
+          409,
+        );
+      }
+
+      const resultaat = await prisma.ruilverzoek.updateMany({
+        where: {
+          dienstBezettingId: ruilverzoek.dienstBezettingId,
+          aanvragerId: ruilverzoek.aanvragerId,
+          status: { in: ["AANGEVRAAGD", "WACHT_OP_EIGENAAR"] },
+        },
+        data: {
+          status: "GEANNULEERD",
+        },
+      });
+
+      return NextResponse.json({
+        geannuleerd: true,
+        aantal: resultaat.count,
+      });
+    }
 
     if (
       actie === "ACCEPTEREN"

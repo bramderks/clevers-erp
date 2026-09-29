@@ -110,32 +110,6 @@
     );
   }
 
-  function medewerkerIsBeschikbaarVoorDienst(
-    medewerker: RuilMedewerker,
-    dienst: Dienst,
-  ) {
-    const dienstStart = new Date(dienst.begintijd).getTime();
-    const dienstEinde = new Date(dienst.eindtijd).getTime();
-
-    return medewerker.beschikbaarheden.some((beschikbaarheid) => {
-      if (
-        beschikbaarheid.status !== "BESCHIKBAAR" &&
-        beschikbaarheid.status !== "VOORKEUR"
-      ) {
-        return false;
-      }
-
-      if (!beschikbaarheid.begintijd || !beschikbaarheid.eindtijd) {
-        return false;
-      }
-
-      const begin = new Date(beschikbaarheid.begintijd).getTime();
-      const einde = new Date(beschikbaarheid.eindtijd).getTime();
-
-      return begin <= dienstStart && einde >= dienstEinde;
-    });
-  }
-
   function isBhvTag(
     naam: string,
   ) {
@@ -454,12 +428,7 @@
                 dienst,
               ),
             )
-            .filter((medewerker) =>
-              medewerkerIsBeschikbaarVoorDienst(
-                medewerker,
-                dienst,
-              ),
-            )
+
             .map(
               (medewerker) => ({
                 id: medewerker.id,
@@ -608,6 +577,7 @@
                   eigenBezetting.id,
                 ruilMedewerkerId:
                   gekozenRuilMedewerkerId,
+                uitnodigen: true,
               }),
             },
           );
@@ -924,9 +894,9 @@
                     </h2>
 
                     <p className="mt-1 text-xs text-slate-500">
-                      Kies de medewerker aan wie
-                      je deze dienst wilt
-                      aanbieden.
+                      Kies een collega met dezelfde diensttag(s). Als je onderling
+                      hebt afgesproken om te ruilen, hoeft de collega niet als
+                      beschikbaar te staan.
                     </p>
                   </div>
 

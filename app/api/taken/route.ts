@@ -334,121 +334,27 @@ export async function GET() {
      * RUILVERZOEKEN VOOR DE MEDEWERKER
      * ======================================================
      *
-     * Een medewerker ziet uitsluitend ruilverzoeken
-     * die daadwerkelijk aan hem/haar zijn gericht.
+     * Algemene ruilverzoeken worden niet meer als taak/card
+     * in het centrale Taken-overzicht getoond. De medewerker
+     * ontvangt hiervoor een eenvoudige notificatie en kan
+     * het verzoek openen via "Ruilverzoeken".
      */
 
     if (gebruiker.medewerker?.id) {
       try {
-        const ruilverzoeken =
-          await prisma.ruilverzoek.findMany(
-            {
-              where: {
-                ruilMedewerkerId:
-                  gebruiker.medewerker.id,
-                status: "AANGEVRAAGD",
-              },
-              include: {
-                dienstBezetting: {
-                  include: {
-                    dienst: {
-                      include: {
-                        week: {
-                          select: {
-                            vestigingId: true,
-                            jaar: true,
-                            weeknummer: true,
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-                aanvrager: {
-                  select: {
-                    id: true,
-                    voornaam: true,
-                    tussenvoegsel: true,
-                    achternaam: true,
-                  },
-                },
-                ruilMedewerker: {
-                  select: {
-                    id: true,
-                    voornaam: true,
-                    tussenvoegsel: true,
-                    achternaam: true,
-                  },
-                },
-              },
-              orderBy: {
-                aangevraagdOp: "asc",
-              },
-            },
-          );
-
-        for (const ruil of ruilverzoeken) {
-          const dienst =
-            ruil.dienstBezetting
-              .dienst;
-
-          const aanvrager =
-            naamVanMedewerker(
-              ruil.aanvrager,
-            );
-
-          taken.push({
-            id: ruil.id,
-            type: "RUIL_ACCEPTEREN",
-            categorie: "Planning",
-            titel:
-              "Dienst ruilen accepteren",
-            omschrijving:
-              `${aanvrager} wil een dienst met jou ruilen.`,
-            aangemaaktOp:
-              ruil.aangevraagdOp,
-            actie:
-              "RUIL_ACCEPTEREN",
-            gegevens: {
-              ruilverzoekId:
-                ruil.id,
-              dienstBezettingId:
-                ruil.dienstBezettingId,
-              dienstId:
-                dienst.id,
-              datum:
-                dienst.datum,
-              begintijd:
-                dienst.begintijd,
-              eindtijd:
-                dienst.eindtijd,
-              vestigingId:
-                dienst.week
-                  .vestigingId,
-              jaar:
-                dienst.week.jaar,
-              weeknummer:
-                dienst.week
-                  .weeknummer,
-              aanvragerId:
-                ruil.aanvrager.id,
-              aanvragerNaam:
-                aanvrager,
-            },
-          });
-        }
+        await prisma.ruilverzoek.findMany({
+          where: {
+            ruilMedewerkerId: gebruiker.medewerker.id,
+            status: "AANGEVRAAGD",
+          },
+          select: { id: true },
+          take: 1,
+        });
       } catch (error) {
         if (
-          isOntbrekendeRuilverzoekTabel(
-            error,
-          )
+          isOntbrekendeRuilverzoekTabel(error)
         ) {
-          ruilverzoekenBeschikbaar =
-            false;
-
-          console.warn(
-            "Ruilverzoek-tabel bestaat nog niet in de huidige database. Ruilverzoeken worden tijdelijk overgeslagen.",
-          );
+          ruilverzoekenBeschikbaar = false;
         } else {
           throw error;
         }
