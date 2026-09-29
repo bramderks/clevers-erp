@@ -557,16 +557,6 @@ export async function POST(
               eindtijd: { gte: bezetting.dienst.eindtijd },
             },
           },
-          diensten: {
-            none: {
-              status: { notIn: ["AFGEZEGD"] },
-              dienst: {
-                datum: bezetting.dienst.datum,
-                begintijd: { lt: bezetting.dienst.eindtijd },
-                eindtijd: { gt: bezetting.dienst.begintijd },
-              },
-            },
-          },
         },
         select: { id: true },
       });
@@ -574,6 +564,44 @@ export async function POST(
       if (kandidaten.length === 0) {
         return fout(
           "Er zijn geen actieve medewerkers met de juiste tags voor deze dienst.",
+          400,
+        );
+      }
+
+      const conflicten = await prisma.dienstBezetting.findMany({
+        where: {
+          medewerkerId: {
+            in: kandidaten.map((kandidaat) => kandidaat.id),
+          },
+          status: { notIn: ["AFGEZEGD"] },
+          dienst: {
+            datum: bezetting.dienst.datum,
+            begintijd: { lt: bezetting.dienst.eindtijd },
+            eindtijd: { gt: bezetting.dienst.begintijd },
+          },
+        },
+        select: {
+          medewerkerId: true,
+        },
+      });
+
+      const conflicterendeMedewerkerIds = new Set(
+        conflicten
+          .map((conflict) => conflict.medewerkerId)
+          .filter(
+            (medewerkerId): medewerkerId is string =>
+              medewerkerId !== null,
+          ),
+      );
+
+      const geschikteKandidaten = kandidaten.filter(
+        (kandidaat) =>
+          !conflicterendeMedewerkerIds.has(kandidaat.id),
+      );
+
+      if (geschikteKandidaten.length === 0) {
+        return fout(
+          "Er zijn geen beschikbare medewerkers met de juiste tags voor deze dienst.",
           400,
         );
       }
