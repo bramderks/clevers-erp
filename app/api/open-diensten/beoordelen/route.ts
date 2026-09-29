@@ -172,7 +172,7 @@ export async function POST(request: Request) {
         dienstId: true,
         dienst: {
           select: {
-            tags: { select: { tagId: true } },
+            tags: { select: { tagId: true, aantal: true } },
             week: { select: { vestigingId: true } },
           },
         },
@@ -235,7 +235,7 @@ export async function POST(request: Request) {
     const benodigdePosities = Math.max(
       1,
       openDienst.dienst.tags.reduce(
-        (totaal, tag) => totaal + 1,
+        (totaal, tag) => totaal + Math.max(1, Number(tag.aantal) || 1),
         0,
       ),
     );
