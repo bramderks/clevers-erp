@@ -231,3 +231,23 @@ model PushMelding {
   @@index([geplandVoor])
   @@index([verstuurdOp])
 }
+
+model EmailMelding {
+  id String @id @default(cuid())
+
+  type String
+  sleutel String @unique
+  systeemGebruikerId String
+  geplandVoor DateTime
+  verstuurdOp DateTime?
+  foutmelding String?
+
+  systeemGebruiker SysteemGebruiker @relation(fields: [systeemGebruikerId], references: [id], onDelete: Cascade)
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([systeemGebruikerId])
+  @@index([geplandVoor])
+  @@index([verstuurdOp])
+}
