@@ -3,6 +3,9 @@ import { NextResponse } from "next/server";
 import { hasPermissionForVestiging, isEigenaar } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
+import { verstuurDirecteDienstMelding } from "@/lib/push/dienst-direct";
+import { verstuurDirecteOpenDienstMelding } from "@/lib/push/open-diensten";
 
 const TOEGESTANE_STATUSSEN = [
   "OPEN",
@@ -346,6 +349,67 @@ export async function PATCH(
       },
       data,
     });
+
+    /*
+     * Publiceren is het moment waarop de planning
+     * voor medewerkers daadwerkelijk live gaat.
+     * Pas bij de overgang naar GEPUBLICEERD sturen we
+     * de persoonlijke en open-dienstmeldingen uit.
+     */
+    if (
+      data.status === "GEPUBLICEERD" &&
+      bestaandeWeek.status !== "GEPUBLICEERD"
+    ) {
+      const bezettingen =
+        await prisma.dienstBezetting.findMany({
+          where: {
+            dienst: {
+              weekId: id,
+            },
+            OR: [
+              {
+                medewerkerId: {
+                  not: null,
+                },
+                status: {
+                  in: ["GEPLAND", "BEVESTIGD"],
+                },
+              },
+              {
+                status: "OPEN",
+                medewerkerId: null,
+              },
+            ],
+          },
+          select: {
+            id: true,
+            status: true,
+          },
+        });
+
+      for (const bezetting of bezettingen) {
+        try {
+          if (bezetting.status === "OPEN") {
+            await verstuurDirecteOpenDienstMelding(
+              bezetting.id,
+            );
+          } else {
+            await verstuurDirecteDienstMelding(
+              bezetting.id,
+            );
+          }
+        } catch (pushError) {
+          console.error(
+            "Publicatiepush kon niet worden verwerkt:",
+            pushError,
+          );
+        }
+      }
+
+      revalidatePath("/app");
+      revalidatePath("/app/planning");
+      revalidatePath("/dashboard");
+    }
 
     return NextResponse.json(week);
   } catch (error) {
