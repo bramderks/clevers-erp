@@ -179,6 +179,7 @@ id,
     week: {
       select: {
         id: true,
+        status: true,
         vestigingId: true,
 
         vestiging: {
@@ -251,6 +252,22 @@ Niemand mag een dienst openen van een
 organisatie waarvoor hij geen actieve
 toegang heeft.
 */
+
+if (
+  !isEigenaar &&
+  dienst.week.status !== "GEPUBLICEERD"
+) {
+  return (
+    <main className="rounded-xl border bg-white p-6 shadow-sm">
+      <h1 className="text-2xl font-semibold text-slate-900">
+        Planning nog niet gepubliceerd
+      </h1>
+      <p className="mt-2 text-sm text-slate-600">
+        Deze dienst wordt zichtbaar zodra de eigenaar de planning publiceert.
+      </p>
+    </main>
+  );
+}
 
 const organisatieToegankelijk =
 organisatieIds.includes(

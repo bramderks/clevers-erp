@@ -42,6 +42,9 @@ export async function verstuurOpenDienstMeldingen() {
       medewerkerId: null,
       dienst: {
         datum: { gte: zoekVanaf, lte: zoekTot },
+        week: {
+          status: "GEPUBLICEERD",
+        },
       },
     },
     include: {
@@ -199,7 +202,7 @@ export async function verstuurDirecteOpenDienstMelding(
     },
   });
 
-  if (!bezetting || bezetting.status !== "OPEN" || bezetting.medewerkerId !== null) {
+  if (!bezetting || bezetting.dienst.week.status !== "GEPUBLICEERD" || bezetting.status !== "OPEN" || bezetting.medewerkerId !== null) {
     return { verstuurd: 0, fouten: 0 };
   }
 

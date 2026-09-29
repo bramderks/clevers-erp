@@ -61,6 +61,13 @@ export default async function MedewerkerAppPage() {
           datum: {
             gte: vandaag,
           },
+          ...(isEigenaar
+            ? {}
+            : {
+                week: {
+                  status: "GEPUBLICEERD",
+                },
+              }),
         },
       },
       select: {

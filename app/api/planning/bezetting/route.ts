@@ -45,6 +45,7 @@ async function haalDienstOp(
 
       week: {
         select: {
+          status: true,
           vestigingId: true,
           vestiging: {
             select: {
@@ -189,6 +190,8 @@ export async function GET(
         dienst.week.vestigingId,
       );
 
+    const eigenaar = await isEigenaar(dienst.week.vestiging.organisatieId);
+
     if (!toegang) {
       return NextResponse.json(
         {
@@ -198,6 +201,13 @@ export async function GET(
         {
           status: 403,
         },
+      );
+    }
+
+    if (!eigenaar && dienst.week.status !== "GEPUBLICEERD") {
+      return NextResponse.json(
+        { fout: "Deze planning is nog niet gepubliceerd." },
+        { status: 404 },
       );
     }
 

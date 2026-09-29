@@ -2156,11 +2156,11 @@ export default function BeschikbaarheidWeekSelector({
               <div className="mb-5 flex justify-end">
                 <button
                   type="button"
-                  onClick={() => setBewerken(true)}
-                  disabled={bewerken}
-                  className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={() => setBewerken((vorige) => !vorige)}
+                  aria-pressed={bewerken}
+                  className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
                 >
-                  {bewerken ? "Wijzigen..." : "Wijzigen"}
+                  {bewerken ? "Klaar met wijzigen" : "Wijzigen"}
                 </button>
               </div>
             )}
@@ -2326,7 +2326,8 @@ export default function BeschikbaarheidWeekSelector({
                                     type="button"
                                     disabled={
                                       opslaan ||
-                                      !wijzigingToegestaan
+                                      !wijzigingToegestaan ||
+                                      !bewerken
                                     }
                                     onClick={() =>
                                       maakDagBeschikbaar(
@@ -2519,7 +2520,8 @@ export default function BeschikbaarheidWeekSelector({
                                 type="button"
                                 disabled={
                                   opslaan ||
-                                  !wijzigingToegestaan
+                                  !wijzigingToegestaan ||
+                                  !bewerken
                                 }
                                 onClick={() =>
                                   void slaDagOp(
