@@ -148,6 +148,7 @@ model SysteemGebruiker {
   vestigingToegang SysteemGebruikerVestiging[]
   auditLogs AuditLog[]
   pushSubscriptions PushSubscription[]
+  emailMeldingen EmailMelding[]
 
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt
