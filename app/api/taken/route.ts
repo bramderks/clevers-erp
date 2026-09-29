@@ -14,22 +14,6 @@ function fout(
   );
 }
 
-function naamVanMedewerker(
-  medewerker: {
-    voornaam: string;
-    tussenvoegsel: string | null;
-    achternaam: string;
-  },
-) {
-  return [
-    medewerker.voornaam,
-    medewerker.tussenvoegsel,
-    medewerker.achternaam,
-  ]
-    .filter(Boolean)
-    .join(" ");
-}
-
 export async function GET() {
   try {
     const gebruiker =
