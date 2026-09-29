@@ -541,6 +541,15 @@ async function synchroniseerVasteUrenAfspraak(
     eindDatum: Date;
   },
   oudeTagId: string,
+  oudeAfspraak: {
+    vestigingId: string;
+    tagId: string;
+    dagVanWeek: number;
+    begintijd: string;
+    eindtijd: string;
+    startDatum: Date;
+    eindDatum: Date;
+  },
 ) {
   const vandaag = beginDag(new Date());
   const eersteDatum = beginDag(
@@ -569,6 +578,75 @@ async function synchroniseerVasteUrenAfspraak(
         cursor.getDate() + 1,
       );
     }
+  }
+
+  const bestaandeOngekoppelde =
+    await prisma.$queryRawUnsafe<
+      Array<{
+        bezettingId: string;
+        dienstId: string;
+        datum: Date;
+        begintijd: Date;
+        eindtijd: Date;
+      }>
+    >(
+      `SELECT
+         db."id" AS "bezettingId",
+         d."id" AS "dienstId",
+         d."datum" AS "datum",
+         d."begintijd" AS "begintijd",
+         d."eindtijd" AS "eindtijd"
+       FROM "DienstBezetting" db
+       INNER JOIN "Dienst" d ON d."id" = db."dienstId"
+       INNER JOIN "Week" w ON w."id" = d."weekId"
+       WHERE db."medewerkerId" = $1
+         AND db."vasteUrenAfspraakId" IS NULL
+         AND db."status" <> 'AFGEZEGD'
+         AND w."vestigingId" = $2
+         AND d."opmerkingen" = 'Automatisch ingevuld vanuit een vaste urenafspraak.'
+         AND d."datum" >= $3
+         AND d."datum" <= $4
+       ORDER BY d."datum" ASC`,
+      afspraak.medewerkerId,
+      oudeAfspraak.vestigingId,
+      beginDag(oudeAfspraak.startDatum),
+      eindeDag(oudeAfspraak.eindDatum),
+    );
+
+  for (const item of bestaandeOngekoppelde) {
+    if (
+      dagVanWeek(item.datum) !==
+      oudeAfspraak.dagVanWeek
+    ) {
+      continue;
+    }
+
+    const verwachtBegin = maakTijd(
+      item.datum,
+      oudeAfspraak.begintijd,
+    );
+    const verwachtEinde = maakTijd(
+      item.datum,
+      oudeAfspraak.eindtijd,
+    );
+
+    if (
+      item.begintijd.getTime() !==
+        verwachtBegin.getTime() ||
+      item.eindtijd.getTime() !==
+        verwachtEinde.getTime()
+    ) {
+      continue;
+    }
+
+    await prisma.$executeRawUnsafe(
+      `UPDATE "DienstBezetting"
+       SET "vasteUrenAfspraakId"=$1,
+           "gewijzigdOp"=CURRENT_TIMESTAMP
+       WHERE "id"=$2`,
+      afspraak.id,
+      item.bezettingId,
+    );
   }
 
   const gekoppeld =
@@ -818,6 +896,15 @@ export async function PATCH(
         eindDatum,
       },
       oudeTagId,
+      {
+        vestigingId: afspraak[0].vestigingId,
+        tagId: afspraak[0].tagId,
+        dagVanWeek: afspraak[0].dagVanWeek,
+        begintijd: afspraak[0].begintijd,
+        eindtijd: afspraak[0].eindtijd,
+        startDatum: afspraak[0].startDatum,
+        eindDatum: afspraak[0].eindDatum,
+      },
     );
 
     return NextResponse.json({ melding: "De vaste urenafspraak is gewijzigd." });
