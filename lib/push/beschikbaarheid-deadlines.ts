@@ -133,18 +133,6 @@ export async function verstuurBeschikbaarheidDeadlineHerinneringen() {
                       },
                     },
                   },
-                  beschikbaarheden: {
-                    where: {
-                      weekId: {
-                        // Prisma cannot reference the outer week here;
-                        // the week-specific availability is loaded below.
-                        not: "",
-                      },
-                    },
-                    select: {
-                      datum: true,
-                    },
-                  },
                 },
               },
             },
