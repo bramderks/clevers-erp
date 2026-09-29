@@ -2,6 +2,7 @@ import { createRemoteJWKSet, jwtVerify } from "jose";
 import { NextRequest, NextResponse } from "next/server";
 import { verstuurDienstHerinneringen } from "@/lib/push/dienst-herinneringen";
 import { verstuurOpenDienstMeldingen } from "@/lib/push/open-diensten";
+import { verstuurBeschikbaarheidDeadlineHerinneringen } from "@/lib/push/beschikbaarheid-deadlines";
 
 export const dynamic = "force-dynamic";
 
@@ -49,15 +50,21 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const [dienstHerinneringen, openDienstMeldingen] = await Promise.all([
+    const [
+      dienstHerinneringen,
+      openDienstMeldingen,
+      beschikbaarheidDeadlineHerinneringen,
+    ] = await Promise.all([
       verstuurDienstHerinneringen(),
       verstuurOpenDienstMeldingen(),
+      verstuurBeschikbaarheidDeadlineHerinneringen(),
     ]);
 
     return NextResponse.json({
       ok: true,
       dienstHerinneringen,
       openDienstMeldingen,
+      beschikbaarheidDeadlineHerinneringen,
     });
   } catch (error) {
     console.error("Pushmeldingen planning mislukt:", error);
