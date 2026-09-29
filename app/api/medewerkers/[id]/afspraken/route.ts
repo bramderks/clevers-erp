@@ -776,7 +776,6 @@ export async function PATCH(
     );
 
     const synchronisatie = await synchroniseerVasteUrenAfspraak(
-      afspraakId,
       {
         id: afspraakId,
         medewerkerId: id,
