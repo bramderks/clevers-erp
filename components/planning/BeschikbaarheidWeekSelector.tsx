@@ -835,6 +835,9 @@ export default function BeschikbaarheidWeekSelector({
     setOpslaanDatum,
   ] = useState<string | null>(null);
 
+  const [bewerken, setBewerken] =
+    useState(false);
+
   const [error, setError] =
     useState<string | null>(null);
 
