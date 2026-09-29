@@ -179,6 +179,7 @@ id,
     week: {
       select: {
         id: true,
+        status: true,
         vestigingId: true,
 
         vestiging: {
