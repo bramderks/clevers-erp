@@ -73,15 +73,17 @@ export async function GET() {
   const interesseIds = new Set(interesse.map((item) => item.recordId));
 
   return NextResponse.json(
-    diensten.map((dienst) => ({
-      id: dienst.id,
-      datum: dienst.dienst.datum,
-      begintijd: dienst.dienst.begintijd,
-      eindtijd: dienst.dienst.eindtijd,
-      vestigingNaam: dienst.dienst.week.vestiging.naam,
-      tags: dienst.dienst.tags.map((item) => item.tag.naam),
-      interesseGemeld: interesseIds.has(dienst.id),
-    })),
+    diensten
+      .filter((dienst) => !interesseIds.has(dienst.id))
+      .map((dienst) => ({
+        id: dienst.id,
+        datum: dienst.dienst.datum,
+        begintijd: dienst.dienst.begintijd,
+        eindtijd: dienst.dienst.eindtijd,
+        vestigingNaam: dienst.dienst.week.vestiging.naam,
+        tags: dienst.dienst.tags.map((item) => item.tag.naam),
+        interesseGemeld: false,
+      })),
   );
 }
 
