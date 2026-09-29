@@ -345,6 +345,14 @@ export default function Topbar({
     setUitloggenBezig(true);
 
     try {
+      try {
+        Object.keys(sessionStorage)
+          .filter((key) => key.startsWith("clevers-erp-planweek:"))
+          .forEach((key) => sessionStorage.removeItem(key));
+      } catch {
+        // Session storage is optioneel.
+      }
+
       const response =
         await fetch(
           "/api/logout",

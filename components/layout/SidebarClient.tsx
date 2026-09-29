@@ -36,6 +36,13 @@ export default function SidebarClient({
 
   async function handleLogout() {
     try {
+      try {
+        Object.keys(sessionStorage)
+          .filter((key) => key.startsWith("clevers-erp-planweek:"))
+          .forEach((key) => sessionStorage.removeItem(key));
+      } catch {
+        // Session storage is optioneel.
+      }
       await fetch("/api/logout", {
         method: "POST",
         credentials: "include",
