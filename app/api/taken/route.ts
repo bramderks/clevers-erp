@@ -389,7 +389,7 @@ export async function GET() {
           titel: `Beschikbaarheid doorgeven week ${week.weeknummer}`,
           omschrijving:
             `${week.vestiging.naam} · Geef je beschikbaarheid voor deze week door vóór de deadline.`,
-          aangemaaktOp: week.beschikbaarheidDeadline,
+          aangemaaktOp: week.beschikbaarheidDeadline ?? new Date(),
           actie: "BESCHIKBAARHEID_DOORGEVEN",
           gegevens: {
             href: `/profiel/beschikbaarheid?week=${week.jaar}-${week.weeknummer}&datum=${datumParameter}`,
