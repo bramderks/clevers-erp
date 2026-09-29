@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ArrowLeft,
   Bell,
   Check,
   ChevronDown,
@@ -382,6 +383,10 @@ export default function Topbar({
     }
   }
 
+  function gaTerug() {
+    router.back();
+  }
+
   function bepaalActieLabel(
     taak: Taak,
   ) {
@@ -458,6 +463,16 @@ export default function Topbar({
           {page.subtitle}
         </p>
       </div>
+
+      {/* Terug */}
+      <button
+        type="button"
+        onClick={gaTerug}
+        aria-label="Ga terug"
+        className="mr-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+      >
+        <ArrowLeft size={22} />
+      </button>
 
       {/* Midden */}
       <div className="hidden xl:flex">
