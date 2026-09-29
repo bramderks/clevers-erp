@@ -8,7 +8,6 @@ function fout(bericht: string, status: number) {
 
 export async function POST(request: NextRequest) {
   const gebruiker = await getCurrentUser();
-
   if (!gebruiker) return fout("Je moet ingelogd zijn.", 401);
 
   const body = await request.json().catch(() => null);
@@ -16,9 +15,7 @@ export async function POST(request: NextRequest) {
   const p256dh = typeof body?.keys?.p256dh === "string" ? body.keys.p256dh : "";
   const auth = typeof body?.keys?.auth === "string" ? body.keys.auth : "";
 
-  if (!endpoint || !p256dh || !auth) {
-    return fout("Ongeldige push subscription.", 400);
-  }
+  if (!endpoint || !p256dh || !auth) return fout("Ongeldige push subscription.", 400);
 
   await prisma.pushSubscription.upsert({
     where: { endpoint },
@@ -37,6 +34,23 @@ export async function POST(request: NextRequest) {
       actief: true,
       laatsteFoutOp: null,
     },
+  });
+
+  return NextResponse.json({ ok: true });
+}
+
+export async function DELETE(request: NextRequest) {
+  const gebruiker = await getCurrentUser();
+  if (!gebruiker) return fout("Je moet ingelogd zijn.", 401);
+
+  const body = await request.json().catch(() => null);
+  const endpoint = typeof body?.endpoint === "string" ? body.endpoint : "";
+
+  if (!endpoint) return fout("Push subscription ontbreekt.", 400);
+
+  await prisma.pushSubscription.updateMany({
+    where: { systeemGebruikerId: gebruiker.id, endpoint },
+    data: { actief: false },
   });
 
   return NextResponse.json({ ok: true });
