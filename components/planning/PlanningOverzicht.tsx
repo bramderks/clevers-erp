@@ -931,6 +931,17 @@ export default function PlanningOverzicht({
         setGeselecteerdeWeekIndex(
           opgeslagenIndex,
         );
+        setGeselecteerdeWeekSleutel(
+          opgeslagenWeekSleutel,
+        );
+        try {
+          sessionStorage.setItem(
+            "clevers-erp-planweek:" + vestigingId,
+            opgeslagenWeekSleutel,
+          );
+        } catch {
+          // Session storage is alleen een extra geheugenlaag.
+        }
 
         return;
       }
