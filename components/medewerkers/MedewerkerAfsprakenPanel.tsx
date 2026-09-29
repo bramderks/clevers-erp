@@ -166,6 +166,7 @@ export default function MedewerkerAfsprakenPanel({
       string,
       unknown
     >,
+    method: "POST" | "PATCH" = "POST",
   ) {
     setFout(null);
     setMelding(null);
@@ -178,7 +179,7 @@ export default function MedewerkerAfsprakenPanel({
             medewerkerId,
           )}/afspraken`,
           {
-            method: "POST",
+            method,
 
             headers: {
               "Content-Type":
@@ -208,12 +209,14 @@ export default function MedewerkerAfsprakenPanel({
       );
 
       router.refresh();
+      return true;
     } catch (error) {
       setFout(
         error instanceof Error
           ? error.message
           : "Opslaan is mislukt.",
       );
+      return false;
     } finally {
       setOpslaan(false);
     }
@@ -236,13 +239,20 @@ export default function MedewerkerAfsprakenPanel({
 
   async function slaBewerkingOp() {
     if (!bewerkenId) return;
-    await verstuur({
-      type: "vaste-uren-bewerken",
-      afspraakId: bewerkenId,
-      ...bewerkenForm,
-      dagVanWeek: Number(bewerkenForm.dagVanWeek),
-    });
-    setBewerkenId(null);
+
+    const opgeslagen = await verstuur(
+      {
+        type: "vaste-uren-bewerken",
+        afspraakId: bewerkenId,
+        ...bewerkenForm,
+        dagVanWeek: Number(bewerkenForm.dagVanWeek),
+      },
+      "PATCH",
+    );
+
+    if (opgeslagen) {
+      setBewerkenId(null);
+    }
   }
 
   async function verwijder(
