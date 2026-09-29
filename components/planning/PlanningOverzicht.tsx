@@ -869,6 +869,11 @@ export default function PlanningOverzicht({
   ] = useState(false);
 
   const [
+    publicerenBezig,
+    setPublicerenBezig,
+  ] = useState(false);
+
+  const [
     fout,
     setFout,
   ] = useState<string | null>(
@@ -1306,6 +1311,66 @@ export default function PlanningOverzicht({
         EINDE_MINUTEN,
       );
     }, [begintijd]);
+
+  async function publiceerHuidigeWeek() {
+    if (
+      !isEigenaar ||
+      !huidigeWeek ||
+      huidigeWeek.status === "GEPUBLICEERD" ||
+      huidigeWeek.status === "AFGESLOTEN" ||
+      publicerenBezig
+    ) {
+      return;
+    }
+
+    const bevestigd =
+      window.confirm(
+        `Week ${huidigeWeek.weeknummer} · ${huidigeWeek.jaar} publiceren? Na publicatie is het rooster zichtbaar voor medewerkers en worden de bijbehorende meldingen verstuurd.`,
+      );
+
+    if (!bevestigd) {
+      return;
+    }
+
+    try {
+      setPublicerenBezig(true);
+      setFout(null);
+
+      const response = await fetch(
+        `/api/planning/weken/${encodeURIComponent(huidigeWeek.id)}`,
+        {
+          method: "PATCH",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: "GEPUBLICEERD",
+          }),
+        },
+      );
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(
+          data?.fout ??
+            "De planning kon niet worden gepubliceerd.",
+        );
+      }
+
+      onGewijzigd?.();
+      router.refresh();
+    } catch (error) {
+      setFout(
+        error instanceof Error
+          ? error.message
+          : "De planning kon niet worden gepubliceerd.",
+      );
+    } finally {
+      setPublicerenBezig(false);
+    }
+  }
 
   /*
    * ============================================================
@@ -1770,6 +1835,30 @@ export default function PlanningOverzicht({
                   huidigeWeek.jaar
                 }
               </h1>
+
+              {isEigenaar && (
+                <div className="mt-2 flex justify-center">
+                  {huidigeWeek.status === "GEPUBLICEERD" ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      LIVE
+                    </span>
+                  ) : huidigeWeek.status !== "AFGESLOTEN" ? (
+                    <button
+                      type="button"
+                      onClick={() => void publiceerHuidigeWeek()}
+                      disabled={publicerenBezig}
+                      className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {publicerenBezig ? "Publiceren..." : "Publiceren"}
+                    </button>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
+                      Afgesloten
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             <button
