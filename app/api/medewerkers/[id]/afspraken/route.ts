@@ -501,7 +501,6 @@ async function haalOfMaakWeek(
   datum: Date,
 ) {
   const iso = isoWeek(datum);
-
   const bestaande = await prisma.week.findFirst({
     where: {
       vestigingId,
@@ -529,57 +528,6 @@ async function haalOfMaakWeek(
   });
 }
 
-async function maakGesynchroniseerdeVasteDienst(
-  afspraak: {
-    id: string;
-    medewerkerId: string;
-    vestigingId: string;
-    tagId: string;
-  },
-  datum: Date,
-) {
-  const week = await haalOfMaakWeek(
-    afspraak.vestigingId,
-    datum,
-  );
-
-  const dienstId = randomUUID();
-  const bezettingId = randomUUID();
-  const tagRegelId = randomUUID();
-
-  await prisma.$executeRawUnsafe(
-    `INSERT INTO "Dienst"
-      ("id","weekId","datum","begintijd","eindtijd","opmerkingen")
-     VALUES
-      ($1,$2,$3,$4,$5,$6)`,
-    dienstId,
-    week.id,
-    beginDag(datum),
-    maakTijd(datum, afspraak.begintijd),
-    maakTijd(datum, afspraak.eindtijd),
-    "Automatisch ingevuld vanuit een vaste urenafspraak.",
-  );
-
-  await prisma.$executeRawUnsafe(
-    `INSERT INTO "DienstTag"
-      ("id","dienstId","tagId","aantal")
-     VALUES ($1,$2,$3,1)`,
-    tagRegelId,
-    dienstId,
-    afspraak.tagId,
-  );
-
-  await prisma.$executeRawUnsafe(
-    `INSERT INTO "DienstBezetting"
-      ("id","dienstId","medewerkerId","status","vasteUrenAfspraakId")
-     VALUES ($1,$2,$3,'GEPLAND',$4)`,
-    bezettingId,
-    dienstId,
-    afspraak.medewerkerId,
-    afspraak.id,
-  );
-}
-
 async function synchroniseerVasteUrenAfspraak(
   afspraak: {
     id: string;
@@ -603,12 +551,10 @@ async function synchroniseerVasteUrenAfspraak(
   const laatsteDatum = eindeDag(
     afspraak.eindDatum,
   );
-
   const gewensteDagen = new Map<string, Date>();
 
   if (eersteDatum <= laatsteDatum) {
     const cursor = new Date(eersteDatum);
-
     while (cursor <= laatsteDatum) {
       if (
         dagVanWeek(cursor) ===
@@ -619,30 +565,27 @@ async function synchroniseerVasteUrenAfspraak(
           new Date(cursor),
         );
       }
-
       cursor.setDate(
         cursor.getDate() + 1,
       );
     }
   }
 
-  type GekoppeldeBezetting = {
-    bezettingId: string;
-    dienstId: string;
-    bezettingStatus: string;
-    weekStatus: string;
-    datum: Date;
-    actieveBezettingen: number;
-  };
-
-  const gekoppeldeBezettingen =
+  const gekoppeld =
     await prisma.$queryRawUnsafe<
-      GekoppeldeBezetting[]
+      Array<{
+        bezettingId: string;
+        dienstId: string;
+        status: string;
+        weekStatus: string;
+        datum: Date;
+        actieveBezettingen: number;
+      }>
     >(
       `SELECT
          db."id" AS "bezettingId",
          d."id" AS "dienstId",
-         db."status" AS "bezettingStatus",
+         db."status" AS "status",
          w."status" AS "weekStatus",
          d."datum" AS "datum",
          (
@@ -661,113 +604,138 @@ async function synchroniseerVasteUrenAfspraak(
       afspraak.medewerkerId,
     );
 
-  const gebruikteDagen = new Set<string>();
+  const gebruikte = new Set<string>();
 
-  for (const bezetting of gekoppeldeBezettingen) {
-    const sleutel = datumSleutel(
-      bezetting.datum,
-    );
+  for (const item of gekoppeld) {
+    const sleutel = datumSleutel(item.datum);
     const gewensteDatum =
       gewensteDagen.get(sleutel);
 
     if (
       isBeschermdeVasteDienst(
-        bezetting.bezettingStatus,
-        bezetting.weekStatus,
+        item.status,
+        item.weekStatus,
       )
     ) {
       if (gewensteDatum) {
-        gebruikteDagen.add(sleutel);
+        gebruikte.add(sleutel);
       }
       continue;
     }
 
-    if (
-      !gewensteDatum ||
-      gebruikteDagen.has(sleutel)
-    ) {
-      if (
-        bezetting.actieveBezettingen <= 1
-      ) {
+    if (!gewensteDatum) {
+      if (item.actieveBezettingen <= 1) {
         await prisma.$executeRawUnsafe(
           `DELETE FROM "Dienst"
-           WHERE "id" = $1`,
-          bezetting.dienstId,
+           WHERE "id"=$1`,
+          item.dienstId,
         );
       } else {
         await prisma.$executeRawUnsafe(
           `DELETE FROM "DienstBezetting"
-           WHERE "id" = $1`,
-          bezetting.bezettingId,
+           WHERE "id"=$1`,
+          item.bezettingId,
         );
       }
       continue;
     }
 
-    gebruikteDagen.add(sleutel);
+    gebruikte.add(sleutel);
+
+    if (item.actieveBezettingen > 1) {
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM "DienstBezetting"
+         WHERE "id"=$1`,
+        item.bezettingId,
+      );
+    } else {
+      const week = await haalOfMaakWeek(
+        afspraak.vestigingId,
+        gewensteDatum,
+      );
+
+      await prisma.$executeRawUnsafe(
+        `UPDATE "Dienst"
+         SET "weekId"=$1,
+             "datum"=$2,
+             "begintijd"=$3,
+             "eindtijd"=$4,
+             "gewijzigdOp"=CURRENT_TIMESTAMP
+         WHERE "id"=$5`,
+        week.id,
+        beginDag(gewensteDatum),
+        maakTijd(
+          gewensteDatum,
+          afspraak.begintijd,
+        ),
+        maakTijd(
+          gewensteDatum,
+          afspraak.eindtijd,
+        ),
+        item.dienstId,
+      );
+
+      if (oudeTagId !== afspraak.tagId) {
+        await prisma.$executeRawUnsafe(
+          `DELETE FROM "DienstTag"
+           WHERE "dienstId"=$1 AND "tagId"=$2`,
+          item.dienstId,
+          oudeTagId,
+        );
+      }
+
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "DienstTag"
+          ("id","dienstId","tagId","aantal")
+         VALUES ($1,$2,$3,1)
+         ON CONFLICT ("dienstId","tagId")
+         DO UPDATE SET "aantal"=EXCLUDED."aantal"`,
+        randomUUID(),
+        item.dienstId,
+        afspraak.tagId,
+      );
+    }
+  }
+
+  for (const [sleutel, datum] of gewensteDagen) {
+    if (gebruikte.has(sleutel)) continue;
 
     const week = await haalOfMaakWeek(
       afspraak.vestigingId,
-      gewensteDatum,
+      datum,
     );
+    const dienstId = randomUUID();
+    const bezettingId = randomUUID();
 
     await prisma.$executeRawUnsafe(
-      `UPDATE "Dienst"
-       SET "weekId"=$1,
-           "datum"=$2,
-           "begintijd"=$3,
-           "eindtijd"=$4,
-           "gewijzigdOp"=CURRENT_TIMESTAMP
-       WHERE "id"=$5`,
+      `INSERT INTO "Dienst"
+        ("id","weekId","datum","begintijd","eindtijd","opmerkingen")
+       VALUES ($1,$2,$3,$4,$5,$6)`,
+      dienstId,
       week.id,
-      beginDag(gewensteDatum),
-      maakTijd(
-        gewensteDatum,
-        afspraak.begintijd,
-      ),
-      maakTijd(
-        gewensteDatum,
-        afspraak.eindtijd,
-      ),
-      bezetting.dienstId,
+      beginDag(datum),
+      maakTijd(datum, afspraak.begintijd),
+      maakTijd(datum, afspraak.eindtijd),
+      "Automatisch ingevuld vanuit een vaste urenafspraak.",
     );
-
-    if (oudeTagId !== afspraak.tagId) {
-      await prisma.$executeRawUnsafe(
-        `DELETE FROM "DienstTag"
-         WHERE "dienstId"=$1 AND "tagId"=$2`,
-        bezetting.dienstId,
-        oudeTagId,
-      );
-    }
 
     await prisma.$executeRawUnsafe(
       `INSERT INTO "DienstTag"
         ("id","dienstId","tagId","aantal")
-       VALUES ($1,$2,$3,1)
-       ON CONFLICT ("dienstId","tagId")
-       DO UPDATE SET "aantal"=EXCLUDED."aantal"`,
+       VALUES ($1,$2,$3,1)`,
       randomUUID(),
-      bezetting.dienstId,
+      dienstId,
       afspraak.tagId,
     );
 
     await prisma.$executeRawUnsafe(
-      `UPDATE "DienstBezetting"
-       SET "vasteUrenAfspraakId"=$1,
-           "gewijzigdOp"=CURRENT_TIMESTAMP
-       WHERE "id"=$2`,
+      `INSERT INTO "DienstBezetting"
+        ("id","dienstId","medewerkerId","status","vasteUrenAfspraakId")
+       VALUES ($1,$2,$3,'GEPLAND',$4)`,
+      bezettingId,
+      dienstId,
+      afspraak.medewerkerId,
       afspraak.id,
-      bezetting.bezettingId,
-    );
-  }
-
-  for (const [sleutel, datum] of gewensteDagen) {
-    if (gebruikteDagen.has(sleutel)) continue;
-
-    await maakGesynchroniseerdeVasteDienst(
-      afspraak,
-      datum,
     );
   }
 }
