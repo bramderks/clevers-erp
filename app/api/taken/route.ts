@@ -4,6 +4,38 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { verstuurNieuweTaakMeldingen } from "@/lib/push/open-diensten";
 
+function naamVanMedewerker(
+  medewerker: {
+    voornaam: string;
+    tussenvoegsel: string | null;
+    achternaam: string;
+  },
+) {
+  return [
+    medewerker.voornaam,
+    medewerker.tussenvoegsel,
+    medewerker.achternaam,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function isOntbrekendeRuilverzoekTabel(error: unknown) {
+  if (typeof error !== "object" || error === null) {
+    return false;
+  }
+
+  const prismaError = error as {
+    code?: string;
+    meta?: { modelName?: string };
+  };
+
+  return (
+    prismaError.code === "P2021" &&
+    prismaError.meta?.modelName === "Ruilverzoek"
+  );
+}
+
 function fout(
   bericht: string,
   status: number,
