@@ -476,6 +476,250 @@ export async function GET(
   }
 }
 
+function isBeschermdeVasteDienst(status: string, weekStatus: string) {
+  return (
+    status === "BEVESTIGD" ||
+    status === "GEWERKT" ||
+    weekStatus === "AFGESLOTEN"
+  );
+}
+
+function datumSleutel(datum: Date) {
+  const jaar = datum.getFullYear();
+  const maand = String(datum.getMonth() + 1).padStart(2, "0");
+  const dag = String(datum.getDate()).padStart(2, "0");
+  return `${jaar}-${maand}-${dag}`;
+}
+
+async function haalOfMaakWeek(vestigingId: string, datum: Date) {
+  const iso = isoWeek(datum);
+
+  let week = await prisma.week.findFirst({
+    where: {
+      vestigingId,
+      jaar: iso.jaar,
+      weeknummer: iso.weeknummer,
+    },
+    select: {
+      id: true,
+      status: true,
+    },
+  });
+
+  if (!week) {
+    week = await prisma.week.create({
+      data: {
+        vestigingId,
+        jaar: iso.jaar,
+        weeknummer: iso.weeknummer,
+        status: "OPEN",
+        beschikbaarheidDeadline: berekenBeschikbaarheidDeadline(
+          iso.jaar,
+          iso.weeknummer,
+        ),
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+  }
+
+  return week;
+}
+
+async function maakVasteDienst(
+  afspraak: {
+    id: string;
+    medewerkerId: string;
+    vestigingId: string;
+    tagId: string;
+    dagVanWeek: number;
+    begintijd: string;
+    eindtijd: string;
+  },
+  datum: Date,
+) {
+  const week = await haalOfMaakWeek(afspraak.vestigingId, datum);
+  const dagStart = beginDag(datum);
+  const begintijd = maakTijd(datum, afspraak.begintijd);
+  const eindtijd = maakTijd(datum, afspraak.eindtijd);
+
+  return prisma.dienst.create({
+    data: {
+      weekId: week.id,
+      datum: dagStart,
+      begintijd,
+      eindtijd,
+      opmerkingen: "Automatisch ingevuld vanuit een vaste urenafspraak.",
+      tags: {
+        create: {
+          tagId: afspraak.tagId,
+          aantal: 1,
+        },
+      },
+      bezetting: {
+        create: {
+          medewerkerId: afspraak.medewerkerId,
+          vasteUrenAfspraakId: afspraak.id,
+          status: "GEPLAND",
+        },
+      },
+    },
+  });
+}
+
+/**
+ * Synchroniseert uitsluitend diensten die expliciet aan deze vaste afspraak
+ * gekoppeld zijn. Definitieve/gewerkte diensten blijven altijd onaangetast.
+ */
+async function synchroniseerVasteUrenAfspraak(
+  afspraakId: string,
+  oudeTagId?: string,
+) {
+  const afspraak = await prisma.vasteUrenAfspraak.findUnique({
+    where: { id: afspraakId },
+    include: {
+      gegenereerdeDiensten: {
+        include: {
+          dienst: {
+            include: {
+              week: {
+                select: {
+                  id: true,
+                  status: true,
+                  vestigingId: true,
+                },
+              },
+              bezetting: {
+                select: {
+                  id: true,
+                  medewerkerId: true,
+                  status: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!afspraak) {
+    throw new Error("Vaste urenafspraak niet gevonden.");
+  }
+
+  const vandaag = beginDag(new Date());
+  const gewensteDatums = new Map<string, Date>();
+
+  const cursor = beginDag(
+    afspraak.startDatum > vandaag ? afspraak.startDatum : vandaag,
+  );
+  const eindDatum = eindeDag(afspraak.eindDatum);
+
+  while (cursor <= eindDatum) {
+    if (dagVanWeek(cursor) === afspraak.dagVanWeek) {
+      gewensteDatums.set(datumSleutel(cursor), new Date(cursor));
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  const gekoppeldeDiensten = afspraak.gegenereerdeDiensten.filter(
+    (bezetting) => !isBeschermdeVasteDienst(
+      bezetting.status,
+      bezetting.dienst.week.status,
+    ),
+  );
+
+  const behouden = new Set<string>();
+
+  for (const bezetting of gekoppeldeDiensten) {
+    const dienst = bezetting.dienst;
+    const sleutel = datumSleutel(new Date(dienst.datum));
+    const gewensteDatum = gewensteDatums.get(sleutel);
+
+    if (!gewensteDatum || behouden.has(sleutel)) {
+      await prisma.dienstBezetting.delete({
+        where: { id: bezetting.id },
+      });
+
+      const overige = await prisma.dienstBezetting.count({
+        where: {
+          dienstId: dienst.id,
+          status: { not: "AFGEZEGD" },
+        },
+      });
+
+      if (overige === 0) {
+        await prisma.dienst.delete({ where: { id: dienst.id } });
+      }
+      continue;
+    }
+
+    const actieveBezettingen = dienst.bezetting.filter(
+      (item) => item.status !== "AFGEZEGD",
+    );
+
+    const nieuweWeek = await haalOfMaakWeek(
+      afspraak.vestigingId,
+      gewensteDatum,
+    );
+
+    if (actieveBezettingen.length === 1 && actieveBezettingen[0]?.id === bezetting.id) {
+      const oudeDatum = new Date(dienst.datum);
+      const oudeTagId = afspraak.tagId === oudeTagId ? oudeTagId : undefined;
+
+      await prisma.dienst.update({
+        where: { id: dienst.id },
+        data: {
+          weekId: nieuweWeek.id,
+          datum: beginDag(gewensteDatum),
+          begintijd: maakTijd(gewensteDatum, afspraak.begintijd),
+          eindtijd: maakTijd(gewensteDatum, afspraak.eindtijd),
+        },
+      });
+
+      if (oudeTagId) {
+        await prisma.dienstTag.deleteMany({
+          where: {
+            dienstId: dienst.id,
+            tagId: oudeTagId,
+          },
+        });
+        await prisma.dienstTag.create({
+          data: {
+            dienstId: dienst.id,
+            tagId: afspraak.tagId,
+            aantal: 1,
+          },
+        });
+      } else if (oudeDatum.getTime() !== gewensteDatum.getTime()) {
+        // De datum/tijd is aangepast; de bronafspraak blijft de enige bron van
+        // de automatisch gegenereerde planning. De bestaande tags blijven staan.
+      }
+    } else {
+      await prisma.dienstBezetting.delete({
+        where: { id: bezetting.id },
+      });
+      await maakVasteDienst(afspraak, gewensteDatum);
+    }
+
+    behouden.add(sleutel);
+  }
+
+  for (const [sleutel, datum] of gewensteDatums) {
+    if (!behouden.has(sleutel)) {
+      await maakVasteDienst(afspraak, datum);
+    }
+  }
+
+  return {
+    aangepast: behouden.size,
+    aangemaakt: Math.max(0, gewensteDatums.size - behouden.size),
+    verwijderd: Math.max(0, gekoppeldeDiensten.length - behouden.size),
+  };
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: RouteContext,
@@ -532,6 +776,8 @@ export async function PATCH(
     const seizoenEinde = eindeDag(vestiging.vestiging.seizoenEinde);
     if ((seizoenStart && startDatum < seizoenStart) || eindDatum > seizoenEinde) return NextResponse.json({ error: "De afspraak moet binnen het seizoen vallen." }, { status: 400 });
 
+    const oudeAfspraak = afspraak[0];
+
     await prisma.$executeRawUnsafe(
       `UPDATE "VasteUrenAfspraak"
        SET "vestigingId"=$1,"tagId"=$2,"dagVanWeek"=$3,"begintijd"=$4,"eindtijd"=$5,"startDatum"=$6,"eindDatum"=$7,"gewijzigdOp"=CURRENT_TIMESTAMP
@@ -539,7 +785,15 @@ export async function PATCH(
       vestigingId, tagId, weekdag, begintijd, eindtijd, startDatum, eindDatum, afspraakId, id,
     );
 
-    return NextResponse.json({ melding: "De vaste urenafspraak is gewijzigd." });
+    const synchronisatie = await synchroniseerVasteUrenAfspraak(
+      afspraakId,
+      oudeAfspraak.tagId,
+    );
+
+    return NextResponse.json({
+      melding: "De vaste urenafspraak is gewijzigd en de toekomstige, nog niet definitieve diensten zijn gesynchroniseerd.",
+      synchronisatie,
+    });
   } catch (error) {
     console.error("Vaste urenafspraak wijzigen mislukt:", error);
     return NextResponse.json({ error: error instanceof Error ? error.message : "Wijzigen is mislukt." }, { status: 400 });
@@ -1104,6 +1358,7 @@ export async function POST(
               bezetting: {
                 create: {
                   medewerkerId: id,
+                  vasteUrenAfspraakId: afspraakId,
                   status:
                     "GEPLAND",
                 },
@@ -1146,6 +1401,7 @@ export async function POST(
               bezetting: {
                 create: {
                   medewerkerId: id,
+                  vasteUrenAfspraakId: afspraakId,
                   status:
                     "GEPLAND",
                 },
@@ -1268,6 +1524,47 @@ export async function DELETE(
         id,
       );
     } else {
+      const gekoppeldeDiensten = await prisma.dienstBezetting.findMany({
+        where: {
+          vasteUrenAfspraakId: itemId,
+        },
+        include: {
+          dienst: {
+            select: {
+              id: true,
+              week: {
+                select: {
+                  status: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      for (const bezetting of gekoppeldeDiensten) {
+        if (isBeschermdeVasteDienst(bezetting.status, bezetting.dienst.week.status)) {
+          continue;
+        }
+
+        await prisma.dienstBezetting.delete({
+          where: { id: bezetting.id },
+        });
+
+        const overige = await prisma.dienstBezetting.count({
+          where: {
+            dienstId: bezetting.dienst.id,
+            status: { not: "AFGEZEGD" },
+          },
+        });
+
+        if (overige === 0) {
+          await prisma.dienst.delete({
+            where: { id: bezetting.dienst.id },
+          });
+        }
+      }
+
       await prisma.$executeRawUnsafe(
         `DELETE FROM "VasteUrenAfspraak"
          WHERE "id" = $1
