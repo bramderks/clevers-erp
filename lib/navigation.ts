@@ -33,6 +33,11 @@ export const navigation = [
         icon: UserRound,
         medewerkerOnly: true,
       },
+      {
+        title: "Instellingen",
+        href: "/instellingen",
+        icon: Settings,
+      },
     ],
   },
 
@@ -143,13 +148,6 @@ export const navigation = [
         href: "/audit",
         icon: ScrollText,
         ownerOnly: true,
-      },
-
-      {
-        title: "Instellingen",
-        href: "/instellingen",
-        icon: Settings,
-        permission: permissions.instellingen.view,
       },
     ],
   },

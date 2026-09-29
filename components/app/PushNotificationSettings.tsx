@@ -1,0 +1,261 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Bell, BellOff, Loader2 } from "lucide-react";
+
+function base64UrlNaarUint8Array(waarde: string) {
+  const padding = "=".repeat((4 - (waarde.length % 4)) % 4);
+  const base64 = (waarde + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = window.atob(base64);
+  return Uint8Array.from(raw, (karakter) => karakter.charCodeAt(0));
+}
+
+export default function PushNotificationSettings() {
+  const [ondersteund, setOndersteund] = useState(false);
+  const [toestemming, setToestemming] =
+    useState<NotificationPermission | "unknown">("unknown");
+  const [ingeschakeld, setIngeschakeld] = useState(false);
+  const [bezig, setBezig] = useState(true);
+  const [melding, setMelding] = useState<string | null>(null);
+  const [testBezig, setTestBezig] = useState(false);
+
+  useEffect(() => {
+    async function laad() {
+      const beschikbaar =
+        "Notification" in window &&
+        "serviceWorker" in navigator &&
+        "PushManager" in window;
+
+      setOndersteund(beschikbaar);
+
+      if (!beschikbaar) {
+        setBezig(false);
+        return;
+      }
+
+      const huidigeToestemming = Notification.permission;
+      setToestemming(huidigeToestemming);
+
+      if (huidigeToestemming === "granted") {
+        const registratie = await navigator.serviceWorker.ready;
+        const subscription =
+          await registratie.pushManager.getSubscription();
+        setIngeschakeld(Boolean(subscription));
+      }
+
+      setBezig(false);
+    }
+
+    void laad();
+  }, []);
+
+  async function inschakelen() {
+    if (!ondersteund || bezig) return;
+
+    setBezig(true);
+    setMelding(null);
+
+    try {
+      const resultaat = await Notification.requestPermission();
+      setToestemming(resultaat);
+
+      if (resultaat !== "granted") {
+        setMelding(
+          resultaat === "denied"
+            ? "Meldingen zijn door je browser geblokkeerd. Je kunt dit aanpassen in de browserinstellingen."
+            : "Toestemming voor meldingen is niet gegeven.",
+        );
+        return;
+      }
+
+      const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (!vapidPublicKey) {
+        throw new Error("VAPID public key ontbreekt.");
+      }
+
+      const registratie = await navigator.serviceWorker.ready;
+      const bestaande =
+        await registratie.pushManager.getSubscription();
+
+      const subscription =
+        bestaande ??
+        (await registratie.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey:
+            base64UrlNaarUint8Array(vapidPublicKey),
+        }));
+
+      const response = await fetch("/api/push/subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(subscription),
+      });
+
+      if (!response.ok) {
+        throw new Error("Pushmeldingen konden niet worden opgeslagen.");
+      }
+
+      setIngeschakeld(true);
+      setMelding("Meldingen zijn ingeschakeld op dit apparaat.");
+    } catch (error) {
+      setMelding(
+        error instanceof Error
+          ? error.message
+          : "Meldingen konden niet worden ingeschakeld.",
+      );
+    } finally {
+      setBezig(false);
+    }
+  }
+
+  async function uitschakelen() {
+    if (!ondersteund || bezig) return;
+
+    setBezig(true);
+    setMelding(null);
+
+    try {
+      const registratie = await navigator.serviceWorker.ready;
+      const subscription =
+        await registratie.pushManager.getSubscription();
+
+      if (subscription) {
+        const response = await fetch("/api/push/subscription", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ endpoint: subscription.endpoint }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Pushmeldingen konden niet worden uitgeschakeld.");
+        }
+
+        await subscription.unsubscribe();
+      }
+
+      setIngeschakeld(false);
+      setMelding("Meldingen zijn uitgeschakeld op dit apparaat.");
+    } catch (error) {
+      setMelding(
+        error instanceof Error
+          ? error.message
+          : "Meldingen konden niet worden uitgeschakeld.",
+      );
+    } finally {
+      setBezig(false);
+    }
+  }
+
+  async function testPush() {
+    if (testBezig || !ingeschakeld) return;
+
+    setTestBezig(true);
+    setMelding(null);
+
+    try {
+      const response = await fetch("/api/push/test", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(
+          data?.fout ?? "Testmelding kon niet worden verstuurd.",
+        );
+      }
+
+      setMelding("Testmelding verstuurd.");
+    } catch (error) {
+      setMelding(
+        error instanceof Error
+          ? error.message
+          : "Testmelding kon niet worden verstuurd.",
+      );
+    } finally {
+      setTestBezig(false);
+    }
+  }
+
+  if (bezig) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-slate-500">
+        <Loader2 size={18} className="animate-spin" />
+        Meldingen controleren...
+      </div>
+    );
+  }
+
+  if (!ondersteund) {
+    return (
+      <div className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-800">
+        Deze browser ondersteunt geen pushmeldingen.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <div
+          className={[
+            "inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold",
+            ingeschakeld
+              ? "bg-emerald-50 text-emerald-700"
+              : "bg-slate-100 text-slate-600",
+          ].join(" ")}
+        >
+          {ingeschakeld ? <Bell size={17} /> : <BellOff size={17} />}
+          {ingeschakeld ? "Meldingen ingeschakeld" : "Meldingen uitgeschakeld"}
+        </div>
+
+        {ingeschakeld ? (
+          <>
+            <button
+              type="button"
+              onClick={() => void uitschakelen()}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+            >
+              Meldingen uitschakelen
+            </button>
+            <button
+              type="button"
+              onClick={() => void testPush()}
+              disabled={testBezig}
+              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-wait disabled:opacity-60"
+            >
+              {testBezig ? "Testen..." : "Test pushmelding"}
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={() => void inschakelen()}
+            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
+          >
+            Meldingen inschakelen
+          </button>
+        )}
+      </div>
+
+      {toestemming === "denied" && !ingeschakeld && (
+        <p className="text-sm text-amber-700">
+          Je browser blokkeert meldingen. Zet meldingen voor erp.iselto.nl
+          eerst weer aan via de site-instellingen van je browser.
+        </p>
+      )}
+
+      {melding && (
+        <p className="text-sm text-slate-600" role="status">
+          {melding}
+        </p>
+      )}
+
+      <p className="text-xs leading-5 text-slate-500">
+        Deze instelling geldt voor dit apparaat en deze browser. Gebruik je
+        Clevers op meerdere apparaten, dan kun je meldingen per apparaat
+        afzonderlijk instellen.
+      </p>
+    </div>
+  );
+}
