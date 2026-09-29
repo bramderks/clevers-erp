@@ -22,7 +22,7 @@ export async function verstuurDirecteDienstMelding(dienstBezettingId: string) {
     },
   });
 
-  if (!bezetting || bezetting.dienst.week.status !== "GEPUBLICEERD" || !bezetting.medewerker?.systeemGebruikerId || bezetting.status === "AFGEZEGD") {
+  if (!bezetting || !bezetting.medewerker?.systeemGebruikerId || bezetting.status === "AFGEZEGD") {
     return { verstuurd: 0, fouten: 0 };
   }
 
