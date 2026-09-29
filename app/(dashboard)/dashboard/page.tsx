@@ -173,6 +173,9 @@ export default async function DashboardPage() {
             datum: {
               gte: vandaagBegin,
             },
+            week: {
+              status: "GEPUBLICEERD",
+            },
           },
         },
 
