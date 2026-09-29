@@ -445,6 +445,8 @@ model VasteUrenAfspraak {
   akkoordDoorId String?
   akkoordOp DateTime?
 
+  gegenereerdeDiensten DienstBezetting[]
+
   aangemaaktOp DateTime @default(now())
   gewijzigdOp DateTime @updatedAt
 
@@ -815,10 +817,15 @@ model DienstBezetting {
 
   medewerkerId String?
 
+  /// Bron van automatisch gegenereerde diensten uit een vaste urenafspraak.
+  /// Handmatig aangemaakte diensten hebben hier NULL.
+  vasteUrenAfspraakId String?
+
   status String @default("OPEN")
 
   dienst Dienst @relation(fields: [dienstId], references: [id], onDelete: Cascade)
   medewerker Medewerker? @relation(fields: [medewerkerId], references: [id], onDelete: SetNull)
+  vasteUrenAfspraak VasteUrenAfspraak? @relation(fields: [vasteUrenAfspraakId], references: [id], onDelete: SetNull)
 
   urenregistratie UrenRegistratie?
 
@@ -830,6 +837,7 @@ model DienstBezetting {
   @@index([dienstId])
   @@index([medewerkerId])
   @@index([status])
+  @@index([vasteUrenAfspraakId])
 
   @@unique([dienstId, medewerkerId])
 }
