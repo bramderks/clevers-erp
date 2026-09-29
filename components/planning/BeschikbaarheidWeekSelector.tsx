@@ -949,6 +949,7 @@ export default function BeschikbaarheidWeekSelector({
       setWeekStatussen({});
       setDagenInvoer({});
       setDagFouten({});
+      setBewerken(false);
 
       try {
         const response =
@@ -1005,6 +1006,7 @@ export default function BeschikbaarheidWeekSelector({
         setWeken(
           opgehaaldeWeken,
         );
+        setBewerken(false);
 
         const eersteOpenstaandeWeek =
           resultaat.eersteOpenstaandeWeek ??
@@ -2147,6 +2149,19 @@ export default function BeschikbaarheidWeekSelector({
               </div>
             )}
 
+            {wijzigingToegestaan && (
+              <div className="mb-5 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setBewerken(true)}
+                  disabled={bewerken}
+                  className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {bewerken ? "Wijzigen..." : "Wijzigen"}
+                </button>
+              </div>
+            )}
+
             {!magBewerken &&
               deadlineVerstreken && (
                 <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
@@ -2291,7 +2306,8 @@ export default function BeschikbaarheidWeekSelector({
                                     type="button"
                                     disabled={
                                       opslaan ||
-                                      !wijzigingToegestaan
+                                      !wijzigingToegestaan ||
+                                      !bewerken
                                     }
                                     onClick={() =>
                                       maakDagNietBeschikbaar(
@@ -2340,7 +2356,8 @@ export default function BeschikbaarheidWeekSelector({
                                     disabled={
                                       !magBewerken ||
                                       opslaan ||
-                                      !wijzigingToegestaan
+                                      !wijzigingToegestaan ||
+                                      !bewerken
                                     }
                                     onChange={(
                                       event,
@@ -2396,7 +2413,8 @@ export default function BeschikbaarheidWeekSelector({
                                     disabled={
                                       !magBewerken ||
                                       opslaan ||
-                                      !wijzigingToegestaan
+                                      !wijzigingToegestaan ||
+                                      !bewerken
                                     }
                                     onChange={(
                                       event,
@@ -2452,7 +2470,8 @@ export default function BeschikbaarheidWeekSelector({
                                     disabled={
                                       !magBewerken ||
                                       opslaan ||
-                                      !wijzigingToegestaan
+                                      !wijzigingToegestaan ||
+                                      !bewerken
                                     }
                                     onChange={(
                                       event,
