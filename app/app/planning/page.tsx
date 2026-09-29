@@ -42,6 +42,9 @@ export default async function AppPlanningPage() {
           datum: {
             gte: vandaag,
           },
+          week: {
+            status: "GEPUBLICEERD",
+          },
         },
       },
       select: {
