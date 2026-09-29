@@ -607,7 +607,7 @@ export async function POST(
       }
 
       const ruilverzoeken = await prisma.$transaction(
-        kandidaten.map((kandidaat) =>
+        geschikteKandidaten.map((kandidaat) =>
           prisma.ruilverzoek.create({
             data: {
               dienstBezettingId,
