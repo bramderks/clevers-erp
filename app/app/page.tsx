@@ -61,6 +61,9 @@ export default async function MedewerkerAppPage() {
           datum: {
             gte: vandaag,
           },
+          week: {
+            status: "GEPUBLICEERD",
+          },
         },
       },
       select: {
