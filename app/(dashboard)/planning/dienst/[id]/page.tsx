@@ -270,10 +270,10 @@ if (
 }
 
 const organisatieToegankelijk =
-organisatieIds.includes(
-dienst.week.vestiging
-.organisatieId,
-);
+  organisatieIds.includes(
+    dienst.week.vestiging.organisatieId,
+  ) ||
+  isMedewerker;
 
 if (!organisatieToegankelijk) {
 return (
