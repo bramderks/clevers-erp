@@ -64,6 +64,11 @@ export async function GET(
         week.vestigingId,
       );
 
+    const eigenaar =
+      await isEigenaar(
+        week.vestiging.organisatieId,
+      );
+
     if (!toegang) {
       return NextResponse.json(
         {
@@ -71,6 +76,16 @@ export async function GET(
             "Geen toegang tot deze planning.",
         },
         { status: 403 },
+      );
+    }
+
+    if (!eigenaar && week.status !== "GEPUBLICEERD") {
+      return NextResponse.json(
+        {
+          fout:
+            "Deze planning is nog niet gepubliceerd.",
+        },
+        { status: 404 },
       );
     }
 
