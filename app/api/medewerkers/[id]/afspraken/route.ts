@@ -539,8 +539,6 @@ export async function PATCH(
     const seizoenEinde = eindeDag(vestiging.vestiging.seizoenEinde);
     if ((seizoenStart && startDatum < seizoenStart) || eindDatum > seizoenEinde) return NextResponse.json({ error: "De afspraak moet binnen het seizoen vallen." }, { status: 400 });
 
-    const oudeTagId = afspraak[0].tagId;
-
     await prisma.$executeRawUnsafe(
       `UPDATE "VasteUrenAfspraak"
        SET "vestigingId"=$1,"tagId"=$2,"dagVanWeek"=$3,"begintijd"=$4,"eindtijd"=$5,"startDatum"=$6,"eindDatum"=$7,"gewijzigdOp"=CURRENT_TIMESTAMP
