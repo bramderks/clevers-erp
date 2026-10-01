@@ -18,6 +18,8 @@ export default function PushNotificationSettings() {
   const [bezig, setBezig] = useState(true);
   const [melding, setMelding] = useState<string | null>(null);
   const [testBezig, setTestBezig] = useState(false);
+  const [emailAan, setEmailAan] = useState(true);
+  const [emailBezig, setEmailBezig] = useState(true);
 
   useEffect(() => {
     async function laad() {
@@ -27,6 +29,16 @@ export default function PushNotificationSettings() {
         "PushManager" in window;
 
       setOndersteund(beschikbaar);
+
+      try {
+        const emailResponse = await fetch("/api/instellingen/meldingen", { credentials: "include" });
+        if (emailResponse.ok) {
+          const emailData = await emailResponse.json();
+          setEmailAan(emailData.emailMeldingenAan !== false);
+        }
+      } finally {
+        setEmailBezig(false);
+      }
 
       if (!beschikbaar) {
         setBezig(false);
@@ -146,6 +158,27 @@ export default function PushNotificationSettings() {
     }
   }
 
+  async function wijzigEmailMeldingen() {
+    const nieuweWaarde = !emailAan;
+    setEmailBezig(true);
+    setMelding(null);
+    try {
+      const response = await fetch("/api/instellingen/meldingen", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ emailMeldingenAan: nieuweWaarde }),
+      });
+      if (!response.ok) throw new Error("E-mailmeldingen konden niet worden aangepast.");
+      setEmailAan(nieuweWaarde);
+      setMelding(nieuweWaarde ? "E-mailmeldingen zijn ingeschakeld." : "E-mailmeldingen zijn uitgeschakeld.");
+    } catch (error) {
+      setMelding(error instanceof Error ? error.message : "E-mailmeldingen konden niet worden aangepast.");
+    } finally {
+      setEmailBezig(false);
+    }
+  }
+
   async function testPush() {
     if (testBezig || !ingeschakeld) return;
 
@@ -250,6 +283,24 @@ export default function PushNotificationSettings() {
           {melding}
         </p>
       )}
+
+      <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-slate-900">E-mailmeldingen</p>
+            <p className="mt-1 text-sm text-slate-500">Ontvang dezelfde relevante herinneringen ook per e-mail.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void wijzigEmailMeldingen()}
+            disabled={emailBezig}
+            className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition ${emailAan ? "bg-emerald-600" : "bg-slate-300"} disabled:cursor-wait disabled:opacity-60`}
+            aria-label={emailAan ? "E-mailmeldingen uitschakelen" : "E-mailmeldingen inschakelen"}
+          >
+            <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${emailAan ? "left-6" : "left-1"}`} />
+          </button>
+        </div>
+      </div>
 
       <p className="text-xs leading-5 text-slate-500">
         Deze instelling geldt voor dit apparaat en deze browser. Gebruik je
