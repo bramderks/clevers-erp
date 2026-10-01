@@ -120,6 +120,9 @@ model SysteemGebruiker {
   actief Boolean @default(true)
   laatsteLoginOp DateTime?
 
+  /// Persoonlijke e-mailmeldingen voor het account.
+  emailMeldingenAan Boolean @default(true)
+
   medewerker Medewerker?
 
   organisaties OrganisatieGebruiker[]
