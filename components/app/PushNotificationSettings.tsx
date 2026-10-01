@@ -214,7 +214,7 @@ export default function PushNotificationSettings() {
     return (
       <div className="flex items-center gap-2 text-sm text-slate-500">
         <Loader2 size={18} className="animate-spin" />
-        Meldingen controleren...
+        Instellingen controleren...
       </div>
     );
   }
@@ -222,13 +222,37 @@ export default function PushNotificationSettings() {
   if (!ondersteund) {
     return (
       <div className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-800">
-        Deze browser ondersteunt geen pushmeldingen.
+        Deze browser ondersteunt geen pushmeldingen. E-mailmeldingen blijven gewoon beschikbaar.
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-slate-900">E-mailmeldingen</p>
+            <p className="mt-1 text-sm leading-5 text-slate-500">
+              E-mail staat standaard aan. Zo mis je belangrijke meldingen ook als
+              je geen pushmeldingen op je telefoon of computer hebt ingesteld.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void wijzigEmailMeldingen()}
+            disabled={emailBezig}
+            className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition ${emailAan ? "bg-emerald-600" : "bg-slate-300"} disabled:cursor-wait disabled:opacity-60`}
+            aria-label={emailAan ? "E-mailmeldingen uitschakelen" : "E-mailmeldingen inschakelen"}
+          >
+            <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${emailAan ? "left-6" : "left-1"}`} />
+          </button>
+        </div>
+        <p className="mt-3 text-xs text-slate-500">
+          Je kunt e-mailmeldingen altijd zelf uitschakelen via deze instelling.
+        </p>
+      </div>
+
       <div className="flex flex-wrap items-center gap-3">
         <div
           className={[
@@ -284,29 +308,14 @@ export default function PushNotificationSettings() {
         </p>
       )}
 
-      <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-slate-900">E-mailmeldingen</p>
-            <p className="mt-1 text-sm text-slate-500">Ontvang dezelfde relevante herinneringen ook per e-mail.</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => void wijzigEmailMeldingen()}
-            disabled={emailBezig}
-            className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition ${emailAan ? "bg-emerald-600" : "bg-slate-300"} disabled:cursor-wait disabled:opacity-60`}
-            aria-label={emailAan ? "E-mailmeldingen uitschakelen" : "E-mailmeldingen inschakelen"}
-          >
-            <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${emailAan ? "left-6" : "left-1"}`} />
-          </button>
-        </div>
+      <div className="rounded-2xl bg-slate-50 p-4">
+        <p className="text-sm font-semibold text-slate-900">Pushmeldingen</p>
+        <p className="mt-1 text-sm leading-5 text-slate-500">
+          Push is optioneel en werkt alleen als je dit op je apparaat en in je
+          browser toestaat. Gebruik je Clevers op meerdere apparaten, dan stel
+          je pushmeldingen per apparaat afzonderlijk in.
+        </p>
       </div>
-
-      <p className="text-xs leading-5 text-slate-500">
-        Deze instelling geldt voor dit apparaat en deze browser. Gebruik je
-        Clevers op meerdere apparaten, dan kun je meldingen per apparaat
-        afzonderlijk instellen.
-      </p>
     </div>
   );
 }
