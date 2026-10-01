@@ -120,6 +120,7 @@ export async function verstuurBeschikbaarheidDeadlineHerinneringen() {
                       id: true,
                       email: true,
                       actief: true,
+                      emailMeldingenAan: true,
                       pushSubscriptions: {
                         where: {
                           actief: true,
@@ -237,7 +238,9 @@ Clevers`;
 <p>Met vriendelijke groet,<br>Clevers</p>`;
 
         // E-mail: maximaal één keer per medewerker/week/herinnering.
+        // De medewerker kan e-mailmeldingen zelf uitschakelen in Instellingen.
         const emailSleutel = `${sleutelBasis}:email`;
+        if (gebruiker.emailMeldingenAan) {
         const emailMelding = await prisma.emailMelding.upsert({
           where: { sleutel: emailSleutel },
           create: {
@@ -279,6 +282,7 @@ Clevers`;
             });
             fouten += 1;
           }
+        }
         }
 
         if (!pushBeschikbaar) continue;
