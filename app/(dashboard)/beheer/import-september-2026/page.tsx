@@ -26,7 +26,7 @@ export default function ImportSeptember2026Page() {
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h1 className="text-xl font-semibold text-slate-900">September 2026 rooster importeren</h1>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Importeert de 79 diensten uit het aangeleverde rooster voor medewerkers die actief in Nijmegen in ERP staan.
+          Importeert de 79 diensten uit het aangeleverde rooster voor medewerkers die actief in Nijmegen in ERP staan. Opnieuw uitvoeren is veilig: bestaande diensten worden niet gedupliceerd en eerder verkeerd opgeslagen kalenderdatums worden automatisch hersteld.
           Andrea de Bock wordt gekoppeld aan Andrea de Bock - Berghmans.
         </p>
         <p className="mt-2 text-sm leading-6 text-slate-600">
