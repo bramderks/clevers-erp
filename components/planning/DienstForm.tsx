@@ -1391,7 +1391,7 @@ export default function DienstForm({
       )
     ) {
       setFout(
-        "Diensten kunnen alleen per 30 minuten worden gepland.",
+        "Diensten kunnen alleen per 15 minuten worden gepland.",
       );
 
       return;
