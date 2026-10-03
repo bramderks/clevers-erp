@@ -52,6 +52,7 @@ model Vestiging {
 
   urenregistraties UrenRegistratie[]
   verloningsRegels VerloningsRegel[]
+  historischeVerloningsPeriodes HistorischeVerloningsPeriode[]
 
   openingstijden OpeningstijdenPeriode[]
   vestigingToegang SysteemGebruikerVestiging[]
