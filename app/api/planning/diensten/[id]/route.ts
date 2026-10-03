@@ -28,20 +28,20 @@ type PlanningTagInput = {
  *
  * - vanaf 08:30
  * - tot maximaal 23:00
- * - uitsluitend per 30 minuten
+ * - uitsluitend per 15 minuten
  *
  * Geldige voorbeelden:
  *
+ * 08:30
+ * 08:45
  * 09:00
- * 09:30
- * 10:00
- * 10:30
+ * 09:15
  * ...
  * 22:30
  * 23:00
  */
 
-const START_MINUTEN = 9 * 60;
+const START_MINUTEN = 8 * 60 + 30;
 const EINDE_MINUTEN = 23 * 60;
 const TIJD_INTERVAL = 15;
 
@@ -915,7 +915,7 @@ export async function PATCH(
       return NextResponse.json(
         {
           fout:
-            "Diensten kunnen alleen per 30 minuten worden gepland.",
+            "Diensten kunnen alleen per 15 minuten worden gepland.",
         },
         {
           status: 400,
