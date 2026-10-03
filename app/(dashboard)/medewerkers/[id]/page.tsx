@@ -36,6 +36,7 @@ import MedewerkerStatusActie from "@/components/medewerkers/MedewerkerStatusActi
 import BeschikbaarheidPanel from "@/components/medewerkers/beschikbaarheid/components/BeschikbaarheidPanel";
 import VakantiePlanningPanel from "@/components/medewerkers/VakantiePlanningPanel";
 import MedewerkerAfsprakenPanel from "@/components/medewerkers/MedewerkerAfsprakenPanel";
+import MedewerkerLoonperiodesPanel from "@/components/medewerkers/MedewerkerLoonperiodesPanel";
 
 type PageProps = {
   params: Promise<{
@@ -45,6 +46,7 @@ type PageProps = {
   searchParams: Promise<{
     tab?: string;
     edit?: string;
+    jaar?: string;
   }>;
 };
 
@@ -253,7 +255,7 @@ function maakMaandOverzicht(
 
 export default async function MedewerkerPage({ params, searchParams }: PageProps) {
   const { id } = await params;
-  const { tab, edit } = await searchParams;
+  const { tab, edit, jaar: jaarParam } = await searchParams;
 
   const gebruiker = await getCurrentUser();
   if (!gebruiker) redirect("/login");
@@ -556,20 +558,28 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
     .slice(0, 50);
 
   const huidigJaar = new Date().getFullYear();
+  const geselecteerdJaar = jaarParam && /^\d{4}$/.test(jaarParam) ? Number(jaarParam) : huidigJaar;
+  const loonperiodes = await prisma.medewerkerLoonPeriode.findMany({
+    where: { medewerkerId: medewerker.id },
+    orderBy: [{ periodeStart: "desc" }, { periodeEinde: "desc" }],
+    select: { id: true, uurloon: true, periodeStart: true, periodeEinde: true, actief: true },
+  });
+  const vandaagVoorLoon = new Date();
+  const actiefLoon = loonperiodes.find((p) => p.actief && p.periodeStart <= vandaagVoorLoon && p.periodeEinde >= vandaagVoorLoon) ?? null;
   const definitieveUren = await prisma.urenRegistratie.findMany({
     where: {
       medewerkerId: medewerker.id,
       status: "DEFINITIEF",
       datum: {
-        gte: new Date(huidigJaar, 0, 1),
-        lt: new Date(huidigJaar + 1, 0, 1),
+        gte: new Date(geselecteerdJaar, 0, 1),
+        lt: new Date(geselecteerdJaar + 1, 0, 1),
       },
     },
     select: { datum: true, gewerkteUren: true },
     orderBy: { datum: "asc" },
   });
 
-  const maandOverzicht = maakMaandOverzicht(huidigJaar, definitieveUren);
+  const maandOverzicht = maakMaandOverzicht(geselecteerdJaar, definitieveUren);
   const totaalDagen = maandOverzicht.reduce((totaal, maand) => totaal + maand.dagen, 0);
   const totaalUren = maandOverzicht.reduce((totaal, maand) => totaal + maand.uren, 0);
 
@@ -955,11 +965,22 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
                 <>
                   <Card title="Verloningsgegevens" description="Gegevens die relevant zijn voor de verloning.">
                     <dl className="grid gap-5 sm:grid-cols-2">
-                      <div><dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Uurloon</dt><dd className="mt-1 text-sm font-medium text-slate-700">{medewerker.uurloon != null ? new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(Number(medewerker.uurloon)) : "Nog niet ingevuld"}</dd></div>
+                      <div><dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Actief uurloon</dt><dd className="mt-1 text-sm font-medium text-emerald-700">{actiefLoon ? new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(Number(actiefLoon.uurloon)) : "Geen actief uurloon"}</dd></div>
                       <div><dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Contracturen</dt><dd className="mt-1 text-sm text-slate-700">{medewerker.contractUren != null ? `${medewerker.contractUren} uur` : "Nog niet ingevuld"}</dd></div>
                     </dl>
                   </Card>
-                  <Card title={`Goedgekeurde uren ${huidigJaar}`} description="Alleen definitief gecontroleerde gewerkte uren worden meegenomen.">
+                  <MedewerkerLoonperiodesPanel
+                    medewerkerId={medewerker.id}
+                    periodes={loonperiodes.map((p) => ({ ...p, uurloon: Number(p.uurloon) }))}
+                    actiefUurloon={actiefLoon ? Number(actiefLoon.uurloon) : null}
+                    alleenLezen={!magVerloningBewerken}
+                  />
+                  <Card title={`Goedgekeurde uren ${geselecteerdJaar}`} description="Alleen definitief gecontroleerde gewerkte uren worden meegenomen.">
+                    <div className="mb-5 flex flex-wrap items-center gap-2">
+                      {[huidigJaar - 1, huidigJaar, huidigJaar + 1].map((jaar) => (
+                        <Link key={jaar} href={`/medewerkers/${medewerker.id}?tab=verloning&jaar=${jaar}`} className={`rounded-lg border px-3 py-2 text-sm font-medium ${geselecteerdJaar === jaar ? "border-slate-900 bg-slate-900 text-white" : "border-slate-300 bg-white text-slate-700"}`}>{jaar}</Link>
+                      ))}
+                    </div>
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                       {maandOverzicht.map((maand) => (
                         <div key={maand.maand} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
