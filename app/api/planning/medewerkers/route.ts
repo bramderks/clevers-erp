@@ -12,6 +12,21 @@ import {
   urenVanSamengevoegdeIntervallen,
 } from "@/lib/verloning/overlappendeUren";
 
+function uurloonVoorDag(
+  medewerker: {
+    uurloon: unknown;
+    loonperiodes: Array<{ uurloon: unknown; periodeStart: Date; periodeEinde: Date }>;
+  },
+  datum: Date,
+) {
+  const actief = medewerker.loonperiodes.find(
+    (periode) => periode.periodeStart <= datum && periode.periodeEinde >= datum,
+  );
+  if (actief) return Number(actief.uurloon);
+  if (medewerker.uurloon !== null) return Number(medewerker.uurloon);
+  return null;
+}
+
 function datumTekstNaarBeginVanDag(
   datum: string,
 ) {
@@ -407,12 +422,7 @@ export async function GET(
 
           ...(magFinancielePlanningInzien
             ? {
-                uurloon: (() => {
-                  const actief = medewerker.loonperiodes.find(
-                    (periode) => periode.periodeStart <= beginVanDag && periode.periodeEinde >= beginVanDag,
-                  );
-                  return actief ? Number(actief.uurloon) : medewerker.uurloon !== null ? Number(medewerker.uurloon) : null;
-                })(),
+                uurloon: uurloonVoorDag(medewerker, beginVanDag),
                 urenSindsVorigeVerloning:
                   Math.round((urenPerMedewerker.get(medewerker.id) ?? 0) * 100) / 100,
                 vorigeVerloningEinde:
