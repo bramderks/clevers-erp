@@ -963,7 +963,7 @@ export async function POST(
       return NextResponse.json(
         {
           fout:
-            "Een dienst kan niet eerder dan 09:00 beginnen.",
+            "Een dienst kan niet eerder dan 08:30 beginnen.",
         },
         {
           status: 400,
