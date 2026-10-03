@@ -155,6 +155,32 @@ export default function LoonkostenRapport(p: {
     }
   };
 
+  const herberekenen = async () => {
+    if (!gesloten || !p.weekBestaat) return;
+    if (!window.confirm("Deze afgesloten week opnieuw berekenen met de actuele centrale pauze- en loonregels? De historische snapshot wordt hiermee gecorrigeerd.")) return;
+
+    setBusy(true);
+    setMelding("");
+    try {
+      const response = await fetch("/api/rapportages/loonkosten/herbereken", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vestigingId: p.vestigingId,
+          jaar: p.jaar,
+          weeknummer: p.weeknummer,
+        }),
+      });
+      const resultaat = await response.json();
+      if (!response.ok) throw new Error(resultaat.error || "Herberekenen mislukt.");
+      window.location.reload();
+    } catch (error) {
+      setMelding(error instanceof Error ? error.message : "Herberekenen mislukt.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const afsluiten = async () => {
     if (gesloten || !p.weekBestaat) return;
     if (!window.confirm("Week afsluiten? De geplande loonkosten, omzet en personeelsmix worden definitief opgeslagen als historische waarde.")) return;
@@ -429,7 +455,11 @@ export default function LoonkostenRapport(p: {
           <div>
             <p className="font-semibold">Week afgesloten</p>
             <p className="mt-0.5">De loonkostenrapportage is definitief vastgelegd op {new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium", timeStyle: "short" }).format(new Date(p.afgeslotenOp!))}.</p>
+            <p className="mt-1 text-xs text-slate-500">De snapshot kan hieronder eenmalig opnieuw worden berekend met de huidige centrale pauze- en loonregels.</p>
           </div>
+          <button onClick={herberekenen} disabled={busy} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">
+            {busy ? "Herberekenen..." : "Snapshot herstellen"}
+          </button>
         </div>
       ) : (
         <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
