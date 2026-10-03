@@ -470,6 +470,15 @@ async function haalPlanningOp(
                   tussenvoegsel: true,
                   achternaam: true,
                   uurloon: true,
+                  loonperiodes: {
+                    where: { actief: true },
+                    select: {
+                      uurloon: true,
+                      periodeStart: true,
+                      periodeEinde: true,
+                    },
+                    orderBy: { periodeStart: "desc" },
+                  },
                   tags: {
                     include: { tag: true },
                     orderBy: { tag: { volgorde: "asc" } },
@@ -533,15 +542,27 @@ async function haalPlanningOp(
         medewerker: bezetting.medewerker
           ? {
               ...bezetting.medewerker,
+              uurloon: (() => {
+                const datum = new Date(dienst.datum);
+                const actief = bezetting.medewerker.loonperiodes.find(
+                  (periode) => periode.periodeStart <= datum && periode.periodeEinde >= datum,
+                );
+                return actief ? Number(actief.uurloon) : bezetting.medewerker.uurloon !== null ? Number(bezetting.medewerker.uurloon) : null;
+              })(),
               ...(magFinancieel
                 ? {
                     uurloon:
-                      bezetting.medewerker.uurloon !== null
-                        ? Number(bezetting.medewerker.uurloon)
-                        : null,
+                      (() => {
+                        const datum = new Date(dienst.datum);
+                        const actief = bezetting.medewerker.loonperiodes.find(
+                          (periode) => periode.periodeStart <= datum && periode.periodeEinde >= datum,
+                        );
+                        return actief ? Number(actief.uurloon) : bezetting.medewerker.uurloon !== null ? Number(bezetting.medewerker.uurloon) : null;
+                      })(),
                   }
                 : {}),
               ...(magFinancieel ? {} : { uurloon: undefined }),
+              loonperiodes: undefined,
             }
           : null,
       })),
