@@ -428,13 +428,17 @@ function tijdUitWaarde(
  * ============================================================
  */
 
-function tijdNaarMinuten(
-  datum: Date,
-): number {
-  return (
-    datum.getHours() * 60 +
-    datum.getMinutes()
-  );
+function tijdNaarMinuten(datum: Date): number {
+  const delen = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Amsterdam",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(datum);
+
+  const uur = Number(delen.find((deel) => deel.type === "hour")?.value ?? "0");
+  const minuut = Number(delen.find((deel) => deel.type === "minute")?.value ?? "0");
+  return uur * 60 + minuut;
 }
 
 /*
@@ -453,14 +457,13 @@ function tijdNaarMinuten(
  * XX:45
  */
 
-function isGeldigTijdsinterval(
-  datum: Date,
-): boolean {
-  return (
-    datum.getMinutes() %
-      TIJD_INTERVAL ===
-    0
-  );
+function isGeldigTijdsinterval(datum: Date): boolean {
+  const delen = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Amsterdam",
+    minute: "2-digit",
+  }).formatToParts(datum);
+  const minuut = Number(delen.find((deel) => deel.type === "minute")?.value ?? "0");
+  return minuut % TIJD_INTERVAL === 0;
 }
 
 /*
