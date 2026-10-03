@@ -491,10 +491,10 @@ function kalenderDatum(date: string) {
   return new Date(date + "T00:00:00.000Z");
 }
 function dagStart(date: Date) {
-  const d = new Date(date); d.setHours(0,0,0,0); return d;
+  const d = new Date(date); d.setUTCHours(0, 0, 0, 0); return d;
 }
 function dagEinde(date: Date) {
-  const d = new Date(date); d.setHours(23,59,59,999); return d;
+  const d = new Date(date); d.setUTCHours(23, 59, 59, 999); return d;
 }
 function isoWeek(datum: Date) {
   const d = new Date(Date.UTC(datum.getFullYear(), datum.getMonth(), datum.getDate()));
@@ -572,31 +572,40 @@ export async function POST() {
       }
 
       let dienst = await prisma.dienst.findFirst({
-        where: { weekId: week.id, datum: { gte: dagStart(datum), lte: dagEinde(datum) }, begintijd, eindtijd },
+        where: {
+          weekId: week.id,
+          datum: { gte: dagStart(datum), lte: dagEinde(datum) },
+          begintijd,
+          eindtijd,
+        },
         select: { id: true },
       });
 
-      // Herstel eerder geïmporteerde diensten waarbij de kalenderdatum
-      // als Amsterdamse middernacht was opgeslagen (dus 1 dag terug in UTC).
+      // Herstel ook diensten die door de eerdere timezone-fout in de
+      // verkeerde planningweek terecht zijn gekomen. Bijvoorbeeld:
+      // 7 september kon als 6 september worden geïnterpreteerd en zo
+      // onterecht aan ISO-week 36 worden gekoppeld.
       if (!dienst) {
-        const verkeerdeDatum = new Date(datum);
-        verkeerdeDatum.setUTCDate(verkeerdeDatum.getUTCDate() - 1);
+        const vorigeDatum = new Date(datum);
+        vorigeDatum.setUTCDate(vorigeDatum.getUTCDate() - 1);
+        const volgendeDatum = new Date(datum);
+        volgendeDatum.setUTCDate(volgendeDatum.getUTCDate() + 1);
 
         const bestaandVerkeerd = await prisma.dienst.findFirst({
           where: {
-            weekId: week.id,
-            datum: { gte: verkeerdeDatum, lt: datum },
+            datum: { gte: vorigeDatum, lte: volgendeDatum },
             begintijd,
             eindtijd,
             bezetting: { some: { medewerkerId: medewerker.id } },
           },
+          orderBy: { datum: "asc" },
           select: { id: true },
         });
 
         if (bestaandVerkeerd) {
           dienst = await prisma.dienst.update({
             where: { id: bestaandVerkeerd.id },
-            data: { datum },
+            data: { datum, weekId: week.id },
             select: { id: true },
           });
         }
