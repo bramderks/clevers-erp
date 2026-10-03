@@ -969,7 +969,13 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
                   </Card>
                   <MedewerkerLoonperiodesPanel
                     medewerkerId={medewerker.id}
-                    periodes={loonperiodes.map((p) => ({ ...p, uurloon: Number(p.uurloon) }))}
+                    periodes={loonperiodes.map((p) => ({
+                      id: p.id,
+                      uurloon: Number(p.uurloon),
+                      periodeStart: p.periodeStart.toISOString(),
+                      periodeEinde: p.periodeEinde.toISOString(),
+                      actief: p.actief,
+                    }))}
                     actiefUurloon={actiefLoon ? Number(actiefLoon.uurloon) : null}
                     alleenLezen={!magVerloningBewerken}
                   />
