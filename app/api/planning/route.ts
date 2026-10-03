@@ -562,6 +562,34 @@ async function haalPlanningOp(
   }));
 }
 
+function uurloonVoorDienst(
+  medewerker: {
+    uurloon: unknown;
+    loonperiodes: Array<{
+      uurloon: unknown;
+      periodeStart: Date;
+      periodeEinde: Date;
+    }>;
+  },
+  datum: Date,
+) {
+  const actief = medewerker.loonperiodes.find(
+    (periode) =>
+      periode.periodeStart <= datum &&
+      periode.periodeEinde >= datum,
+  );
+
+  if (actief) {
+    return Number(actief.uurloon);
+  }
+
+  if (medewerker.uurloon !== null) {
+    return Number(medewerker.uurloon);
+  }
+
+  return null;
+}
+
 /*
  * ============================================================
  * GET
