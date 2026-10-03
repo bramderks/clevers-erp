@@ -180,6 +180,7 @@ export async function POST(request: NextRequest) {
       datum: dienst.datum.toISOString(),
       begintijd: dienst.begintijd.toISOString(),
       eindtijd: dienst.eindtijd.toISOString(),
+      pauzeMinuten: berekenGewerkteUren(dienst.begintijd, dienst.eindtijd).pauzeMinuten,
       medewerkers: dienst.bezetting
         .filter((bezetting) => bezetting.medewerker)
         .map((bezetting) => ({
@@ -190,7 +191,7 @@ export async function POST(request: NextRequest) {
     }));
 
     const snapshot = {
-      versie: 2,
+      versie: 4,
       vastgelegdOp: new Date().toISOString(),
       dagen,
       medewerkers,
