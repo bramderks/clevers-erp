@@ -43,7 +43,7 @@ type PlanningTagInput = {
 
 const START_MINUTEN = 9 * 60;
 const EINDE_MINUTEN = 23 * 60;
-const TIJD_INTERVAL = 30;
+const TIJD_INTERVAL = 15;
 
 /*
  * ============================================================
