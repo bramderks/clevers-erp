@@ -104,9 +104,9 @@ function uitSnapshot(loonkosten: {
   }
 
   const snapshot = loonkosten.snapshot as RapportSnapshot;
-  // Snapshots van vóór versie 3 bevatten bruto-uren zonder de centrale pauzeregels.
-  // Gebruik die niet meer als historische bron; de pagina berekent dan opnieuw met de actuele centrale regels.
-  if ((snapshot.versie ?? 0) < 3) return null;
+  // Snapshots van vóór versie 4 zijn gemaakt vóór de definitieve rapportage- en pauzelogica.
+  // Gebruik die niet meer als historische bron; de pagina berekent dan opnieuw vanuit de actuele diensten van de week.
+  if ((snapshot.versie ?? 0) < 4) return null;
   if (!Array.isArray(snapshot.dagen) || !Array.isArray(snapshot.medewerkers)) {
     return null;
   }
