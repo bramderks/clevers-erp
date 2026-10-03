@@ -1197,6 +1197,11 @@ export default function PlanningWeekOverzicht({
                                                           medewerker,
                                                         )}
                                                       </span>
+                                                      {isEigenaar && medewerker.uurloon != null && (
+                                                        <span className="shrink-0 text-[10px] font-medium text-slate-500">
+                                                          € {Number(medewerker.uurloon).toFixed(2).replace(".", ",")}/uur
+                                                        </span>
+                                                      )}
                                                     </div>
                                                   );
                                                 },
