@@ -3,6 +3,16 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 
+function kalenderDatumVanBegintijd(begintijd: Date): Date {
+  const delen = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Amsterdam", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(begintijd);
+  const jaar = Number(delen.find((d) => d.type === "year")?.value);
+  const maand = Number(delen.find((d) => d.type === "month")?.value);
+  const dag = Number(delen.find((d) => d.type === "day")?.value);
+  return new Date(Date.UTC(jaar, maand - 1, dag));
+}
+
 import DienstBewerkToggle from "@/components/planning/DienstBewerkToggle";
 import RuilDienstPaneel from "@/components/planning/RuilDienstPaneel";
 
@@ -424,6 +434,8 @@ EIGEN BEZETTING
 ============================================================
 */
 
+const kalenderDatum = kalenderDatumVanBegintijd(dienst.begintijd);
+
 const eigenBezetting =
 isMedewerker
 ? dienst.bezetting.find(
@@ -448,7 +460,7 @@ HEADER
 
         <h1 className="mt-2 text-3xl font-semibold text-slate-900">
           {formatDate(
-            dienst.datum,
+            kalenderDatum,
           )}
         </h1>
 
@@ -485,7 +497,7 @@ HEADER
 
         <p className="mt-2 text-sm font-medium text-slate-900">
           {formatDate(
-            dienst.datum,
+            kalenderDatum,
           )}
         </p>
       </div>
@@ -531,7 +543,7 @@ HEADER
           dienst={{
             id: dienst.id,
             weekId: dienst.weekId,
-            datum: dienst.datum.toISOString(),
+            datum: kalenderDatum.toISOString(),
             begintijd: dienst.begintijd.toISOString(),
             eindtijd: dienst.eindtijd.toISOString(),
             opmerkingen: dienst.opmerkingen,
@@ -760,7 +772,7 @@ HEADER
               dienstBezettingId={eigenBezetting.id}
               huidigeMedewerkerId={gebruiker.medewerker!.id}
               vestigingId={dienst.week.vestigingId}
-              datum={dienst.datum.toISOString()}
+              datum={kalenderDatum.toISOString()}
               begintijd={dienst.begintijd.toISOString()}
               eindtijd={dienst.eindtijd.toISOString()}
               vereisteTags={dienst.tags.map((dienstTag) => ({
