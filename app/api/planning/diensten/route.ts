@@ -317,38 +317,51 @@ function isDatumBinnenSeizoen(
   );
 }
 
-function minutenVanDag(
-  datum: Date,
-) {
+function amsterdamOnderdelen(datum: Date) {
+  const delen = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Amsterdam",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(datum);
+
+  const waarde = (type: string) =>
+    Number(delen.find((deel) => deel.type === type)?.value ?? "0");
+
+  return {
+    jaar: waarde("year"),
+    maand: waarde("month"),
+    dag: waarde("day"),
+    uur: waarde("hour"),
+    minuut: waarde("minute"),
+    seconde: waarde("second"),
+  };
+}
+
+function minutenVanDag(datum: Date) {
+  const lokaal = amsterdamOnderdelen(datum);
+  return lokaal.uur * 60 + lokaal.minuut;
+}
+
+function isTijdOpKwartier(datum: Date) {
+  const lokaal = amsterdamOnderdelen(datum);
   return (
-    datum.getHours() * 60 +
-    datum.getMinutes()
+    lokaal.seconde === 0 &&
+    datum.getUTCMilliseconds() === 0 &&
+    lokaal.minuut % TIJDSTAP_MINUTEN === 0
   );
 }
 
-function isTijdOpKwartier(
-  datum: Date,
-) {
+function isZelfdeDag(a: Date, b: Date) {
+  const lokaalA = amsterdamOnderdelen(a);
+  const lokaalB = amsterdamOnderdelen(b);
   return (
-    datum.getSeconds() === 0 &&
-    datum.getMilliseconds() === 0 &&
-    datum.getMinutes() %
-      TIJDSTAP_MINUTEN ===
-      0
-  );
-}
-
-function isZelfdeDag(
-  a: Date,
-  b: Date,
-) {
-  return (
-    a.getFullYear() ===
-      b.getFullYear() &&
-    a.getMonth() ===
-      b.getMonth() &&
-    a.getDate() ===
-      b.getDate()
+    lokaalA.jaar === lokaalB.jaar &&
+    lokaalA.maand === lokaalB.maand &&
+    lokaalA.dag === lokaalB.dag
   );
 }
 
