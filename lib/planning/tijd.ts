@@ -1,4 +1,4 @@
-export const START_MINUTEN = 9 * 60;
+export const START_MINUTEN = 8 * 60 + 30;
 export const EINDE_MINUTEN = 23 * 60;
 export const TIJD_INTERVAL = 15;
 
