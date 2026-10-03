@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser, isEigenaar } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+function uurloonVoorDienst(
+  medewerker: {
+    uurloon: unknown;
+    loonperiodes: Array<{ uurloon: unknown; periodeStart: Date; periodeEinde: Date }>;
+  },
+  datum: Date,
+) {
+  const actief = medewerker.loonperiodes.find(
+    (periode) => periode.periodeStart <= datum && periode.periodeEinde >= datum,
+  );
+  if (actief) return Number(actief.uurloon);
+  if (medewerker.uurloon !== null) return Number(medewerker.uurloon);
+  return null;
+}
+
 function urenVanDienst(begintijd: Date, eindtijd: Date) {
   return Math.max(
     0,
@@ -108,14 +123,7 @@ export async function POST(request: NextRequest) {
         .map((bezetting) => {
           const medewerker = bezetting.medewerker!;
           const uren = urenVanDienst(dienst.begintijd, dienst.eindtijd);
-          const loonPeriode = medewerker.loonperiodes.find(
-            (periode) => periode.periodeStart <= dienst.datum && periode.periodeEinde >= dienst.datum,
-          );
-          const uurloon = loonPeriode
-            ? Number(loonPeriode.uurloon)
-            : medewerker.uurloon == null
-              ? null
-              : Number(medewerker.uurloon);
+          const uurloon = uurloonVoorDienst(medewerker, dienst.datum);
           return {
             datum: dienst.datum.toISOString().slice(0, 10),
             medewerkerId: medewerker.id,
@@ -183,16 +191,7 @@ export async function POST(request: NextRequest) {
         .map((bezetting) => ({
           medewerkerId: bezetting.medewerker!.id,
           naam: [bezetting.medewerker!.voornaam, bezetting.medewerker!.achternaam].filter(Boolean).join(" "),
-          uurloon: (() => {
-            const loonPeriode = bezetting.medewerker!.loonperiodes.find(
-              (periode) => periode.periodeStart <= dienst.datum && periode.periodeEinde >= dienst.datum,
-            );
-            return loonPeriode
-              ? Number(loonPeriode.uurloon)
-              : bezetting.medewerker!.uurloon == null
-                ? null
-                : Number(bezetting.medewerker!.uurloon);
-          })(),
+          uurloon: uurloonVoorDienst(bezetting.medewerker!, dienst.datum),
         })),
     }));
 
