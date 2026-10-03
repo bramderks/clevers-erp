@@ -26,7 +26,7 @@ type PlanningTagInput = {
  *
  * Diensten kunnen worden gepland:
  *
- * - vanaf 09:00
+ * - vanaf 08:30
  * - tot maximaal 23:00
  * - uitsluitend per 30 minuten
  *
@@ -924,7 +924,7 @@ export async function PATCH(
     }
 
     /*
-     * Niet vóór 09:00.
+     * Niet vóór 08:30.
      */
 
     if (
@@ -933,7 +933,7 @@ export async function PATCH(
       return NextResponse.json(
         {
           fout:
-            "Een dienst kan niet vóór 09:00 starten.",
+            "Een dienst kan niet vóór 08:30 starten.",
         },
         {
           status: 400,
