@@ -81,7 +81,7 @@ type DienstFormProps = {
   onAangemaakt?: () => void;
 };
 
-const START_MINUTEN = 9 * 60;
+const START_MINUTEN = 8 * 60 + 30;
 const EINDE_MINUTEN = 23 * 60;
 
 function minutenNaarTijd(minuten: number) {
@@ -1402,7 +1402,7 @@ export default function DienstForm({
       START_MINUTEN
     ) {
       setFout(
-        "Een dienst kan niet vóór 09:00 starten.",
+        "Een dienst kan niet vóór 08:30 starten.",
       );
 
       return;
