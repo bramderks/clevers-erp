@@ -366,7 +366,7 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
   });
 
   const editSection = getEditSection(actieveTab);
-  const isBewerken = edit === "1" && magTabBewerken && editSection !== null;
+  const isBewerken = edit === "1" && magTabBewerken && editSection !== null && actieveTab !== "verloning";
   const volledigeNaam = formatteerNaam(medewerker);
 
   const beschikbareRollen = isEigenaar
@@ -954,8 +954,6 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
                   <h2 className="text-lg font-semibold text-slate-900">Verloning</h2>
                   <p className="mt-1 text-sm text-slate-500">Verloningsgegevens en definitief geregistreerde gewerkte uren.</p>
                 </div>
-                {!isBewerken && <WijzigenKnop href={`/medewerkers/${medewerker.id}?tab=verloning&edit=1`} disabled={!magVerloningBewerken} />}
-                {isBewerken && <AnnuleerBewerkenKnop href={`/medewerkers/${medewerker.id}?tab=verloning`} />}
               </div>
               {isBewerken && editSection === "verloning" ? (
                 <Card title="Verloningsgegevens wijzigen" description="Wijzig het uurloon van deze medewerker.">
