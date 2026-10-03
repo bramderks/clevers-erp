@@ -104,7 +104,7 @@ function uitSnapshot(loonkosten: {
   }
 
   const snapshot = loonkosten.snapshot as RapportSnapshot;
-  // Snapshots van vóór versie 4 zijn gemaakt vóór de definitieve rapportage- en pauzelogica.
+  // Snapshots van vóór versie 5 zijn gemaakt vóór de definitieve rapportage- en pauzelogica.
   // Gebruik die niet meer als historische bron; de pagina berekent dan opnieuw vanuit de actuele diensten van de week.
   if ((snapshot.versie ?? 0) < 4) return null;
   if (!Array.isArray(snapshot.dagen) || !Array.isArray(snapshot.medewerkers)) {
