@@ -486,6 +486,61 @@ function maakDatumMetTijd(
 
 /*
  * ============================================================
+ * KALENDERDATUM NORMALISEREN
+ * ============================================================
+ *
+ * Dienst.datum is een kalenderdatum en hoort niet door de
+ * timezone van de database een dag terug te schuiven.
+ * De begintijd bevat de daadwerkelijke lokale dienst-datum.
+ *
+ * Oude imports konden bijvoorbeeld:
+ *   datum = 31-08 22:00 UTC
+ *   begintijd = 31-08 22:00 UTC (= 01-09 00:00 Amsterdam)
+ *
+ * In dat geval herstellen we datum naar 01-09 00:00 UTC.
+ */
+function kalenderDatumVanLokaleDienst(begintijd: Date): Date {
+  const delen = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Amsterdam",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(begintijd);
+
+  const jaar = Number(delen.find((deel) => deel.type === "year")?.value);
+  const maand = Number(delen.find((deel) => deel.type === "month")?.value);
+  const dag = Number(delen.find((deel) => deel.type === "day")?.value);
+
+  return new Date(Date.UTC(jaar, maand - 1, dag, 0, 0, 0, 0));
+}
+
+function kalenderDatumIsGelijk(a: Date, b: Date): boolean {
+  return (
+    a.getUTCFullYear() === b.getUTCFullYear() &&
+    a.getUTCMonth() === b.getUTCMonth() &&
+    a.getUTCDate() === b.getUTCDate()
+  );
+}
+
+async function normaliseerKalenderDatum(dienst: {
+  id: string;
+  datum: Date;
+  begintijd: Date;
+}) {
+  const juisteDatum = kalenderDatumVanLokaleDienst(dienst.begintijd);
+
+  if (kalenderDatumIsGelijk(dienst.datum, juisteDatum)) {
+    return dienst;
+  }
+
+  return prisma.dienst.update({
+    where: { id: dienst.id },
+    data: { datum: juisteDatum },
+  });
+}
+
+/*
+ * ============================================================
  * GET
  * ============================================================
  */
@@ -558,7 +613,7 @@ export async function GET(
       );
     }
 
-    const volledigeDienst =
+    let volledigeDienst =
       await haalDienstVolledigOp(id);
 
     if (!volledigeDienst) {
@@ -572,6 +627,18 @@ export async function GET(
         },
       );
     }
+
+    const genormaliseerdeDienst =
+      await normaliseerKalenderDatum({
+        id: volledigeDienst.id,
+        datum: volledigeDienst.datum,
+        begintijd: volledigeDienst.begintijd,
+      });
+
+    volledigeDienst = {
+      ...volledigeDienst,
+      datum: genormaliseerdeDienst.datum,
+    };
 
     return NextResponse.json(
       volledigeDienst,
