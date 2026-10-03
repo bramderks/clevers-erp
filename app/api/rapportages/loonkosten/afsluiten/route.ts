@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser, isEigenaar } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { berekenGewerkteUren } from "@/lib/verloning/pauze";
 
 function uurloonVoorDienst(
   medewerker: {
@@ -15,13 +16,6 @@ function uurloonVoorDienst(
   if (actief) return Number(actief.uurloon);
   if (medewerker.uurloon !== null) return Number(medewerker.uurloon);
   return null;
-}
-
-function urenVanDienst(begintijd: Date, eindtijd: Date) {
-  return Math.max(
-    0,
-    (new Date(eindtijd).getTime() - new Date(begintijd).getTime()) / 3600000,
-  );
 }
 
 export async function POST(request: NextRequest) {
@@ -122,7 +116,7 @@ export async function POST(request: NextRequest) {
         .filter((bezetting) => bezetting.medewerker)
         .map((bezetting) => {
           const medewerker = bezetting.medewerker!;
-          const uren = urenVanDienst(dienst.begintijd, dienst.eindtijd);
+          const uren = berekenGewerkteUren(dienst.begintijd, dienst.eindtijd).gewerkteUren;
           const uurloon = uurloonVoorDienst(medewerker, dienst.datum);
           return {
             datum: dienst.datum.toISOString().slice(0, 10),
