@@ -106,7 +106,7 @@ function maakTijden(
   for (
     let minuten = vanaf;
     minuten <= tot;
-    minuten += 30
+    minuten += 15
   ) {
     tijden.push(
       minutenNaarTijd(minuten),
@@ -1155,7 +1155,7 @@ export default function DienstForm({
       }
 
       return maakTijden(
-        start + 30,
+        start + 15,
         EINDE_MINUTEN,
       );
     }, [begintijd]);
