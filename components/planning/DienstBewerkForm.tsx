@@ -705,9 +705,7 @@ export default function DienstBewerkForm({
 }: DienstBewerkFormProps) {
   const [datum, setDatum] =
     useState(
-      datumNaarInput(
-        dienst.datum,
-      ),
+      datumNaarInput(dienst.begintijd),
     );
 
   const [
@@ -831,9 +829,7 @@ export default function DienstBewerkForm({
 
   useEffect(() => {
     setDatum(
-      datumNaarInput(
-        dienst.datum,
-      ),
+      datumNaarInput(dienst.begintijd),
     );
 
     setBegintijd(
