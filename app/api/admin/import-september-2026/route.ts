@@ -522,11 +522,21 @@ export async function POST() {
       return NextResponse.json({ fout: "Alleen de eigenaar kan deze import uitvoeren." }, { status: 403 });
     }
 
-    const tag = await prisma.tag.findFirst({
-      where: { naam: "Bediening", actief: true },
-      select: { id: true },
-    });
-    if (!tag) return NextResponse.json({ fout: "Planningstag Bediening ontbreekt." }, { status: 400 });
+    const [leidinggevendeTag, handijsTag] = await Promise.all([
+      prisma.tag.findFirst({ where: { naam: "Leidinggevende", actief: true }, select: { id: true } }),
+      prisma.tag.findFirst({ where: { naam: "Handijs", actief: true }, select: { id: true } }),
+    ]);
+    if (!leidinggevendeTag || !handijsTag) {
+      return NextResponse.json({ fout: "Planningstag Leidinggevende en/of Handijs ontbreekt." }, { status: 400 });
+    }
+
+    const leidinggevendeNamen = new Set([
+      norm("Jessica Derks"),
+      norm("Bram Derks"),
+      norm("Andrea de Bock"),
+      norm("Pleun Kamps"),
+      norm("Jayro Peters"),
+    ]);
 
     const medewerkers = await prisma.medewerker.findMany({
       where: { actief: true, vestigingen: { some: { vestigingId: vestiging.id } } },
@@ -548,6 +558,7 @@ export async function POST() {
 
     for (const item of DIENSTEN) {
       const lookup = alias[norm(item.name)] ?? norm(item.name);
+      const isLeidinggevende = leidinggevendeNamen.has(norm(item.name));
       const medewerker = medewerkerByName.get(lookup);
       if (!medewerker) {
         if (!unmatched.includes(item.name)) unmatched.push(item.name);
@@ -613,7 +624,7 @@ export async function POST() {
 
       if (!dienst) {
         dienst = await prisma.dienst.create({
-          data: { weekId: week.id, datum, begintijd, eindtijd, tags: { create: [{ tagId: tag.id, aantal: 1 }] } },
+          data: { weekId: week.id, datum, begintijd, eindtijd, tags: { create: [{ tagId: isLeidinggevende ? leidinggevendeTag.id : handijsTag.id, aantal: 1 }] } },
           select: { id: true },
         });
         created.push(dienst.id);
