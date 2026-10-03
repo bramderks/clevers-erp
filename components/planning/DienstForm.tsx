@@ -1384,10 +1384,10 @@ export default function DienstForm({
     }
 
     if (
-      startMinuten % 30 !== 0 ||
+      startMinuten % 15 !== 0 ||
       (
         eindeMinuten !== null &&
-        eindeMinuten % 30 !== 0
+        eindeMinuten % 15 !== 0
       )
     ) {
       setFout(
