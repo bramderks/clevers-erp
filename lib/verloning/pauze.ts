@@ -50,10 +50,10 @@ function afrondenOpKwartier(
  *
  * 3. Start vanaf 17:00:
  *
- *    - Altijd 30 minuten pauze.
+ *    - Geen pauze.
  *
- * De regel "vanaf 17:00" heeft voorrang op
- * de overige regels.
+ * Avond-/sluitdiensten vanaf 17:00 worden dus volledig als
+ * gewerkte tijd gerekend.
  * ============================================================
  */
 
@@ -78,11 +78,11 @@ export function bepaalPauzeMinuten(
 
   /*
    * Start vanaf 17:00:
-   * altijd 30 minuten pauze.
+   * geen pauze.
    */
 
   if (start >= zeventienUur) {
-    return 30;
+    return 0;
   }
 
   /*
