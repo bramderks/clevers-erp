@@ -76,6 +76,13 @@ model VerloningsRegel {
   gewerkteDagen Int @default(0)
   gewerkteUren Decimal @db.Decimal(7, 2)
 
+  /// Snapshot van het uurloon op het moment van verloning.
+  /// Dit blijft historisch correct als het huidige uurloon later wijzigt.
+  uurloon Decimal? @db.Decimal(8, 2)
+
+  /// Snapshot van de loonkosten van deze verloningsregel.
+  loonkosten Decimal? @db.Decimal(12, 2)
+
   verloningsPeriode VerloningsPeriode @relation(fields: [verloningsPeriodeId], references: [id], onDelete: Cascade)
   medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Restrict)
   vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Restrict)
@@ -119,4 +126,58 @@ model LoonkostenWeek {
 
   @@index([afgeslotenOp])
   @@index([afgeslotenDoorId])
+}
+
+
+/// ======================================================
+/// HISTORISCHE VERLONING / BEDRIJFSCIJFERS
+/// ======================================================
+///
+/// Losgekoppeld van de actuele planning. Deze records bevatten
+/// uitsluitend historische KPI's/snapshots en nooit historische
+/// medewerkers of diensten.
+///
+/// Daardoor blijven rapportages stabiel wanneer actuele planning,
+/// medewerkers of lonen later wijzigen.
+model HistorischeVerloningsPeriode {
+  id String @id @default(cuid())
+
+  vestigingId String
+  vestiging Vestiging @relation(fields: [vestigingId], references: [id], onDelete: Cascade)
+
+  periodeStart DateTime
+  periodeEinde DateTime
+
+  omschrijving String?
+  jaar Int?
+  weeknummer Int?
+
+  /// Historische gemiddelde omzet zoals aangeleverd in de bron.
+  gemiddeldeOmzet Decimal @db.Decimal(12, 2)
+
+  /// Historische loonkosten zoals aangeleverd in de bron.
+  loonkosten Decimal @db.Decimal(12, 2)
+
+  /// Historisch percentage personeelskosten zoals vastgelegd in de bron.
+  loonkostenPercentage Decimal? @db.Decimal(7, 3)
+
+  /// Historisch gemiddeld uurloon; dit is een snapshot.
+  gemiddeldUurloon Decimal? @db.Decimal(8, 2)
+
+  /// Historische inzet in uren voor de volledige periode/week.
+  weekUrenInzet Decimal? @db.Decimal(10, 2)
+
+  /// Historische gemiddelde inzet per dag.
+  dagUrenInzet Decimal? @db.Decimal(10, 2)
+
+  /// Herkomst van de historische cijfers, bijvoorbeeld een Excel-import.
+  bron String?
+
+  vastgelegdOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@unique([vestigingId, periodeStart, periodeEinde])
+  @@index([vestigingId, periodeStart])
+  @@index([vestigingId, jaar, weeknummer])
+  @@index([periodeStart, periodeEinde])
 }
