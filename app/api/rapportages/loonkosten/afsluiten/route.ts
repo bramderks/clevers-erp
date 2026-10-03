@@ -60,6 +60,11 @@ export async function POST(request: NextRequest) {
                     voornaam: true,
                     achternaam: true,
                     uurloon: true,
+                    loonperiodes: {
+                      where: { actief: true },
+                      select: { uurloon: true, periodeStart: true, periodeEinde: true },
+                      orderBy: { periodeStart: "desc" },
+                    },
                   },
                 },
               },
@@ -103,7 +108,14 @@ export async function POST(request: NextRequest) {
         .map((bezetting) => {
           const medewerker = bezetting.medewerker!;
           const uren = urenVanDienst(dienst.begintijd, dienst.eindtijd);
-          const uurloon = medewerker.uurloon == null ? null : Number(medewerker.uurloon);
+          const loonPeriode = medewerker.loonperiodes.find(
+            (periode) => periode.periodeStart <= dienst.datum && periode.periodeEinde >= dienst.datum,
+          );
+          const uurloon = loonPeriode
+            ? Number(loonPeriode.uurloon)
+            : medewerker.uurloon == null
+              ? null
+              : Number(medewerker.uurloon);
           return {
             datum: dienst.datum.toISOString().slice(0, 10),
             medewerkerId: medewerker.id,
@@ -171,7 +183,16 @@ export async function POST(request: NextRequest) {
         .map((bezetting) => ({
           medewerkerId: bezetting.medewerker!.id,
           naam: [bezetting.medewerker!.voornaam, bezetting.medewerker!.achternaam].filter(Boolean).join(" "),
-          uurloon: bezetting.medewerker!.uurloon == null ? null : Number(bezetting.medewerker!.uurloon),
+          uurloon: (() => {
+            const loonPeriode = bezetting.medewerker!.loonperiodes.find(
+              (periode) => periode.periodeStart <= dienst.datum && periode.periodeEinde >= dienst.datum,
+            );
+            return loonPeriode
+              ? Number(loonPeriode.uurloon)
+              : bezetting.medewerker!.uurloon == null
+                ? null
+                : Number(bezetting.medewerker!.uurloon);
+          })(),
         })),
     }));
 
