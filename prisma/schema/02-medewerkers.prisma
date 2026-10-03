@@ -54,6 +54,7 @@ model Medewerker {
 
   contractUren Decimal? @db.Decimal(5, 2)
 
+  /// Legacy/fallback uurloon. Nieuwe loonafspraken worden opgeslagen in MedewerkerLoonPeriode.
   uurloon Decimal? @db.Decimal(8, 2)
 
   datumInDienst DateTime?
@@ -104,6 +105,7 @@ model Medewerker {
   /// Definitieve verloningsregels per periode
   /// en vestiging.
   verloningsRegels VerloningsRegel[]
+  loonperiodes MedewerkerLoonPeriode[]
 
   /// Controle van de maandelijkse verloning
   /// door de medewerker.
@@ -234,4 +236,34 @@ model MedewerkerDocument {
   @@index([medewerkerId])
   @@index([categorie])
   @@index([verloopDatum])
+}
+
+
+/// ======================================================
+/// MEDEWERKER - UURLOON PER PERIODE
+/// ======================================================
+///
+/// Een loonafspraak geldt expliciet van een begin- tot einddatum.
+/// Het planbord gebruikt voor iedere geplande dienst de afspraak
+/// die op de datum van de dienst actief is.
+model MedewerkerLoonPeriode {
+  id String @id @default(cuid())
+
+  medewerkerId String
+  medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
+
+  uurloon Decimal @db.Decimal(8, 2)
+
+  periodeStart DateTime
+  periodeEinde DateTime
+
+  actief Boolean @default(true)
+
+  aangemaaktOp DateTime @default(now())
+  gewijzigdOp DateTime @updatedAt
+
+  @@index([medewerkerId, periodeStart])
+  @@index([medewerkerId, periodeEinde])
+  @@index([medewerkerId, actief])
+  @@unique([medewerkerId, periodeStart, periodeEinde])
 }
