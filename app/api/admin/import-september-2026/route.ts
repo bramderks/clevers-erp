@@ -483,8 +483,12 @@ const DIENSTEN = [
 function norm(v: string) {
   return v.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
 }
-function localDate(date: string, time: string) {
+function lokaleTijd(date: string, time: string) {
   return new Date(date + "T" + time + ":00+02:00");
+}
+
+function kalenderDatum(date: string) {
+  return new Date(date + "T00:00:00.000Z");
 }
 function dagStart(date: Date) {
   const d = new Date(date); d.setHours(0,0,0,0); return d;
@@ -550,9 +554,12 @@ export async function POST() {
         continue;
       }
 
-      const datum = localDate(item.date, "00:00");
-      const begintijd = localDate(item.date, item.start);
-      const eindtijd = localDate(item.date, item.end);
+      // Een dienst-datum is een kalenderdatum, geen tijdstip in Amsterdam.
+      // Daarom slaan we deze op als UTC-middernacht. Zo blijft 1 september
+      // altijd 1 september en wordt hij niet 31 augustus door een timezoneverschuiving.
+      const datum = kalenderDatum(item.date);
+      const begintijd = lokaleTijd(item.date, item.start);
+      const eindtijd = lokaleTijd(item.date, item.end);
 
       const iso = isoWeek(datum);
       const week = await prisma.week.findFirst({
@@ -568,6 +575,32 @@ export async function POST() {
         where: { weekId: week.id, datum: { gte: dagStart(datum), lte: dagEinde(datum) }, begintijd, eindtijd },
         select: { id: true },
       });
+
+      // Herstel eerder geïmporteerde diensten waarbij de kalenderdatum
+      // als Amsterdamse middernacht was opgeslagen (dus 1 dag terug in UTC).
+      if (!dienst) {
+        const verkeerdeDatum = new Date(datum);
+        verkeerdeDatum.setUTCDate(verkeerdeDatum.getUTCDate() - 1);
+
+        const bestaandVerkeerd = await prisma.dienst.findFirst({
+          where: {
+            weekId: week.id,
+            datum: { gte: verkeerdeDatum, lt: datum },
+            begintijd,
+            eindtijd,
+            bezetting: { some: { medewerkerId: medewerker.id } },
+          },
+          select: { id: true },
+        });
+
+        if (bestaandVerkeerd) {
+          dienst = await prisma.dienst.update({
+            where: { id: bestaandVerkeerd.id },
+            data: { datum },
+            select: { id: true },
+          });
+        }
+      }
 
       if (!dienst) {
         dienst = await prisma.dienst.create({
