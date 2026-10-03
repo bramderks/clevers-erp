@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser, isEigenaar } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { berekenGewerkteUren } from "@/lib/verloning/pauze";
 import LoonkostenRapport from "./LoonkostenRapport";
 
 function getISOWeek(datum: Date) {
@@ -16,8 +17,19 @@ function getISOWeek(datum: Date) {
   };
 }
 
-function urenVanDienst(begintijd: Date, eindtijd: Date) {
-  return Math.max(0, (new Date(eindtijd).getTime() - new Date(begintijd).getTime()) / 3600000);
+function uurloonVoorDienst(
+  medewerker: {
+    uurloon: unknown;
+    loonperiodes: Array<{ uurloon: unknown; periodeStart: Date; periodeEinde: Date }>;
+  },
+  datum: Date,
+) {
+  const actief = medewerker.loonperiodes.find(
+    (periode) => periode.periodeStart <= datum && periode.periodeEinde >= datum,
+  );
+  if (actief) return Number(actief.uurloon);
+  if (medewerker.uurloon !== null) return Number(medewerker.uurloon);
+  return null;
 }
 
 type Dag = {
@@ -33,6 +45,7 @@ type DienstDetail = {
   begintijd: string;
   eindtijd: string;
   medewerkers: { medewerkerId: string; naam: string; uurloon: number | null }[];
+  pauzeMinuten: number;
 };
 
 type SeizoenWeek = {
@@ -157,6 +170,11 @@ export default async function RapportagesPage({
                       voornaam: true,
                       achternaam: true,
                       uurloon: true,
+                      loonperiodes: {
+                        where: { actief: true },
+                        select: { uurloon: true, periodeStart: true, periodeEinde: true },
+                        orderBy: { periodeStart: "desc" },
+                      },
                     },
                   },
                 },
@@ -183,8 +201,8 @@ export default async function RapportagesPage({
         .filter((b) => b.medewerker)
         .map((b) => {
           const m = b.medewerker!;
-          const uren = urenVanDienst(dienst.begintijd, dienst.eindtijd);
-          const uurloon = m.uurloon == null ? null : Number(m.uurloon);
+          const uren = berekenGewerkteUren(dienst.begintijd, dienst.eindtijd).gewerkteUren;
+          const uurloon = uurloonVoorDienst(m, dienst.datum);
           return {
             datum: dienst.datum.toISOString(),
             medewerkerId: m.id,
@@ -245,10 +263,11 @@ export default async function RapportagesPage({
         datum: dienst.datum.toISOString(),
         begintijd: dienst.begintijd.toISOString(),
         eindtijd: dienst.eindtijd.toISOString(),
+        pauzeMinuten: berekenGewerkteUren(dienst.begintijd, dienst.eindtijd).pauzeMinuten,
         medewerkers: dienst.bezetting.filter((b) => b.medewerker).map((b) => ({
           medewerkerId: b.medewerker!.id,
           naam: [b.medewerker!.voornaam, b.medewerker!.achternaam].filter(Boolean).join(" "),
-          uurloon: b.medewerker!.uurloon == null ? null : Number(b.medewerker!.uurloon),
+          uurloon: uurloonVoorDienst(b.medewerker!, dienst.datum),
         })),
       })),
       afgeslotenOp: null,
