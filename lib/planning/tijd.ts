@@ -1,6 +1,6 @@
 export const START_MINUTEN = 9 * 60;
 export const EINDE_MINUTEN = 23 * 60;
-export const TIJD_INTERVAL = 30;
+export const TIJD_INTERVAL = 15;
 
 // Centrale planningformattering: datum = kalenderdatum, tijden = Nederlandse tijdzone.
 
