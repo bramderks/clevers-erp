@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
     }));
 
     const snapshot = {
-      versie: 3,
+      versie: 4,
       vastgelegdOp: new Date().toISOString(),
       dagen,
       medewerkers,
