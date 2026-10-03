@@ -544,16 +544,7 @@ async function haalPlanningOp(
               ...bezetting.medewerker,
               uurloon: uurloonVoorDienst(bezetting.medewerker, new Date(dienst.datum)),
               ...(magFinancieel
-                ? {
-                    uurloon:
-                      (() => {
-                        const datum = new Date(dienst.datum);
-                        const actief = bezetting.medewerker.loonperiodes.find(
-                          (periode) => periode.periodeStart <= datum && periode.periodeEinde >= datum,
-                        );
-                        return actief ? Number(actief.uurloon) : bezetting.medewerker.uurloon !== null ? Number(bezetting.medewerker.uurloon) : null;
-                      })(),
-                  }
+                ? { uurloon: uurloonVoorDienst(bezetting.medewerker, new Date(dienst.datum)) }
                 : {}),
               ...(magFinancieel ? {} : { uurloon: undefined }),
               loonperiodes: undefined,
