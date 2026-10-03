@@ -5,13 +5,16 @@ export type PauzeBerekening = {
   gewerkteUren: number;
 };
 
-function minutenSindsMiddernacht(
-  datum: Date,
-) {
-  return (
-    datum.getHours() * 60 +
-    datum.getMinutes()
-  );
+function minutenSindsMiddernacht(datum: Date) {
+  const delen = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Amsterdam",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(datum);
+  const uur = Number(delen.find((deel) => deel.type === "hour")?.value ?? 0);
+  const minuut = Number(delen.find((deel) => deel.type === "minute")?.value ?? 0);
+  return uur * 60 + minuut;
 }
 
 function afrondenOpKwartier(
