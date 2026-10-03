@@ -209,6 +209,11 @@ export async function GET(
           tussenvoegsel: true,
           achternaam: true,
           uurloon: true,
+          loonperiodes: {
+            where: { actief: true },
+            select: { uurloon: true, periodeStart: true, periodeEinde: true },
+            orderBy: { periodeStart: "desc" },
+          },
 
           tags: {
             where: {
@@ -402,16 +407,20 @@ export async function GET(
 
           ...(magFinancielePlanningInzien
             ? {
-                uurloon:
-                  medewerker.uurloon !== null
-                    ? Number(medewerker.uurloon)
-                    : null,
+                uurloon: (() => {
+                  const actief = medewerker.loonperiodes.find(
+                    (periode) => periode.periodeStart <= beginVanDag && periode.periodeEinde >= beginVanDag,
+                  );
+                  return actief ? Number(actief.uurloon) : medewerker.uurloon !== null ? Number(medewerker.uurloon) : null;
+                })(),
                 urenSindsVorigeVerloning:
                   Math.round((urenPerMedewerker.get(medewerker.id) ?? 0) * 100) / 100,
                 vorigeVerloningEinde:
                   vorigeVerloning?.periodeEinde?.toISOString() ?? null,
               }
             : {}),
+
+          loonperiodes: undefined,
 
           tags:
             medewerker.tags.map(
