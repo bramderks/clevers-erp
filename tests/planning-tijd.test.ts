@@ -11,9 +11,9 @@ import {
   tijdenOverlappen,
 } from "../lib/planning/tijd";
 
-test("planningstijden lopen in blokken van 30 minuten", () => {
-  assert.equal(TIJD_INTERVAL, 30);
-  assert.deepEqual(maakTijden(15 * 60, 16 * 60), ["15:00", "15:30", "16:00"]);
+test("planningstijden lopen in blokken van 15 minuten", () => {
+  assert.equal(TIJD_INTERVAL, 15);
+  assert.deepEqual(maakTijden(15 * 60, 16 * 60), ["15:00", "15:15", "15:30", "15:45", "16:00"]);
 });
 
 test("tijd conversie is omkeerbaar", () => {
