@@ -90,12 +90,12 @@ type DienstBewerkFormProps = {
  *
  * Alle diensten binnen Clevers ERP:
  *
- * - starten vanaf 09:00
+ * - starten vanaf 08:30
  * - eindigen uiterlijk om 23:00
- * - gebruiken intervallen van 30 minuten
+ * - gebruiken intervallen van 15 minuten
  */
 
-const START_MINUTEN = 9 * 60;
+const START_MINUTEN = 8 * 60 + 30;
 const EINDE_MINUTEN = 23 * 60;
 const TIJD_INTERVAL = 15;
 
@@ -1189,7 +1189,7 @@ export default function DienstBewerkForm({
         0
     ) {
       setFout(
-        "Diensten kunnen alleen per 30 minuten worden gepland.",
+        "Diensten kunnen alleen per 15 minuten worden gepland.",
       );
 
       return;
