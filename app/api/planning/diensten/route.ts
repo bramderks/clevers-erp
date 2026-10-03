@@ -23,7 +23,7 @@ const TIJD_FOUT =
   "De begintijd moet een geldige datum zijn.";
 
 const MINIMALE_STARTTIJD_MINUTEN =
-  9 * 60;
+  8 * 60 + 30;
 
 const TIJDSTAP_MINUTEN = TIJD_INTERVAL;
 
