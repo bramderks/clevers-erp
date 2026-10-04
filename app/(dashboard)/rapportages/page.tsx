@@ -17,6 +17,11 @@ function getISOWeek(datum: Date) {
   };
 }
 
+function datumValtInWeek(datum: Date, jaar: number, weeknummer: number) {
+  const iso = getISOWeek(datum);
+  return iso.jaar === jaar && iso.weeknummer === weeknummer;
+}
+
 function uurloonVoorDienst(
   medewerker: {
     uurloon: unknown;
@@ -193,13 +198,18 @@ export default async function RapportagesPage({
   });
   const globaalDoel = globaleInstelling ? Number(globaleInstelling.waarde) : 20;
   const opgeslagenBron = week?.loonkostenWeek ? uitSnapshot(week.loonkostenWeek) : null;
+  const snapshotHeeftVerkeerdeWeekdiensten = Boolean(
+    opgeslagenBron?.diensten.some((dienst) => !datumValtInWeek(new Date(dienst.datum), jaar, weeknummer)),
+  );
+  const bruikbareSnapshot = snapshotHeeftVerkeerdeWeekdiensten ? null : opgeslagenBron;
 
   let bron: RapportBron;
 
-  if (opgeslagenBron) {
-    bron = opgeslagenBron;
+  if (bruikbareSnapshot) {
+    bron = bruikbareSnapshot;
   } else {
-    const regels = (week?.diensten ?? []).flatMap((dienst) =>
+    const actueleWeekDiensten = (week?.diensten ?? []).filter((dienst) => datumValtInWeek(dienst.datum, jaar, weeknummer));
+    const regels = actueleWeekDiensten.flatMap((dienst) =>
       dienst.bezetting
         .filter((b) => b.medewerker)
         .map((b) => {
@@ -262,7 +272,7 @@ export default async function RapportagesPage({
       ontbrekendUurloon: regels.filter((r) => r.kosten == null).length,
       dagen,
       medewerkers,
-      diensten: (week?.diensten ?? []).map((dienst) => ({
+      diensten: actueleWeekDiensten.map((dienst) => ({
         datum: dienst.datum.toISOString(),
         begintijd: dienst.begintijd.toISOString(),
         eindtijd: dienst.eindtijd.toISOString(),
