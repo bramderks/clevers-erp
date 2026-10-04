@@ -420,84 +420,22 @@ export default async function DashboardPage() {
      * ============================================================
      */
 
-    if (!isEigenaarOfSuperAdmin) {
-    for (
-      const week of beschikbaarheidWeken
-    ) {
-      const maandag =
-        maandagVanWeek(
-          week.jaar,
-          week.weeknummer,
-        );
+    const openBeschikbaarheid = !isEigenaarOfSuperAdmin
+      ? beschikbaarheidWeken.filter((week) => {
+          const maandag = maandagVanWeek(week.jaar, week.weeknummer);
+          const zondag = new Date(maandag);
+          zondag.setDate(zondag.getDate() + 6);
+          if (zondag < vandaagBegin) return false;
+          if (week.vestiging.seizoenEinde && maandag > new Date(week.vestiging.seizoenEinde)) return false;
+          const dagen = new Set(
+            week.beschikbaarheden.map((beschikbaarheid) =>
+              datumVoorApi(new Date(beschikbaarheid.datum)),
+            ),
+          );
+          return dagen.size < 7;
+        })
+      : [];
 
-      const zondag =
-        new Date(maandag);
-
-      zondag.setDate(
-        zondag.getDate() + 6,
-      );
-
-      /*
-       * Een week die volledig vóór vandaag ligt,
-       * hoeft niet meer als toekomstige taak te
-       * verschijnen.
-       */
-
-      if (zondag < vandaagBegin) {
-        continue;
-      }
-
-      /*
-       * Controleer per vestiging of de planningweek
-       * daadwerkelijk binnen het seizoen valt.
-       */
-
-      if (
-        week.vestiging.seizoenEinde &&
-        maandag >
-          new Date(
-            week.vestiging.seizoenEinde,
-          )
-      ) {
-        continue;
-      }
-
-      const dagen =
-        new Set(
-          week.beschikbaarheden.map(
-            (beschikbaarheid) =>
-              datumVoorApi(
-                new Date(
-                  beschikbaarheid.datum,
-                ),
-              ),
-          ),
-        );
-
-      /*
-       * Volledig doorgegeven:
-       * geen openstaande taak meer.
-       */
-
-      if (dagen.size >= 7) {
-        continue;
-      }
-
-      const datumParameter =
-        datumVoorApi(
-          maandag,
-        );
-
-      taken.push({
-        id: `beschikbaarheid-${week.id}`,
-        titel: `Beschikbaarheid doorgeven week ${week.weeknummer}`,
-        omschrijving: `${week.vestiging.naam} · Geef je beschikbaarheid voor deze week door.`,
-        href: `/profiel/beschikbaarheid?week=${week.jaar}-${week.weeknummer}&datum=${datumParameter}`,
-        variant: "warning",
-      });
-    }
-
-    }
 
     const openVerloningsControles =
       await prisma.verloningsControle.count({
@@ -678,6 +616,41 @@ export default async function DashboardPage() {
                     </a>
                   ),
                 )}
+              </div>
+            )}
+          </DashboardCollapsibleCard>
+        </section>
+
+        <section>
+          <DashboardCollapsibleCard
+            storageKey={`medewerker-beschikbaarheid-${gebruiker.id}`}
+            title="Beschikbaarheid"
+            description="Je openstaande weken om je beschikbaarheid door te geven"
+            count={openBeschikbaarheid.length}
+          >
+            {openBeschikbaarheid.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-center">
+                <p className="font-medium text-slate-900">Geen openstaande beschikbaarheid</p>
+                <p className="mt-1 text-sm text-slate-500">Je beschikbaarheid is bijgewerkt voor alle openstaande weken.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {openBeschikbaarheid.map((week) => (
+                  <a
+                    key={week.id}
+                    href={`/profiel/beschikbaarheid?week=${week.jaar}-${week.weeknummer}&datum=${datumVoorApi(maandagVanWeek(week.jaar, week.weeknummer))}`}
+                    className="group flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0"
+                  >
+                    <div>
+                      <p className="font-medium text-slate-900">Week {week.weeknummer} · {week.jaar}</p>
+                      <p className="mt-1 text-sm text-slate-500">{week.vestiging.naam}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        Deadline {new Intl.DateTimeFormat("nl-NL", { dateStyle: "short", timeStyle: "short" }).format(week.beschikbaarheidDeadline)}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-slate-400 transition-transform group-hover:translate-x-1">→</span>
+                  </a>
+                ))}
               </div>
             )}
           </DashboardCollapsibleCard>
