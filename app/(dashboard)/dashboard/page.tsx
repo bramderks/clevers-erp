@@ -159,6 +159,7 @@ export default async function DashboardPage() {
     const [
       toekomstigeDienstenResultaat,
       beschikbaarheidWeken,
+      openRuilverzoeken,
     ] = await Promise.all([
       prisma.dienstBezetting.findMany({
         where: {
@@ -272,7 +273,16 @@ export default async function DashboardPage() {
             weeknummer: "asc",
           },
         ],
+      })
+
+      prisma.ruilverzoek.count({
+        where: {
+          ruilMedewerkerId: medewerkerId,
+          status: "AANGEVRAAGD",
+        },
       }),
+
+,
     ]);
 
     /*
@@ -419,6 +429,17 @@ export default async function DashboardPage() {
      * tot het einde van het seizoen.
      * ============================================================
      */
+
+    if (openRuilverzoeken > 0) {
+      taken.push({
+        id: "ruilverzoeken-ontvangen",
+        titel: "Ruilverzoeken beoordelen",
+        omschrijving: "Je hebt ruilverzoeken van collega's die je kunt accepteren of afwijzen.",
+        aantal: openRuilverzoeken,
+        href: "/app/ruilen",
+        variant: "warning",
+      });
+    }
 
     const openBeschikbaarheid = !isEigenaarOfSuperAdmin
       ? beschikbaarheidWeken.filter((week) => {
