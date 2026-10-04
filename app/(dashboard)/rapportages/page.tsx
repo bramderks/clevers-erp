@@ -17,6 +17,23 @@ function getISOWeek(datum: Date) {
   };
 }
 
+function datumVanLokaleBegintijd(begintijd: Date) {
+  const delen = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Amsterdam",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(begintijd);
+  const jaar = delen.find((d) => d.type === "year")?.value;
+  const maand = delen.find((d) => d.type === "month")?.value;
+  const dag = delen.find((d) => d.type === "day")?.value;
+  return new Date(Date.UTC(Number(jaar), Number(maand) - 1, Number(dag)));
+}
+
+function dienstValtInWeek(dienst: { begintijd: Date }, jaar: number, weeknummer: number) {
+  return datumValtInWeek(datumVanLokaleBegintijd(dienst.begintijd), jaar, weeknummer);
+}
+
 function datumValtInWeek(datum: Date, jaar: number, weeknummer: number) {
   const iso = getISOWeek(datum);
   return iso.jaar === jaar && iso.weeknummer === weeknummer;
@@ -198,7 +215,7 @@ export default async function RapportagesPage({
   });
   const globaalDoel = globaleInstelling ? Number(globaleInstelling.waarde) : 20;
   const opgeslagenBron = week?.loonkostenWeek ? uitSnapshot(week.loonkostenWeek) : null;
-  const actueleWeekDiensten = (week?.diensten ?? []).filter((dienst) => datumValtInWeek(dienst.datum, jaar, weeknummer));
+  const actueleWeekDiensten = (week?.diensten ?? []).filter((dienst) => dienstValtInWeek(dienst, jaar, weeknummer));
 
   // Een afgesloten snapshot mag alleen worden gebruikt zolang de actuele planning
   // nog dezelfde uren bevat. Dit is belangrijk omdat diensten na afsluiten nog
@@ -217,7 +234,7 @@ export default async function RapportagesPage({
   }
 
   const snapshotHeeftVerkeerdeWeekdiensten = Boolean(
-    opgeslagenBron?.diensten.some((dienst) => !datumValtInWeek(new Date(dienst.datum), jaar, weeknummer)),
+    opgeslagenBron?.diensten.some((dienst) => !dienstValtInWeek({ begintijd: new Date(dienst.begintijd) }, jaar, weeknummer)),
   );
   const snapshotHeeftVerouderdeUren = Boolean(
     opgeslagenBron &&
