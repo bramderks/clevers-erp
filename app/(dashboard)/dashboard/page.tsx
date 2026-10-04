@@ -845,7 +845,7 @@ export default async function DashboardPage() {
       omschrijving:
         "Ruilverzoeken wachten op goedkeuring van de eigenaar.",
       aantal: openRuilverzoeken,
-      href: "/planning",
+      href: "/app/ruilen",
       variant: "warning",
     });
   }
