@@ -919,6 +919,32 @@ export default async function DashboardPage() {
 
       {isEigenaarOfSuperAdmin && (
         <>
+          <section>
+            <DashboardCollapsibleCard
+              storageKey={`beheer-open-diensten-${gebruiker.id}`}
+              title="Open diensten"
+              description="Diensten die nog ingevuld moeten worden"
+              count={openDienstplekken}
+            >
+              <a
+                href="/planning/open-diensten"
+                className="group flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 transition hover:bg-slate-100"
+              >
+                <div>
+                  <p className="font-medium text-slate-900">
+                    {openDienstplekken > 0
+                      ? `${openDienstplekken} open dienst${openDienstplekken === 1 ? "" : "en"}`
+                      : "Geen open diensten"}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Bekijk en vul openstaande diensten in.
+                  </p>
+                </div>
+                <span className="shrink-0 text-slate-400 transition-transform group-hover:translate-x-1">→</span>
+              </a>
+            </DashboardCollapsibleCard>
+          </section>
+
           <OwnerWorkflowTasks gebruikerId={gebruiker.id} />
           <OwnerUpcomingServices gebruikerId={gebruiker.id} />
         </>
