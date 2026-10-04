@@ -1,6 +1,7 @@
 import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
 import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
+import { verstuurMail, webAppUrl } from "@/lib/mail";
 
 function vapidInstellen() {
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -18,7 +19,18 @@ export async function verstuurDirecteDienstMelding(dienstBezettingId: string) {
     where: { id: dienstBezettingId },
     include: {
       dienst: { include: { week: { include: { vestiging: { select: { naam: true } } } } } },
-      medewerker: { select: { systeemGebruikerId: true } },
+      medewerker: {
+        select: {
+          systeemGebruikerId: true,
+          systeemGebruiker: {
+            select: {
+              id: true,
+              email: true,
+              emailMeldingenAan: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -34,9 +46,54 @@ export async function verstuurDirecteDienstMelding(dienstBezettingId: string) {
   const datum = formatDienstDatum(bezetting.dienst.datum);
   const begintijd = formatDienstTijd(bezetting.dienst.begintijd);
   const eindtijd = formatDienstTijd(bezetting.dienst.eindtijd);
+  const vestigingNaam = bezetting.dienst.week.vestiging.naam;
+  const systeemGebruiker = bezetting.medewerker.systeemGebruiker;
 
   let verstuurd = 0;
   let fouten = 0;
+
+  // E-mail is standaard ingeschakeld en kan door de medewerker zelf
+  // worden uitgeschakeld in de meldingsinstellingen.
+  if (systeemGebruiker?.emailMeldingenAan) {
+    const emailSleutel = `dienst-direct:${bezetting.id}:email`;
+    const emailMelding = await prisma.emailMelding.upsert({
+      where: { sleutel: emailSleutel },
+      create: {
+        type: "DIENST_DIRECT",
+        sleutel: emailSleutel,
+        systeemGebruikerId,
+        geplandVoor: new Date(),
+      },
+      update: {},
+    });
+
+    if (!emailMelding.verstuurdOp) {
+      try {
+        await verstuurMail({
+          to: systeemGebruiker.email,
+          subject: `Je bent ingepland — ${vestigingNaam} ${datum}`,
+          text:
+            `Je bent ingepland voor een dienst bij ${vestigingNaam}.\\n\\nDatum: ${datum}\\nTijd: ${begintijd}–${eindtijd}\\n\\nBekijk je planning: ${webAppUrl("/app/planning")}\\n`,
+          html:
+            `<p>Je bent ingepland voor een dienst bij <strong>${vestigingNaam}</strong>.</p><p><strong>Datum:</strong> ${datum}<br><strong>Tijd:</strong> ${begintijd}–${eindtijd}</p><p><a href="${webAppUrl("/app/planning")}">Bekijk je planning</a></p><p>Met vriendelijke groet,<br>Clevers</p>`,
+        });
+
+        await prisma.emailMelding.update({
+          where: { id: emailMelding.id },
+          data: { verstuurdOp: new Date(), foutmelding: null },
+        });
+      } catch (error) {
+        fouten += 1;
+        await prisma.emailMelding.update({
+          where: { id: emailMelding.id },
+          data: {
+            foutmelding:
+              error instanceof Error ? error.message : "Onbekende e-mailfout.",
+          },
+        });
+      }
+    }
+  }
   for (const subscription of subscriptions) {
     const sleutel = "dienst-direct:" + bezetting.id + ":" + subscription.id;
     const bestaand = await prisma.pushMelding.findUnique({ where: { sleutel }, select: { id: true } });
