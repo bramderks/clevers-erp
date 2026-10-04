@@ -276,10 +276,14 @@ export default async function DashboardPage() {
       }),
 
       prisma.ruilverzoek.count({
-        where: {
-          ruilMedewerkerId: medewerkerId,
-          status: "AANGEVRAAGD",
-        },
+        where: isEigenaarOfSuperAdmin
+          ? {
+              status: "WACHT_OP_EIGENAAR",
+            }
+          : {
+              ruilMedewerkerId: medewerkerId,
+              status: "AANGEVRAAGD",
+            },
       }),
     ]);
 
@@ -432,7 +436,9 @@ export default async function DashboardPage() {
       taken.push({
         id: "ruilverzoeken-ontvangen",
         titel: "Ruilverzoeken beoordelen",
-        omschrijving: "Je hebt ruilverzoeken van collega's die je kunt accepteren of afwijzen.",
+        omschrijving: isEigenaarOfSuperAdmin
+          ? "Er staan ruilverzoeken klaar die je als eigenaar moet goedkeuren of afwijzen."
+          : "Je hebt ruilverzoeken van collega's die je kunt accepteren of afwijzen.",
         aantal: openRuilverzoeken,
         href: "/app/ruilen",
         variant: "warning",
