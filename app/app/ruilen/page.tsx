@@ -12,6 +12,7 @@ type Ruil = {
   eigenaarBeoordeeldOp?: string | null;
   uitgevoerdOp?: string | null;
   isAanvrager?: boolean;
+  kanGoedkeuren?: boolean;
   dienstBezetting: {
     id: string;
     dienst: {
@@ -237,6 +238,25 @@ export default function AppRuilenPage() {
                       className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white"
                     >
                       Accepteren
+                    </button>
+                  </div>
+                )}
+
+                {item.status === "WACHT_OP_EIGENAAR" && item.kanGoedkeuren && (
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => void actie(item.id, "AFWIJZEN")}
+                      className="rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700"
+                    >
+                      Afwijzen
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void actie(item.id, "GOEDKEUREN")}
+                      className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white"
+                    >
+                      Goedkeuren
                     </button>
                   </div>
                 )}
