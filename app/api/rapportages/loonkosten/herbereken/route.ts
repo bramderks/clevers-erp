@@ -3,6 +3,21 @@ import { getCurrentUser, isEigenaar } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { berekenGewerkteUren } from "@/lib/verloning/pauze";
 
+
+function getISOWeek(datum: Date) {
+  const d = new Date(Date.UTC(datum.getUTCFullYear(), datum.getUTCMonth(), datum.getUTCDate()));
+  const dag = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dag);
+  const jaar = d.getUTCFullYear();
+  const eerste = new Date(Date.UTC(jaar, 0, 4));
+  const eersteDag = eerste.getUTCDay() || 7;
+  return { jaar, weeknummer: Math.ceil((((d.getTime() - eerste.getTime()) / 86400000) + eersteDag - 1) / 7) };
+}
+function dienstValtInWeek(datum: Date, jaar: number, weeknummer: number) {
+  const iso = getISOWeek(datum);
+  return iso.jaar === jaar && iso.weeknummer === weeknummer;
+}
+
 function uurloonVoorDienst(
   medewerker: {
     uurloon: unknown;
@@ -80,7 +95,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Geen toegang tot deze vestiging." }, { status: 403 });
     }
 
-    const regels = week.diensten.flatMap((dienst) =>
+    const actueleWeekDiensten = week.diensten.filter((dienst) => dienstValtInWeek(dienst.datum, jaar, weeknummer));
+    const regels = actueleWeekDiensten.flatMap((dienst) =>
       dienst.bezetting.filter((b) => b.medewerker).map((bezetting) => {
         const medewerker = bezetting.medewerker!;
         const uren = berekenGewerkteUren(dienst.begintijd, dienst.eindtijd).gewerkteUren;
@@ -137,7 +153,7 @@ export async function POST(request: NextRequest) {
     const doelPercentage = Number(week.loonkostenWeek.doelPercentage);
     const percentageOmzet = omzet > 0 ? (totaalKosten / omzet) * 100 : null;
 
-    const diensten = week.diensten.map((dienst) => ({
+    const diensten = actueleWeekDiensten.map((dienst) => ({
       datum: dienst.datum.toISOString(),
       begintijd: dienst.begintijd.toISOString(),
       eindtijd: dienst.eindtijd.toISOString(),
@@ -177,7 +193,7 @@ export async function POST(request: NextRequest) {
       totaalKosten,
       gemiddeldUurloon,
       percentageOmzet,
-      diensten: week.diensten.length,
+      diensten: actueleWeekDiensten.length,
     });
   } catch (error) {
     return NextResponse.json(
