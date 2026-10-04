@@ -101,7 +101,7 @@ export default function AppRuilenPage() {
 
   async function actie(
     ruilverzoekId: string,
-    actie: "ACCEPTEREN" | "AFWIJZEN" | "ANNULEREN",
+    actie: "ACCEPTEREN" | "AFWIJZEN" | "ANNULEREN" | "GOEDKEUREN",
   ) {
     const response = await fetch("/api/planning/ruilen", {
       method: "PATCH",
