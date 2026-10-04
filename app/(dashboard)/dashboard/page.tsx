@@ -664,7 +664,7 @@ export default async function DashboardPage() {
                       <p className="font-medium text-slate-900">Week {week.weeknummer} · {week.jaar}</p>
                       <p className="mt-1 text-sm text-slate-500">{week.vestiging.naam}</p>
                       <p className="mt-1 text-xs text-slate-400">
-                        Deadline {new Intl.DateTimeFormat("nl-NL", { dateStyle: "short", timeStyle: "short" }).format(week.beschikbaarheidDeadline)}
+                        Deadline {week.beschikbaarheidDeadline ? new Intl.DateTimeFormat("nl-NL", { dateStyle: "short", timeStyle: "short" }).format(week.beschikbaarheidDeadline) : "onbekend"}
                       </p>
                     </div>
                     <span className="shrink-0 text-slate-400 transition-transform group-hover:translate-x-1">→</span>
