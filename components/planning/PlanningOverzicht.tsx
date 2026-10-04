@@ -1372,6 +1372,65 @@ export default function PlanningOverzicht({
     }
   }
 
+  async function heropenHuidigeWeek() {
+    if (
+      !isEigenaar ||
+      !huidigeWeek ||
+      huidigeWeek.status !== "AFGESLOTEN" ||
+      publicerenBezig
+    ) {
+      return;
+    }
+
+    const bevestigd =
+      window.confirm(
+        `Week ${huidigeWeek.weeknummer} · ${huidigeWeek.jaar} heropenen? De week wordt weer LIVE en kan daarna door de eigenaar worden gewijzigd. De eerder gemaakte loonkostensnapshot wordt hiermee niet automatisch opnieuw afgesloten.`,
+      );
+
+    if (!bevestigd) {
+      return;
+    }
+
+    try {
+      setPublicerenBezig(true);
+      setFout(null);
+
+      const response = await fetch(
+        `/api/planning/weken/${encodeURIComponent(huidigeWeek.id)}`,
+        {
+          method: "PATCH",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: "GEPUBLICEERD",
+          }),
+        },
+      );
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(
+          data?.fout ??
+            "De planning kon niet worden heropend.",
+        );
+      }
+
+      onGewijzigd?.();
+      router.refresh();
+    } catch (error) {
+      setFout(
+        error instanceof Error
+          ? error.message
+          : "De planning kon niet worden heropend.",
+      );
+    } finally {
+      setPublicerenBezig(false);
+    }
+  }
+
   /*
    * ============================================================
    * WEEK NAVIGATIE
@@ -1853,9 +1912,14 @@ export default function PlanningOverzicht({
                       {publicerenBezig ? "Publiceren..." : "Publiceren"}
                     </button>
                   ) : (
-                    <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
-                      Afgesloten
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void heropenHuidigeWeek()}
+                      disabled={publicerenBezig}
+                      className="rounded-lg bg-amber-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {publicerenBezig ? "Heropenen..." : "Week heropenen"}
+                    </button>
                   )}
                 </div>
               )}
