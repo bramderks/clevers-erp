@@ -10,6 +10,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import { formatDienstTijd } from "@/lib/planning/tijd";
 import OwnerWorkflowTasks from "@/components/dashboard/OwnerWorkflowTasks";
 import OwnerUpcomingServices from "@/components/dashboard/OwnerUpcomingServices";
+import OpenDienstenMedewerker from "@/components/dashboard/OpenDienstenMedewerker";
 
 import { permissions } from "@/lib/permissions";
 import { vereisPermission } from "@/lib/requirePermission";
@@ -616,6 +617,10 @@ export default async function DashboardPage() {
             </DashboardCollapsibleCard>
           </section>
         )}
+
+        <section>
+          <OpenDienstenMedewerker />
+        </section>
 
         <section>
           <DashboardCollapsibleCard
