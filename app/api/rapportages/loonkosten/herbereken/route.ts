@@ -13,8 +13,21 @@ function getISOWeek(datum: Date) {
   const eersteDag = eerste.getUTCDay() || 7;
   return { jaar, weeknummer: Math.ceil((((d.getTime() - eerste.getTime()) / 86400000) + eersteDag - 1) / 7) };
 }
-function dienstValtInWeek(datum: Date, jaar: number, weeknummer: number) {
-  const iso = getISOWeek(datum);
+function datumVanLokaleBegintijd(begintijd: Date) {
+  const delen = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Amsterdam",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(begintijd);
+  const jaar = delen.find((d) => d.type === "year")?.value;
+  const maand = delen.find((d) => d.type === "month")?.value;
+  const dag = delen.find((d) => d.type === "day")?.value;
+  return new Date(Date.UTC(Number(jaar), Number(maand) - 1, Number(dag)));
+}
+
+function dienstValtInWeek(dienst: { begintijd: Date }, jaar: number, weeknummer: number) {
+  const iso = getISOWeek(datumVanLokaleBegintijd(dienst.begintijd));
   return iso.jaar === jaar && iso.weeknummer === weeknummer;
 }
 
@@ -95,7 +108,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Geen toegang tot deze vestiging." }, { status: 403 });
     }
 
-    const actueleWeekDiensten = week.diensten.filter((dienst) => dienstValtInWeek(dienst.datum, jaar, weeknummer));
+    const actueleWeekDiensten = week.diensten.filter((dienst) => dienstValtInWeek(dienst, jaar, weeknummer));
     const regels = actueleWeekDiensten.flatMap((dienst) =>
       dienst.bezetting.filter((b) => b.medewerker).map((bezetting) => {
         const medewerker = bezetting.medewerker!;
