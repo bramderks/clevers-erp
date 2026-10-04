@@ -386,6 +386,9 @@ export async function GET(
         isAanvrager:
           medewerkerId !== null &&
           ruilverzoek.aanvragerId === medewerkerId,
+        kanGoedkeuren:
+          isOrganisatieEigenaar &&
+          ruilverzoek.status === "WACHT_OP_EIGENAAR",
       })),
     );
   } catch (error) {
