@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 
 export type OpenDienstDashboardItem = {
@@ -17,14 +17,41 @@ function datum(datum: string) { return formatDienstDatum(datum); }
 
 function tijd(datum: string) { return formatDienstTijd(datum); }
 
-export default function OpenDienstenMedewerker({
-  diensten,
-}: {
-  diensten: OpenDienstDashboardItem[];
-}) {
-  const [items, setItems] = useState(diensten);
+export default function OpenDienstenMedewerker() {
+  const [items, setItems] = useState<OpenDienstDashboardItem[]>([]);
+  const [ladenOpenDiensten, setLadenOpenDiensten] = useState(true);
   const [laden, setLaden] = useState<string | null>(null);
   const [melding, setMelding] = useState("");
+  useEffect(() => {
+    let actief = true;
+
+    async function laadOpenDiensten() {
+      try {
+        const response = await fetch("/api/open-diensten", {
+          cache: "no-store",
+          credentials: "include",
+        });
+        const data = await response.json().catch(() => null);
+
+        if (actief && response.ok && Array.isArray(data)) {
+          setItems(data as OpenDienstDashboardItem[]);
+        }
+      } catch {
+        // Het dashboard blijft bruikbaar als open diensten tijdelijk niet geladen kunnen worden.
+      } finally {
+        if (actief) setLadenOpenDiensten(false);
+      }
+    }
+
+    void laadOpenDiensten();
+    const interval = window.setInterval(() => void laadOpenDiensten(), 30000);
+
+    return () => {
+      actief = false;
+      window.clearInterval(interval);
+    };
+  }, []);
+
 
   async function beschikbaarDoorgeven(id: string) {
     setLaden(id);
@@ -66,7 +93,11 @@ export default function OpenDienstenMedewerker({
           </p>
         </div>
 
-        {items.length === 0 ? (
+        {ladenOpenDiensten ? (
+          <div className="px-5 py-8 text-center">
+            <p className="font-medium text-slate-900">Open diensten laden...</p>
+          </div>
+        ) : items.length === 0 ? (
           <div className="px-5 py-8 text-center">
             <p className="font-medium text-slate-900">Geen open diensten</p>
             <p className="mt-1 text-sm text-slate-500">
