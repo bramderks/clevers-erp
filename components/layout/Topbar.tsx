@@ -384,6 +384,12 @@ export default function Topbar({
   }
 
   function gaTerug() {
+    // Op het dashboard gaan we nooit terug naar de loginpagina of
+    // een externe vorige pagina. Het dashboard is het eindpunt.
+    if (pathname === "/dashboard" || pathname === "/") {
+      return;
+    }
+
     router.back();
   }
 
@@ -469,7 +475,8 @@ export default function Topbar({
         type="button"
         onClick={gaTerug}
         aria-label="Ga terug"
-        className="mr-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+        disabled={pathname === "/dashboard" || pathname === "/"}
+        className="mr-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-600"
       >
         <ArrowLeft size={22} />
       </button>
