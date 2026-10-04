@@ -273,7 +273,7 @@ export default async function DashboardPage() {
             weeknummer: "asc",
           },
         ],
-      })
+      }),
 
       prisma.ruilverzoek.count({
         where: {
@@ -281,8 +281,6 @@ export default async function DashboardPage() {
           status: "AANGEVRAAGD",
         },
       }),
-
-,
     ]);
 
     /*
