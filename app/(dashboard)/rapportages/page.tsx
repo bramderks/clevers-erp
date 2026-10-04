@@ -198,17 +198,47 @@ export default async function RapportagesPage({
   });
   const globaalDoel = globaleInstelling ? Number(globaleInstelling.waarde) : 20;
   const opgeslagenBron = week?.loonkostenWeek ? uitSnapshot(week.loonkostenWeek) : null;
+  const actueleWeekDiensten = (week?.diensten ?? []).filter((dienst) => datumValtInWeek(dienst.datum, jaar, weeknummer));
+
+  // Een afgesloten snapshot mag alleen worden gebruikt zolang de actuele planning
+  // nog dezelfde uren bevat. Dit is belangrijk omdat diensten na afsluiten nog
+  // kunnen worden aangepast. Zonder deze controle bleef een oude snapshot, zoals
+  // de 14 uur van Jayro, de actuele planning overschrijven.
+  const actueleUrenPerMedewerker = new Map<string, number>();
+  for (const dienst of actueleWeekDiensten) {
+    const uren = berekenGewerkteUren(dienst.begintijd, dienst.eindtijd).gewerkteUren;
+    for (const bezetting of dienst.bezetting) {
+      if (!bezetting.medewerker) continue;
+      actueleUrenPerMedewerker.set(
+        bezetting.medewerker.id,
+        (actueleUrenPerMedewerker.get(bezetting.medewerker.id) ?? 0) + uren,
+      );
+    }
+  }
+
   const snapshotHeeftVerkeerdeWeekdiensten = Boolean(
     opgeslagenBron?.diensten.some((dienst) => !datumValtInWeek(new Date(dienst.datum), jaar, weeknummer)),
   );
-  const bruikbareSnapshot = snapshotHeeftVerkeerdeWeekdiensten ? null : opgeslagenBron;
+  const snapshotHeeftVerouderdeUren = Boolean(
+    opgeslagenBron &&
+    (
+      opgeslagenBron.medewerkers.some(
+        (medewerker) =>
+          Math.abs((actueleUrenPerMedewerker.get(medewerker.medewerkerId) ?? 0) - medewerker.uren) > 0.001,
+      ) ||
+      Array.from(actueleUrenPerMedewerker.keys()).some(
+        (medewerkerId) => !opgeslagenBron.medewerkers.some((medewerker) => medewerker.medewerkerId === medewerkerId),
+      )
+    ),
+  );
+  const bruikbareSnapshot =
+    snapshotHeeftVerkeerdeWeekdiensten || snapshotHeeftVerouderdeUren ? null : opgeslagenBron;
 
   let bron: RapportBron;
 
   if (bruikbareSnapshot) {
     bron = bruikbareSnapshot;
   } else {
-    const actueleWeekDiensten = (week?.diensten ?? []).filter((dienst) => datumValtInWeek(dienst.datum, jaar, weeknummer));
     const regels = actueleWeekDiensten.flatMap((dienst) =>
       dienst.bezetting
         .filter((b) => b.medewerker)
