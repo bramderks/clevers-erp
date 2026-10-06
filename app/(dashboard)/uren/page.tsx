@@ -115,6 +115,38 @@ async function keurUrenGoed(
   revalidatePath("/dashboard");
 }
 
+async function keurAlleUrenGoed() {
+  "use server";
+
+  const { gebruiker, organisaties } =
+    await controleerEigenaar();
+
+  const organisatieIds = organisaties.map(
+    (relatie) => relatie.organisatieId,
+  );
+
+  const resultaat =
+    await prisma.urenRegistratie.updateMany({
+      where: {
+        status: "TE_CONTROLEREN",
+        vestiging: {
+          organisatieId: {
+            in: organisatieIds,
+          },
+        },
+      },
+      data: {
+        status: "DEFINITIEF",
+        gecontroleerdDoorId: gebruiker.id,
+        gecontroleerdOp: new Date(),
+      },
+    });
+
+  revalidatePath("/uren");
+  revalidatePath("/dashboard");
+  return resultaat.count;
+}
+
 async function keurUrenAf(
   formData: FormData,
 ) {
@@ -419,14 +451,29 @@ export default async function UrenPage() {
 
       <section className="overflow-hidden rounded-xl border bg-white shadow-sm">
         <div className="border-b bg-slate-50 px-6 py-5">
-          <h2 className="font-semibold text-slate-900">
-            Openstaande uren
-          </h2>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="font-semibold text-slate-900">
+                Openstaande uren
+              </h2>
 
-          <p className="mt-1 text-sm text-slate-500">
-            Alleen uren die nog gecontroleerd
-            moeten worden worden hier getoond.
-          </p>
+              <p className="mt-1 text-sm text-slate-500">
+                Alleen uren die nog gecontroleerd
+                moeten worden worden hier getoond.
+              </p>
+            </div>
+
+            {aantalTeControleren > 0 && (
+              <form action={keurAlleUrenGoed}>
+                <button
+                  type="submit"
+                  className="inline-flex w-full items-center justify-center rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 sm:w-auto"
+                >
+                  Alles definitief goedkeuren ({aantalTeControleren})
+                </button>
+              </form>
+            )}
+          </div>
         </div>
 
         {registraties.length === 0 ? (
