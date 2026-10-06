@@ -11,7 +11,7 @@ if (process.env.VERCEL === "1" && process.env.VERCEL_ENV === "production" && pro
   const client=new Client({connectionString:process.env.DATABASE_URL}); await client.connect();
   try { await client.query("BEGIN");
     const vest=(await client.query(`SELECT "id" FROM "Vestiging" WHERE "naam"='Nijmegen' ORDER BY "actief" DESC LIMIT 1`)).rows[0]; if(!vest) throw new Error("Nijmegen ontbreekt");
-    const em=(await client.query(`SELECT m."id",concat_ws(' ',m."voornaam",m."tussenvoegsel",m."achternaam") AS naam FROM "Medewerker" m WHERE m."actief"=true`).rows;
+    const em=(await client.query(`SELECT m."id",concat_ws(' ',m."voornaam",m."tussenvoegsel",m."achternaam") AS naam FROM "Medewerker" m WHERE m."actief"=true`)).rows;
     const ids=new Map(em.map(x=>[x.naam,x.id]));
     const grouped=new Map(); for(const x of target){ if(!ids.has(x[0])) throw new Error("Ontbrekende medewerker: "+x[0]); const k=ids.get(x[0])+"|"+x[1]; grouped.set(k,x); }
     const current=(await client.query(`SELECT u."id",u."medewerkerId",to_char(u."datum",'YYYY-MM-DD') AS datum FROM "UrenRegistratie" u WHERE u."vestigingId"=$1 AND u."datum">=$2 AND u."datum"<$3 ORDER BY u."datum"`,[vest.id,"2026-09-01","2026-10-01"])).rows;
