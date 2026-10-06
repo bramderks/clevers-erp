@@ -19,8 +19,6 @@ export async function GET(request: Request) {
     where: {
       datum: { gte: start, lt: end },
       status: "DEFINITIEF",
-      werkelijkeBegintijd: { not: null },
-      werkelijkeEindtijd: { not: null },
     },
     select: {
       id: true,
@@ -37,13 +35,6 @@ export async function GET(request: Request) {
     registraties.map((registratie) => {
       const begintijd = registratie.werkelijkeBegintijd;
       const eindtijd = registratie.werkelijkeEindtijd;
-
-      if (!begintijd || !eindtijd) {
-        return prisma.urenRegistratie.update({
-          where: { id: registratie.id },
-          data: {},
-        });
-      }
 
       const berekening = berekenGewerkteUren(begintijd, eindtijd);
       const pauze = bepaalPauzeMinuten(begintijd, eindtijd);
