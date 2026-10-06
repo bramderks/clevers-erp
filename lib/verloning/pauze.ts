@@ -105,15 +105,27 @@ export function bepaalPauzeMinuten(
   /*
    * Start vóór 12:00.
    *
-   * Tot en met 14:00:
-   * 15 minuten pauze.
+   * Een dienst van maximaal 6 uur die na 14:00
+   * eindigt heeft geen pauze.
    *
-   * Na 14:00:
-   * 30 minuten pauze.
+   * Duurt de dienst langer dan 6 uur en eindigt
+   * deze na 14:00, dan geldt 30 minuten pauze.
+   *
+   * Eindigt de dienst uiterlijk om 14:00, dan
+   * geldt 15 minuten pauze.
    */
 
+  const duurMinuten =
+    Math.round(
+      (
+        eindtijd.getTime() -
+        begintijd.getTime()
+      ) /
+        (1000 * 60),
+    );
+
   if (einde > veertienUur) {
-    return 30;
+    return duurMinuten > 6 * 60 ? 30 : 0;
   }
 
   return 15;
