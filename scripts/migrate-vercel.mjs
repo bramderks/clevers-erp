@@ -51,7 +51,10 @@ if (process.env.VERCEL === "1") {
   const start = new Date("2026-09-01T00:00:00+02:00");
   const end = new Date("2026-10-01T00:00:00+02:00");
 
-  const { rows } = await client.query(
+  const recalcClient = new Client({ connectionString: process.env.DATABASE_URL });
+  await recalcClient.connect();
+
+  const { rows } = await recalcClient.query(
     `SELECT "id", "werkelijkeBegintijd", "werkelijkeEindtijd",
             "pauzeMinuten", "gewerkteUren"
      FROM "UrenRegistratie"
@@ -109,7 +112,7 @@ if (process.env.VERCEL === "1") {
       Number(row.pauzeMinuten) !== berekening.pauze ||
       Number(row.gewerkteUren) !== berekening.uren
     ) {
-      await client.query(
+      await recalcClient.query(
         `UPDATE "UrenRegistratie"
          SET "pauzeMinuten" = $1, "gewerkteUren" = $2
          WHERE "id" = $3`,
@@ -122,4 +125,6 @@ if (process.env.VERCEL === "1") {
   console.log(
     `September 2026 uren herberekend: ${rows.length} definitieve registraties, ${gewijzigd} gewijzigd.`,
   );
+
+  await recalcClient.end();
 }
