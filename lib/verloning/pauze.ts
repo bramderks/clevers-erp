@@ -37,7 +37,10 @@ function afrondenOpKwartier(
  *    - Dienst eindigt t/m 14:00:
  *      15 minuten pauze.
  *
- *    - Dienst eindigt ná 14:00:
+ *    - Dienst eindigt ná 14:00 en duurt maximaal 6 uur:
+ *      geen pauze.
+ *
+ *    - Dienst eindigt ná 14:00 en duurt langer dan 6 uur:
  *      30 minuten pauze.
  *
  * 2. Start vanaf 12:00 en vóór 17:00:
