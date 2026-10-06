@@ -4,6 +4,25 @@ import { Client } from "pg";
 const OWNER_PROFILE_MIGRATION =
   "20260916203000_create_owner_employee_profiles";
 
+
+if (process.env.VERCEL === "1" && process.env.VERCEL_ENV === "production" && process.env.DATABASE_URL) {
+  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  try {
+    await client.connect();
+    const q = await client.query(
+      `SELECT m."voornaam", m."tussenvoegsel", m."achternaam", COUNT(*)::int AS dagen,
+              SUM(u."gewerkteUren")::numeric(10,2) AS uren
+       FROM "UrenRegistratie" u
+       JOIN "Medewerker" m ON m."id"=u."medewerkerId"
+       WHERE u."datum">=$1 AND u."datum"<$2 AND u."vestigingId"=(SELECT "id" FROM "Vestiging" WHERE "naam"='Nijmegen' ORDER BY "actief" DESC LIMIT 1)
+       GROUP BY m."voornaam",m."tussenvoegsel",m."achternaam"
+       ORDER BY m."achternaam",m."voornaam"`,
+      ["2026-09-01T00:00:00+02:00","2026-10-01T00:00:00+02:00"]
+    );
+    console.log("SEPTEMBER_UREN_REGISTRATIES="+JSON.stringify(q.rows));
+  } finally { await client.end().catch(()=>undefined); }
+}
+
 if (process.env.VERCEL === "1") {
   // The first production rollout of the owner-profile migration failed after
   // partially entering Prisma's migration table. Recover only that known
