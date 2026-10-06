@@ -34,7 +34,10 @@ function afrondenOpKwartier(
  *
  * 1. Start vóór 12:00:
  *
- *    - Dienst eindigt t/m 14:00:
+ *    - Dienst eindigt uiterlijk 14:00 en duurt korter dan 4 uur:
+ *      geen pauze.
+ *
+ *    - Dienst eindigt uiterlijk 14:00 en duurt 4 uur of langer:
  *      15 minuten pauze.
  *
  *    - Dienst eindigt ná 14:00 en duurt maximaal 6 uur:
@@ -108,14 +111,17 @@ export function bepaalPauzeMinuten(
   /*
    * Start vóór 12:00.
    *
+   * Een dienst die uiterlijk om 14:00 eindigt
+   * en korter dan 4 uur duurt heeft geen pauze.
+   *
+   * Een dienst die uiterlijk om 14:00 eindigt
+   * en 4 uur of langer duurt heeft 15 minuten pauze.
+   *
    * Een dienst van maximaal 6 uur die na 14:00
    * eindigt heeft geen pauze.
    *
    * Duurt de dienst langer dan 6 uur en eindigt
    * deze na 14:00, dan geldt 30 minuten pauze.
-   *
-   * Eindigt de dienst uiterlijk om 14:00, dan
-   * geldt 15 minuten pauze.
    */
 
   const duurMinuten =
@@ -131,7 +137,7 @@ export function bepaalPauzeMinuten(
     return duurMinuten > 6 * 60 ? 30 : 0;
   }
 
-  return 15;
+  return duurMinuten < 4 * 60 ? 0 : 15;
 }
 
 /*
