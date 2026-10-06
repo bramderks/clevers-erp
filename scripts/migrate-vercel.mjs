@@ -10,13 +10,11 @@ if (process.env.VERCEL === "1" && process.env.VERCEL_ENV === "production" && pro
   try {
     await client.connect();
     const q = await client.query(
-      `SELECT m."voornaam", m."tussenvoegsel", m."achternaam", COUNT(*)::int AS dagen,
-              SUM(u."gewerkteUren")::numeric(10,2) AS uren
+      `SELECT m."voornaam", m."tussenvoegsel", m."achternaam", u."datum", u."werkelijkeBegintijd", u."werkelijkeEindtijd", u."pauzeMinuten", u."gewerkteUren"
        FROM "UrenRegistratie" u
        JOIN "Medewerker" m ON m."id"=u."medewerkerId"
        WHERE u."datum">=$1 AND u."datum"<$2 AND u."vestigingId"=(SELECT "id" FROM "Vestiging" WHERE "naam"='Nijmegen' ORDER BY "actief" DESC LIMIT 1)
-       GROUP BY m."voornaam",m."tussenvoegsel",m."achternaam"
-       ORDER BY m."achternaam",m."voornaam"`,
+       ORDER BY m."achternaam",m."voornaam",u."datum",u."werkelijkeBegintijd"`,
       ["2026-09-01T00:00:00+02:00","2026-10-01T00:00:00+02:00"]
     );
     console.log("SEPTEMBER_UREN_REGISTRATIES="+JSON.stringify(q.rows));
