@@ -176,6 +176,43 @@ export async function GET() {
 
     /*
      * ======================================================
+     * UREN CONTROLEREN
+     * ======================================================
+     */
+
+    if (eigenaarRelatiesVoorVerloning.length > 0) {
+      const organisatieIds = eigenaarRelatiesVoorVerloning.map(
+        (relatie) => relatie.organisatieId,
+      );
+
+      const openstaandeUren = await prisma.urenRegistratie.count({
+        where: {
+          status: "TE_CONTROLEREN",
+          vestiging: {
+            organisatieId: { in: organisatieIds },
+          },
+        },
+      });
+
+      if (openstaandeUren > 0) {
+        taken.push({
+          id: "uren-controleren",
+          type: "UREN_CONTROLEREN",
+          categorie: "Verloning",
+          titel: "Uren controleren",
+          omschrijving: openstaandeUren + (openstaandeUren === 1 ? " urenregistratie staat" : " urenregistraties staan") + " klaar om te controleren en definitief te maken voor de verloning.",
+          aangemaaktOp: new Date(),
+          actie: "UREN_CONTROLEREN",
+          gegevens: {
+            href: "/uren",
+            aantal: openstaandeUren,
+          },
+        });
+      }
+    }
+
+    /*
+     * ======================================================
      * EIGEN VERLONING
      * ======================================================
      *
