@@ -200,6 +200,37 @@ export async function POST(request: NextRequest) {
     };
 
     await prisma.$transaction(async (tx) => {
+      // Het afsluiten van een planningweek is het controlemoment voor de
+      // geplande uren. Maak daarom voor iedere bezette dienst een
+      // urenregistratie aan als die nog niet bestaat. Bestaande registraties
+      // (ook DEFINITIEF/AFGEKEURD) worden nooit overschreven.
+      const urenRegistraties = week.diensten.flatMap((dienst) =>
+        dienst.bezetting
+          .filter((bezetting) => bezetting.medewerker)
+          .map((bezetting) => {
+            const berekening = berekenGewerkteUren(dienst.begintijd, dienst.eindtijd);
+            return {
+              dienstBezettingId: bezetting.id,
+              medewerkerId: bezetting.medewerker!.id,
+              vestigingId,
+              datum: dienst.datum,
+              taak: null,
+              werkelijkeBegintijd: dienst.begintijd,
+              werkelijkeEindtijd: dienst.eindtijd,
+              pauzeMinuten: berekening.pauzeMinuten,
+              gewerkteUren: berekening.gewerkteUren,
+              status: "TE_CONTROLEREN",
+            };
+          }),
+      );
+
+      if (urenRegistraties.length > 0) {
+        await tx.urenRegistratie.createMany({
+          data: urenRegistraties,
+          skipDuplicates: true,
+        });
+      }
+
       await tx.loonkostenWeek.upsert({
         where: { weekId: week.id },
         update: {
