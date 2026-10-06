@@ -207,6 +207,91 @@ export async function genereerVerloning(
 
   /*
    * ==========================================================
+   * URENREGISTRATIES UIT AFGESLOTEN PLANNINGWEKEN
+   * ==========================================================
+   *
+   * Een oudere versie van het afsluitproces sloeg alleen de
+   * loonkostensnapshot op. Daardoor konden afgesloten weken wel
+   * historisch gesloten zijn, maar ontbraken de UrenRegistraties
+   * voor de verloning. Vul ontbrekende registraties veilig aan
+   * vanuit afgesloten weken; bestaande registraties worden door
+   * skipDuplicates nooit overschreven.
+   */
+  const afgeslotenWeken = await prisma.week.findMany({
+    where: {
+      status: "AFGESLOTEN",
+      diensten: {
+        some: {
+          datum: {
+            gte: periodeStart,
+            lt: periodeEinde,
+          },
+        },
+      },
+    },
+    select: {
+      vestigingId: true,
+      diensten: {
+        where: {
+          datum: {
+            gte: periodeStart,
+            lt: periodeEinde,
+          },
+        },
+        select: {
+          id: true,
+          datum: true,
+          begintijd: true,
+          eindtijd: true,
+          bezetting: {
+            where: {
+              medewerkerId: { not: null },
+              status: { not: "AFGEZEGD" },
+            },
+            select: {
+              id: true,
+              medewerkerId: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const ontbrekendeRegistraties = afgeslotenWeken.flatMap((week) =>
+    week.diensten.flatMap((dienst) =>
+      dienst.bezetting
+        .filter((bezetting) => bezetting.medewerkerId)
+        .map((bezetting) => {
+          const berekening = berekenGewerkteUren(
+            dienst.begintijd,
+            dienst.eindtijd,
+          );
+          return {
+            dienstBezettingId: bezetting.id,
+            medewerkerId: bezetting.medewerkerId!,
+            vestigingId: week.vestigingId,
+            datum: dienst.datum,
+            taak: null,
+            werkelijkeBegintijd: dienst.begintijd,
+            werkelijkeEindtijd: dienst.eindtijd,
+            pauzeMinuten: berekening.pauzeMinuten,
+            gewerkteUren: berekening.gewerkteUren,
+            status: "TE_CONTROLEREN",
+          };
+        }),
+    ),
+  );
+
+  if (ontbrekendeRegistraties.length > 0) {
+    await prisma.urenRegistratie.createMany({
+      data: ontbrekendeRegistraties,
+      skipDuplicates: true,
+    });
+  }
+
+  /*
+   * ==========================================================
    * ALLE URENREGISTRATIES CONTROLEREN
    * ==========================================================
    */
