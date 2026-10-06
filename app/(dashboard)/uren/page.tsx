@@ -144,7 +144,7 @@ async function keurAlleUrenGoed() {
 
   revalidatePath("/uren");
   revalidatePath("/dashboard");
-  return resultaat.count;
+  void resultaat;
 }
 
 async function keurUrenAf(
