@@ -566,7 +566,7 @@ export default async function UrenPage() {
                           type="submit"
                           className="inline-flex w-full items-center justify-center rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
                         >
-                          Goedkeuren
+                          Definitief maken
                         </button>
                       </form>
 
