@@ -101,31 +101,3 @@ patch("components/layout/Navigation.tsx", [[
 ]]);
 
 console.log("ERP security/planning/open-services build fix applied successfully.");
-
-
-import pg from "pg";
-const { Pool } = pg;
-const inspectPool = new Pool({ connectionString: process.env.DATABASE_URL, max: 1 });
-try {
-  const tags = await inspectPool.query('SELECT id, naam, volgorde, actief FROM "Tag" ORDER BY volgorde, naam');
-  const september = await inspectPool.query(
-    'SELECT d.id, d."datum", d."begintijd", d."eindtijd", v.naam AS "vestigingNaam", ' +
-    'm.id AS "medewerkerId", m.voornaam, m.tussenvoegsel, m.achternaam, ' +
-    't.naam AS "tagNaam", dt.aantal AS "tagAantal" ' +
-    'FROM "Dienst" d ' +
-    'JOIN "Week" w ON w.id = d."weekId" ' +
-    'JOIN "Vestiging" v ON v.id = w."vestigingId" ' +
-    'LEFT JOIN "DienstBezetting" db ON db."dienstId" = d.id ' +
-    'LEFT JOIN "Medewerker" m ON m.id = db."medewerkerId" ' +
-    'LEFT JOIN "DienstTag" dt ON dt."dienstId" = d.id ' +
-    'LEFT JOIN "Tag" t ON t.id = dt."tagId" ' +
-    'WHERE v.naam ILIKE \'%Nijmegen%\' ' +
-    'AND d."datum" >= TIMESTAMP \'2026-09-01\' ' +
-    'AND d."datum" < TIMESTAMP \'2026-10-01\' ' +
-    'ORDER BY d."datum", d."begintijd", d.id, m.achternaam, t.volgorde'
-  );
-  console.log("INSPECT_TAGS="+JSON.stringify(tags.rows));
-  console.log("INSPECT_SEPTEMBER="+JSON.stringify(september.rows));
-} finally {
-  await inspectPool.end();
-}
