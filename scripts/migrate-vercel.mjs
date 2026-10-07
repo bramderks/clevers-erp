@@ -43,6 +43,97 @@ if (process.env.VERCEL === "1") {
     }
   }
 
+  if (process.env.DATABASE_URL) {
+    const client = new Client({
+      connectionString: process.env.DATABASE_URL,
+    });
+
+    try {
+      await client.connect();
+
+      const repair = await client.query(`
+        WITH nijmegen AS (
+          SELECT "id"
+          FROM "Vestiging"
+          WHERE lower("naam") = 'nijmegen'
+          ORDER BY "id"
+          LIMIT 1
+        ),
+        medewerkers AS (
+          SELECT "id"
+          FROM "Medewerker"
+          WHERE
+            ("voornaam", "achternaam") IN (
+              ('Jayro', 'Peters'),
+              ('Andrea', 'de Bock - Berghmans'),
+              ('Coosje', 'Helsen'),
+              ('Julia', 'Leenders')
+            )
+        )
+        UPDATE "UrenRegistratie" u
+        SET
+          "status" = 'TE_CONTROLEREN',
+          "gecontroleerdDoorId" = NULL,
+          "gecontroleerdOp" = NULL
+        WHERE u."vestigingId" = (SELECT "id" FROM nijmegen)
+          AND u."medewerkerId" IN (SELECT "id" FROM medewerkers)
+          AND u."datum" >= TIMESTAMPTZ '2026-08-31 22:00:00+00'
+          AND u."datum" < TIMESTAMPTZ '2026-09-30 22:00:00+00'
+        RETURNING u."id"
+      `);
+
+      const period = await client.query(`
+        SELECT "id"
+        FROM "VerloningsPeriode"
+        WHERE "jaar" = 2026 AND "maand" = 9
+        LIMIT 1
+      `);
+
+      let deletedRules = 0;
+      if (period.rowCount > 0) {
+        const result = await client.query(`
+          DELETE FROM "VerloningsRegel" vr
+          USING "Medewerker" m
+          WHERE vr."verloningsPeriodeId" = $1
+            AND vr."medewerkerId" = m."id"
+            AND (m."voornaam", m."achternaam") IN (
+              ('Jayro', 'Peters'),
+              ('Andrea', 'de Bock - Berghmans'),
+              ('Coosje', 'Helsen'),
+              ('Julia', 'Leenders')
+            )
+        `, [period.rows[0].id]);
+        deletedRules = result.rowCount ?? 0;
+
+        await client.query(`
+          UPDATE "VerloningsControle" vc
+          SET
+            "status" = 'OPEN',
+            "gecontroleerdOp" = NULL,
+            "automatischAkkoordOp" = NULL
+          WHERE vc."verloningsPeriodeId" = $1
+            AND vc."medewerkerId" IN (
+              SELECT "id"
+              FROM "Medewerker"
+              WHERE
+                ("voornaam", "achternaam") IN (
+                  ('Jayro', 'Peters'),
+                  ('Andrea', 'de Bock - Berghmans'),
+                  ('Coosje', 'Helsen'),
+                  ('Julia', 'Leenders')
+                )
+            )
+        `, [period.rows[0].id]);
+      }
+
+      console.log(
+        `UREN_HERSTEL_CONTROLE_STATUS={"opengezet":${repair.rowCount ?? 0},"verloningsregelsVerwijderd":${deletedRules}}`,
+      );
+    } finally {
+      await client.end().catch(() => undefined);
+    }
+  }
+
   execFileSync("npx", ["prisma", "migrate", "deploy"], {
     stdio: "inherit",
     env: process.env,
