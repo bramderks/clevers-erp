@@ -215,6 +215,10 @@ function formatteerDatum(
   ).format(datum);
 }
 
+function formatteerUren(waarde: number) {
+  return waarde.toFixed(2).replace(".", ",") + " uur netto";
+}
+
 function formatteerTijd(
   waarde: string,
 ) {
@@ -1192,11 +1196,20 @@ export default function PlanningWeekOverzicht({
                                                         ✓
                                                       </span>
 
-                                                      <span className="min-w-0 truncate text-xs font-semibold text-slate-700">
-                                                        {medewerkerNaam(
-                                                          medewerker,
+                                                      <div className="min-w-0 flex-1">
+                                                        <span className="block truncate text-xs font-semibold text-slate-700">
+                                                          {medewerkerNaam(
+                                                            medewerker,
+                                                          )}
+                                                        </span>
+                                                        {bezetting.gewerkteUren != null && (
+                                                          <span className="mt-0.5 block text-[10px] font-medium text-slate-500">
+                                                            {formatteerUren(
+                                                              Number(bezetting.gewerkteUren),
+                                                            )}
+                                                          </span>
                                                         )}
-                                                      </span>
+                                                      </div>
                                                       {isEigenaar && medewerker.uurloon != null && (
                                                         <span className="shrink-0 text-[10px] font-medium text-slate-500">
                                                           € {Number(medewerker.uurloon).toFixed(2).replace(".", ",")}/uur
