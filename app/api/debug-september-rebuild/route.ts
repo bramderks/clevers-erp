@@ -13,7 +13,7 @@ if(new URL(request.url).searchParams.get("secret")!==SECRET)return NextResponse.
 const vestiging=await prisma.vestiging.findFirst({where:{naam:{contains:"Nijmegen",mode:"insensitive"}},select:{id:true,naam:true}});
 if(!vestiging)return NextResponse.json({fout:"Nijmegen niet gevonden."},{status:404});
 const namen=[...new Set(DATA.map(x=>x.naam))];
-const medewerkers=await prisma.medewerker.findMany({where:{OR:namen.map(n=>{const p=n.split(" ");return{voornaam:p[0],achternaam:p.slice(1).join(" ")}})},select:{id:true,voornaam:true,tussenvoegsel:true,achternaam:true}});
+const medewerkers=await prisma.medewerker.findMany({where:{actief:true},select:{id:true,voornaam:true,tussenvoegsel:true,achternaam:true}});
 const map=new Map<string,string>();
 for(const n of namen){const ms=medewerkers.filter(m=>naam(m)===n);if(ms.length!==1)return NextResponse.json({fout:`Medewerker '${n}' niet uniek gevonden.`,gevonden:ms.map(naam)},{status:400});map.set(n,ms[0].id);}
 const tags=await prisma.tag.findMany({where:{naam:{in:["Leidinggevende","Handijs"]},actief:true},select:{id:true,naam:true}});
