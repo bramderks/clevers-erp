@@ -76,6 +76,9 @@ export type DienstBezetting = {
   status: DienstBezettingStatus;
 
   medewerker: PlanningMedewerker | null;
+
+  /** Netto daadwerkelijk geregistreerde uren voor deze dienst. */
+  gewerkteUren?: number | null;
 };
 
 export type Dienst = {
