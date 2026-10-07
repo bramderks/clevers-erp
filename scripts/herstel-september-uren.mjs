@@ -39,15 +39,11 @@ try {
   const medewerkers = await prisma.medewerker.findMany({
     where: {
       actief: true,
-      OR: Object.keys(doelDatums).map((naam) => {
-        const delen = naam.split(" ");
-        return {
-          voornaam: delen[0],
-          achternaam: {
-            contains: delen.slice(1).join(" "),
-          },
-        };
-      }),
+      vestigingen: {
+        some: {
+          vestigingId: vestiging.id,
+        },
+      },
     },
     select: {
       id: true,
