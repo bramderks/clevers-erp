@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDienstTijd } from "@/lib/planning/tijd";
+import { synchroniseerVerloningsRegelVoorMedewerker } from "@/lib/verloning/synchroniseerVerloningsRegel";
 
 async function controleerEigenaar() {
   const gebruiker =
@@ -66,6 +67,9 @@ async function keurUrenGoed(
         select: {
           id: true,
           status: true,
+          medewerkerId: true,
+          vestigingId: true,
+          datum: true,
           vestiging: {
             select: {
               organisatieId: true,
@@ -112,7 +116,25 @@ async function keurUrenGoed(
     },
   });
 
+  const lokaleDatum = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Amsterdam",
+    year: "numeric",
+    month: "2-digit",
+  }).format(new Date(registratie.datum));
+  const [jaar, maand] = lokaleDatum.split("-").map(Number);
+
+  const periodeId = await synchroniseerVerloningsRegelVoorMedewerker(
+    registratie.medewerkerId,
+    registratie.vestigingId,
+    jaar,
+    maand,
+  );
+
   revalidatePath("/uren");
+  revalidatePath("/verloning");
+  if (periodeId) {
+    revalidatePath(`/verloning/${periodeId}`);
+  }
   revalidatePath("/dashboard");
 }
 
