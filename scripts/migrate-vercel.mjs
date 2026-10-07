@@ -59,27 +59,119 @@ if (process.env.VERCEL === "1") {
           ORDER BY "id"
           LIMIT 1
         ),
-        medewerkers AS (
-          SELECT "id"
-          FROM "Medewerker"
-          WHERE
-            concat_ws(' ', "voornaam", "tussenvoegsel", "achternaam") IN (
+        doel AS (
+          SELECT *
+          FROM (VALUES
+            ('Andrea de Bock - Berghmans', '2026-09-01'),
+            ('Andrea de Bock - Berghmans', '2026-09-04'),
+            ('Andrea de Bock - Berghmans', '2026-09-07'),
+            ('Andrea de Bock - Berghmans', '2026-09-11'),
+            ('Andrea de Bock - Berghmans', '2026-09-14'),
+            ('Andrea de Bock - Berghmans', '2026-09-18'),
+            ('Andrea de Bock - Berghmans', '2026-09-21'),
+            ('Andrea de Bock - Berghmans', '2026-09-22'),
+            ('Andrea de Bock - Berghmans', '2026-09-25'),
+            ('Andrea de Bock - Berghmans', '2026-09-28'),
+            ('Coosje Helsen', '2026-09-07'),
+            ('Coosje Helsen', '2026-09-12'),
+            ('Coosje Helsen', '2026-09-14'),
+            ('Coosje Helsen', '2026-09-21'),
+            ('Coosje Helsen', '2026-09-28'),
+            ('Jayro Peters', '2026-09-02'),
+            ('Jayro Peters', '2026-09-03'),
+            ('Jayro Peters', '2026-09-07'),
+            ('Jayro Peters', '2026-09-08'),
+            ('Jayro Peters', '2026-09-10'),
+            ('Jayro Peters', '2026-09-14'),
+            ('Jayro Peters', '2026-09-21'),
+            ('Jayro Peters', '2026-09-28'),
+            ('Julia Leenders', '2026-09-01'),
+            ('Julia Leenders', '2026-09-03'),
+            ('Julia Leenders', '2026-09-08'),
+            ('Julia Leenders', '2026-09-25'),
+            ('Julia Leenders', '2026-09-29')
+          ) AS t("naam", "datum")
+        ),
+        teVerwijderen AS (
+          SELECT u."id"
+          FROM "UrenRegistratie" u
+          JOIN "Medewerker" m ON m."id" = u."medewerkerId"
+          WHERE u."vestigingId" = (SELECT "id" FROM nijmegen)
+            AND u."datum" >= TIMESTAMPTZ '2026-08-31 22:00:00+00'
+            AND u."datum" < TIMESTAMPTZ '2026-09-30 22:00:00+00'
+            AND concat_ws(' ', m."voornaam", m."tussenvoegsel", m."achternaam") IN (
               'Jayro Peters',
               'Andrea de Bock - Berghmans',
               'Coosje Helsen',
               'Julia Leenders'
             )
+            AND NOT EXISTS (
+              SELECT 1
+              FROM doel
+              WHERE doel."naam" = concat_ws(' ', m."voornaam", m."tussenvoegsel", m."achternaam")
+                AND doel."datum" = to_char(u."datum" + interval '2 hours', 'YYYY-MM-DD')
+            )
+        )
+        DELETE FROM "UrenRegistratie" u
+        WHERE u."id" IN (SELECT "id" FROM teVerwijderen)
+        RETURNING u."id"
+      `);
+
+      await client.query(`
+        WITH doel AS (
+          SELECT *
+          FROM (VALUES
+            ('Andrea de Bock - Berghmans', '2026-09-01'),
+            ('Andrea de Bock - Berghmans', '2026-09-04'),
+            ('Andrea de Bock - Berghmans', '2026-09-07'),
+            ('Andrea de Bock - Berghmans', '2026-09-11'),
+            ('Andrea de Bock - Berghmans', '2026-09-14'),
+            ('Andrea de Bock - Berghmans', '2026-09-18'),
+            ('Andrea de Bock - Berghmans', '2026-09-21'),
+            ('Andrea de Bock - Berghmans', '2026-09-22'),
+            ('Andrea de Bock - Berghmans', '2026-09-25'),
+            ('Andrea de Bock - Berghmans', '2026-09-28'),
+            ('Coosje Helsen', '2026-09-07'),
+            ('Coosje Helsen', '2026-09-12'),
+            ('Coosje Helsen', '2026-09-14'),
+            ('Coosje Helsen', '2026-09-21'),
+            ('Coosje Helsen', '2026-09-28'),
+            ('Jayro Peters', '2026-09-02'),
+            ('Jayro Peters', '2026-09-03'),
+            ('Jayro Peters', '2026-09-07'),
+            ('Jayro Peters', '2026-09-08'),
+            ('Jayro Peters', '2026-09-10'),
+            ('Jayro Peters', '2026-09-14'),
+            ('Jayro Peters', '2026-09-21'),
+            ('Jayro Peters', '2026-09-28'),
+            ('Julia Leenders', '2026-09-01'),
+            ('Julia Leenders', '2026-09-03'),
+            ('Julia Leenders', '2026-09-08'),
+            ('Julia Leenders', '2026-09-25'),
+            ('Julia Leenders', '2026-09-29')
+          ) AS t("naam", "datum")
         )
         UPDATE "UrenRegistratie" u
         SET
           "status" = 'TE_CONTROLEREN',
           "gecontroleerdDoorId" = NULL,
           "gecontroleerdOp" = NULL
-        WHERE u."vestigingId" = (SELECT "id" FROM nijmegen)
-          AND u."medewerkerId" IN (SELECT "id" FROM medewerkers)
+        FROM "Medewerker" m
+        WHERE m."id" = u."medewerkerId"
+          AND u."vestigingId" = (
+            SELECT "id" FROM "Vestiging"
+            WHERE lower("naam") = 'nijmegen'
+            ORDER BY "id"
+            LIMIT 1
+          )
           AND u."datum" >= TIMESTAMPTZ '2026-08-31 22:00:00+00'
           AND u."datum" < TIMESTAMPTZ '2026-09-30 22:00:00+00'
-        RETURNING u."id"
+          AND EXISTS (
+            SELECT 1
+            FROM doel
+            WHERE doel."naam" = concat_ws(' ', m."voornaam", m."tussenvoegsel", m."achternaam")
+              AND doel."datum" = to_char(u."datum" + interval '2 hours', 'YYYY-MM-DD')
+          )
       `);
 
       const period = await client.query(`
@@ -129,8 +221,8 @@ if (process.env.VERCEL === "1") {
       const diagnostiek = await client.query(`
         SELECT
           concat_ws(' ', m."voornaam", m."tussenvoegsel", m."achternaam") AS "naam",
-          count(*)::int AS "aantal",
-          array_agg(to_char(u."datum" + interval '2 hours', 'YYYY-MM-DD') ORDER BY u."datum") AS "datums"
+          u."status" AS "status",
+          count(*)::int AS "aantal"
         FROM "UrenRegistratie" u
         JOIN "Medewerker" m ON m."id" = u."medewerkerId"
         WHERE u."vestigingId" = (SELECT "id" FROM "Vestiging" WHERE lower("naam") = 'nijmegen' ORDER BY "id" LIMIT 1)
@@ -142,8 +234,8 @@ if (process.env.VERCEL === "1") {
             'Coosje Helsen',
             'Julia Leenders'
           )
-        GROUP BY 1
-        ORDER BY 1
+        GROUP BY 1, 2
+        ORDER BY 1, 2
       `);
 
       console.log(
