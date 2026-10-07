@@ -5,7 +5,6 @@ const PUBLIC_ROUTES = [
   "/api/login",
   "/account/activeren",
   "/api/account/activeren",
-  "/api/debug-september",
   "/_next",
   "/favicon.ico",
   "/logo.png",
