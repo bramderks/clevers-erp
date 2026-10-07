@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 import GenereerVerloningForm from "./GenereerVerloningForm";
+import VerwijderVerloningButton from "./VerwijderVerloningButton";
 
 function formatUren(uren: number) {
   return uren
@@ -227,6 +228,70 @@ export default async function VerloningPage() {
         gewerkteUren,
       };
     });
+
+  async function verwijderPeriode(periodeId: string) {
+    "use server";
+
+    const actueleGebruiker = await getCurrentUser();
+
+    if (!actueleGebruiker) {
+      redirect("/login");
+    }
+
+    const actieveOrganisaties =
+      actueleGebruiker.organisaties.filter(
+        (relatie) =>
+          relatie.actief &&
+          relatie.organisatie.actief,
+      );
+
+    const eigenaar = actieveOrganisaties.some(
+      (relatie) =>
+        relatie.rol.naam.trim().toLowerCase() === "eigenaar",
+    );
+
+    if (!eigenaar) {
+      throw new Error("Alleen een eigenaar kan een verloningsperiode verwijderen.");
+    }
+
+    const organisatieIds = actieveOrganisaties.map(
+      (relatie) => relatie.organisatieId,
+    );
+
+    const periode = await prisma.verloningsPeriode.findUnique({
+      where: { id: periodeId },
+      include: {
+        regels: {
+          select: {
+            vestiging: {
+              select: {
+                organisatieId: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!periode) {
+      throw new Error("De verloningsperiode bestaat niet meer.");
+    }
+
+    const hoortBijOrganisatie = periode.regels.some((regel) =>
+      organisatieIds.includes(regel.vestiging.organisatieId),
+    );
+
+    if (!hoortBijOrganisatie) {
+      throw new Error("Je hebt geen toegang tot deze verloningsperiode.");
+    }
+
+    await prisma.verloningsPeriode.delete({
+      where: { id: periodeId },
+    });
+
+    revalidatePath("/verloning");
+    revalidatePath("/dashboard");
+  }
 
   return (
     <main className="space-y-8">
