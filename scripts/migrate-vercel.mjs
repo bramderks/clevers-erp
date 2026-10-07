@@ -63,11 +63,11 @@ if (process.env.VERCEL === "1") {
           SELECT "id"
           FROM "Medewerker"
           WHERE
-            ("voornaam", "achternaam") IN (
-              ('Jayro', 'Peters'),
-              ('Andrea', 'de Bock - Berghmans'),
-              ('Coosje', 'Helsen'),
-              ('Julia', 'Leenders')
+            concat_ws(' ', "voornaam", "tussenvoegsel", "achternaam") IN (
+              'Jayro Peters',
+              'Andrea de Bock - Berghmans',
+              'Coosje Helsen',
+              'Julia Leenders'
             )
         )
         UPDATE "UrenRegistratie" u
@@ -96,11 +96,11 @@ if (process.env.VERCEL === "1") {
           USING "Medewerker" m
           WHERE vr."verloningsPeriodeId" = $1
             AND vr."medewerkerId" = m."id"
-            AND (m."voornaam", m."achternaam") IN (
-              ('Jayro', 'Peters'),
-              ('Andrea', 'de Bock - Berghmans'),
-              ('Coosje', 'Helsen'),
-              ('Julia', 'Leenders')
+            AND concat_ws(' ', m."voornaam", m."tussenvoegsel", m."achternaam") IN (
+              'Jayro Peters',
+              'Andrea de Bock - Berghmans',
+              'Coosje Helsen',
+              'Julia Leenders'
             )
         `, [period.rows[0].id]);
         deletedRules = result.rowCount ?? 0;
@@ -116,11 +116,11 @@ if (process.env.VERCEL === "1") {
               SELECT "id"
               FROM "Medewerker"
               WHERE
-                ("voornaam", "achternaam") IN (
-                  ('Jayro', 'Peters'),
-                  ('Andrea', 'de Bock - Berghmans'),
-                  ('Coosje', 'Helsen'),
-                  ('Julia', 'Leenders')
+                concat_ws(' ', "voornaam", "tussenvoegsel", "achternaam") IN (
+                  'Jayro Peters',
+                  'Andrea de Bock - Berghmans',
+                  'Coosje Helsen',
+                  'Julia Leenders'
                 )
             )
         `, [period.rows[0].id]);
