@@ -15,7 +15,7 @@ if(!vestiging)return NextResponse.json({fout:"Nijmegen niet gevonden."},{status:
 const namen=[...new Set(DATA.map(x=>x.naam))];
 const medewerkers=await prisma.medewerker.findMany({where:{},select:{id:true,voornaam:true,tussenvoegsel:true,achternaam:true}});
 const map=new Map<string,string>();
-for(const n of namen){const ms=medewerkers.filter(m=>naam(m)===n);if(ms.length!==1)return NextResponse.json({fout:`Medewerker '${n}' niet uniek gevonden.`,gevonden:ms.map(naam)},{status:400});map.set(n,ms[0].id);}
+for(const n of namen){const exact=medewerkers.filter(m=>naam(m)===n);const starts=medewerkers.filter(m=>naam(m).startsWith(n+" "));const ms=exact.length?exact:starts;if(ms.length!==1)return NextResponse.json({fout:`Medewerker '${n}' niet uniek gevonden.`,gevonden:medewerkers.map(naam).filter(x=>x.toLowerCase().includes(n.toLowerCase().split(" ")[0]))},{status:400});map.set(n,ms[0].id);}
 const tags=await prisma.tag.findMany({where:{naam:{in:["Leidinggevende","Handijs"]},actief:true},select:{id:true,naam:true}});
 const tagMap=new Map(tags.map(t=>[t.naam,t.id]));
 if(!tagMap.has("Leidinggevende")||!tagMap.has("Handijs"))return NextResponse.json({fout:"Planningstags ontbreken."},{status:400});
