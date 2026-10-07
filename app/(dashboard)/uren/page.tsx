@@ -148,8 +148,8 @@ async function keurAlleUrenGoed() {
     (relatie) => relatie.organisatieId,
   );
 
-  const resultaat =
-    await prisma.urenRegistratie.updateMany({
+  const openRegistraties =
+    await prisma.urenRegistratie.findMany({
       where: {
         status: "TE_CONTROLEREN",
         vestiging: {
@@ -158,16 +158,78 @@ async function keurAlleUrenGoed() {
           },
         },
       },
-      data: {
-        status: "DEFINITIEF",
-        gecontroleerdDoorId: gebruiker.id,
-        gecontroleerdOp: new Date(),
+      select: {
+        medewerkerId: true,
+        vestigingId: true,
+        datum: true,
       },
     });
 
+  await prisma.urenRegistratie.updateMany({
+    where: {
+      status: "TE_CONTROLEREN",
+      vestiging: {
+        organisatieId: {
+          in: organisatieIds,
+        },
+      },
+    },
+    data: {
+      status: "DEFINITIEF",
+      gecontroleerdDoorId: gebruiker.id,
+      gecontroleerdOp: new Date(),
+    },
+  });
+
+  const uniekeGroepen = new Map<
+    string,
+    { medewerkerId: string; vestigingId: string; jaar: number; maand: number }
+  >();
+
+  for (const registratie of openRegistraties) {
+    const lokaleDatum = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Amsterdam",
+      year: "numeric",
+      month: "2-digit",
+    }).format(new Date(registratie.datum));
+    const [jaar, maand] = lokaleDatum.split("-").map(Number);
+    const sleutel = [
+      registratie.medewerkerId,
+      registratie.vestigingId,
+      jaar,
+      maand,
+    ].join(":");
+
+    uniekeGroepen.set(sleutel, {
+      medewerkerId: registratie.medewerkerId,
+      vestigingId: registratie.vestigingId,
+      jaar,
+      maand,
+    });
+  }
+
+  const periodeIds = new Set<string>();
+
+  for (const groep of uniekeGroepen.values()) {
+    const periodeId =
+      await synchroniseerVerloningsRegelVoorMedewerker(
+        groep.medewerkerId,
+        groep.vestigingId,
+        groep.jaar,
+        groep.maand,
+      );
+
+    if (periodeId) {
+      periodeIds.add(periodeId);
+    }
+  }
+
   revalidatePath("/uren");
+  revalidatePath("/verloning");
+  for (const periodeId of periodeIds) {
+    revalidatePath(`/verloning/${periodeId}`);
+  }
   revalidatePath("/dashboard");
-  void resultaat;
 }
 
 async function keurUrenAf(
