@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/migrate-vercel.mjs && npm run prisma:generate && next build",
+    "build": "node scripts/migrate-vercel.mjs && npm run prisma:generate && node scripts/inspect-september.mjs && next build",
     "start": "next start",
     "lint": "eslint",
     "lint:ci": "eslint --max-warnings 0",
