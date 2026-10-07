@@ -461,6 +461,11 @@ async function haalPlanningOp(
           },
           bezetting: {
             include: {
+              urenregistratie: {
+                select: {
+                  gewerkteUren: true,
+                },
+              },
               medewerker: {
                 select: {
                   id: true,
@@ -539,6 +544,9 @@ async function haalPlanningOp(
       ...dienst,
       bezetting: dienst.bezetting.map((bezetting) => ({
         ...bezetting,
+        gewerkteUren: bezetting.urenregistratie
+          ? Number(bezetting.urenregistratie.gewerkteUren)
+          : null,
         medewerker: bezetting.medewerker
           ? {
               ...bezetting.medewerker,
