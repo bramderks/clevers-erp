@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatDienstTijd } from "@/lib/planning/tijd";
 
 async function controleerEigenaar() {
   const gebruiker =
@@ -257,19 +258,6 @@ function formatDatum(
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
-    },
-  ).format(datum);
-}
-
-function formatTijd(
-  datum: Date,
-) {
-  return new Intl.DateTimeFormat(
-    "nl-NL",
-    {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
     },
   ).format(datum);
 }
@@ -554,17 +542,9 @@ export default async function UrenPage() {
                         </p>
 
                         <p className="mt-1 font-semibold text-slate-900">
-                          {formatTijd(
-                            new Date(
-                              registratie.werkelijkeBegintijd,
-                            ),
-                          )}{" "}
+                          {formatDienstTijd(registratie.werkelijkeBegintijd)}{" "}
                           -{" "}
-                          {formatTijd(
-                            new Date(
-                              registratie.werkelijkeEindtijd,
-                            ),
-                          )}
+                          {formatDienstTijd(registratie.werkelijkeEindtijd)}
                         </p>
                       </div>
 
