@@ -126,8 +126,28 @@ if (process.env.VERCEL === "1") {
         `, [period.rows[0].id]);
       }
 
+      const diagnostiek = await client.query(`
+        SELECT
+          concat_ws(' ', m."voornaam", m."tussenvoegsel", m."achternaam") AS "naam",
+          count(*)::int AS "aantal",
+          array_agg(to_char(u."datum" + interval '2 hours', 'YYYY-MM-DD') ORDER BY u."datum") AS "datums"
+        FROM "UrenRegistratie" u
+        JOIN "Medewerker" m ON m."id" = u."medewerkerId"
+        WHERE u."vestigingId" = (SELECT "id" FROM "Vestiging" WHERE lower("naam") = 'nijmegen' ORDER BY "id" LIMIT 1)
+          AND u."datum" >= TIMESTAMPTZ '2026-08-31 22:00:00+00'
+          AND u."datum" < TIMESTAMPTZ '2026-09-30 22:00:00+00'
+          AND concat_ws(' ', m."voornaam", m."tussenvoegsel", m."achternaam") IN (
+            'Jayro Peters',
+            'Andrea de Bock - Berghmans',
+            'Coosje Helsen',
+            'Julia Leenders'
+          )
+        GROUP BY 1
+        ORDER BY 1
+      `);
+
       console.log(
-        `UREN_HERSTEL_CONTROLE_STATUS={"opengezet":${repair.rowCount ?? 0},"verloningsregelsVerwijderd":${deletedRules}}`,
+        `UREN_HERSTEL_CONTROLE_STATUS={"opengezet":${repair.rowCount ?? 0},"verloningsregelsVerwijderd":${deletedRules},"diagnostiek":${JSON.stringify(diagnostiek.rows)}}`,
       );
     } finally {
       await client.end().catch(() => undefined);
