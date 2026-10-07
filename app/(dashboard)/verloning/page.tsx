@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/auth";
@@ -396,11 +397,13 @@ export default async function VerloningPage() {
                     periode.periodeStart;
 
                   return (
-                    <a
-                      key={periode.id}
-                      href={`/verloning/${periode.id}`}
-                      className="group block px-6 py-5 transition hover:bg-slate-50"
-                    >
+                    <div className="group px-6 py-5 transition hover:bg-slate-50">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <a
+                          href={`/verloning/${periode.id}`}
+                          className="min-w-0 flex-1"
+                        >
+
                       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                         <div className="min-w-0 lg:min-w-[220px]">
                           <div className="flex flex-wrap items-center gap-3">
@@ -473,7 +476,19 @@ export default async function VerloningPage() {
                           →
                         </span>
                       </div>
-                    </a>
+
+                        </a>
+                        <div className="shrink-0">
+                          <VerwijderVerloningButton
+                            compact
+                            verwijderAction={async () => {
+                              "use server";
+                              await verwijderPeriode(periode.id);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   );
                 },
               )}
