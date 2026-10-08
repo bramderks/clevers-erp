@@ -18,221 +18,54 @@ type RouteContext = {
   }>;
 };
 
-function isGeldigeDatum(
-  waarde: unknown,
-): waarde is string {
-  return (
-    typeof waarde === "string" &&
-    /^\d{4}-\d{2}-\d{2}$/.test(
-      waarde,
-    ) &&
-    !Number.isNaN(
-      new Date(
-        `${waarde}T00:00:00`,
-      ).getTime(),
-    )
-  );
+function isGeldigeDatum(waarde: unknown): waarde is string {
+  if (typeof waarde !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(waarde)) return false;
+  try { kalenderDatumUTC(waarde); return true; } catch { return false; }
 }
 
-function isGeldigeTijd(
-  waarde: unknown,
-): waarde is string {
-  if (
-    typeof waarde !== "string" ||
-    !/^\d{2}:\d{2}$/.test(
-      waarde,
-    )
-  ) {
-    return false;
-  }
-
-  const [
-    uren,
-    minuten,
-  ] = waarde.split(":").map(Number);
-
-  return (
-    uren >= 0 &&
-    uren <= 23 &&
-    minuten >= 0 &&
-    minuten <= 59
-  );
+function isGeldigeTijd(waarde: unknown): waarde is string {
+  if (typeof waarde !== "string" || !/^\d{2}:\d{2}$/.test(waarde)) return false;
+  const [uren, minuten] = waarde.split(":").map(Number);
+  return uren >= 0 && uren <= 23 && minuten >= 0 && minuten <= 59;
 }
 
-function isoWeek(
-  datum: Date,
-) {
-  const kopie =
-    new Date(
-      Date.UTC(
-        datum.getFullYear(),
-        datum.getMonth(),
-        datum.getDate(),
-      ),
-    );
-
-  const dag =
-    kopie.getUTCDay() || 7;
-
-  kopie.setUTCDate(
-    kopie.getUTCDate() +
-      4 -
-      dag,
-  );
-
-  const jaar =
-    kopie.getUTCFullYear();
-
-  const eerste =
-    new Date(
-      Date.UTC(
-        jaar,
-        0,
-        4,
-      ),
-    );
-
-  const eersteDag =
-    eerste.getUTCDay() || 7;
-
-  const weeknummer =
-    Math.ceil(
-      (
-        (
-          kopie.getTime() -
-          eerste.getTime()
-        ) /
-          86400000 +
-        eersteDag -
-        1
-      ) /
-        7,
-    );
-
+function isoWeek(datum: Date) {
+  const sleutel = lokaleDatumSleutel(datum);
+  const [jaar, maand, dag] = sleutel.split("-").map(Number);
+  const kopie = new Date(Date.UTC(jaar, maand - 1, dag));
+  const dagNr = kopie.getUTCDay() || 7;
+  kopie.setUTCDate(kopie.getUTCDate() + 4 - dagNr);
+  const isoJaar = kopie.getUTCFullYear();
+  const eerste = new Date(Date.UTC(isoJaar, 0, 4));
+  const eersteDag = eerste.getUTCDay() || 7;
   return {
-    jaar,
-    weeknummer,
+    jaar: isoJaar,
+    weeknummer: Math.ceil(((kopie.getTime() - eerste.getTime()) / 86400000 + eersteDag - 1) / 7),
   };
 }
 
-function dagVanWeek(
-  datum: Date,
-) {
-  const dag =
-    datum.getDay();
-
-  return dag === 0
-    ? 7
-    : dag;
+function dagVanWeek(datum: Date) {
+  const sleutel = lokaleDatumSleutel(datum);
+  const [jaar, maand, dag] = sleutel.split("-").map(Number);
+  const d = new Date(Date.UTC(jaar, maand - 1, dag));
+  return d.getUTCDay() || 7;
 }
 
-function beginDag(
-  datum: Date,
-) {
-  const resultaat =
-    new Date(datum);
-
-  resultaat.setHours(
-    0,
-    0,
-    0,
-    0,
-  );
-
-  return resultaat;
+function beginDag(datum: Date) {
+  return kalenderDatumUTC(lokaleDatumSleutel(datum));
 }
 
-function eindeDag(
-  datum: Date,
-) {
-  const resultaat =
-    new Date(datum);
-
-  resultaat.setHours(
-    23,
-    59,
-    59,
-    999,
-  );
-
-  return resultaat;
+function eindeDag(datum: Date) {
+  const start = beginDag(datum);
+  return new Date(start.getTime() + 86400000 - 1);
 }
 
-function maakTijd(
-  datum: Date,
-  tijd: string,
-) {
-  const [
-    uren,
-    minuten,
-  ] = tijd.split(":").map(Number);
+function maakTijd(datum: Date, tijd: string) {
+  return nederlandseDatumTijd(lokaleDatumSleutel(datum), tijd);
+}
 
-  /*
-   * Diensten zijn bedrijfstijden in de Nederlandse tijdzone.
-   * Vercel draait doorgaans in UTC; setHours() zou daar 17:00
-   * als 17:00 UTC opslaan en in Nederland als 19:00 tonen.
-   *
-   * Gebruik daarom expliciet Europe/Amsterdam, inclusief zomer-
-   * en wintertijd.
-   */
-  const utcBasis =
-    new Date(
-      Date.UTC(
-        datum.getFullYear(),
-        datum.getMonth(),
-        datum.getDate(),
-        uren,
-        minuten,
-        0,
-        0,
-      ),
-    );
-
-  const offsetTekst =
-    new Intl.DateTimeFormat(
-      "en-US",
-      {
-        timeZone:
-          "Europe/Amsterdam",
-        timeZoneName:
-          "longOffset",
-      },
-    )
-      .formatToParts(
-        utcBasis,
-      )
-      .find(
-        (part) =>
-          part.type ===
-          "timeZoneName",
-      )
-      ?.value ?? "GMT";
-
-  const match =
-    /^GMT([+-])(\d{1,2}):?(\d{2})?$/.exec(
-      offsetTekst,
-    );
-
-  const offsetMinuten =
-    match
-      ? (Number(
-          match[2],
-        ) *
-          60 +
-          Number(
-            match[3] ?? "0",
-          )) *
-        (match[1] ===
-        "+"
-          ? 1
-          : -1)
-      : 0;
-
-  return new Date(
-    utcBasis.getTime() -
-      offsetMinuten *
-        60_000,
-  );
+function datumSleutel(datum: Date) {
+  return lokaleDatumSleutel(datum);
 }
 
 function berekenBeschikbaarheidDeadline(
