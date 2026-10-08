@@ -321,13 +321,6 @@ function isBeschermdeVasteDienst(
   );
 }
 
-function datumSleutel(datum: Date) {
-  return [
-    datum.getFullYear(),
-    String(datum.getMonth() + 1).padStart(2, "0"),
-    String(datum.getDate()).padStart(2, "0"),
-  ].join("-");
-}
 
 async function haalOfMaakWeek(
   vestigingId: string,
