@@ -7,6 +7,7 @@ import {
 } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { kalenderDatumUTC } from "@/lib/planning/tijd";
 import {
   datumSleutelVoorUren,
   urenVanSamengevoegdeIntervallen,
@@ -27,33 +28,9 @@ function uurloonVoorDag(
   return null;
 }
 
-function datumTekstNaarBeginVanDag(
-  datum: string,
-) {
-  const waarde = new Date(
-    `${datum}T00:00:00`,
-  );
+function datumTekstNaarBeginVanDag(datum: string) { try { return kalenderDatumUTC(datum); } catch { return null; } }
 
-  if (Number.isNaN(waarde.getTime())) {
-    return null;
-  }
-
-  return waarde;
-}
-
-function datumTekstNaarEindeVanDag(
-  datum: string,
-) {
-  const waarde = new Date(
-    `${datum}T23:59:59.999`,
-  );
-
-  if (Number.isNaN(waarde.getTime())) {
-    return null;
-  }
-
-  return waarde;
-}
+function datumTekstNaarEindeVanDag(datum: string) { try { return new Date(kalenderDatumUTC(datum).getTime() + 86400000 - 1); } catch { return null; } }
 
 export async function GET(
   request: Request,
