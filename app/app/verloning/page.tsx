@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import MijnVerloningAkkoordButton from "@/app/(dashboard)/mijn-verloning/MijnVerloningAkkoordButton";
 
 function formatUren(uren: number) {
   return uren.toFixed(2).replace(".", ",");
@@ -30,6 +31,8 @@ export default async function AppVerloningPage() {
         where: { medewerkerId },
         select: { status: true },
       },
+      controleStart: true,
+      controleDeadline: true,
     },
   });
 
@@ -77,6 +80,15 @@ export default async function AppVerloningPage() {
                 </div>
               ))}
             </section>
+
+            {periode.status === "KLAAR" &&
+              periode.controleStart &&
+              periode.controleDeadline &&
+              new Date() >= periode.controleStart &&
+              new Date() <= periode.controleDeadline &&
+              periode.controles[0]?.status === "OPEN" && (
+                <MijnVerloningAkkoordButton periodeId={periode.id} />
+              )}
           </div>
         )}
       </div>
