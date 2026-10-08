@@ -107,7 +107,7 @@ export async function GET() {
       const periode =
         await prisma.verloningsPeriode.findFirst({
           where: {
-            status: "KLAAR",
+            status: { in: ["AANGEMAAKT", "KLAAR"] },
             regels: {
               some: {
                 vestiging: {
@@ -127,6 +127,7 @@ export async function GET() {
             jaar: true,
             maand: true,
             periodeStart: true,
+            status: true,
             regels: {
               where: {
                 vestiging: {
@@ -162,8 +163,14 @@ export async function GET() {
           id: `verloning-${periode.id}`,
           type: "VERLONING_CONTROLEREN",
           categorie: "Verloning",
-          titel: "Verloning staat klaar",
+          titel:
+            periode.status === "AANGEMAAKT"
+              ? "Verloning controleren en versturen"
+              : "Verloning staat klaar",
           omschrijving:
+            (periode.status === "AANGEMAAKT"
+              ? "Controleer de verloning en verstuur deze ter controle naar de medewerkers. "
+              : "") +
             `${new Intl.DateTimeFormat("nl-NL", { month: "long", year: "numeric" }).format(periode.periodeStart)} · ${gewerkteDagen} gewerkte dagen · ${gewerkteUren.toFixed(2).replace(".", ",")} gewerkte uren.`,
           aangemaaktOp: periode.periodeStart,
           actie: "VERLONING_CONTROLEREN",
