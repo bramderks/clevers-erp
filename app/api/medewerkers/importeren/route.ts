@@ -26,7 +26,10 @@ type ImportRij = {
   datumindienst: string;
   datumuitdienst: string;
   vestiging: string;
+  vestigingen: string;
   hoofdvestiging: string;
+  rol: string;
+  actief: string;
 };
 
 type ImportFout = {
@@ -47,7 +50,7 @@ type OrganisatieContext = {
  *
  * Deze sluiten aan op het huidige importbestand.
  *
- * Rol wordt NIET geïmporteerd.
+ * Rol en actief/inactief worden geïmporteerd. Meerdere vestigingen mogen in één cel staan.
  *
  * De organisatie van een medewerker wordt bepaald via:
  *
@@ -65,7 +68,7 @@ const VERPLICHTE_KOLOMMEN = [
   "geboortedatum",
   "email",
   "telefoon",
-  "vestiging",
+  "rol",
 ];
 
 /*
@@ -117,6 +120,17 @@ function isLeeg(
     waarde === undefined ||
     String(waarde).trim() === ""
   );
+}
+
+function splitsLijst(waarde: unknown): string[] {
+  return Array.from(new Set(normaliseerWaarde(waarde).split(/[;,|]/).map((item) => item.trim()).filter(Boolean)));
+}
+
+function normaliseerActief(waarde: unknown): boolean | null {
+  const tekst = normaliseerVergelijking(waarde);
+  if (!tekst || ["ja", "j", "true", "1", "actief"].includes(tekst)) return true;
+  if (["nee", "n", "false", "0", "inactief", "uitdienst"].includes(tekst)) return false;
+  return null;
 }
 
 /*
@@ -525,14 +539,19 @@ function vertaalRij(
       ),
 
     vestiging:
-      normaliseerWaarde(
-        rij.vestiging,
-      ),
+      normaliseerWaarde(rij.vestiging),
+
+    vestigingen:
+      normaliseerWaarde(rij.vestigingen),
 
     hoofdvestiging:
-      normaliseerWaarde(
-        rij.hoofdvestiging,
-      ),
+      normaliseerWaarde(rij.hoofdvestiging),
+
+    rol:
+      normaliseerWaarde(rij.rol),
+
+    actief:
+      normaliseerWaarde(rij.actief),
   };
 }
 
@@ -728,6 +747,17 @@ function controleerRij(
       melding:
         "Uurloon moet een geldig getal zijn.",
     });
+  }
+
+  /*
+   * Actief
+   */
+  if (!isLeeg(rij.actief) && normaliseerActief(rij.actief) === null) {
+    fouten.push({ rij: rijNummer, veld: "actief", melding: 'Gebruik bij "actief" Ja/Nee, Actief/Inactief of 1/0.' });
+  }
+
+  if (isLeeg(rij.rol)) {
+    fouten.push({ rij: rijNummer, veld: "rol", melding: "Rol is verplicht." });
   }
 
   /*
@@ -1268,7 +1298,8 @@ export async function POST(
 
     const [
       vestigingen,
-      medewerkerStatus,
+      medewerkerStatussen,
+      rollen,
       bestaandeMedewerkers,
     ] = await Promise.all([
       prisma.vestiging.findMany({
@@ -1324,24 +1355,11 @@ export async function POST(
       }),
     ]);
 
-    if (!medewerkerStatus) {
-      return NextResponse.json(
-        {
-          ok: false,
-          aangemaakt: 0,
-          fouten: [
-            {
-              rij: 0,
-              melding:
-                'Geen actieve medewerkerstatus met code "ACTIEF" gevonden.',
-            },
-          ],
-        },
-        {
-          status: 500,
-        },
-      );
+    const statusMap = new Map(medewerkerStatussen.map((status) => [status.code, status.id]));
+    if (!statusMap.has("ACTIEF") || !statusMap.has("UIT_DIENST")) {
+      return NextResponse.json({ ok: false, aangemaakt: 0, fouten: [{ rij: 0, melding: 'De statussen "ACTIEF" en "UIT_DIENST" moeten beschikbaar zijn.' }] }, { status: 500 });
     }
+    const rolMap = new Map(rollen.map((rol) => [normaliseerVergelijking(rol.naam), rol]));
 
     /*
      * ----------------------------------------------------------
@@ -1556,51 +1574,18 @@ export async function POST(
         }
       }
 
-      /*
-       * Vestiging
-       */
+      const vestigingNamen = splitsLijst(!isLeeg(rij.vestigingen) ? rij.vestigingen : rij.vestiging);
+      if (!vestigingNamen.length) fouten.push({ rij: rijNummer, veld: "vestigingen", melding: "Minimaal één vestiging is verplicht." });
+      const gekozenVestigingen = vestigingNamen.map((naam) => vestigingMap.get(normaliseerVergelijking(naam))).filter((item): item is (typeof vestigingen)[number] => Boolean(item));
+      const onbekend = vestigingNamen.filter((naam) => !vestigingMap.has(normaliseerVergelijking(naam)));
+      if (onbekend.length) fouten.push({ rij: rijNummer, veld: "vestigingen", melding: `Vestiging(en) bestaan niet binnen de organisatie: ${onbekend.join(", ")}.` });
 
-      const vestiging =
-        vestigingMap.get(
-          normaliseerVergelijking(
-            rij.vestiging,
-          ),
-        );
+      const hoofdNaam = normaliseerWaarde(rij.hoofdvestiging) || vestigingNamen[0] || "";
+      if (!vestigingMap.has(normaliseerVergelijking(hoofdNaam))) fouten.push({ rij: rijNummer, veld: "hoofdvestiging", melding: `Hoofdvestiging "${hoofdNaam}" bestaat niet binnen de organisatie.` });
+      else if (!vestigingNamen.some((naam) => normaliseerVergelijking(naam) === normaliseerVergelijking(hoofdNaam))) fouten.push({ rij: rijNummer, veld: "hoofdvestiging", melding: "De hoofdvestiging moet ook in vestigingen staan." });
 
-      if (!vestiging) {
-        fouten.push({
-          rij: rijNummer,
-          veld: "vestiging",
-          melding:
-            `Vestiging "${rij.vestiging}" bestaat niet binnen de organisatie.`,
-        });
-      }
-
-      /*
-       * Hoofdvestiging
-       */
-
-      if (
-        !isLeeg(
-          rij.hoofdvestiging,
-        )
-      ) {
-        const hoofdvestiging =
-          vestigingMap.get(
-            normaliseerVergelijking(
-              rij.hoofdvestiging,
-            ),
-          );
-
-        if (!hoofdvestiging) {
-          fouten.push({
-            rij: rijNummer,
-            veld:
-              "hoofdvestiging",
-            melding:
-              `Hoofdvestiging "${rij.hoofdvestiging}" bestaat niet binnen de organisatie.`,
-          });
-        }
+      for (const rolNaam of splitsLijst(rij.rol)) {
+        if (!rolMap.has(normaliseerVergelijking(rolNaam))) fouten.push({ rij: rijNummer, veld: "rol", melding: `Rol "${rolNaam}" bestaat niet in Clevers ERP.` });
       }
     }
 
@@ -1639,18 +1624,9 @@ export async function POST(
            * --------------------------------------------
            */
 
-          const vestiging =
-            vestigingMap.get(
-              normaliseerVergelijking(
-                rij.vestiging,
-              ),
-            );
-
-          if (!vestiging) {
-            throw new Error(
-              `Vestiging "${rij.vestiging}" kon tijdens de import niet worden gevonden.`,
-            );
-          }
+          const vestigingNamen = splitsLijst(!isLeeg(rij.vestigingen) ? rij.vestigingen : rij.vestiging);
+          const gekozenVestigingen = vestigingNamen.map((naam) => vestigingMap.get(normaliseerVergelijking(naam))).filter((item): item is (typeof vestigingen)[number] => Boolean(item));
+          if (!gekozenVestigingen.length) throw new Error("Geen geldige vestiging gevonden tijdens de import.");
 
           /*
            * --------------------------------------------
@@ -1661,22 +1637,14 @@ export async function POST(
            * wordt Vestiging gebruikt.
            */
 
-          const hoofdvestiging =
-            !isLeeg(
-              rij.hoofdvestiging,
-            )
-              ? vestigingMap.get(
-                  normaliseerVergelijking(
-                    rij.hoofdvestiging,
-                  ),
-                )
-              : vestiging;
-
-          if (!hoofdvestiging) {
-            throw new Error(
-              `Hoofdvestiging "${rij.hoofdvestiging}" kon tijdens de import niet worden gevonden.`,
-            );
-          }
+          const hoofdNaam = normaliseerWaarde(rij.hoofdvestiging) || vestigingNamen[0];
+          const hoofdvestiging = vestigingMap.get(normaliseerVergelijking(hoofdNaam));
+          if (!hoofdvestiging) throw new Error(`Hoofdvestiging "${hoofdNaam}" kon tijdens de import niet worden gevonden.`);
+          if (!gekozenVestigingen.some((item) => item.id === hoofdvestiging.id)) throw new Error("De hoofdvestiging moet ook aan de medewerker gekoppeld zijn.");
+          const actief = normaliseerActief(rij.actief);
+          const statusId = actief === false ? statusMap.get("UIT_DIENST") : statusMap.get("ACTIEF");
+          if (!statusId) throw new Error("De juiste medewerkerstatus kon niet worden bepaald.");
+          const rolIds = splitsLijst(rij.rol).map((naam) => rolMap.get(normaliseerVergelijking(naam))?.id).filter((id): id is string => Boolean(id));
 
           /*
            * --------------------------------------------
@@ -1735,8 +1703,7 @@ export async function POST(
                 telefoon:
                   rij.telefoon,
 
-                statusId:
-                  medewerkerStatus.id,
+                statusId,
 
                 aanmeldingOp:
                   new Date(),
@@ -1768,7 +1735,7 @@ export async function POST(
                     rij.datumuitdienst,
                   ),
 
-                actief: true,
+                actief: actief !== false,
               },
             });
 
@@ -1778,50 +1745,11 @@ export async function POST(
            * --------------------------------------------
            */
 
-          await tx.medewerkerVestiging.create(
-            {
-              data: {
-                medewerkerId:
-                  medewerker.id,
-
-                vestigingId:
-                  vestiging.id,
-
-                hoofdvestiging:
-                  hoofdvestiging.id ===
-                  vestiging.id,
-              },
-            },
-          );
-
-          /*
-           * --------------------------------------------
-           * EXTRA HOOFDVESTIGING
-           * --------------------------------------------
-           *
-           * Wanneer Hoofdvestiging anders is dan
-           * Vestiging, krijgt de medewerker beide
-           * koppelingen.
-           */
-
-          if (
-            hoofdvestiging.id !==
-            vestiging.id
-          ) {
-            await tx.medewerkerVestiging.create(
-              {
-                data: {
-                  medewerkerId:
-                    medewerker.id,
-
-                  vestigingId:
-                    hoofdvestiging.id,
-
-                  hoofdvestiging:
-                    true,
-                },
-              },
-            );
+          await tx.medewerkerVestiging.createMany({
+            data: gekozenVestigingen.map((item) => ({ medewerkerId: medewerker.id, vestigingId: item.id, hoofdvestiging: item.id === hoofdvestiging.id })),
+          });
+          if (rolIds.length) {
+            await tx.medewerkerRol.createMany({ data: rolIds.map((rolId) => ({ medewerkerId: medewerker.id, rolId })) });
           }
 
           aangemaakt++;

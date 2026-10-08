@@ -60,7 +60,7 @@ export default async function MedewerkersImporterenPage() {
       <div className="mx-auto w-full max-w-5xl space-y-6">
         <Card
           title="Medewerkers importeren"
-          description="Importeer meerdere medewerkers tegelijk vanuit een Excel- of CSV-bestand."
+          description="Importeer meerdere medewerkers tegelijk vanuit een Excel- of CSV-bestand. Elke rij wordt volledig gecontroleerd voordat er iets wordt opgeslagen."
         >
           <MedewerkersImportForm />
         </Card>
@@ -103,7 +103,7 @@ export default async function MedewerkersImporterenPage() {
                   voornaam, tussenvoegsel,
                   achternaam, geboortedatum,
                   e-mailadres, telefoon,
-                  vestiging en rol moeten
+                  vestigingen en rol moeten
                   aanwezig zijn.
                 </p>
               </div>
@@ -120,10 +120,7 @@ export default async function MedewerkersImporterenPage() {
                 </p>
 
                 <p className="mt-1 text-sm text-slate-600">
-                  Roepnaam, contracttype,
-                  contracturen, uurloon,
-                  datum indienst en datum
-                  uitdienst mogen leeg zijn.
+                  Roepnaam, contracttype, contracturen, uurloon, datum indienst, datum uitdienst, hoofdvestiging en actief mogen leeg zijn. Bij lege actief wordt de medewerker actief aangemaakt.
                 </p>
               </div>
             </div>
@@ -139,9 +136,7 @@ export default async function MedewerkersImporterenPage() {
                 </p>
 
                 <p className="mt-1 text-sm text-slate-600">
-                  De opgegeven vestigingen en
-                  rollen moeten al binnen de
-                  organisatie bestaan.
+                  Meerdere vestigingen mogen met komma, puntkomma of | worden opgegeven. De hoofdvestiging moet één van de vestigingen zijn. Rollen moeten al in Clevers ERP bestaan.
                 </p>
               </div>
             </div>
