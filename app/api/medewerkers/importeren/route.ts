@@ -1319,16 +1319,14 @@ export async function POST(
         },
       }),
 
-      prisma.status.findFirst({
-        where: {
-          module: "MEDEWERKER",
-          code: "ACTIEF",
-          actief: true,
-        },
+      prisma.status.findMany({
+        where: { module: "MEDEWERKER", code: { in: ["ACTIEF", "UIT_DIENST"] }, actief: true },
+        select: { id: true, code: true },
+      }),
 
-        select: {
-          id: true,
-        },
+      prisma.rol.findMany({
+        where: { naam: { in: ["Super Admin", "Eigenaar", "Teamleider", "Medewerker"] } },
+        select: { id: true, naam: true },
       }),
 
       prisma.medewerker.findMany({
