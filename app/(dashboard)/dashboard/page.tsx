@@ -479,6 +479,9 @@ export default async function DashboardPage() {
     const laatsteEigenVerloning =
       await prisma.verloningsPeriode.findFirst({
         where: {
+          status: {
+            in: ["KLAAR", "VERWERKT"],
+          },
           regels: {
             some: {
               medewerkerId,
@@ -904,15 +907,22 @@ export default async function DashboardPage() {
 
   if (
     verloningsPeriode?.status ===
-    "KLAAR"
+      "AANGEMAAKT" ||
+    verloningsPeriode?.status === "KLAAR"
   ) {
+    const terControle =
+      verloningsPeriode.status === "AANGEMAAKT";
+
     taken.push({
       id: "verloning",
-      titel: "Verloning staat klaar",
-      omschrijving:
-        "De verloning van de vorige maand is gegenereerd en kan worden gecontroleerd.",
+      titel: terControle
+        ? "Verloning controleren en versturen"
+        : "Verloning staat klaar",
+      omschrijving: terControle
+        ? "De verloning is aangemaakt. Controleer de cijfers en verstuur deze daarna ter controle naar de medewerkers."
+        : "De verloning is naar de medewerkers verstuurd en staat klaar voor controle.",
       href: `/verloning/${verloningsPeriode.id}`,
-      variant: "info",
+      variant: terControle ? "warning" : "info",
     });
   }
 
