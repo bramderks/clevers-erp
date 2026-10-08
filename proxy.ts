@@ -11,8 +11,8 @@ const PUBLIC_ROUTES = [
   "/ijs-logo-transparent.png",
   "/sw.js",
   "/manifest.webmanifest",
-  "/api/debug-september-rebuild",
-  "/api/debug-september-rebuild2",
+
+
 ];
 
 export function proxy(request: NextRequest) {
