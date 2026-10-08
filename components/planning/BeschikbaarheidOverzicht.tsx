@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { datumInputWaarde, tijdInputWaarde, formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
+
 
 import type { Beschikbaarheid } from "@/types/planning";
 
@@ -46,88 +48,13 @@ function parseDatum(
   return waarde;
 }
 
-function formatteerDatum(
-  datum: string,
-) {
-  const waarde =
-    parseDatum(datum);
+function formatteerDatum(datum: string) { const waarde = new Date(datum); return Number.isNaN(waarde.getTime()) ? "Ongeldige datum" : formatDienstDatum(waarde); }
 
-  if (!waarde) {
-    return "Ongeldige datum";
-  }
+function formatteerTijd(datum: string | null | undefined) { return datum ? formatDienstTijd(datum) : "--:--"; }
 
-  return new Intl.DateTimeFormat(
-    "nl-NL",
-    {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    },
-  ).format(waarde);
-}
+function datumVoorInput(datum: string) { return datumInputWaarde(datum); }
 
-function formatteerTijd(
-  datum:
-    | string
-    | null
-    | undefined,
-) {
-  if (!datum) {
-    return "--:--";
-  }
-
-  const waarde =
-    parseDatum(datum);
-
-  if (!waarde) {
-    return "--:--";
-  }
-
-  return new Intl.DateTimeFormat(
-    "nl-NL",
-    {
-      hour: "2-digit",
-      minute: "2-digit",
-    },
-  ).format(waarde);
-}
-
-function datumVoorInput(
-  datum: string,
-) {
-  const waarde =
-    parseDatum(datum);
-
-  if (!waarde) {
-    return "";
-  }
-
-  return waarde
-    .toISOString()
-    .slice(0, 10);
-}
-
-function tijdVoorInput(
-  datum:
-    | string
-    | null
-    | undefined,
-) {
-  if (!datum) {
-    return "";
-  }
-
-  const waarde =
-    parseDatum(datum);
-
-  if (!waarde) {
-    return "";
-  }
-
-  return waarde
-    .toISOString()
-    .slice(11, 16);
-}
+function tijdVoorInput(datum: string | null | undefined) { return tijdInputWaarde(datum); }
 
 function statusLabel(
   status: Beschikbaarheid["status"],
