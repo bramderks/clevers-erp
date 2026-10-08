@@ -320,8 +320,11 @@ export default async function VerloningDetailPage({
       throw new Error("De verloningsperiode bestaat niet.");
     }
 
-    if (actuelePeriode.status !== "AANGEMAAKT") {
-      throw new Error("Deze verloningsperiode is al ter controle verstuurd of verwerkt.");
+    if (
+      actuelePeriode.status !== "AANGEMAAKT" &&
+      actuelePeriode.status !== "KLAAR"
+    ) {
+      throw new Error("Deze verloningsperiode is al verwerkt.");
     }
 
     if (
@@ -563,6 +566,22 @@ export default async function VerloningDetailPage({
             />
           </div>
         )}
+
+        {periode.status === "KLAAR" &&
+          controleVerlopen &&
+          !eigenaarGecontroleerd && (
+            <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
+              <p className="font-medium text-amber-950">
+                Controleperiode is verlopen
+              </p>
+              <p className="mt-1 text-sm text-amber-800">
+                Verstuur de verloning opnieuw ter controle om een nieuwe controleperiode voor de medewerkers te starten.
+              </p>
+              <VerstuurVerloningButton
+                verstuurAction={verstuurPeriodeTerControle}
+              />
+            </div>
+          )}
 
         {periode.status === "KLAAR" &&
           !controleVerlopen &&
