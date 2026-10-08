@@ -21,7 +21,13 @@ export default async function AppVerloningPage() {
   const periode = await prisma.verloningsPeriode.findFirst({
     where: { regels: { some: { medewerkerId } } },
     orderBy: [{ jaar: "desc" }, { maand: "desc" }],
-    include: {
+    select: {
+      id: true,
+      status: true,
+      jaar: true,
+      maand: true,
+      controleStart: true,
+      controleDeadline: true,
       regels: {
         where: { medewerkerId },
         include: { vestiging: { select: { naam: true } } },
@@ -31,8 +37,6 @@ export default async function AppVerloningPage() {
         where: { medewerkerId },
         select: { status: true },
       },
-      controleStart: true,
-      controleDeadline: true,
     },
   });
 
