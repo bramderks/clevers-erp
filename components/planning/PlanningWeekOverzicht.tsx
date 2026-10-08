@@ -1,5 +1,7 @@
 "use client";
 
+import { lokaleDatumSleutel, formatDienstTijd } from "@/lib/planning/tijd";
+
 import type {
   PlanningWeek,
 } from "@/types/planning";
@@ -105,18 +107,7 @@ const VASTE_GROEPEN: VasteGroep[] = [
 function datumNaarIso(
   datum: Date,
 ) {
-  const jaar =
-    datum.getFullYear();
-
-  const maand = String(
-    datum.getMonth() + 1,
-  ).padStart(2, "0");
-
-  const dag = String(
-    datum.getDate(),
-  ).padStart(2, "0");
-
-  return `${jaar}-${maand}-${dag}`;
+  return lokaleDatumSleutel(datum);
 }
 
 function isoWeekNaarMaandag(
