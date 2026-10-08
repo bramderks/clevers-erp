@@ -32,7 +32,8 @@ export function tijdNaarMinuten(tijd: string | null | undefined): number | null 
 
   const datum = new Date(tijd);
   if (Number.isNaN(datum.getTime())) return null;
-  const lokaal = nederlandseDatumOnderdelen(datum);\n  return lokaal.uur * 60 + lokaal.minuut;
+  const lokaal = nederlandseDatumOnderdelen(datum);
+  return lokaal.uur * 60 + lokaal.minuut;
 }
 
 export function maakTijden(vanaf: number, tot: number, interval = TIJD_INTERVAL): string[] {
