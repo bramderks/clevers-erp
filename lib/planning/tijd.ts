@@ -32,7 +32,7 @@ export function tijdNaarMinuten(tijd: string | null | undefined): number | null 
 
   const datum = new Date(tijd);
   if (Number.isNaN(datum.getTime())) return null;
-  return datum.getHours() * 60 + datum.getMinutes();
+  const lokaal = nederlandseDatumOnderdelen(datum);\n  return lokaal.uur * 60 + lokaal.minuut;
 }
 
 export function maakTijden(vanaf: number, tot: number, interval = TIJD_INTERVAL): string[] {
@@ -142,6 +142,30 @@ export function kalenderDatumUTC(waarde: string): Date {
 export function lokaleKalenderDatumUTC(datum: Date): Date {
   const lokaal = nederlandseDatumOnderdelen(datum);
   return new Date(Date.UTC(lokaal.jaar, lokaal.maand - 1, lokaal.dag));
+}
+
+export function lokaleTijdMinuten(datum: Date): number {
+  const lokaal = nederlandseDatumOnderdelen(datum);
+  return lokaal.uur * 60 + lokaal.minuut;
+}
+
+export function datumInputWaarde(waarde: Date | string): string {
+  if (typeof waarde === "string" && /^\d{4}-\d{2}-\d{2}$/.test(waarde)) return waarde;
+  const datum = waarde instanceof Date ? waarde : new Date(waarde);
+  if (Number.isNaN(datum.getTime())) return "";
+  return lokaleDatumSleutel(datum);
+}
+
+export function tijdInputWaarde(waarde: Date | string | null | undefined): string {
+  if (!waarde) return "";
+  if (typeof waarde === "string") {
+    const direct = /^(\d{1,2}):(\d{2})/.exec(waarde);
+    if (direct) return String(Number(direct[1])).padStart(2, "0") + ":" + direct[2];
+  }
+  const datum = waarde instanceof Date ? waarde : new Date(waarde);
+  if (Number.isNaN(datum.getTime())) return "";
+  const lokaal = nederlandseDatumOnderdelen(datum);
+  return String(lokaal.uur).padStart(2, "0") + ":" + String(lokaal.minuut).padStart(2, "0");
 }
 
 export function lokaleDatumSleutel(datum: Date): string {
