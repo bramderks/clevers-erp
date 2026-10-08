@@ -16,6 +16,8 @@ import {
 import PlanningWeekOverzicht from "@/components/planning/PlanningWeekOverzicht";
 import DienstForm from "@/components/planning/DienstForm";
 
+import { kalenderDatumUTC, lokaleDatumSleutel, nederlandseDatumTijd, formatDienstTijd } from "@/lib/planning/tijd";
+
 import type {
   PlanningWeek,
 } from "@/types/planning";
@@ -235,8 +237,7 @@ function datumUitWaarde(
     return waarde;
   }
 
-  const datum =
-    new Date(waarde);
+  const datum = new Date(waarde);
 
   if (
     Number.isNaN(
