@@ -284,7 +284,4 @@ async function normaliseerKalenderDatum(dienst: {
   return prisma.dienst.update({
     where: { id: dienst.id },
     data: { datum: juisteDatum },
-  });
-}
-
-}
+  });}
