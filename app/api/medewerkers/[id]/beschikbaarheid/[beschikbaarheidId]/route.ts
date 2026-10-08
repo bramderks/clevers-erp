@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+import { lokaleTijdMinuten } from "@/lib/planning/tijd";
+
 type RouteContext = {
   params: Promise<{
     id: string;
@@ -293,12 +295,10 @@ function controleerTijden(
   }
 
   const beginTotaal =
-    begintijd.getHours() * 60 +
-    begintijd.getMinutes();
+    lokaleTijdMinuten(begintijd);
 
   const eindTotaal =
-    eindtijd.getHours() * 60 +
-    eindtijd.getMinutes();
+    lokaleTijdMinuten(eindtijd);
 
   if (
     beginTotaal <
