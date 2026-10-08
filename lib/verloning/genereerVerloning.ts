@@ -195,22 +195,93 @@ export async function genereerVerloning(
 
   /*
    * ==========================================================
-   * URENREGISTRATIES ZIJN DE BRON VOOR VERLONING
+   * ACTUELE PLANNING SYNCHRONISEREN
    * ==========================================================
-   *
-   * De planning is alleen de bron voor het aanmaken van een
-   * urenregistratie. Voor de daadwerkelijke verloning zijn de
-   * gecontroleerde urenregistraties leidend. Een regeneratie
-   * van een verloningsperiode mag daarom nooit de werkelijke
-   * begin-/eindtijd of gewerkte uren vanuit het planbord
-   * overschrijven.
-   *
-   * Dit is belangrijk wanneer een eigenaar na een dienst de
-   * werkelijke uren heeft gecorrigeerd. Bij het verwijderen en
-   * opnieuw genereren van de verloningsperiode blijven die
-   * definitieve correcties behouden.
+   * Bij opnieuw genereren is de actuele planning leidend.
+   * Dit voorkomt dat oude urenregistraties van een eerdere
+   * planning opnieuw in de verloning terechtkomen.
    * ==========================================================
    */
+
+  const actueleBezettingen = await prisma.dienstBezetting.findMany({
+    where: {
+      medewerkerId: { not: null },
+      status: { not: "AFGEZEGD" },
+      dienst: {
+        datum: { gte: periodeStart, lt: periodeEinde },
+      },
+    },
+    select: {
+      id: true,
+      medewerkerId: true,
+      dienst: {
+        select: {
+          datum: true,
+          begintijd: true,
+          eindtijd: true,
+          week: { select: { vestigingId: true } },
+        },
+      },
+    },
+  });
+
+  const actueleIds = actueleBezettingen.map((b) => b.id);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.urenRegistratie.deleteMany({
+      where: {
+        datum: { gte: periodeStart, lt: periodeEinde },
+        ...(actueleIds.length > 0
+          ? { dienstBezettingId: { notIn: actueleIds } }
+          : {}),
+      },
+    });
+
+    for (const bezetting of actueleBezettingen) {
+      const berekening = berekenGewerkteUren(
+        bezetting.dienst.begintijd,
+        bezetting.dienst.eindtijd,
+      );
+
+      const bestaande = await tx.urenRegistratie.findUnique({
+        where: { dienstBezettingId: bezetting.id },
+        select: { id: true },
+      });
+
+      if (bestaande) {
+        await tx.urenRegistratie.update({
+          where: { id: bestaande.id },
+          data: {
+            medewerkerId: bezetting.medewerkerId!,
+            vestigingId: bezetting.dienst.week.vestigingId,
+            datum: bezetting.dienst.datum,
+            werkelijkeBegintijd: bezetting.dienst.begintijd,
+            werkelijkeEindtijd: bezetting.dienst.eindtijd,
+            pauzeMinuten: berekening.pauzeMinuten,
+            gewerkteUren: berekening.gewerkteUren,
+            status: "DEFINITIEF",
+            gecontroleerdDoorId: null,
+            gecontroleerdOp: null,
+          },
+        });
+      } else {
+        await tx.urenRegistratie.create({
+          data: {
+            dienstBezettingId: bezetting.id,
+            medewerkerId: bezetting.medewerkerId!,
+            vestigingId: bezetting.dienst.week.vestigingId,
+            datum: bezetting.dienst.datum,
+            taak: null,
+            werkelijkeBegintijd: bezetting.dienst.begintijd,
+            werkelijkeEindtijd: bezetting.dienst.eindtijd,
+            pauzeMinuten: berekening.pauzeMinuten,
+            gewerkteUren: berekening.gewerkteUren,
+            status: "DEFINITIEF",
+          },
+        });
+      }
+    }
+  });
 
   /*
    * ==========================================================
