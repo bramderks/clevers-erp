@@ -190,7 +190,11 @@ function tijdNaarMinuten(
   return uren * 60 + minuten;
 }
 
-function datumNaarInput(waarde: string | null | undefined): string { return datumInputWaarde(waarde ?? ""); }\n\nfunction tijdNaarInput(waarde: string | null | undefined): string { return tijdInputWaarde(waarde); }\n\nfunction volledigeNaam(
+function datumNaarInput(waarde: string | null | undefined): string { return datumInputWaarde(waarde ?? ""); }
+
+function tijdNaarInput(waarde: string | null | undefined): string { return tijdInputWaarde(waarde); }
+
+function volledigeNaam(
   medewerker: {
     voornaam: string;
     tussenvoegsel:
