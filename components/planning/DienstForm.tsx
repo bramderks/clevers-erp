@@ -7,6 +7,8 @@ import {
   useState,
 } from "react";
 
+import { lokaleDatumSleutel, nederlandseDatumTijd } from "@/lib/planning/tijd";
+
 import type {
   Dienst,
   PlanningTag,
@@ -144,12 +146,8 @@ function volledigeNaam(
     .join(" ");
 }
 
-function datumVanDienst(
-  dienst: Dienst,
-) {
-  return new Date(dienst.datum)
-    .toISOString()
-    .slice(0, 10);
+function datumVanDienst(dienst: Dienst) {
+  return lokaleDatumSleutel(new Date(dienst.datum));
 }
 
 function dienstOverlapt(
@@ -398,9 +396,9 @@ function medewerkerHeeftDienstOverlap(
   return medewerker.diensten.some((bezetting) => {
     if (bezetting.status === "AFGEZEGD") return false;
     const bestaandeStart = new Date(bezetting.dienst.begintijd).getTime();
-    const bestaandeEinde = new Date(bezetting.dienst.eindtijd ?? `${datum}T23:00:00`).getTime();
-    const nieuweStart = new Date(`${datum}T${begintijd}`).getTime();
-    const nieuweEinde = new Date(`${datum}T${eindtijd ?? "23:00"}`).getTime();
+    const bestaandeEinde = new Date(bezetting.dienst.eindtijd ?? nederlandseDatumTijd(datum, "23:00").toISOString()).getTime();
+    const nieuweStart = nederlandseDatumTijd(datum, begintijd).getTime();
+    const nieuweEinde = nederlandseDatumTijd(datum, eindtijd ?? "23:00").getTime();
     if ([bestaandeStart, bestaandeEinde, nieuweStart, nieuweEinde].some(Number.isNaN)) return false;
     const isAndereVestiging = bezetting.dienst.vestigingId !== huidigeVestigingId;
 
@@ -419,7 +417,7 @@ function medewerkerHeeftDienstOpAndereVestiging(
   medewerker: PlanningMedewerker, datum: string, huidigeVestigingId: string,
 ) {
   return medewerker.diensten.find((bezetting) =>
-    bezetting.status !== "AFGEZEGD" && bezetting.dienst.vestigingId !== huidigeVestigingId && new Date(bezetting.dienst.datum).toISOString().slice(0, 10) === datum
+    bezetting.status !== "AFGEZEGD" && bezetting.dienst.vestigingId !== huidigeVestigingId && datumVanDienst(bezetting.dienst as unknown as Dienst) === datum
   ) ?? null;
 }
 
