@@ -28,6 +28,9 @@ export default async function MijnVerloningPage() {
   const periode =
     await prisma.verloningsPeriode.findFirst({
       where: {
+        status: {
+          in: ["KLAAR", "VERWERKT"],
+        },
         regels: {
           some: {
             medewerkerId,
