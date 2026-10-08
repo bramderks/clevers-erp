@@ -37,3 +37,42 @@ test("standaard planning bereik blijft 09:00 tot 23:00", () => {
   assert.equal(START_MINUTEN, 540);
   assert.equal(EINDE_MINUTEN, 1380);
 });
+
+
+test("Nederlandse diensttijd blijft lokaal bij datum/tijd conversie", async () => {
+  const { nederlandseDatumTijd, lokaleDatumSleutel, tijdInputWaarde } = await import("../lib/planning/tijd");
+  const dienst = nederlandseDatumTijd("2026-09-30", "17:00");
+  assert.equal(lokaleDatumSleutel(dienst), "2026-09-30");
+  assert.equal(tijdInputWaarde(dienst), "17:00");
+});
+
+test("pauzeregels blijven centraal en reproduceerbaar", async () => {
+  const { berekenGewerkteUren } = await import("../lib/verloning/pauze");
+  const ochtend = berekenGewerkteUren(
+    new Date("2026-10-08T07:00:00.000Z"),
+    new Date("2026-10-08T12:00:00.000Z"),
+  );
+  assert.equal(ochtend.pauzeMinuten, 15);
+  assert.equal(ochtend.gewerkteUren, 4.75);
+
+  const avond = berekenGewerkteUren(
+    new Date("2026-10-08T15:00:00.000Z"),
+    new Date("2026-10-08T19:00:00.000Z"),
+  );
+  assert.equal(avond.pauzeMinuten, 0);
+  assert.equal(avond.gewerkteUren, 4);
+});
+
+test("overlappende functies tellen dezelfde tijd maar één keer", async () => {
+  const { mergeTijdIntervallen } = await import("../lib/verloning/overlappendeUren");
+  const basis = new Date("2026-09-30T15:00:00.000Z");
+  const later = new Date("2026-09-30T16:00:00.000Z");
+  const einde = new Date("2026-09-30T19:00:00.000Z");
+  const samengevoegd = mergeTijdIntervallen([
+    { begintijd: basis, eindtijd: einde },
+    { begintijd: later, eindtijd: new Date("2026-09-30T18:00:00.000Z") },
+  ]);
+  assert.equal(samengevoegd.length, 1);
+  assert.equal(samengevoegd[0].begintijd.getTime(), basis.getTime());
+  assert.equal(samengevoegd[0].eindtijd.getTime(), einde.getTime());
+});
