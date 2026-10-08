@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { kalenderDatumUTC, lokaleDatumSleutel, lokaleKalenderDatumUTC } from "@/lib/planning/tijd";
 
 import {
   berekenGewerkteUren,
@@ -26,97 +27,29 @@ type VerloningsGroep = {
   gewerkteUren: number;
 };
 
-function beginVanMaand(
-  jaar: number,
-  maand: number,
-) {
-  return new Date(
-    jaar,
-    maand - 1,
-    1,
-  );
+function beginVanMaand(jaar: number, maand: number) {
+  return kalenderDatumUTC(`${jaar}-${String(maand).padStart(2, "0")}-01`);
 }
 
-function beginVanVolgendeMaand(
-  jaar: number,
-  maand: number,
-) {
-  return new Date(
-    jaar,
-    maand,
-    1,
-  );
+function beginVanVolgendeMaand(jaar: number, maand: number) {
+  return new Date(Date.UTC(jaar, maand, 1));
 }
 
-function beginVanControleperiode(
-  jaar: number,
-  maand: number,
-) {
-  return new Date(
-    jaar,
-    maand,
-    1,
-    0,
-    0,
-    0,
-    0,
-  );
+function beginVanControleperiode(jaar: number, maand: number) {
+  return new Date(Date.UTC(jaar, maand, 1, 0, 0, 0, 0));
 }
 
-function eindeVanControleperiode(
-  jaar: number,
-  maand: number,
-) {
-  return new Date(
-    jaar,
-    maand,
-    3,
-    23,
-    59,
-    59,
-    999,
-  );
+function eindeVanControleperiode(jaar: number, maand: number) {
+  return new Date(Date.UTC(jaar, maand, 3, 23, 59, 59, 999));
 }
 
-function lokaleKalenderDatumUTC(datum: Date) {
-  const delen = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Amsterdam",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(datum);
-
-  const jaar = Number(delen.find((deel) => deel.type === "year")?.value ?? "0");
-  const maand = Number(delen.find((deel) => deel.type === "month")?.value ?? "0");
-  const dag = Number(delen.find((deel) => deel.type === "day")?.value ?? "0");
-
-  return new Date(Date.UTC(jaar, maand - 1, dag, 0, 0, 0, 0));
-}
-
-function ligtInVerloningsMaand(
-  datum: Date,
-  jaar: number,
-  maand: number,
-) {
+function ligtInVerloningsMaand(datum: Date, jaar: number, maand: number) {
   const lokaleDatum = lokaleKalenderDatumUTC(datum);
-  return (
-    lokaleDatum.getUTCFullYear() === jaar &&
-    lokaleDatum.getUTCMonth() === maand - 1
-  );
+  return lokaleDatum.getUTCFullYear() === jaar && lokaleDatum.getUTCMonth() === maand - 1;
 }
 
-function datumSleutel(
-  datum: Date,
-) {
-  return [
-    datum.getFullYear(),
-    String(
-      datum.getMonth() + 1,
-    ).padStart(2, "0"),
-    String(
-      datum.getDate(),
-    ).padStart(2, "0"),
-  ].join("-");
+function datumSleutel(datum: Date) {
+  return lokaleDatumSleutel(datum);
 }
 
 function volledigeNaam(
