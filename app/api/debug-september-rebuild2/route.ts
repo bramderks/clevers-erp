@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { DATA } from "./data";
+import { DATA } from "../debug-september-rebuild/data";
 const SECRET="clevers-september-rebuild-2026-10-07";
 const LEIDING=new Set(["Bram Derks","Jessica Derks","Andrea de Bock","Jayro Peters","Pleun Kamps"]);
 const dt=(d:string,t:string)=>new Date(d+"T"+t+":00+02:00");
