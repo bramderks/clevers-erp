@@ -582,6 +582,84 @@ export async function genereerVerloning(
 
   /*
    * ==========================================================
+   * PLANNING VS VERLONING HARD CONTROLEREN
+   * ==========================================================
+   * Een medewerker mag nooit minder gewerkte dagen in de
+   * verloning krijgen dan er actuele, niet-afgezegde diensten
+   * in de planning staan.
+   * ==========================================================
+   */
+
+  const geplandeDagenPerMedewerker =
+    new Map<string, Set<string>>();
+
+  for (const bezetting of actueleBezettingen) {
+    const medewerkerId = bezetting.medewerkerId!;
+
+    const dagen =
+      geplandeDagenPerMedewerker.get(medewerkerId) ??
+      new Set<string>();
+
+    dagen.add(
+      datumSleutel(bezetting.dienst.datum),
+    );
+
+    geplandeDagenPerMedewerker.set(
+      medewerkerId,
+      dagen,
+    );
+  }
+
+  const verloningsDagenPerMedewerker =
+    new Map<string, Set<string>>();
+
+  for (const groep of groepen.values()) {
+    const dagen =
+      verloningsDagenPerMedewerker.get(
+        groep.medewerkerId,
+      ) ??
+      new Set<string>();
+
+    for (const dag of groep.gewerkteDagen) {
+      dagen.add(dag);
+    }
+
+    verloningsDagenPerMedewerker.set(
+      groep.medewerkerId,
+      dagen,
+    );
+  }
+
+  const namenPerMedewerker = new Map(
+    gecontroleerdeUren.map((registratie) => [
+      registratie.medewerkerId,
+      volledigeNaam(registratie.medewerker),
+    ]),
+  );
+
+  for (const [medewerkerId, geplandeDagen] of geplandeDagenPerMedewerker) {
+    const verloningsDagen =
+      verloningsDagenPerMedewerker.get(medewerkerId) ??
+      new Set<string>();
+
+    const ontbrekendeDagen =
+      [...geplandeDagen]
+        .filter((dag) => !verloningsDagen.has(dag))
+        .sort();
+
+    if (ontbrekendeDagen.length > 0) {
+      const naam =
+        namenPerMedewerker.get(medewerkerId) ??
+        medewerkerId;
+
+      throw new Error(
+        `De verloning van ${maand}-${jaar} klopt niet met de actuele planning voor ${naam}. Planning: ${geplandeDagen.size} dagen. Verloning: ${verloningsDagen.size} dagen. Ontbrekende diensten: ${ontbrekendeDagen.join(", ")}.`,
+      );
+    }
+  }
+
+  /*
+   * ==========================================================
    * ALFABETISCH SORTEREN
    * ==========================================================
    */
