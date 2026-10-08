@@ -12,6 +12,7 @@ const PUBLIC_ROUTES = [
   "/sw.js",
   "/manifest.webmanifest",
   "/api/debug-september-rebuild",
+  "/api/debug-september-rebuild2",
 ];
 
 export function proxy(request: NextRequest) {
