@@ -14,7 +14,7 @@ import {
 } from "@/lib/prisma";
 
 import { verstuurDirecteOpenDienstMelding } from "@/lib/push/open-diensten";
-import { TIJD_INTERVAL } from "@/lib/planning/tijd";
+import { kalenderDatumUTC, lokaleDatumSleutel, lokaleKalenderDatumUTC, TIJD_INTERVAL } from "@/lib/planning/tijd";
 
 const DATUM_FOUT =
   "Datum moet een geldige datum zijn.";
@@ -254,36 +254,13 @@ function verwerkTags(
  * ============================================================
  */
 
-function zetBeginVanDag(
-  datum: Date,
-) {
-  const resultaat =
-    new Date(datum);
-
-  resultaat.setHours(
-    0,
-    0,
-    0,
-    0,
-  );
-
-  return resultaat;
+function zetBeginVanDag(datum: Date) {
+  return kalenderDatumUTC(lokaleDatumSleutel(datum));
 }
 
-function zetEindeVanDag(
-  datum: Date,
-) {
-  const resultaat =
-    new Date(datum);
-
-  resultaat.setHours(
-    23,
-    59,
-    59,
-    999,
-  );
-
-  return resultaat;
+function zetEindeVanDag(datum: Date) {
+  const begin = zetBeginVanDag(datum);
+  return new Date(begin.getTime() + 86_400_000 - 1);
 }
 
 function isDatumBinnenSeizoen(
