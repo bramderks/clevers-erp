@@ -8,6 +8,7 @@ import { controleerVerloning } from "@/lib/verloning/controleerVerloning";
 import { verwerkVerloning } from "@/lib/verloning/verwerkVerloning";
 
 import VerwerkVerloningButton from "./VerwerkVerloningButton";
+import VerstuurVerloningButton from "./VerstuurVerloningButton";
 
 type VerloningDetailPageProps = {
   params: Promise<{
@@ -272,6 +273,89 @@ export default async function VerloningDetailPage({
         controle.status === "OPEN",
     ).length;
 
+  async function verstuurPeriodeTerControle() {
+    "use server";
+
+    const actueleGebruiker = await getCurrentUser();
+
+    if (!actueleGebruiker) {
+      redirect("/login");
+    }
+
+    const actieveOrganisaties = actueleGebruiker.organisaties.filter(
+      (relatie) =>
+        relatie.actief &&
+        relatie.organisatie.actief,
+    );
+
+    const eigenaar = actieveOrganisaties.some(
+      (relatie) =>
+        relatie.rol.naam.trim().toLowerCase() === "eigenaar",
+    );
+
+    if (!eigenaar) {
+      throw new Error("Alleen een eigenaar kan een verloning ter controle versturen.");
+    }
+
+    const organisatieIds = actieveOrganisaties.map(
+      (relatie) => relatie.organisatieId,
+    );
+
+    const actuelePeriode = await prisma.verloningsPeriode.findUnique({
+      where: { id: periodeId },
+      select: {
+        id: true,
+        status: true,
+        regels: {
+          select: {
+            vestiging: {
+              select: { organisatieId: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!actuelePeriode) {
+      throw new Error("De verloningsperiode bestaat niet.");
+    }
+
+    if (actuelePeriode.status !== "AANGEMAAKT") {
+      throw new Error("Deze verloningsperiode is al ter controle verstuurd of verwerkt.");
+    }
+
+    if (
+      actuelePeriode.regels.length === 0 ||
+      !actuelePeriode.regels.every((regel) =>
+        organisatieIds.includes(regel.vestiging.organisatieId),
+      )
+    ) {
+      throw new Error("Je hebt geen toegang tot deze volledige verloningsperiode.");
+    }
+
+    const start = new Date();
+    const deadline = new Date(start);
+    deadline.setDate(deadline.getDate() + 3);
+
+    await prisma.verloningsPeriode.update({
+      where: { id: periodeId },
+      data: {
+        status: "KLAAR",
+        controleStart: start,
+        controleDeadline: deadline,
+        gecontroleerdDoorId: null,
+        gecontroleerdOp: null,
+      },
+    });
+
+    revalidatePath(`/verloning/${periodeId}`);
+    revalidatePath("/verloning");
+    revalidatePath("/dashboard");
+    revalidatePath("/mijn-verloning");
+    revalidatePath("/app/verloning");
+    revalidatePath("/app");
+  }
+
   async function controleerPeriode() {
     "use server";
 
@@ -465,6 +549,20 @@ export default async function VerloningDetailPage({
             </p>
           </div>
         </div>
+
+        {periode.status === "AANGEMAAKT" && (
+          <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4">
+            <p className="font-medium text-blue-950">
+              Verloning gereed voor verzending
+            </p>
+            <p className="mt-1 text-sm text-blue-800">
+              Controleer eerst de cijfers hierboven. Pas daarna wordt de verloning zichtbaar voor medewerkers.
+            </p>
+            <VerstuurVerloningButton
+              verstuurAction={verstuurPeriodeTerControle}
+            />
+          </div>
+        )}
 
         {periode.status === "KLAAR" &&
           !controleVerlopen &&
