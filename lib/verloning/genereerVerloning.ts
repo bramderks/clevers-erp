@@ -578,7 +578,7 @@ export async function genereerVerloning(
       new Set<string>();
 
     dagen.add(
-      datumSleutel(bezetting.dienst.datum),
+      lokaleDatumSleutel(bezetting.dienst.begintijd),
     );
 
     geplandeDagenPerMedewerker.set(
