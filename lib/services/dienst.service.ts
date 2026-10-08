@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 
 import { dienstRepository } from "@/lib/repositories/dienst.repository";
 import { weekService } from "@/lib/services/week.service";
+import { lokaleDatumSleutel, nederlandseDatumTijd } from "@/lib/planning/tijd";
 
 type DienstTagInput = {
   tagId: string;
@@ -47,16 +48,7 @@ function controleerTijd(
 }
 
 function maakSluitingstijd(datum: Date) {
-  const sluiting = new Date(datum);
-
-  sluiting.setHours(
-    SLUITINGSTIJD_UUR,
-    SLUITINGSTIJD_MINUUT,
-    0,
-    0,
-  );
-
-  return sluiting;
+  return nederlandseDatumTijd(lokaleDatumSleutel(datum), "23:00");
 }
 
 function normaliseerEindtijd(
@@ -91,18 +83,8 @@ function controleerTijden(
   }
 }
 
-function zelfdeDag(
-  eerste: Date,
-  tweede: Date,
-) {
-  return (
-    eerste.getFullYear() ===
-      tweede.getFullYear() &&
-    eerste.getMonth() ===
-      tweede.getMonth() &&
-    eerste.getDate() ===
-      tweede.getDate()
-  );
+function zelfdeDag(eerste: Date, tweede: Date) {
+  return lokaleDatumSleutel(eerste) === lokaleDatumSleutel(tweede);
 }
 
 function controleerTijdBinnenDienst(
