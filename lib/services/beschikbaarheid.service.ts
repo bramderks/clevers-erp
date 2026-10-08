@@ -135,13 +135,9 @@
       );
     }
 
-    const beginMinuten =
-      begintijd.getHours() * 60 +
-      begintijd.getMinutes();
+    const beginMinuten = lokaleTijdMinuten(begintijd);
 
-    const eindMinuten =
-      eindtijd.getHours() * 60 +
-      eindtijd.getMinutes();
+    const eindMinuten = lokaleTijdMinuten(eindtijd);
 
     const minimum = 9 * 60;
     const maximum = 23 * 60;
