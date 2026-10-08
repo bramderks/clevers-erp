@@ -6,6 +6,8 @@ import {
 } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+
+import { lokaleTijdMinuten } from "@/lib/planning/tijd";
 const TOEGESTANE_STATUSSEN = [
   "BESCHIKBAAR",
   "NIET_BESCHIKBAAR",
@@ -574,11 +576,9 @@ if (
   definitieveEindtijd !== null
 ) {
   const beginMinuten =
-    definitieveBegintijd.getHours() * 60 +
-    definitieveBegintijd.getMinutes();
+    lokaleTijdMinuten(definitieveBegintijd);
   const eindMinuten =
-    definitieveEindtijd.getHours() * 60 +
-    definitieveEindtijd.getMinutes();
+    lokaleTijdMinuten(definitieveEindtijd);
 
   if (
     beginMinuten < 11 * 60 + 30 ||
