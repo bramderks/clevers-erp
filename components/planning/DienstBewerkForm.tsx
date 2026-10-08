@@ -7,6 +7,8 @@ import {
   useState,
 } from "react";
 
+import { datumInputWaarde, tijdInputWaarde } from "@/lib/planning/tijd";
+
 import type {
   Dienst,
   PlanningTag,
@@ -188,84 +190,7 @@ function tijdNaarMinuten(
   return uren * 60 + minuten;
 }
 
-function datumNaarInput(
-  waarde: string | null | undefined,
-): string {
-  if (!waarde) {
-    return "";
-  }
-
-  if (
-    /^\d{4}-\d{2}-\d{2}$/.test(
-      waarde,
-    )
-  ) {
-    return waarde;
-  }
-
-  const datum =
-    new Date(waarde);
-
-  if (
-    Number.isNaN(
-      datum.getTime(),
-    )
-  ) {
-    return "";
-  }
-
-  return [
-    datum.getFullYear(),
-    String(
-      datum.getMonth() + 1,
-    ).padStart(2, "0"),
-    String(
-      datum.getDate(),
-    ).padStart(2, "0"),
-  ].join("-");
-}
-
-function tijdNaarInput(
-  waarde: string | null | undefined,
-): string {
-  if (!waarde) {
-    return "";
-  }
-
-  const directeTijd =
-    /^(\d{1,2}):(\d{2})/.exec(
-      waarde,
-    );
-
-  if (directeTijd) {
-    return `${directeTijd[1].padStart(
-      2,
-      "0",
-    )}:${directeTijd[2]}`;
-  }
-
-  const datum =
-    new Date(waarde);
-
-  if (
-    Number.isNaN(
-      datum.getTime(),
-    )
-  ) {
-    return "";
-  }
-
-  return [
-    String(
-      datum.getHours(),
-    ).padStart(2, "0"),
-    String(
-      datum.getMinutes(),
-    ).padStart(2, "0"),
-  ].join(":");
-}
-
-function volledigeNaam(
+function datumNaarInput(waarde: string | null | undefined): string { return datumInputWaarde(waarde ?? ""); }\n\nfunction tijdNaarInput(waarde: string | null | undefined): string { return tijdInputWaarde(waarde); }\n\nfunction volledigeNaam(
   medewerker: {
     voornaam: string;
     tussenvoegsel:
