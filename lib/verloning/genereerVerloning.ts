@@ -161,19 +161,7 @@ export async function genereerVerloning(
       maand,
     );
 
-  const controleStart =
-    beginVanControleperiode(
-      jaar,
-      maand,
-    );
-
-  const controleDeadline =
-    eindeVanControleperiode(
-      jaar,
-      maand,
-    );
-
-  /*
+    /*
    * ==========================================================
    * BESTAANDE PERIODE CONTROLEREN
    * ==========================================================
@@ -618,8 +606,8 @@ export async function genereerVerloning(
             },
 
             data: {
-              controleStart,
-              controleDeadline,
+              controleStart: null,
+              controleDeadline: null,
               gecontroleerdDoorId: null,
               gecontroleerdOp: null,
             },
@@ -714,10 +702,10 @@ export async function genereerVerloning(
               },
 
               data: {
-                status: "KLAAR",
+                status: "AANGEMAAKT",
                 gegenereerdOp,
-                controleStart,
-                controleDeadline,
+                controleStart: null,
+                controleDeadline: null,
                 gecontroleerdDoorId:
                   null,
                 gecontroleerdOp: null,
