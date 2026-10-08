@@ -50,7 +50,10 @@ export function urenVanSamengevoegdeIntervallen(
   );
 }
 
-export function datumSleutelVoorUren(datum: Date) {\n  return lokaleDatumSleutel(datum);\n}\n
+export function datumSleutelVoorUren(datum: Date) {
+  return lokaleDatumSleutel(datum);
+}
+
 export function uniekeUrenPerRegistratie(
   registraties: TijdInterval[],
 ) {
