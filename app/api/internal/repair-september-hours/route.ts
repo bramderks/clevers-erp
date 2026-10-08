@@ -10,10 +10,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Niet toegestaan" }, { status: 403 });
   }
 
-  const start = new Date("2026-09-01T00:00:00.000Z");
-  const end = new Date("2026-10-01T00:00:00.000Z");
+  const start = new Date("2026-08-31T00:00:00.000Z");
+  const end = new Date("2026-10-02T00:00:00.000Z");
 
-  const bezettingen = await prisma.dienstBezetting.findMany({
+  const alleBezettingen = await prisma.dienstBezetting.findMany({
     where: {
       medewerkerId: { not: null },
       dienst: {
@@ -40,6 +40,16 @@ export async function GET(request: Request) {
       },
     },
     orderBy: [{ dienst: { datum: "asc" } }, { aangemaaktOp: "asc" }],
+  });
+
+  const bezettingen = alleBezettingen.filter((bezetting) => {
+    const lokaleDatum = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Amsterdam",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(bezetting.dienst.datum));
+    return lokaleDatum >= "2026-09-01" && lokaleDatum < "2026-10-01";
   });
 
   let aangemaakt = 0;
