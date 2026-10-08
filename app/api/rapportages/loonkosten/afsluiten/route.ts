@@ -224,10 +224,28 @@ export async function POST(request: NextRequest) {
           }),
       );
 
-      if (urenRegistraties.length > 0) {
-        await tx.urenRegistratie.createMany({
-          data: urenRegistraties,
-          skipDuplicates: true,
+      for (const registratie of urenRegistraties) {
+        const bestaande = await tx.urenRegistratie.findUnique({
+          where: { dienstBezettingId: registratie.dienstBezettingId },
+          select: { status: true },
+        });
+        if (bestaande?.status === "DEFINITIEF") continue;
+        await tx.urenRegistratie.upsert({
+          where: { dienstBezettingId: registratie.dienstBezettingId },
+          create: registratie,
+          update: {
+            medewerkerId: registratie.medewerkerId,
+            vestigingId: registratie.vestigingId,
+            datum: registratie.datum,
+            taak: registratie.taak,
+            werkelijkeBegintijd: registratie.werkelijkeBegintijd,
+            werkelijkeEindtijd: registratie.werkelijkeEindtijd,
+            pauzeMinuten: registratie.pauzeMinuten,
+            gewerkteUren: registratie.gewerkteUren,
+            status: "TE_CONTROLEREN",
+            gecontroleerdDoorId: null,
+            gecontroleerdOp: null,
+          },
         });
       }
 
