@@ -1,3 +1,5 @@
+import { lokaleDatumSleutel } from "@/lib/planning/tijd";
+
 export type TijdInterval = {
   id: string;
   begintijd: Date;
@@ -48,14 +50,7 @@ export function urenVanSamengevoegdeIntervallen(
   );
 }
 
-export function datumSleutelVoorUren(datum: Date) {
-  return [
-    datum.getFullYear(),
-    String(datum.getMonth() + 1).padStart(2, "0"),
-    String(datum.getDate()).padStart(2, "0"),
-  ].join("-");
-}
-
+export function datumSleutelVoorUren(datum: Date) {\n  return lokaleDatumSleutel(datum);\n}\n
 export function uniekeUrenPerRegistratie(
   registraties: TijdInterval[],
 ) {
