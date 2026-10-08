@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { datumInputWaarde, tijdInputWaarde, formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
+
 
 import Form from "@/components/ui/Form";
 import Input from "@/components/ui/Input";
@@ -46,53 +48,9 @@ const TIJDEN = Array.from(
   },
 );
 
-function datumWaarde(
-  value: Date | string,
-): string {
-  const datum =
-    value instanceof Date
-      ? value
-      : new Date(value);
+function datumWaarde(value: Date | string): string { return datumInputWaarde(value); }
 
-  if (Number.isNaN(datum.getTime())) {
-    return "";
-  }
-
-  const jaar = datum.getFullYear();
-
-  const maand = String(
-    datum.getMonth() + 1,
-  ).padStart(2, "0");
-
-  const dag = String(
-    datum.getDate(),
-  ).padStart(2, "0");
-
-  return `${jaar}-${maand}-${dag}`;
-}
-
-function tijdWaarde(
-  value: Date | string,
-): string {
-  const datum =
-    value instanceof Date
-      ? value
-      : new Date(value);
-
-  if (Number.isNaN(datum.getTime())) {
-    return "";
-  }
-
-  const uren = String(
-    datum.getHours(),
-  ).padStart(2, "0");
-
-  const minuten = String(
-    datum.getMinutes(),
-  ).padStart(2, "0");
-
-  return `${uren}:${minuten}`;
-}
+function tijdWaarde(value: Date | string): string { return tijdInputWaarde(value); }
 
 function geldigeStatus(
   value: string,
