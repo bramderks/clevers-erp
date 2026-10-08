@@ -26,10 +26,10 @@ type ImportRij = {
   datumindienst: string;
   datumuitdienst: string;
   vestiging: string;
-  vestigingen: string;
+  vestigingen?: string;
   hoofdvestiging: string;
-  rol: string;
-  actief: string;
+  rol?: string;
+  actief?: string;
 };
 
 type ImportFout = {
