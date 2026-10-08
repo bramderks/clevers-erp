@@ -1,4 +1,5 @@
   import { prisma } from "@/lib/prisma";
+import { lokaleTijdMinuten } from "@/lib/planning/tijd";
 
   type BeschikbaarheidStatus =
     | "BESCHIKBAAR"
