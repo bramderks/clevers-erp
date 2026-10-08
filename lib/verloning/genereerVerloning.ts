@@ -195,97 +195,22 @@ export async function genereerVerloning(
 
   /*
    * ==========================================================
-   * UREN SYNCHRONISEREN MET HET ACTUELE PLANBORD
+   * URENREGISTRATIES ZIJN DE BRON VOOR VERLONING
    * ==========================================================
    *
-   * De planning is de actuele bron voor de diensten van de
-   * maand. Een eerder aangemaakte UrenRegistratie kan anders
-   * verouderd blijven nadat een dienst is gewijzigd, toegevoegd
-   * of verwijderd. Dat veroorzaakte dat een opnieuw aangemaakte
-   * verloning oude uren bleef gebruiken.
+   * De planning is alleen de bron voor het aanmaken van een
+   * urenregistratie. Voor de daadwerkelijke verloning zijn de
+   * gecontroleerde urenregistraties leidend. Een regeneratie
+   * van een verloningsperiode mag daarom nooit de werkelijke
+   * begin-/eindtijd of gewerkte uren vanuit het planbord
+   * overschrijven.
    *
-   * Bij het genereren van een nieuwe verloningsperiode worden
-   * daarom de registraties voor de betreffende maand opnieuw
-   * opgebouwd vanuit de actuele bezette diensten. Eventuele
-   * registraties van verwijderde diensten worden verwijderd.
-   * De bestaande status blijft DEFINITIEF: alleen de brondata
-   * (dienst, tijden en berekende uren) wordt gesynchroniseerd.
+   * Dit is belangrijk wanneer een eigenaar na een dienst de
+   * werkelijke uren heeft gecorrigeerd. Bij het verwijderen en
+   * opnieuw genereren van de verloningsperiode blijven die
+   * definitieve correcties behouden.
    * ==========================================================
    */
-
-  const actueleBezettingen = await prisma.dienstBezetting.findMany({
-    where: {
-      medewerkerId: { not: null },
-      status: { not: "AFGEZEGD" },
-      dienst: {
-        datum: {
-          gte: periodeStart,
-          lt: periodeEinde,
-        },
-      },
-    },
-    select: {
-      id: true,
-      medewerkerId: true,
-      dienst: {
-        select: {
-          datum: true,
-          begintijd: true,
-          eindtijd: true,
-        },
-      },
-    },
-  });
-
-  const actueleBezettingIds = actueleBezettingen.map((bezetting) => bezetting.id);
-
-  await prisma.$transaction(async (tx) => {
-    await tx.urenRegistratie.deleteMany({
-      where: {
-        datum: {
-          gte: periodeStart,
-          lt: periodeEinde,
-        },
-        ...(actueleBezettingIds.length > 0
-          ? { dienstBezettingId: { notIn: actueleBezettingIds } }
-          : {}),
-      },
-    });
-
-    for (const bezetting of actueleBezettingen) {
-      const berekening = berekenGewerkteUren(
-        bezetting.dienst.begintijd,
-        bezetting.dienst.eindtijd,
-      );
-
-      await tx.urenRegistratie.upsert({
-        where: { dienstBezettingId: bezetting.id },
-        create: {
-          dienstBezettingId: bezetting.id,
-          medewerkerId: bezetting.medewerkerId!,
-          vestigingId: (await tx.dienst.findUniqueOrThrow({
-            where: { id: (await tx.dienstBezetting.findUniqueOrThrow({ where: { id: bezetting.id }, select: { dienstId: true } })).dienstId },
-            select: { week: { select: { vestigingId: true } } },
-          })).week.vestigingId,
-          datum: bezetting.dienst.datum,
-          taak: null,
-          werkelijkeBegintijd: bezetting.dienst.begintijd,
-          werkelijkeEindtijd: bezetting.dienst.eindtijd,
-          pauzeMinuten: berekening.pauzeMinuten,
-          gewerkteUren: berekening.gewerkteUren,
-          status: "DEFINITIEF",
-        },
-        update: {
-          medewerkerId: bezetting.medewerkerId!,
-          datum: bezetting.dienst.datum,
-          werkelijkeBegintijd: bezetting.dienst.begintijd,
-          werkelijkeEindtijd: bezetting.dienst.eindtijd,
-          pauzeMinuten: berekening.pauzeMinuten,
-          gewerkteUren: berekening.gewerkteUren,
-        },
-      });
-    }
-  });
 
   /*
    * ==========================================================
