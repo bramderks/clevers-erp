@@ -78,6 +78,33 @@ function eindeVanControleperiode(
   );
 }
 
+function lokaleKalenderDatumUTC(datum: Date) {
+  const delen = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Amsterdam",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(datum);
+
+  const jaar = Number(delen.find((deel) => deel.type === "year")?.value ?? "0");
+  const maand = Number(delen.find((deel) => deel.type === "month")?.value ?? "0");
+  const dag = Number(delen.find((deel) => deel.type === "day")?.value ?? "0");
+
+  return new Date(Date.UTC(jaar, maand - 1, dag, 0, 0, 0, 0));
+}
+
+function ligtInVerloningsMaand(
+  datum: Date,
+  jaar: number,
+  maand: number,
+) {
+  const lokaleDatum = lokaleKalenderDatumUTC(datum);
+  return (
+    lokaleDatum.getUTCFullYear() === jaar &&
+    lokaleDatum.getUTCMonth() === maand - 1
+  );
+}
+
 function datumSleutel(
   datum: Date,
 ) {
@@ -203,12 +230,18 @@ export async function genereerVerloning(
    * ==========================================================
    */
 
-  const actueleBezettingen = await prisma.dienstBezetting.findMany({
+  const zoekStart = new Date(periodeStart);
+  zoekStart.setDate(zoekStart.getDate() - 2);
+
+  const zoekEinde = new Date(periodeEinde);
+  zoekEinde.setDate(zoekEinde.getDate() + 2);
+
+  const alleBezettingen = await prisma.dienstBezetting.findMany({
     where: {
       medewerkerId: { not: null },
       status: { not: "AFGEZEGD" },
       dienst: {
-        datum: { gte: periodeStart, lt: periodeEinde },
+        datum: { gte: zoekStart, lt: zoekEinde },
       },
     },
     select: {
@@ -224,6 +257,17 @@ export async function genereerVerloning(
       },
     },
   });
+
+  // Dienst.datum is een kalenderdatum en kan door oudere imports één dag
+  // verschoven zijn opgeslagen. De daadwerkelijke lokale dienstdatum wordt
+  // daarom bepaald vanuit de begintijd in Europe/Amsterdam.
+  const actueleBezettingen = alleBezettingen.filter((bezetting) =>
+    ligtInVerloningsMaand(
+      bezetting.dienst.begintijd,
+      jaar,
+      maand,
+    ),
+  );
 
   const actueleIds = actueleBezettingen.map((b) => b.id);
 
@@ -254,7 +298,7 @@ export async function genereerVerloning(
           data: {
             medewerkerId: bezetting.medewerkerId!,
             vestigingId: bezetting.dienst.week.vestigingId,
-            datum: bezetting.dienst.datum,
+            datum: lokaleKalenderDatumUTC(bezetting.dienst.begintijd),
             werkelijkeBegintijd: bezetting.dienst.begintijd,
             werkelijkeEindtijd: bezetting.dienst.eindtijd,
             pauzeMinuten: berekening.pauzeMinuten,
@@ -270,7 +314,7 @@ export async function genereerVerloning(
             dienstBezettingId: bezetting.id,
             medewerkerId: bezetting.medewerkerId!,
             vestigingId: bezetting.dienst.week.vestigingId,
-            datum: bezetting.dienst.datum,
+            datum: lokaleKalenderDatumUTC(bezetting.dienst.begintijd),
             taak: null,
             werkelijkeBegintijd: bezetting.dienst.begintijd,
             werkelijkeEindtijd: bezetting.dienst.eindtijd,
