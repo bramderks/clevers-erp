@@ -152,11 +152,27 @@ export async function hasPermission(permission: Permission, organisatieId?: stri
     return rol?.permissions.includes(permission) ?? false;
   });
   if (resultaat) return true;
-  // Medewerkers worden organisatorisch via hun vestigingskoppeling geautoriseerd.
-  // Alleen het beperkte medewerkerprofiel mag zonder systeem-organisatierelatie dashboard/planning bekijken.
+
+  // Een medewerker zonder aparte systeem-organisatierelatie mag alleen
+  // dashboard/planning bekijken wanneer het medewerkersprofiel actief is
+  // en daadwerkelijk aan minimaal één actieve vestiging is gekoppeld.
   if (gebruiker.medewerker?.id && ["dashboard.view", "planning.view"].includes(permission)) {
-    return true;
+    const medewerker = await prisma.medewerker.findUnique({
+      where: { id: gebruiker.medewerker.id },
+      select: {
+        actief: true,
+        vestigingen: {
+          where: {
+            vestiging: { actief: true, organisatie: { actief: true } },
+          },
+          select: { id: true },
+          take: 1,
+        },
+      },
+    });
+    return Boolean(medewerker?.actief && medewerker.vestigingen.length > 0);
   }
+
   return false;
 }
 
