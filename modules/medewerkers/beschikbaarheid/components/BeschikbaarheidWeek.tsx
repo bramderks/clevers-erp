@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { datumInputWaarde, tijdInputWaarde, formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
+
 
 import Badge from "@/components/ui/Badge";
 
@@ -25,17 +27,7 @@ type Dag = {
   naam: string;
 };
 
-function maakDatumKey(datum: Date) {
-  const jaar = datum.getFullYear();
-  const maand = String(
-    datum.getMonth() + 1,
-  ).padStart(2, "0");
-  const dag = String(
-    datum.getDate(),
-  ).padStart(2, "0");
-
-  return `${jaar}-${maand}-${dag}`;
-}
+function maakDatumKey(datum: Date) { return datumInputWaarde(datum); }
 
 function maakWeekDagen(
   jaar: number,
@@ -86,22 +78,7 @@ function maakWeekDagen(
   );
 }
 
-function formatTijd(
-  value: string | Date,
-) {
-  const datum =
-    value instanceof Date
-      ? value
-      : new Date(value);
-
-  return datum.toLocaleTimeString(
-    "nl-NL",
-    {
-      hour: "2-digit",
-      minute: "2-digit",
-    },
-  );
-}
+function formatTijd(value: string | Date) { return formatDienstTijd(value); }
 
 function statusNaam(
   status: string,
