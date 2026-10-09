@@ -10,6 +10,7 @@ type Aanvraag = {
   eindDatum: string;
   vestigingId: string;
   vestigingNaam: string;
+  type: string;
   status: string;
   opmerking: string | null;
   redenAfwijzing: string | null;
