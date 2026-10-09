@@ -35,6 +35,7 @@ import MedewerkerStatusActie from "@/components/medewerkers/MedewerkerStatusActi
 
 import BeschikbaarheidPanel from "@/components/medewerkers/beschikbaarheid/components/BeschikbaarheidPanel";
 import VakantiePlanningPanel from "@/components/medewerkers/VakantiePlanningPanel";
+import DagVerlofPanel from "@/components/medewerkers/DagVerlofPanel";
 import MedewerkerAfsprakenPanel from "@/components/medewerkers/MedewerkerAfsprakenPanel";
 import MedewerkerLoonperiodesPanel from "@/components/medewerkers/MedewerkerLoonperiodesPanel";
 
@@ -55,7 +56,7 @@ const TABS = [
   { id: "contract", label: "Contract" },
   { id: "vestigingen", label: "Vestigingen" },
   { id: "beschikbaarheid", label: "Beschikbaarheid" },
-  { id: "vakantie", label: "Vakantie" },
+  { id: "vakantie", label: "Verlof" },
   { id: "planning", label: "Planning" },
   { id: "verloning", label: "Verloning" },
   { id: "afspraken", label: "Afspraken" },
@@ -876,11 +877,14 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
           {actieveTab === "vakantie" && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">Vakantieplanning</h2>
-                <p className="mt-1 text-sm text-slate-500">Vakantieplanning voor juni, juli en augustus. De medewerker levert deze uiterlijk 30 april in en de eigenaar beoordeelt de aanvraag.</p>
+                <h2 className="text-lg font-semibold text-slate-900">Verlof</h2>
+                <p className="mt-1 text-sm text-slate-500">Dien meerdaags verlof of verlof voor één losse dag in. Alle aanvragen worden door de eigenaar beoordeeld.</p>
               </div>
-              <Card title="Zomervakantie" description="Maximaal 14 dagen in totaal en maximaal 14 dagen aaneengesloten.">
+              <Card title="Meerdaags verlof" description="Voor de zomervakantieplanning in juni, juli en augustus: maximaal 14 dagen in totaal en maximaal 14 dagen aaneengesloten.">
                 <VakantiePlanningPanel medewerkerId={medewerker.id} isEigenaar={isEigenaar} magIndienen={isEigenProfiel} />
+              </Card>
+              <Card title="Een dag verlof" description="Vraag een losse verlofdag aan. Na goedkeuring wordt de datum automatisch op niet beschikbaar gezet in de beschikbaarheidsweek.">
+                <DagVerlofPanel medewerkerId={medewerker.id} isEigenaar={isEigenaar} magIndienen={isEigenProfiel} />
               </Card>
             </div>
           )}
