@@ -815,6 +815,66 @@ async function controleerAaneengeslotenAfwezigheid(
 }
 
 /*
+ * Controleer de weekendregel: in iedere periode van twee opeenvolgende
+ * weekenden moet minimaal één weekenddag expliciet als beschikbaar staan.
+ * Onvolledig ingevulde weekenden worden nog niet als overtreding beschouwd.
+ */
+async function controleerWeekendBeschikbaarheid(
+  medewerkerId: string,
+  kandidaten: Array<{ datum: Date; beschikbaar: boolean }>,
+) {
+  const weekendKandidaten = kandidaten.filter((item) => {
+    const dag = item.datum.getUTCDay();
+    return dag === 0 || dag === 6;
+  });
+  if (weekendKandidaten.length === 0) return;
+
+  const vensters = new Map<string, Date[]>();
+  for (const item of weekendKandidaten) {
+    const zaterdag = new Date(item.datum);
+    zaterdag.setUTCHours(0, 0, 0, 0);
+    if (zaterdag.getUTCDay() === 0) zaterdag.setUTCDate(zaterdag.getUTCDate() - 1);
+    for (const verschuiving of [-7, 0]) {
+      const start = new Date(zaterdag);
+      start.setUTCDate(start.getUTCDate() + verschuiving);
+      const datums = Array.from({ length: 9 }, (_, index) => {
+        const dag = new Date(start);
+        dag.setUTCDate(dag.getUTCDate() + index);
+        return dag;
+      }).filter((dag) => dag.getUTCDay() === 6 || dag.getUTCDay() === 0);
+      vensters.set(start.toISOString().slice(0, 10), datums);
+    }
+  }
+
+  const alleDatums = [...vensters.values()].flat();
+  const min = new Date(Math.min(...alleDatums.map((d) => d.getTime())));
+  const max = new Date(Math.max(...alleDatums.map((d) => d.getTime())));
+  max.setUTCDate(max.getUTCDate() + 1);
+  const bestaande = await prisma.beschikbaarheid.findMany({
+    where: { medewerkerId, datum: { gte: min, lt: max } },
+    select: { datum: true, status: true },
+  });
+  const statusPerDatum = new Map<string, boolean>();
+  for (const item of bestaande) {
+    statusPerDatum.set(item.datum.toISOString().slice(0, 10), item.status === "BESCHIKBAAR");
+  }
+  for (const item of kandidaten) {
+    statusPerDatum.set(item.datum.toISOString().slice(0, 10), item.beschikbaar);
+  }
+
+  for (const datums of vensters.values()) {
+    const sleutels = datums.map((dag) => dag.toISOString().slice(0, 10));
+    if (!sleutels.every((sleutel) => statusPerDatum.has(sleutel))) continue;
+    if (!sleutels.some((sleutel) => statusPerDatum.get(sleutel) === true)) {
+      throw new RouteFout(
+        "Je moet minimaal één weekenddag per twee opeenvolgende weekenden beschikbaar zijn. Kies zaterdag of zondag in één van deze weekenden.",
+        400,
+      );
+    }
+  }
+}
+
+/*
  * ============================================================
  * GET
  * ============================================================
@@ -1085,6 +1145,14 @@ export async function POST(
       }
 
       const weekStart = beginVanISOWeek(toegang.week.jaar, toegang.week.weeknummer);
+      await controleerWeekendBeschikbaarheid(
+        medewerkerId,
+        Array.from({ length: 7 }, (_, index) => {
+          const datum = new Date(weekStart);
+          datum.setUTCDate(datum.getUTCDate() + index);
+          return { datum, beschikbaar: false };
+        }),
+      );
       const transacties = Array.from({ length: 7 }, (_, index) => {
         const dag = new Date(weekStart);
         dag.setUTCDate(dag.getUTCDate() + index);
@@ -1166,6 +1234,13 @@ export async function POST(
           .filter((item) => item.beschikbaar !== true)
           .map((item) => parseDatum(item.datum))
           .filter((datum): datum is Date => datum !== null),
+      );
+      await controleerWeekendBeschikbaarheid(
+        medewerkerId,
+        items.map((item) => {
+          const datum = parseDatum(item.datum);
+          return { datum: datum ?? new Date(0), beschikbaar: item.beschikbaar === true };
+        }).filter((item) => item.datum.getTime() !== 0),
       );
 
       const transacties = [];
@@ -1460,6 +1535,7 @@ export async function POST(
         medewerkerId,
         [datum],
       );
+      await controleerWeekendBeschikbaarheid(medewerkerId, [{ datum, beschikbaar: false }]);
 
       const data = {
         medewerkerId,
