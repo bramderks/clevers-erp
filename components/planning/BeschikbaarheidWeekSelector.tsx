@@ -1736,22 +1736,8 @@ export default function BeschikbaarheidWeekSelector({
       setError(null);
       setLoadingDagen(true);
 
-      const start = bepaalWeekStart(week);
-      if (!start) {
-        throw new Error("De weekdatum kon niet worden bepaald.");
-      }
-
-      const datums = Array.from({ length: 7 }, (_, index) => {
-        const datum = new Date(start);
-        datum.setDate(start.getDate() + index);
-        datum.setHours(12, 0, 0, 0);
-        return {
-          sleutel: formatteerDatumSleutel(datum),
-          iso: datum.toISOString(),
-        };
-      });
-
-      // Eén API-aanroep slaat alle zeven dagen atomair op.
+      // Gebruik dezelfde speciale API-route als "Hele week beschikbaar".
+      // De server slaat de zeven dagen samen op en respecteert dezelfde rechten.
       const response = await fetch(
         `/api/medewerkers/${encodeURIComponent(medewerkerId)}/beschikbaarheid`,
         {
@@ -1759,10 +1745,7 @@ export default function BeschikbaarheidWeekSelector({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             weekId: week.id,
-            beschikbaarheden: datums.map((dag) => ({
-              datum: dag.iso,
-              beschikbaar: false,
-            })),
+            weekNietBeschikbaar: true,
           }),
         },
       );
@@ -1780,15 +1763,24 @@ export default function BeschikbaarheidWeekSelector({
         );
       }
 
+      const start = bepaalWeekStart(week);
+      if (!start) {
+        throw new Error("De week is opgeslagen, maar de weekdatum kon niet worden bepaald.");
+      }
+
       setDagenInvoer((vorige) => {
         const volgende = { ...vorige };
-        for (const dag of datums) {
-          volgende[dag.sleutel] = {
-            datum: dag.sleutel,
+        for (let index = 0; index < 7; index += 1) {
+          const datum = new Date(start);
+          datum.setDate(start.getDate() + index);
+          datum.setHours(12, 0, 0, 0);
+          const sleutel = formatteerDatumSleutel(datum);
+          volgende[sleutel] = {
+            datum: sleutel,
             status: "NIET_BESCHIKBAAR",
             begintijd: "",
             eindtijd: "",
-            opmerking: "",
+            opmerking: "Week niet beschikbaar",
             opgeslagen: true,
           };
         }
@@ -1803,7 +1795,7 @@ export default function BeschikbaarheidWeekSelector({
 
       if (nieuweStatus !== "DOORGEGEVEN") {
         throw new Error(
-          "De week is opgeslagen, maar de status kon niet worden bevestigd. Vernieuw de pagina en controleer de week.",
+          "De week is opgeslagen, maar de status kon niet als doorgegeven worden bevestigd. Vernieuw de pagina en controleer de week.",
         );
       }
     } catch (error) {
