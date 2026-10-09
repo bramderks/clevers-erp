@@ -1741,57 +1741,54 @@ export default function BeschikbaarheidWeekSelector({
         throw new Error("De weekdatum kon niet worden bepaald.");
       }
 
-      const datums: string[] = [];
-      for (let index = 0; index < 7; index += 1) {
+      const datums = Array.from({ length: 7 }, (_, index) => {
         const datum = new Date(start);
         datum.setDate(start.getDate() + index);
         datum.setHours(12, 0, 0, 0);
-        datums.push(formatteerDatumSleutel(datum));
-      }
+        return {
+          sleutel: formatteerDatumSleutel(datum),
+          iso: datum.toISOString(),
+        };
+      });
 
-      // Sla voor iedere dag expliciet NIET_BESCHIKBAAR op.
-      // Hierdoor telt ook een volledig niet-beschikbare week als doorgegeven.
-      for (const datumSleutel of datums) {
-        const datum = new Date(`${datumSleutel}T12:00:00`);
-        const response = await fetch(
-          `/api/medewerkers/${encodeURIComponent(medewerkerId)}/beschikbaarheid`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              weekId: week.id,
-              datum: datum.toISOString(),
-              begintijd: null,
-              eindtijd: null,
-              status: "NIET_BESCHIKBAAR",
-              opmerking: "Week niet beschikbaar",
-            }),
-          },
+      // Eén API-aanroep slaat alle zeven dagen atomair op.
+      const response = await fetch(
+        `/api/medewerkers/${encodeURIComponent(medewerkerId)}/beschikbaarheid`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            weekId: week.id,
+            beschikbaarheden: datums.map((dag) => ({
+              datum: dag.iso,
+              beschikbaar: false,
+            })),
+          }),
+        },
+      );
+
+      const resultaat = await leesJsonResponse<{
+        fout?: string;
+        error?: string;
+      }>(response);
+
+      if (!response.ok) {
+        throw new Error(
+          resultaat.fout ??
+            resultaat.error ??
+            "De week kon niet als niet beschikbaar worden opgeslagen.",
         );
-
-        const resultaat = await leesJsonResponse<{
-          fout?: string;
-          error?: string;
-        }>(response);
-
-        if (!response.ok) {
-          throw new Error(
-            resultaat.fout ??
-              resultaat.error ??
-              "De week kon niet als niet beschikbaar worden opgeslagen.",
-          );
-        }
       }
 
       setDagenInvoer((vorige) => {
         const volgende = { ...vorige };
-        for (const datum of datums) {
-          volgende[datum] = {
-            datum,
+        for (const dag of datums) {
+          volgende[dag.sleutel] = {
+            datum: dag.sleutel,
             status: "NIET_BESCHIKBAAR",
             begintijd: "",
             eindtijd: "",
-            opmerking: "Week niet beschikbaar",
+            opmerking: "",
             opgeslagen: true,
           };
         }
@@ -1806,7 +1803,7 @@ export default function BeschikbaarheidWeekSelector({
 
       if (nieuweStatus !== "DOORGEGEVEN") {
         throw new Error(
-          "De week is opgeslagen, maar de status kon niet als doorgegeven worden bevestigd. Vernieuw de pagina en controleer de week.",
+          "De week is opgeslagen, maar de status kon niet worden bevestigd. Vernieuw de pagina en controleer de week.",
         );
       }
     } catch (error) {
@@ -1820,6 +1817,7 @@ export default function BeschikbaarheidWeekSelector({
       setLoadingDagen(false);
     }
   }
+
 
   async function zetAltijdBeschikbaarSeizoen() {
     const week = geselecteerdeWeek;
