@@ -77,7 +77,7 @@ export default function DagVerlofPanel({ medewerkerId, isEigenaar, magIndienen }
 
   async function beoordeel(id: string, status: "GOEDGEKEURD" | "AFGEWEZEN") {
     const reden = status === "AFGEWEZEN" ? (window.prompt("Reden van afwijzing:") ?? "") : undefined;
-    if (status === "AFGEWEZEN" && !reden.trim()) return;
+    if (status === "AFGEWEZEN" && !(reden ?? "").trim()) return;
     setFout(null);
     const r = await fetch(`/api/medewerkers/${encodeURIComponent(medewerkerId)}/vakantie/${encodeURIComponent(id)}`, {
       method: "PATCH",
