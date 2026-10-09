@@ -22,6 +22,7 @@ type RequestBody = {
   opmerking?: string | null;
   altijdBeschikbaarSeizoen?: boolean;
   altijdBeschikbaarWeek?: boolean;
+  weekNietBeschikbaar?: boolean;
 };
 
 class RouteFout extends Error {
@@ -998,6 +999,58 @@ export async function POST(
       return NextResponse.json({
         success: true,
         week: true,
+        dagen: 7,
+      });
+    }
+
+    /*
+     * Expliciete keuze "Week niet beschikbaar".
+     * Net als "Hele week beschikbaar" verwerkt dit alle zeven dagen
+     * in één transactie en telt de week daarna als doorgegeven.
+     */
+    if (body.weekNietBeschikbaar === true) {
+      if (!toegang.isTeamleider && !toegang.isEigenaar && !toegang.isSuperAdmin && !toegang.isEigenMedewerker) {
+        return fout("Je hebt geen toestemming om deze week als niet beschikbaar in te stellen.", 403);
+      }
+
+      const weekStart = beginVanISOWeek(toegang.week.jaar, toegang.week.weeknummer);
+      const transacties = Array.from({ length: 7 }, (_, index) => {
+        const dag = new Date(weekStart);
+        dag.setUTCDate(dag.getUTCDate() + index);
+
+        return prisma.beschikbaarheid.upsert({
+          where: {
+            weekId_medewerkerId_datum: {
+              weekId,
+              medewerkerId,
+              datum: dag,
+            },
+          },
+          update: {
+            datum: dag,
+            begintijd: null,
+            eindtijd: null,
+            status: "NIET_BESCHIKBAAR",
+            opmerking: "Week niet beschikbaar",
+          },
+          create: {
+            weekId,
+            medewerkerId,
+            datum: dag,
+            begintijd: null,
+            eindtijd: null,
+            status: "NIET_BESCHIKBAAR",
+            opmerking: "Week niet beschikbaar",
+          },
+        });
+      });
+
+      await prisma.$transaction(transacties);
+
+      return NextResponse.json({
+        success: true,
+        week: true,
+        nietBeschikbaar: true,
         dagen: 7,
       });
     }
