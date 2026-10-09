@@ -1725,6 +1725,102 @@ export default function BeschikbaarheidWeekSelector({
     }
   }
 
+  async function zetWeekNietBeschikbaar() {
+    const week = geselecteerdeWeek;
+
+    if (!week || !wijzigingToegestaan || loadingDagen) {
+      return;
+    }
+
+    try {
+      setError(null);
+      setLoadingDagen(true);
+
+      const start = bepaalWeekStart(week);
+      if (!start) {
+        throw new Error("De weekdatum kon niet worden bepaald.");
+      }
+
+      const datums: string[] = [];
+      for (let index = 0; index < 7; index += 1) {
+        const datum = new Date(start);
+        datum.setDate(start.getDate() + index);
+        datum.setHours(12, 0, 0, 0);
+        datums.push(formatteerDatumSleutel(datum));
+      }
+
+      // Sla voor iedere dag expliciet NIET_BESCHIKBAAR op.
+      // Hierdoor telt ook een volledig niet-beschikbare week als doorgegeven.
+      for (const datumSleutel of datums) {
+        const datum = new Date(`${datumSleutel}T12:00:00`);
+        const response = await fetch(
+          `/api/medewerkers/${encodeURIComponent(medewerkerId)}/beschikbaarheid`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              weekId: week.id,
+              datum: datum.toISOString(),
+              begintijd: null,
+              eindtijd: null,
+              status: "NIET_BESCHIKBAAR",
+              opmerking: "Week niet beschikbaar",
+            }),
+          },
+        );
+
+        const resultaat = await leesJsonResponse<{
+          fout?: string;
+          error?: string;
+        }>(response);
+
+        if (!response.ok) {
+          throw new Error(
+            resultaat.fout ??
+              resultaat.error ??
+              "De week kon niet als niet beschikbaar worden opgeslagen.",
+          );
+        }
+      }
+
+      setDagenInvoer((vorige) => {
+        const volgende = { ...vorige };
+        for (const datum of datums) {
+          volgende[datum] = {
+            datum,
+            status: "NIET_BESCHIKBAAR",
+            begintijd: "",
+            eindtijd: "",
+            opmerking: "Week niet beschikbaar",
+            opgeslagen: true,
+          };
+        }
+        return volgende;
+      });
+
+      const nieuweStatus = await haalWeekStatusOp(medewerkerId, week.id);
+      setWeekStatussen((vorige) => ({
+        ...vorige,
+        [week.id]: nieuweStatus,
+      }));
+
+      if (nieuweStatus !== "DOORGEGEVEN") {
+        throw new Error(
+          "De week is opgeslagen, maar de status kon niet als doorgegeven worden bevestigd. Vernieuw de pagina en controleer de week.",
+        );
+      }
+    } catch (error) {
+      console.error("Week niet beschikbaar opslaan mislukt:", error);
+      setError(
+        error instanceof Error
+          ? error.message
+          : "De week kon niet als niet beschikbaar worden opgeslagen.",
+      );
+    } finally {
+      setLoadingDagen(false);
+    }
+  }
+
   async function zetAltijdBeschikbaarSeizoen() {
     const week = geselecteerdeWeek;
 
@@ -2141,14 +2237,24 @@ export default function BeschikbaarheidWeekSelector({
                   Hiermee zet je maandag t/m zondag in deze geselecteerde week
                   automatisch op beschikbaar van 11:30 tot 21:00.
                 </p>
-                <button
-                  type="button"
-                  disabled={loadingDagen || !wijzigingToegestaan}
-                  onClick={() => void zetAltijdBeschikbaarDezeWeek()}
-                  className="mt-4 rounded-xl border border-emerald-300 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {loadingDagen ? "Week instellen..." : "Altijd beschikbaar deze week"}
-                </button>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={loadingDagen || !wijzigingToegestaan}
+                    onClick={() => void zetAltijdBeschikbaarDezeWeek()}
+                    className="rounded-xl border border-emerald-300 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {loadingDagen ? "Week opslaan..." : "Hele week beschikbaar"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={loadingDagen || !wijzigingToegestaan}
+                    onClick={() => void zetWeekNietBeschikbaar()}
+                    className="rounded-xl border border-red-300 bg-white px-4 py-2.5 text-sm font-semibold text-red-800 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {loadingDagen ? "Week opslaan..." : "Week niet beschikbaar"}
+                  </button>
+                </div>
               </div>
             )}
 
