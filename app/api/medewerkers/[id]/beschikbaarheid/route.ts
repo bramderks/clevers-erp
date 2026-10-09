@@ -752,6 +752,69 @@ function controleerDatumBinnenWeek(
 }
 
 /*
+ * Controleer dat een medewerker in juni, juli en augustus niet via
+ * beschikbaarheid meer dan 14 dagen aaneengesloten afwezig kan melden.
+ * Dit wordt server-side gecontroleerd zodat ook de bulkknop en API-calls
+ * dezelfde regel volgen.
+ */
+async function controleerAaneengeslotenAfwezigheid(
+  medewerkerId: string,
+  kandidaatDatums: Date[],
+) {
+  const zomerJaren = [...new Set(
+    kandidaatDatums
+      .map((datum) => datum.getUTCFullYear())
+      .filter((jaar) => kandidaatDatums.some((datum) =>
+        datum.getUTCFullYear() === jaar &&
+        datum.getUTCMonth() >= 5 &&
+        datum.getUTCMonth() <= 7
+      )),
+  )];
+
+  for (const jaar of zomerJaren) {
+    const zomerStart = new Date(Date.UTC(jaar, 5, 1));
+    const zomerEinde = new Date(Date.UTC(jaar, 8, 1));
+    const kandidaatSleutels = new Set(
+      kandidaatDatums
+        .filter((datum) => datum >= zomerStart && datum < zomerEinde)
+        .map((datum) => datum.toISOString().slice(0, 10)),
+    );
+
+    if (kandidaatSleutels.size === 0) continue;
+
+    const bestaande = await prisma.beschikbaarheid.findMany({
+      where: {
+        medewerkerId,
+        status: "NIET_BESCHIKBAAR",
+        datum: { gte: zomerStart, lt: zomerEinde },
+      },
+      select: { datum: true },
+    });
+
+    const afwezig = new Set(
+      bestaande.map((item) => item.datum.toISOString().slice(0, 10)),
+    );
+    for (const sleutel of kandidaatSleutels) afwezig.add(sleutel);
+
+    let reeks = 0;
+    for (
+      let datum = new Date(zomerStart);
+      datum < zomerEinde;
+      datum.setUTCDate(datum.getUTCDate() + 1)
+    ) {
+      const sleutel = datum.toISOString().slice(0, 10);
+      reeks = afwezig.has(sleutel) ? reeks + 1 : 0;
+      if (reeks > 14) {
+        throw new RouteFout(
+          "Je kunt in juni, juli en augustus niet meer dan 14 dagen achter elkaar als niet beschikbaar opgeven. Regel langere afwezigheid via een vakantieaanvraag.",
+          400,
+        );
+      }
+    }
+  }
+}
+
+/*
  * ============================================================
  * GET
  * ============================================================
@@ -959,6 +1022,14 @@ export async function POST(
       }
 
       const weekStart = beginVanISOWeek(toegang.week.jaar, toegang.week.weeknummer);
+      await controleerAaneengeslotenAfwezigheid(
+        medewerkerId,
+        Array.from({ length: 7 }, (_, index) => {
+          const datum = new Date(weekStart);
+          datum.setUTCDate(datum.getUTCDate() + index);
+          return datum;
+        }),
+      );
       const transacties = Array.from({ length: 7 }, (_, index) => {
         const dag = new Date(weekStart);
         dag.setUTCDate(dag.getUTCDate() + index);
@@ -1088,6 +1159,14 @@ export async function POST(
       if (items.length !== 7) {
         return fout("Er moeten precies 7 dagen worden opgeslagen.", 400);
       }
+
+      await controleerAaneengeslotenAfwezigheid(
+        medewerkerId,
+        items
+          .filter((item) => item.beschikbaar !== true)
+          .map((item) => parseDatum(item.datum))
+          .filter((datum): datum is Date => datum !== null),
+      );
 
       const transacties = [];
 
@@ -1377,6 +1456,11 @@ export async function POST(
       status ===
       "NIET_BESCHIKBAAR"
     ) {
+      await controleerAaneengeslotenAfwezigheid(
+        medewerkerId,
+        [datum],
+      );
+
       const data = {
         medewerkerId,
         weekId,
