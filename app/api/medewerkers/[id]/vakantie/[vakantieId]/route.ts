@@ -26,8 +26,7 @@ export async function PATCH(request:Request,{params}:{params:Promise<{id:string;
  if(body.status==="GOEDGEKEURD"&&aanvraag.type==="OVERIG"&&aanvraag.startDatum.getTime()===aanvraag.eindDatum.getTime()){
   const datum=new Date(Date.UTC(aanvraag.startDatum.getUTCFullYear(),aanvraag.startDatum.getUTCMonth(),aanvraag.startDatum.getUTCDate()));
   const {jaar,weeknummer}=isoWeek(datum);
-  const week=await prisma.week.findUnique({where:{vestigingId_jaar_weeknummer:{vestigingId:aanvraag.vestigingId,jaar,weeknummer}},select:{id:true}});
-  if(!week)return NextResponse.json({fout:"De planningweek voor deze datum bestaat nog niet. Maak eerst de week aan; de aanvraag is nog niet goedgekeurd."},{status:400});
+  const week=await prisma.week.upsert({where:{vestigingId_jaar_weeknummer:{vestigingId:aanvraag.vestigingId,jaar,weeknummer}},update:{},create:{vestigingId:aanvraag.vestigingId,jaar,weeknummer,status:"OPEN"},select:{id:true}});
   const [,resultaat]=await prisma.$transaction([
    prisma.beschikbaarheid.upsert({where:{weekId_medewerkerId_datum:{weekId:week.id,medewerkerId:id,datum}},update:{datum,begintijd:null,eindtijd:null,status:"NIET_BESCHIKBAAR",opmerking:"Goedgekeurd dagverlof"},create:{weekId:week.id,medewerkerId:id,datum,begintijd:null,eindtijd:null,status:"NIET_BESCHIKBAAR",opmerking:"Goedgekeurd dagverlof"}}),
    prisma.vakantieAanvraag.update({where:{id:vakantieId},data})
