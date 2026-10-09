@@ -21,7 +21,7 @@ export async function GET(_:Request,{params}:{params:Promise<{id:string}>}){
  const eigenaar=organisatieIds.length>0&&organisatieIds.every(organisatieId=>magEigenaarVoorOrganisatie(gebruiker,organisatieId));
  if(!eigenaar&&gebruiker.medewerker?.id!==id)return fout("Geen toegang.",403);
  const aanvragen=await prisma.vakantieAanvraag.findMany({where:{medewerkerId:id},orderBy:{startDatum:"asc"},select:{id:true,startDatum:true,eindDatum:true,vestigingId:true,type:true,status:true,opmerking:true,redenAfwijzing:true,vestiging:{select:{naam:true}}}});
- const vestigingen=medewerker.vestigingen.map(v=>v.vestiging).filter(v=>v.actief&&v.seizoenStart).map(v=>({id:v.id,naam:v.naam}));
+ const vestigingen=medewerker.vestigingen.map(v=>v.vestiging).filter(v=>v.actief).map(v=>({id:v.id,naam:v.naam}));
  return NextResponse.json({aanvragen:aanvragen.map(a=>({...a,vestigingNaam:a.vestiging.naam})),vestigingen});
 }
 
@@ -43,10 +43,10 @@ export async function POST(request:Request,{params}:{params:Promise<{id:string}>
  const deadline=deadlineVoorSeizoen(vestiging.seizoenStart); if(new Date()>deadline)return fout("De deadline van 30 april voor deze vakantieplanning is verstreken.",400); const jaar=vestiging.seizoenStart.getFullYear(); const zomer=zomerGrenzen(jaar);
  if(start<zomer.start||einde>zomer.einde)return fout("De vakantieplanning mag alleen betrekking hebben op juni, juli en augustus van het seizoen.",400);
  if(dagen(start,einde)>14)return fout("Je mag maximaal 14 dagen aaneengesloten vakantie plannen.",400);
- const bestaande=await prisma.vakantieAanvraag.findMany({where:{medewerkerId:id,vestigingId:vestiging.id,status:{in:["AANGEVRAAGD","GOEDGEKEURD"]},startDatum:{lte:zomer.einde},eindDatum:{gte:zomer.start}},select:{startDatum:true,eindDatum:true}});
+ const bestaande=await prisma.vakantieAanvraag.findMany({where:{medewerkerId:id,vestigingId:vestiging.id,type:"VAKANTIE",status:{in:["AANGEVRAAGD","GOEDGEKEURD"]},startDatum:{lte:zomer.einde},eindDatum:{gte:zomer.start}},select:{startDatum:true,eindDatum:true}});
  const totaal=bestaande.reduce((som,a)=>som+dagen(a.startDatum,a.eindDatum),0)+dagen(start,einde);
  if(totaal>14)return fout("In totaal mag je in juni, juli en augustus maximaal 14 dagen vakantie plannen.",400);
  }
  const aanvraag=await prisma.vakantieAanvraag.create({data:{medewerkerId:id,vestigingId:vestiging.id,startDatum:start,eindDatum:einde,type,opmerking:body.opmerking?.trim()||null,status:"AANGEVRAAGD"}});
- return NextResponse.json({aanvraag,deadline}, {status:201});
+ return NextResponse.json({aanvraag}, {status:201});
 }
