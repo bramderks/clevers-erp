@@ -32,7 +32,7 @@ export default function VakantiePlanningPanel({medewerkerId,isEigenaar,magIndien
     setLoading(true);
     const r=await fetch(`/api/medewerkers/${encodeURIComponent(medewerkerId)}/vakantie`,{cache:"no-store"});
     const d=await r.json();
-    if(!r.ok){setFout(d.fout ?? "Vakantieplanning kon niet worden geladen.");setLoading(false);return;}
+    if(!r.ok){setFout(d.fout ?? "Verlof kon niet worden geladen.");setLoading(false);return;}
     setItems((d.aanvragen ?? []).filter((a:Aanvraag)=>a.type === "VAKANTIE"));setVestigingen(d.vestigingen ?? []);
     setLoading(false);
   }, [medewerkerId]);
