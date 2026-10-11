@@ -286,6 +286,163 @@ async function normaliseerKalenderDatum(dienst: {
     data: { datum: juisteDatum },
   });}
 
+
+/*
+ * ============================================================
+ * DIENST WIJZIGEN
+ * ============================================================
+ */
+export async function PATCH(
+  request: Request,
+  context: RouteContext,
+) {
+  try {
+    const { id } = await context.params;
+    const bestaand = await haalDienstOp(id);
+
+    if (!bestaand) {
+      return NextResponse.json(
+        { fout: "Dienst niet gevonden." },
+        { status: 404 },
+      );
+    }
+
+    const organisatieId = await haalOrganisatieIdOp(
+      bestaand.week.vestigingId,
+    );
+    const eigenaar = await isEigenaar(organisatieId);
+
+    if (!eigenaar) {
+      return NextResponse.json(
+        { fout: "Alleen de eigenaar kan een dienst wijzigen." },
+        { status: 403 },
+      );
+    }
+
+    const toegang = await hasPermissionForVestiging(
+      permissions.planning.update,
+      bestaand.week.vestigingId,
+    );
+
+    if (!toegang) {
+      return NextResponse.json(
+        { fout: "Je hebt geen rechten om deze dienst te wijzigen." },
+        { status: 403 },
+      );
+    }
+
+    let body: {
+      datum?: unknown;
+      begintijd?: unknown;
+      eindtijd?: unknown;
+      opmerkingen?: unknown;
+      tags?: unknown;
+    };
+
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { fout: "De aanvraag bevat geen geldige JSON." },
+        { status: 400 },
+      );
+    }
+
+    const datum = datumUitWaarde(body.datum);
+    const begintijd = datum && tijdUitWaarde(body.begintijd, datum);
+    const eindtijd = datum && tijdUitWaarde(body.eindtijd, datum);
+
+    if (!datum || !begintijd || !eindtijd) {
+      return NextResponse.json(
+        { fout: "Datum, begintijd en eindtijd zijn verplicht en moeten geldig zijn." },
+        { status: 400 },
+      );
+    }
+
+    const beginMinuten = tijdNaarMinuten(begintijd);
+    const eindeMinuten = tijdNaarMinuten(eindtijd);
+
+    if (
+      beginMinuten < START_MINUTEN ||
+      eindeMinuten > EINDE_MINUTEN ||
+      eindeMinuten <= beginMinuten ||
+      eindeMinuten - beginMinuten < 30 ||
+      !isGeldigTijdsinterval(begintijd) ||
+      !isGeldigTijdsinterval(eindtijd)
+    ) {
+      return NextResponse.json(
+        { fout: "Controleer de diensttijden. Diensten starten vanaf 08:30, eindigen uiterlijk om 23:00 en worden per 15 minuten ingepland met een minimale duur van 30 minuten." },
+        { status: 400 },
+      );
+    }
+
+    const dienstTags = verwerkTags(body.tags);
+    if (dienstTags.length === 0) {
+      return NextResponse.json(
+        { fout: "Selecteer minimaal één planningstag." },
+        { status: 400 },
+      );
+    }
+
+    const opmerkingen =
+      typeof body.opmerkingen === "string" && body.opmerkingen.trim()
+        ? body.opmerkingen.trim()
+        : null;
+
+    const bijgewerkt = await prisma.dienst.update({
+      where: { id },
+      data: {
+        datum: kalenderDatumUTC(lokaleDatumSleutel(datum)),
+        begintijd,
+        eindtijd,
+        opmerkingen,
+        tags: {
+          deleteMany: {},
+          create: dienstTags.map((tag) => ({
+            tagId: tag.tagId,
+            aantal: tag.aantal,
+          })),
+        },
+      },
+      include: {
+        week: {
+          select: {
+            id: true,
+            vestigingId: true,
+          },
+        },
+        tags: {
+          include: { tag: true },
+          orderBy: { tag: { volgorde: "asc" } },
+        },
+        bezetting: {
+          include: {
+            medewerker: {
+              select: {
+                id: true,
+                personeelsnummer: true,
+                aanhef: true,
+                voornaam: true,
+                tussenvoegsel: true,
+                achternaam: true,
+              },
+            },
+          },
+          orderBy: { aangemaaktOp: "asc" },
+        },
+      },
+    });
+
+    return NextResponse.json(bijgewerkt);
+  } catch (error) {
+    console.error("Fout bij wijzigen dienst:", error);
+    return NextResponse.json(
+      { fout: "De dienst kon niet worden gewijzigd." },
+      { status: 500 },
+    );
+  }
+}
+
 /*
  * ============================================================
  * DIENST VERWIJDEREN
