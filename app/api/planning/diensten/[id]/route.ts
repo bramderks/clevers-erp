@@ -92,6 +92,8 @@ async function haalDienstOp(id: string) {
         select: {
           id: true,
           vestigingId: true,
+          jaar: true,
+          weeknummer: true,
         },
       },
     },
@@ -258,6 +260,20 @@ function tijdNaarMinuten(datum: Date): number {
   return lokaleTijdMinuten(datum);
 }
 
+function isoWeekVanDatum(datum: Date): { jaar: number; weeknummer: number } {
+  const sleutel = lokaleDatumSleutel(datum);
+  const [jaar, maand, dag] = sleutel.split("-").map(Number);
+  const utcDatum = new Date(Date.UTC(jaar, maand - 1, dag));
+  const dagVanWeek = utcDatum.getUTCDay() || 7;
+  utcDatum.setUTCDate(utcDatum.getUTCDate() + 4 - dagVanWeek);
+  const isoJaar = utcDatum.getUTCFullYear();
+  const jaarStart = new Date(Date.UTC(isoJaar, 0, 1));
+  const weeknummer = Math.ceil(
+    ((utcDatum.getTime() - jaarStart.getTime()) / 86400000 + 1) / 7,
+  );
+  return { jaar: isoJaar, weeknummer };
+}
+
 function isGeldigTijdsinterval(datum: Date): boolean {
   return lokaleTijdMinuten(datum) % TIJD_INTERVAL === 0;
 }
@@ -355,6 +371,17 @@ export async function PATCH(
     if (!datum || !begintijd || !eindtijd) {
       return NextResponse.json(
         { fout: "Datum, begintijd en eindtijd zijn verplicht en moeten geldig zijn." },
+        { status: 400 },
+      );
+    }
+
+    const isoWeek = isoWeekVanDatum(datum);
+    if (
+      isoWeek.jaar !== bestaand.week.jaar ||
+      isoWeek.weeknummer !== bestaand.week.weeknummer
+    ) {
+      return NextResponse.json(
+        { fout: "De gekozen datum valt niet binnen de geselecteerde planningweek." },
         { status: 400 },
       );
     }
