@@ -94,6 +94,20 @@ async function haalDienstOp(id: string) {
           vestigingId: true,
           jaar: true,
           weeknummer: true,
+          vestiging: {
+            select: {
+              organisatieId: true,
+            },
+          },
+        },
+      },
+      bezetting: {
+        where: {
+          status: { not: "AFGEZEGD" },
+          medewerkerId: { not: null },
+        },
+        select: {
+          medewerkerId: true,
         },
       },
     },
@@ -415,6 +429,70 @@ export async function PATCH(
       typeof body.opmerkingen === "string" && body.opmerkingen.trim()
         ? body.opmerkingen.trim()
         : null;
+
+    /*
+     * Het wijzigen van diensttijden mag geen bestaande bezetting
+     * onveilig maken. Controleer daarom ook bij bewerken de
+     * afgesproken reistijdbuffer tussen vestigingen.
+     */
+    const medewerkerIds = bestaand.bezetting
+      .map((bezetting) => bezetting.medewerkerId)
+      .filter((medewerkerId): medewerkerId is string => medewerkerId !== null);
+
+    if (medewerkerIds.length > 0) {
+      const andereDiensten = await prisma.dienstBezetting.findMany({
+        where: {
+          medewerkerId: { in: medewerkerIds },
+          status: { not: "AFGEZEGD" },
+          dienst: {
+            id: { not: id },
+            datum: kalenderDatumUTC(lokaleDatumSleutel(datum)),
+            week: {
+              vestiging: {
+                organisatieId: bestaand.week.vestiging.organisatieId,
+              },
+            },
+          },
+        },
+        select: {
+          medewerkerId: true,
+          dienst: {
+            select: {
+              begintijd: true,
+              eindtijd: true,
+              week: {
+                select: {
+                  vestiging: {
+                    select: { id: true, naam: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const buffer = 60 * 60 * 1000;
+      const conflict = andereDiensten.find((bezetting) => {
+        if (bezetting.dienst.week.vestiging.id === bestaand.week.vestigingId) {
+          return false;
+        }
+        return (
+          begintijd.getTime() < bezetting.dienst.eindtijd.getTime() + buffer &&
+          eindtijd.getTime() > bezetting.dienst.begintijd.getTime() - buffer
+        );
+      });
+
+      if (conflict) {
+        return NextResponse.json(
+          {
+            fout: `De gewijzigde dienst conflicteert met een dienst in ${conflict.dienst.week.vestiging.naam}. Tussen vestigingen is 1 uur reistijd gereserveerd.`,
+            code: "ANDERE_VESTIGING_ZELFDE_DAG",
+          },
+          { status: 409 },
+        );
+      }
+    }
 
     const bijgewerkt = await prisma.dienst.update({
       where: { id },
