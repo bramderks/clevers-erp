@@ -734,7 +734,7 @@ async function haalWeekStatusOp(
         ? resultaat.beschikbaarheden
         : [];
 
-    return beschikbaarheden.length > 0
+    return beschikbaarheden.length >= 7
       ? "DOORGEGEVEN"
       : "NOG_DOORGEVEN";
   } catch (error) {
@@ -1638,7 +1638,7 @@ export default function BeschikbaarheidWeekSelector({
   async function zetAltijdBeschikbaarDezeWeek() {
     const week = geselecteerdeWeek;
 
-    if (!week || !wijzigingToegestaan) {
+    if (!week || !wijzigingToegestaan || loadingDagen) {
       return;
     }
 
@@ -1646,53 +1646,38 @@ export default function BeschikbaarheidWeekSelector({
       setError(null);
       setLoadingDagen(true);
 
-      const start = bepaalWeekStart(week);
-      if (!start) {
-        throw new Error("De weekdatum kon niet worden bepaald.");
+      const response = await fetch(
+        `/api/medewerkers/${encodeURIComponent(medewerkerId)}/beschikbaarheid`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            weekId: week.id,
+            altijdBeschikbaarWeek: true,
+          }),
+        },
+      );
+
+      const resultaat = await leesJsonResponse<{
+        fout?: string;
+        error?: string;
+      }>(response);
+
+      if (!response.ok) {
+        throw new Error(
+          resultaat.fout ??
+            resultaat.error ??
+            "De week kon niet als beschikbaar worden opgeslagen.",
+        );
       }
 
-      for (let index = 0; index < 7; index += 1) {
-        const datum = new Date(start);
-        datum.setDate(start.getDate() + index);
-        datum.setHours(12, 0, 0, 0);
-
-        const datumSleutel = formatteerDatumSleutel(datum);
-        const beginDatum = new Date(`${datumSleutel}T11:30:00`);
-        const eindDatum = new Date(`${datumSleutel}T21:00:00`);
-
-        const response = await fetch(
-          `/api/medewerkers/${encodeURIComponent(medewerkerId)}/beschikbaarheid`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              weekId: week.id,
-              datum: datum.toISOString(),
-              begintijd: beginDatum.toISOString(),
-              eindtijd: eindDatum.toISOString(),
-              status: "BESCHIKBAAR",
-              opmerking: "Altijd beschikbaar deze week",
-            }),
-          },
-        );
-
-        const resultaat = await leesJsonResponse<{
-          fout?: string;
-          error?: string;
-        }>(response);
-
-        if (!response.ok) {
-          throw new Error(
-            resultaat.fout ??
-              resultaat.error ??
-              "De week kon niet als altijd beschikbaar worden ingesteld.",
-          );
-        }
+      const start = bepaalWeekStart(week);
+      if (!start) {
+        throw new Error("De week is opgeslagen, maar de weekdatum kon niet worden bepaald.");
       }
 
       setDagenInvoer((vorige) => {
         const volgende = { ...vorige };
-        const start = bepaalWeekStart(week)!;
         for (let index = 0; index < 7; index += 1) {
           const datum = new Date(start);
           datum.setDate(start.getDate() + index);
@@ -1709,16 +1694,22 @@ export default function BeschikbaarheidWeekSelector({
         }
         return volgende;
       });
+
+      const nieuweStatus = await haalWeekStatusOp(medewerkerId, week.id);
       setWeekStatussen((vorige) => ({
         ...vorige,
-        [week.id]: "DOORGEGEVEN",
+        [week.id]: nieuweStatus,
       }));
+
+      if (nieuweStatus !== "DOORGEGEVEN") {
+        throw new Error("De week is opgeslagen, maar alle zeven dagen konden niet worden bevestigd. Vernieuw de pagina en controleer de week.");
+      }
     } catch (error) {
       console.error("Altijd beschikbaar instellen mislukt:", error);
       setError(
         error instanceof Error
           ? error.message
-          : "De week kon niet als altijd beschikbaar worden ingesteld.",
+          : "De week kon niet als beschikbaar worden opgeslagen.",
       );
     } finally {
       setLoadingDagen(false);
