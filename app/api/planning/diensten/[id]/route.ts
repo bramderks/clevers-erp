@@ -285,3 +285,66 @@ async function normaliseerKalenderDatum(dienst: {
     where: { id: dienst.id },
     data: { datum: juisteDatum },
   });}
+
+/*
+ * ============================================================
+ * DIENST VERWIJDEREN
+ * ============================================================
+ *
+ * Verwijderen is alleen toegestaan voor de eigenaar met
+ * planning.delete-rechten op de vestiging van de dienst.
+ * Gerelateerde diensttags, bezettingen en ruilverzoeken worden
+ * door de ingestelde Prisma-relaties mee verwijderd.
+ */
+export async function DELETE(
+  _request: Request,
+  context: RouteContext,
+) {
+  try {
+    const { id } = await context.params;
+    const dienst = await haalDienstOp(id);
+
+    if (!dienst) {
+      return NextResponse.json(
+        { fout: "Dienst niet gevonden." },
+        { status: 404 },
+      );
+    }
+
+    const organisatieId = await haalOrganisatieIdOp(
+      dienst.week.vestigingId,
+    );
+    const eigenaar = await isEigenaar(organisatieId);
+
+    if (!eigenaar) {
+      return NextResponse.json(
+        { fout: "Alleen de eigenaar kan een dienst verwijderen." },
+        { status: 403 },
+      );
+    }
+
+    const toegang = await hasPermissionForVestiging(
+      permissions.planning.delete,
+      dienst.week.vestigingId,
+    );
+
+    if (!toegang) {
+      return NextResponse.json(
+        { fout: "Je hebt geen rechten om deze dienst te verwijderen." },
+        { status: 403 },
+      );
+    }
+
+    await prisma.dienst.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ succes: true, verwijderdId: id });
+  } catch (error) {
+    console.error("Fout bij verwijderen dienst:", error);
+    return NextResponse.json(
+      { fout: "De dienst kon niet worden verwijderd." },
+      { status: 500 },
+    );
+  }
+}
