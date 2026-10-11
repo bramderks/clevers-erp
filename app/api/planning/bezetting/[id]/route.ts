@@ -40,12 +40,16 @@ async function haalBezettingOp(
 
       dienst: {
         select: {
+          datum: true,
+          begintijd: true,
+          eindtijd: true,
           week: {
             select: {
               vestigingId: true,
-
               vestiging: {
                 select: {
+                  id: true,
+                  naam: true,
                   organisatieId: true,
                 },
               },
@@ -316,6 +320,71 @@ export async function PATCH(
             },
             { status: 409 },
           );
+        }
+
+        /*
+         * Houd bij het wijzigen van een bezetting dezelfde
+         * vestigingsoverlapregel aan als bij het toevoegen:
+         * tussen verschillende vestigingen is één uur reistijd nodig.
+         */
+        if (body.medewerkerId !== bestaandeBezetting.medewerkerId) {
+          const andereVestigingBezettingen =
+            await prisma.dienstBezetting.findMany({
+              where: {
+                medewerkerId: body.medewerkerId,
+                status: { not: "AFGEZEGD" },
+                dienst: {
+                  id: { not: bestaandeBezetting.dienstId },
+                  datum: bestaandeBezetting.dienst.datum,
+                  week: {
+                    vestiging: {
+                      organisatieId,
+                    },
+                  },
+                },
+              },
+              select: {
+                dienst: {
+                  select: {
+                    begintijd: true,
+                    eindtijd: true,
+                    week: {
+                      select: {
+                        vestiging: {
+                          select: { id: true, naam: true },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            });
+
+          const conflict = andereVestigingBezettingen.find((bezetting) => {
+            if (
+              bezetting.dienst.week.vestiging.id === vestigingId
+            ) {
+              return false;
+            }
+
+            const buffer = 60 * 60 * 1000;
+            return (
+              bestaandeBezetting.dienst.begintijd.getTime() <
+                bezetting.dienst.eindtijd.getTime() + buffer &&
+              bestaandeBezetting.dienst.eindtijd.getTime() >
+                bezetting.dienst.begintijd.getTime() - buffer
+            );
+          });
+
+          if (conflict) {
+            return NextResponse.json(
+              {
+                fout: `Deze medewerker heeft op dezelfde dag al een dienst in ${conflict.dienst.week.vestiging.naam}. Tussen vestigingen is 1 uur reistijd gereserveerd.`,
+                code: "ANDERE_VESTIGING_ZELFDE_DAG",
+              },
+              { status: 409 },
+            );
+          }
         }
       }
 
