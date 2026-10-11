@@ -1082,21 +1082,15 @@ export async function POST(
       }
 
       const weekStart = beginVanISOWeek(toegang.week.jaar, toegang.week.weeknummer);
-      await controleerAaneengeslotenAfwezigheid(
-        medewerkerId,
-        Array.from({ length: 7 }, (_, index) => {
-          const datum = new Date(weekStart);
-          datum.setUTCDate(datum.getUTCDate() + index);
-          return datum;
-        }),
-      );
       const transacties = Array.from({ length: 7 }, (_, index) => {
         const dag = new Date(weekStart);
         dag.setUTCDate(dag.getUTCDate() + index);
-        const begintijd = new Date(dag);
-        begintijd.setUTCHours(11, 30, 0, 0);
-        const eindtijd = new Date(dag);
-        eindtijd.setUTCHours(21, 0, 0, 0);
+        const datumSleutel = dag.toISOString().slice(0, 10);
+        const begintijd = maakNederlandseDatum(datumSleutel, "11:30");
+        const eindtijd = maakNederlandseDatum(datumSleutel, "21:00");
+        if (!begintijd || !eindtijd) {
+          throw new RouteFout("De standaardbeschikbaarheid kon niet worden berekend.", 400);
+        }
 
         return prisma.beschikbaarheid.upsert({
           where: {
@@ -1145,13 +1139,15 @@ export async function POST(
       }
 
       const weekStart = beginVanISOWeek(toegang.week.jaar, toegang.week.weeknummer);
+      const weekDatums = Array.from({ length: 7 }, (_, index) => {
+        const datum = new Date(weekStart);
+        datum.setUTCDate(datum.getUTCDate() + index);
+        return datum;
+      });
+      await controleerAaneengeslotenAfwezigheid(medewerkerId, weekDatums);
       await controleerWeekendBeschikbaarheid(
         medewerkerId,
-        Array.from({ length: 7 }, (_, index) => {
-          const datum = new Date(weekStart);
-          datum.setUTCDate(datum.getUTCDate() + index);
-          return { datum, beschikbaar: false };
-        }),
+        weekDatums.map((datum) => ({ datum, beschikbaar: false })),
       );
       const transacties = Array.from({ length: 7 }, (_, index) => {
         const dag = new Date(weekStart);
