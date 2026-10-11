@@ -1181,15 +1181,33 @@ export default function DienstBewerkForm({
           },
         );
 
-      const data: unknown =
-        await response.json();
+      const responseTekst = await response.text();
+      let data: unknown = null;
+
+      if (responseTekst.trim()) {
+        try {
+          data = JSON.parse(responseTekst) as unknown;
+        } catch {
+          throw new Error(
+            "De server gaf een ongeldig antwoord terug bij het opslaan van de dienst.",
+          );
+        }
+      }
 
       if (!response.ok) {
         throw new Error(
           foutmeldingUitResponse(
             data,
-            "De dienst kon niet worden opgeslagen.",
+            response.status === 405
+              ? "De wijzigroute voor diensten is niet beschikbaar. Ververs de pagina en probeer opnieuw."
+              : "De dienst kon niet worden opgeslagen.",
           ),
+        );
+      }
+
+      if (data === null) {
+        throw new Error(
+          "De server heeft de dienst niet bevestigd. Controleer de planning voordat je opnieuw opslaat.",
         );
       }
 
