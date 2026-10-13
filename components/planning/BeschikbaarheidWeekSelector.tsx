@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { isBeschikbaarheidDeadlineVerstreken } from "@/lib/beschikbaarheid/deadline";
 
 /* ============================================================
    TYPES
@@ -81,8 +82,8 @@ type WekenApiResponse = {
    CONSTANTEN
    ============================================================ */
 
-const MIN_TIJD = "11:30";
-const MAX_TIJD = "21:00";
+const MIN_TIJD = "09:00";
+const MAX_TIJD = "23:00";
 const TIJD_INTERVAL = 15;
 
 /* ============================================================
@@ -587,19 +588,7 @@ function standaardDag(
 function isDeadlineVerstreken(
   week: SelectorWeek,
 ): boolean {
-  if (!week.beschikbaarheidDeadline) {
-    return false;
-  }
-
-  const deadline = parseDatum(
-    week.beschikbaarheidDeadline,
-  );
-
-  if (!deadline) {
-    return false;
-  }
-
-  return new Date() > deadline;
+  return isBeschikbaarheidDeadlineVerstreken(week);
 }
 
 function formatteerDeadline(
@@ -1471,7 +1460,7 @@ export default function BeschikbaarheidWeekSelector({
           (vorige) => ({
             ...vorige,
             [datum]:
-              "Kies geldige tijden tussen 11:30 en 21:00 in stappen van 15 minuten.",
+              "Kies geldige tijden tussen 09:00 en 23:00 in stappen van 15 minuten.",
           }),
         );
 
