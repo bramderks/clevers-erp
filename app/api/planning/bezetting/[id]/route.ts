@@ -541,6 +541,21 @@ export async function DELETE(
       );
     }
 
+    const urenregistratie = await prisma.urenRegistratie.findUnique({
+      where: { dienstBezettingId: id },
+      select: { id: true },
+    });
+
+    if (urenregistratie) {
+      return NextResponse.json(
+        {
+          fout: "Deze bezetting kan niet worden verwijderd omdat er een urenregistratie aan gekoppeld is.",
+          code: "BEZETTING_HEEFT_URENREGISTRATIE",
+        },
+        { status: 409 },
+      );
+    }
+
     await prisma.dienstBezetting.delete({
       where: {
         id,
