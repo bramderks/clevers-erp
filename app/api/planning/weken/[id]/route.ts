@@ -471,6 +471,29 @@ export async function DELETE(
       );
     }
 
+    // Verwijderen van een week kan via cascade ook dienstbezettingen en
+    // urenregistraties verwijderen. Bescherm daarom historische/geverifieerde uren.
+    const historischeUren = await prisma.dienstBezetting.findFirst({
+      where: { dienst: { weekId: id } },
+      select: {
+        status: true,
+        urenregistratie: { select: { id: true } },
+      },
+    });
+
+    if (
+      historischeUren &&
+      (historischeUren.status === "GEWERKT" || historischeUren.urenregistratie !== null)
+    ) {
+      return NextResponse.json(
+        {
+          fout: "Deze planningweek kan niet worden verwijderd omdat er gewerkte uren of urenregistraties aan gekoppeld zijn.",
+          code: "WEEK_HEEFT_URENREGISTRATIE",
+        },
+        { status: 409 },
+      );
+    }
+
     await prisma.week.delete({
       where: {
         id,
