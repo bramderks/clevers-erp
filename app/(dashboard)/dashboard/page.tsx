@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 import DashboardCollapsibleCard from "@/components/dashboard/DashboardCollapsibleCard";
 import PageHeader from "@/components/ui/PageHeader";
 import OpenDienstenMedewerker from "@/components/dashboard/OpenDienstenMedewerker";
-import { formatDienstTijd } from "@/lib/planning/tijd";
+import { formatDienstTijd, kalenderDatumUTC, lokaleDatumSleutel } from "@/lib/planning/tijd";
 import OwnerWorkflowTasks from "@/components/dashboard/OwnerWorkflowTasks";
 import OwnerUpcomingServices from "@/components/dashboard/OwnerUpcomingServices";
 
@@ -855,7 +855,7 @@ export default async function DashboardPage() {
       status: { in: ["GEPLAND", "BEVESTIGD"] },
       medewerker: { actief: false },
       dienst: {
-        datum: { gte: vandaag },
+        datum: { gte: vandaagAlsKalenderdatum },
         week: {
           vestiging: {
             organisatieId: {
