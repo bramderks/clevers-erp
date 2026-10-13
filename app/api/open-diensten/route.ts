@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { kalenderDatumUTC, lokaleDatumSleutel } from "@/lib/planning/tijd";
 
 export async function GET() {
   const gebruiker = await getCurrentUser();
@@ -34,7 +35,7 @@ export async function GET() {
       status: "OPEN",
       medewerkerId: null,
       dienst: {
-        datum: { gte: new Date() },
+        datum: { gte: kalenderDatumUTC(lokaleDatumSleutel(new Date())) },
         week: {
           ...(isEigenaar ? {} : { status: "GEPUBLICEERD" }),
           vestiging: { medewerkers: { some: { medewerkerId } } },
@@ -112,7 +113,7 @@ export async function POST(request: Request) {
       status: "OPEN",
       medewerkerId: null,
       dienst: {
-        datum: { gte: new Date() },
+        datum: { gte: kalenderDatumUTC(lokaleDatumSleutel(new Date())) },
         week: {
           status: "GEPUBLICEERD",
           vestiging: { medewerkers: { some: { medewerkerId } } },
