@@ -1370,6 +1370,9 @@ export async function POST(
               },
             },
             include: {
+              urenregistratie: {
+                select: { id: true },
+              },
               dienst: {
                 include: {
                   bezetting: {
@@ -1410,6 +1413,13 @@ export async function POST(
         for (
           const bezetting of overlappende
         ) {
+          // Een vaste urenafspraak mag geen gewerkte of al geregistreerde
+          // uren wijzigen/verwijderen. Sla zulke bestaande bezettingen over.
+          if (bezetting.status === "GEWERKT" || bezetting.urenregistratie) {
+            overgeslagen += 1;
+            continue;
+          }
+
           const dienst =
             bezetting.dienst;
 
