@@ -48,6 +48,8 @@ export default function SidebarClient({
         credentials: "include",
       });
     } finally {
+      // Force a full reload so no authenticated client-side state survives logout.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.href = "/login";
     }
   }
