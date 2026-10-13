@@ -6,7 +6,6 @@ import {
   BESCHIKBAARHEID_TEST_EINDDATUM,
   berekenBeschikbaarheidDeadline,
   isTestOpenVoorWeek,
-  volgendeWeekStart,
 } from "@/lib/beschikbaarheid/deadline";
 
 type RouteContext = {
