@@ -478,6 +478,13 @@ export async function DELETE(
       );
     }
 
+    if (week.status === "AFGESLOTEN") {
+      return NextResponse.json(
+        { fout: "Een afgesloten planningweek kan niet worden verwijderd." },
+        { status: 409 },
+      );
+    }
+
     // Verwijderen van een week kan via cascade ook dienstbezettingen en
     // urenregistraties verwijderen. Bescherm daarom historische/geverifieerde uren.
     const [historischeUren, loonkostenSnapshot] = await Promise.all([
