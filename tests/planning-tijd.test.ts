@@ -1,4 +1,8 @@
 import { test } from "node:test";
+import {
+  isBeschikbaarheidDeadlineVerstreken,
+  isTestOpenVoorWeek,
+} from "../lib/beschikbaarheid/deadline";
 import * as assert from "node:assert/strict";
 
 import {
@@ -75,4 +79,34 @@ test("overlappende functies tellen dezelfde tijd maar één keer", async () => {
   assert.equal(samengevoegd.length, 1);
   assert.equal(samengevoegd[0].begintijd.getTime(), basis.getTime());
   assert.equal(samengevoegd[0].eindtijd.getTime(), einde.getTime());
+});
+
+
+test("beschikbaarheidstestfase opent vanaf volgende week tot 1 december", () => {
+  const vandaag = new Date("2026-10-13T12:00:00.000Z");
+
+  assert.equal(isTestOpenVoorWeek(2026, 42, vandaag), false);
+  assert.equal(isTestOpenVoorWeek(2026, 43, vandaag), true);
+  assert.equal(isTestOpenVoorWeek(2026, 50, vandaag), true);
+  assert.equal(
+    isTestOpenVoorWeek(2026, 43, new Date("2026-12-01T00:00:00.000Z")),
+    false,
+  );
+});
+
+test("testfase overschrijft tijdelijk een verstreken beschikbaarheidsdeadline", () => {
+  const week = {
+    jaar: 2026,
+    weeknummer: 43,
+    beschikbaarheidDeadline: "2026-10-01T23:59:59.999Z",
+  };
+
+  assert.equal(
+    isBeschikbaarheidDeadlineVerstreken(week, new Date("2026-10-13T12:00:00.000Z")),
+    false,
+  );
+  assert.equal(
+    isBeschikbaarheidDeadlineVerstreken(week, new Date("2026-12-01T00:00:00.000Z")),
+    true,
+  );
 });
