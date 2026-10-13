@@ -136,12 +136,11 @@ export async function genereerVerloning(
       },
     );
 
-  if (
-    bestaandePeriode?.status ===
-    "VERWERKT"
-  ) {
+  if (bestaandePeriode && bestaandePeriode.status !== "AANGEMAAKT") {
     throw new Error(
-      `De verloningsperiode ${maand}-${jaar} is al verwerkt en kan niet opnieuw worden gegenereerd.`,
+      bestaandePeriode.status === "VERWERKT"
+        ? `De verloningsperiode ${maand}-${jaar} is al verwerkt en kan niet opnieuw worden gegenereerd.`
+        : `De verloningsperiode ${maand}-${jaar} staat al klaar voor medewerkercontrole en kan niet opnieuw worden gegenereerd.`,
     );
   }
 
@@ -197,9 +196,12 @@ export async function genereerVerloning(
   const actueleIds = actueleBezettingen.map((b) => b.id);
 
   await prisma.$transaction(async (tx) => {
+    // Alleen verouderde, nog niet gecontroleerde registraties mogen worden
+    // opgeruimd. Definitieve en afgekeurde uren zijn historische gegevens.
     await tx.urenRegistratie.deleteMany({
       where: {
         datum: { gte: periodeStart, lt: periodeEinde },
+        status: "TE_CONTROLEREN",
         ...(actueleIds.length > 0
           ? { dienstBezettingId: { notIn: actueleIds } }
           : {}),
@@ -207,48 +209,34 @@ export async function genereerVerloning(
     });
 
     for (const bezetting of actueleBezettingen) {
-      const berekening = berekenGewerkteUren(
-        bezetting.dienst.begintijd,
-        bezetting.dienst.eindtijd,
-      );
-
       const bestaande = await tx.urenRegistratie.findUnique({
         where: { dienstBezettingId: bezetting.id },
         select: { id: true },
       });
 
-      if (bestaande) {
-        await tx.urenRegistratie.update({
-          where: { id: bestaande.id },
-          data: {
-            medewerkerId: bezetting.medewerkerId!,
-            vestigingId: bezetting.dienst.week.vestigingId,
-            datum: lokaleKalenderDatumUTC(bezetting.dienst.begintijd),
-            werkelijkeBegintijd: bezetting.dienst.begintijd,
-            werkelijkeEindtijd: bezetting.dienst.eindtijd,
-            pauzeMinuten: berekening.pauzeMinuten,
-            gewerkteUren: berekening.gewerkteUren,
-            status: "DEFINITIEF",
-            gecontroleerdDoorId: null,
-            gecontroleerdOp: null,
-          },
-        });
-      } else {
-        await tx.urenRegistratie.create({
-          data: {
-            dienstBezettingId: bezetting.id,
-            medewerkerId: bezetting.medewerkerId!,
-            vestigingId: bezetting.dienst.week.vestigingId,
-            datum: lokaleKalenderDatumUTC(bezetting.dienst.begintijd),
-            taak: null,
-            werkelijkeBegintijd: bezetting.dienst.begintijd,
-            werkelijkeEindtijd: bezetting.dienst.eindtijd,
-            pauzeMinuten: berekening.pauzeMinuten,
-            gewerkteUren: berekening.gewerkteUren,
-            status: "DEFINITIEF",
-          },
-        });
-      }
+      // Een bestaande registratie kan al door de eigenaar zijn aangepast,
+      // definitief gemaakt of afgekeurd. Nooit opnieuw overschrijven.
+      if (bestaande) continue;
+
+      const berekening = berekenGewerkteUren(
+        bezetting.dienst.begintijd,
+        bezetting.dienst.eindtijd,
+      );
+
+      await tx.urenRegistratie.create({
+        data: {
+          dienstBezettingId: bezetting.id,
+          medewerkerId: bezetting.medewerkerId!,
+          vestigingId: bezetting.dienst.week.vestigingId,
+          datum: lokaleKalenderDatumUTC(bezetting.dienst.begintijd),
+          taak: null,
+          werkelijkeBegintijd: bezetting.dienst.begintijd,
+          werkelijkeEindtijd: bezetting.dienst.eindtijd,
+          pauzeMinuten: berekening.pauzeMinuten,
+          gewerkteUren: berekening.gewerkteUren,
+          status: "TE_CONTROLEREN",
+        },
+      });
     }
   });
 
