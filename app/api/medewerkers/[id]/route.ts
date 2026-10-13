@@ -8,6 +8,7 @@ import {
 } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { medewerkerService } from "@/lib/services/medewerker.service";
+import { kalenderDatumUTC, lokaleDatumSleutel } from "@/lib/planning/tijd";
 
 type RouteContext = {
   params: Promise<{
@@ -570,7 +571,7 @@ export async function PATCH(
           where: {
             medewerkerId: id,
             status: { in: ["GEPLAND", "BEVESTIGD"] },
-            dienst: { datum: { gte: new Date() } },
+            dienst: { datum: { gte: kalenderDatumUTC(lokaleDatumSleutel(new Date())) } },
           },
         });
 
