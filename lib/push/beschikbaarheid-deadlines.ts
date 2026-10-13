@@ -92,11 +92,29 @@ export async function verstuurBeschikbaarheidDeadlineHerinneringen() {
 
   // Haal ook weken met een oude of lege opgeslagen deadline op: tijdens de
   // testfase geldt een tijdelijke effectieve deadline, los van die opslag.
+  const huidigeJaar = nu.getUTCFullYear();
+  const mogelijkeWeken = [
+    {
+      beschikbaarheidDeadline: {
+        gt: minimaleDeadline,
+        lte: maximaleDeadline,
+      },
+    },
+    {
+      beschikbaarheidDeadline: null,
+      jaar: { gte: huidigeJaar, lte: huidigeJaar + 1 },
+    },
+    ...(nu < BESCHIKBAARHEID_TEST_EINDDATUM
+      ? [{ jaar: huidigeJaar }]
+      : []),
+  ];
+
   const weken = await prisma.week.findMany({
     where: {
       vestiging: {
         actief: true,
       },
+      OR: mogelijkeWeken,
     },
     select: {
       id: true,
