@@ -6,6 +6,13 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   {
+    files: ["scripts/**/*.cjs"],
+    rules: {
+      // These scripts are explicitly CommonJS; require() is the correct module syntax.
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
+  {
     rules: {
       // Existing data-loading effects intentionally update local state after
       // asynchronous work. This rule is too strict for that established pattern.
