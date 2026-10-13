@@ -79,8 +79,6 @@ export default function LoonkostenRapport(p: {
 }) {
   const router = useRouter();
 
-  const router = useRouter();
-
   const [omzet, setOmzet] = useState(
     p.omzet ? String(p.omzet).replace(".", ",") : "",
   );
