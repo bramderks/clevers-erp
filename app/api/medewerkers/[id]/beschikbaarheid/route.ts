@@ -1083,16 +1083,11 @@ export async function POST(
     }
 
     /*
-     * Een teamleider mag via de expliciete knop
-     * "Altijd beschikbaar deze week" een volledige
-     * week als beschikbaar instellen. Gewone dagelijkse
-     * wijzigingen blijven voor de teamleider geblokkeerd.
+     * De expliciete weekknop gebruikt dezelfde toegangscontrole als
+     * dagelijkse wijzigingen. Alleen eigenaar/superadmin of de eigen
+     * medewerker vóór de deadline kan de hele week wijzigen.
      */
     if (body.altijdBeschikbaarWeek === true) {
-      if (!toegang.isTeamleider && !toegang.isEigenaar && !toegang.isSuperAdmin && !toegang.isEigenMedewerker) {
-        return fout("Je hebt geen toestemming om deze week als altijd beschikbaar in te stellen.", 403);
-      }
-
       const weekStart = beginVanISOWeek(toegang.week.jaar, toegang.week.weeknummer);
       const transacties = Array.from({ length: 7 }, (_, index) => {
         const dag = new Date(weekStart);
@@ -1146,10 +1141,6 @@ export async function POST(
      * in één transactie en telt de week daarna als doorgegeven.
      */
     if (body.weekNietBeschikbaar === true) {
-      if (!toegang.isTeamleider && !toegang.isEigenaar && !toegang.isSuperAdmin && !toegang.isEigenMedewerker) {
-        return fout("Je hebt geen toestemming om deze week als niet beschikbaar in te stellen.", 403);
-      }
-
       const weekStart = beginVanISOWeek(toegang.week.jaar, toegang.week.weeknummer);
       const weekDatums = Array.from({ length: 7 }, (_, index) => {
         const datum = new Date(weekStart);
