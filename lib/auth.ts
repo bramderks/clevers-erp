@@ -26,7 +26,7 @@ export async function getCurrentUser() {
   try {
     const payload = await controleerToken(token);
     if (!payload.sub) return null;
-    return prisma.systeemGebruiker.findUnique({
+    const gebruiker = await prisma.systeemGebruiker.findUnique({
       where: { id: payload.sub as string },
       include: {
         organisaties: { include: { organisatie: true, rol: true } },
@@ -34,6 +34,11 @@ export async function getCurrentUser() {
         medewerker: true,
       },
     });
+
+    // Inactieve accounts mogen niet blijven doorwerken met een nog geldig
+    // JWT-cookie. Alle routes die getCurrentUser gebruiken vallen hiermee
+    // direct terug op de bestaande niet-ingelogd-afhandeling.
+    return gebruiker?.actief ? gebruiker : null;
   } catch {
     return null;
   }
