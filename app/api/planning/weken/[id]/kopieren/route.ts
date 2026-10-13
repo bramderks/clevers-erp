@@ -2,10 +2,36 @@ import { NextResponse } from "next/server";
 
 import { getCurrentUser, isEigenaar } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { kalenderDatumUTC, lokaleDatumSleutel, nederlandseDatumTijd, formatDienstTijd } from "@/lib/planning/tijd";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
+
+function beginVanISOWeek(jaar: number, weeknummer: number) {
+  const datum = new Date(Date.UTC(jaar, 0, 4));
+  const dag = datum.getUTCDay() || 7;
+  datum.setUTCDate(datum.getUTCDate() - dag + 1 + (weeknummer - 1) * 7);
+  datum.setUTCHours(0, 0, 0, 0);
+  return datum;
+}
+
+function isoWeekVanDatum(datum: Date) {
+  const utc = new Date(Date.UTC(datum.getUTCFullYear(), datum.getUTCMonth(), datum.getUTCDate()));
+  const dag = utc.getUTCDay() || 7;
+  utc.setUTCDate(utc.getUTCDate() + 4 - dag);
+  const jaar = utc.getUTCFullYear();
+  const jaarStart = new Date(Date.UTC(jaar, 0, 1));
+  const weeknummer = Math.ceil((((utc.getTime() - jaarStart.getTime()) / 86400000) + 1) / 7);
+  return { jaar, weeknummer };
+}
+
+function verschuifKalenderdatum(datum: Date, verschilDagen: number) {
+  const sleutel = lokaleDatumSleutel(datum);
+  const [jaar, maand, dag] = sleutel.split("-").map(Number);
+  const verschoven = new Date(Date.UTC(jaar, maand - 1, dag + verschilDagen));
+  return lokaleDatumSleutel(verschoven);
+}
 
 export async function POST(
   request: Request,
@@ -26,12 +52,22 @@ export async function POST(
 
     if (
       !Number.isInteger(doelJaar) ||
+      doelJaar < 2000 ||
       !Number.isInteger(doelWeeknummer) ||
       doelWeeknummer < 1 ||
       doelWeeknummer > 53
     ) {
       return NextResponse.json(
         { fout: "Jaar en weeknummer zijn ongeldig." },
+        { status: 400 },
+      );
+    }
+
+    const doelWeekStart = beginVanISOWeek(doelJaar, doelWeeknummer);
+    const isoDoelWeek = isoWeekVanDatum(doelWeekStart);
+    if (isoDoelWeek.jaar !== doelJaar || isoDoelWeek.weeknummer !== doelWeeknummer) {
+      return NextResponse.json(
+        { fout: "Deze ISO-week bestaat niet in het gekozen jaar." },
         { status: 400 },
       );
     }
@@ -79,7 +115,7 @@ export async function POST(
       );
     }
 
-    const verschilDagen = (doelWeeknummer - bron.weeknummer) * 7;
+    const verschilDagen = Math.round((doelWeekStart.getTime() - beginVanISOWeek(bron.jaar, bron.weeknummer).getTime()) / 86400000);
 
     const resultaat = await prisma.$transaction(async (tx) => {
       const doelWeek = await tx.week.create({
@@ -93,14 +129,10 @@ export async function POST(
       });
 
       for (const dienst of bron.diensten) {
-        const datum = new Date(dienst.datum);
-        datum.setDate(datum.getDate() + verschilDagen);
-
-        const begintijd = new Date(dienst.begintijd);
-        begintijd.setDate(begintijd.getDate() + verschilDagen);
-
-        const eindtijd = new Date(dienst.eindtijd);
-        eindtijd.setDate(eindtijd.getDate() + verschilDagen);
+        const datumSleutel = verschuifKalenderdatum(dienst.datum, verschilDagen);
+        const datum = kalenderDatumUTC(datumSleutel);
+        const begintijd = nederlandseDatumTijd(datumSleutel, formatDienstTijd(dienst.begintijd));
+        const eindtijd = nederlandseDatumTijd(datumSleutel, formatDienstTijd(dienst.eindtijd));
 
         const nieuweDienst = await tx.dienst.create({
           data: {
