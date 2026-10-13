@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  berekenBeschikbaarheidDeadline as berekenDeadline,
+  isTestOpenVoorWeek,
+} from "@/lib/beschikbaarheid/deadline";
 
 type RouteContext = {
   params: Promise<{
@@ -287,78 +291,7 @@ function eindeVanISOWeek(
   return einde;
 }
 
-const BESCHIKBAARHEID_TEST_EINDDATUM = new Date(
-  "2026-12-01T00:00:00.000Z",
-);
 
-function volgendeWeekStart(): Date {
-  const nu = new Date();
-  const vandaag = new Date(
-    Date.UTC(
-      nu.getUTCFullYear(),
-      nu.getUTCMonth(),
-      nu.getUTCDate(),
-      0,
-      0,
-      0,
-      0,
-    ),
-  );
-
-  const dag = vandaag.getUTCDay() || 7;
-  vandaag.setUTCDate(
-    vandaag.getUTCDate() + (8 - dag),
-  );
-
-  return vandaag;
-}
-
-function isTestOpenVoorWeek(
-  jaar: number,
-  weeknummer: number,
-): boolean {
-  return (
-    new Date() < BESCHIKBAARHEID_TEST_EINDDATUM &&
-    beginVanISOWeek(jaar, weeknummer) >=
-      volgendeWeekStart()
-  );
-}
-
-function berekenDeadline(
-  jaar: number,
-  weeknummer: number,
-): Date {
-  const weekStart =
-    beginVanISOWeek(
-      jaar,
-      weeknummer,
-    );
-
-  const deadline =
-    new Date(weekStart);
-
-  /*
-   * Standaarddeadline:
-   * vier weken vóór de betreffende
-   * planningweek, tot 23:59:59.
-   *
-   * Als er op de week zelf een
-   * beschikbaarheidDeadline staat,
-   * wordt die gebruikt.
-   */
-  deadline.setUTCDate(
-    deadline.getUTCDate() - 28,
-  );
-
-  deadline.setUTCHours(
-    23,
-    59,
-    59,
-    999,
-  );
-
-  return deadline;
-}
 
 function deadlineVerstreken(
   deadline: Date,
