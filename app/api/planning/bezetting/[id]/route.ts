@@ -7,6 +7,7 @@ import {
 } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { lokaleDagGrenzen } from "@/lib/planning/tijd";
 
 const TOEGESTANE_STATUSSEN = [
   "OPEN",
@@ -336,6 +337,9 @@ export async function PATCH(
          * tussen verschillende vestigingen is één uur reistijd nodig.
          */
         if (body.medewerkerId !== bestaandeBezetting.medewerkerId) {
+          const dagGrenzen = lokaleDagGrenzen(
+            bestaandeBezetting.dienst.begintijd,
+          );
           const andereVestigingBezettingen =
             await prisma.dienstBezetting.findMany({
               where: {
@@ -343,7 +347,7 @@ export async function PATCH(
                 status: { not: "AFGEZEGD" },
                 dienst: {
                   id: { not: bestaandeBezetting.dienstId },
-                  datum: bestaandeBezetting.dienst.datum,
+                  begintijd: { gte: dagGrenzen.start, lt: dagGrenzen.einde },
                   week: {
                     vestiging: {
                       organisatieId,
