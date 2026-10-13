@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, Lock, Users, X } from "lucide-react";
 import { formatDienstDatum } from "@/lib/planning/tijd";
 
@@ -75,6 +76,8 @@ export default function LoonkostenRapport(p: {
     afgeslotenOp: string | null;
   } | null;
 }) {
+  const router = useRouter();
+
   const [omzet, setOmzet] = useState(
     p.omzet ? String(p.omzet).replace(".", ",") : "",
   );
@@ -108,13 +111,14 @@ export default function LoonkostenRapport(p: {
     const eerste = new Date(nieuwJaar, 0, 4);
     const eersteDag = eerste.getDay() || 7;
     const nieuwWeek = Math.ceil((((date.getTime() - eerste.getTime()) / 86400000) + eersteDag - 1) / 7);
-    window.location.href =
+    router.push(
       "/rapportages?vestiging=" +
       encodeURIComponent(p.vestigingId) +
       "&jaar=" +
       encodeURIComponent(String(nieuwJaar)) +
       "&week=" +
-      encodeURIComponent(String(nieuwWeek));
+      encodeURIComponent(String(nieuwWeek)),
+    );
   };
 
   const navigerenForm = (e: React.FormEvent<HTMLFormElement>) => {
@@ -126,7 +130,8 @@ export default function LoonkostenRapport(p: {
       "&jaar=" +
       encodeURIComponent(String(f.get("jaar") || "")) +
       "&week=" +
-      encodeURIComponent(String(f.get("week") || ""));
+      encodeURIComponent(String(f.get("week") || "")),
+    );
   };
 
   const opslaan = async () => {
