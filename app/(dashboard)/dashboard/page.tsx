@@ -245,6 +245,7 @@ export default async function DashboardPage() {
           id: true,
           jaar: true,
           weeknummer: true,
+          status: true,
           beschikbaarheidDeadline: true,
 
           vestiging: {
@@ -448,6 +449,7 @@ export default async function DashboardPage() {
 
     const openBeschikbaarheid = !isEigenaarOfSuperAdmin
       ? beschikbaarheidWeken.filter((week) => {
+          if (week.status === "AFGESLOTEN") return false;
           const maandag = maandagVanWeek(week.jaar, week.weeknummer);
           const zondag = new Date(maandag);
           zondag.setDate(zondag.getDate() + 6);
