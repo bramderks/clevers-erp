@@ -14,7 +14,7 @@ import {
 } from "@/lib/prisma";
 
 import { verstuurDirecteOpenDienstMelding } from "@/lib/push/open-diensten";
-import { kalenderDatumUTC, lokaleDatumSleutel, lokaleKalenderDatumUTC, TIJD_INTERVAL } from "@/lib/planning/tijd";
+import { kalenderDatumUTC, lokaleDatumSleutel, TIJD_INTERVAL } from "@/lib/planning/tijd";
 
 const DATUM_FOUT =
   "Datum moet een geldige datum zijn.";
