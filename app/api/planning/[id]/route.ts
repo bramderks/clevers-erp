@@ -370,6 +370,13 @@ export async function PATCH(
       );
     }
 
+    if (bestaandeWeek.status === "AFGESLOTEN") {
+      return NextResponse.json(
+        { fout: "Een afgesloten planningweek kan niet via deze route worden heropend of gewijzigd." },
+        { status: 409 },
+      );
+    }
+
     /*
      * Alleen status mag handmatig worden gewijzigd.
      *
