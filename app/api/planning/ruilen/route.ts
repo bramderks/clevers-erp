@@ -571,25 +571,53 @@ export async function POST(
         );
       }
 
-      const conflicten = await prisma.dienstBezetting.findMany({
+      const bestaandeDiensten = await prisma.dienstBezetting.findMany({
         where: {
           medewerkerId: {
             in: kandidaten.map((kandidaat) => kandidaat.id),
           },
-          status: { notIn: ["AFGEZEGD"] },
+          status: { not: "AFGEZEGD" },
           dienst: {
             datum: bezetting.dienst.datum,
-            begintijd: { lt: bezetting.dienst.eindtijd },
-            eindtijd: { gt: bezetting.dienst.begintijd },
+            week: {
+              vestiging: {
+                organisatieId: vestiging.organisatieId,
+              },
+            },
           },
         },
         select: {
           medewerkerId: true,
+          dienst: {
+            select: {
+              id: true,
+              begintijd: true,
+              eindtijd: true,
+              week: {
+                select: {
+                  vestigingId: true,
+                },
+              },
+            },
+          },
         },
       });
 
       const conflicterendeMedewerkerIds = new Set(
-        conflicten
+        bestaandeDiensten
+          .filter((andere) => {
+            // Een medewerker mag niet tweemaal op dezelfde dienst staan.
+            if (andere.dienst.id === bezetting.dienst.id) return true;
+            // Overlap op dezelfde vestiging is bewust toegestaan voor meerdere functies.
+            if (andere.dienst.week.vestigingId === vestiging.id) return false;
+            const buffer = 60 * 60 * 1000;
+            return (
+              bezetting.dienst.begintijd.getTime() <
+                andere.dienst.eindtijd.getTime() + buffer &&
+              bezetting.dienst.eindtijd.getTime() >
+                andere.dienst.begintijd.getTime() - buffer
+            );
+          })
           .map((conflict) => conflict.medewerkerId)
           .filter(
             (medewerkerId): medewerkerId is string =>
@@ -1043,24 +1071,44 @@ export async function PATCH(
         );
       }
 
-      const actueleAndereDienst =
-        await prisma.dienstBezetting.findFirst({
+      const actueleAndereDiensten =
+        await prisma.dienstBezetting.findMany({
           where: {
             medewerkerId,
             status: { notIn: ["AFGEZEGD"] },
             dienst: {
               id: { not: ruilverzoek.dienstBezetting.dienst.id },
               datum: ruilverzoek.dienstBezetting.dienst.datum,
-              begintijd: { lt: ruilverzoek.dienstBezetting.dienst.eindtijd },
-              eindtijd: { gt: ruilverzoek.dienstBezetting.dienst.begintijd },
+              week: {
+                vestiging: {
+                  organisatieId: vestiging.organisatieId,
+                },
+              },
             },
           },
-          select: { id: true },
+          select: {
+            dienst: {
+              select: {
+                begintijd: true,
+                eindtijd: true,
+                week: { select: { vestigingId: true } },
+              },
+            },
+          },
         });
 
-      if (actueleAndereDienst) {
+      const buffer = 60 * 60 * 1000;
+      const actueleConflict = actueleAndereDiensten.some((andere) =>
+        andere.dienst.week.vestigingId !== vestiging.id &&
+        ruilverzoek.dienstBezetting.dienst.begintijd.getTime() <
+          andere.dienst.eindtijd.getTime() + buffer &&
+        ruilverzoek.dienstBezetting.dienst.eindtijd.getTime() >
+          andere.dienst.begintijd.getTime() - buffer,
+      );
+
+      if (actueleConflict) {
         return fout(
-          "Je hebt inmiddels een overlappende dienst en kunt deze ruil niet accepteren.",
+          "Je hebt inmiddels een dienst bij een andere vestiging binnen één uur van deze dienst en kunt deze ruil niet accepteren.",
           409,
         );
       }
