@@ -18,8 +18,15 @@ export async function GET() {
    * De eigenaar moet ALLE nog lege open dienstplekken kunnen nalopen,
    * ook wanneer nog niemand belangstelling heeft gemeld.
    */
+  // Beperk eigenaarshandelingen tot organisaties waar de gebruiker
+  // daadwerkelijk eigenaar/superadmin is, niet alleen teamleider of medewerker.
   const organisatieIds = gebruiker.organisaties
-    .filter((relatie) => relatie.actief && relatie.organisatie.actief)
+    .filter(
+      (relatie) =>
+        relatie.actief &&
+        relatie.organisatie.actief &&
+        ["eigenaar", "super admin"].includes(relatie.rol.naam.trim().toLowerCase()),
+    )
     .map((relatie) => relatie.organisatieId);
 
   const openDiensten = await prisma.dienstBezetting.findMany({
@@ -172,8 +179,18 @@ export async function POST(request: Request) {
         dienstId: true,
         dienst: {
           select: {
+            datum: true,
+            begintijd: true,
+            eindtijd: true,
             tags: { select: { tagId: true, aantal: true } },
-            week: { select: { vestigingId: true } },
+            week: {
+              select: {
+                vestigingId: true,
+                vestiging: {
+                  select: { id: true, naam: true, organisatieId: true },
+                },
+              },
+            },
           },
         },
       },
@@ -200,6 +217,69 @@ export async function POST(request: Request) {
 
     if (!medewerker) {
       throw new Error("Deze medewerker hoort niet bij de vestiging of heeft niet de juiste planningstags.");
+    }
+
+    const dubbeleBezetting = await tx.dienstBezetting.findFirst({
+      where: {
+        dienstId: openDienst.dienstId,
+        medewerkerId,
+        status: { not: "AFGEZEGD" },
+      },
+      select: { id: true },
+    });
+
+    if (dubbeleBezetting) {
+      throw new Error("Deze medewerker staat al op deze dienst.");
+    }
+
+    // Gebruik dezelfde vestigingsoverlapregel als de gewone planning:
+    // tussen verschillende vestigingen blijft één uur reistijd vrij.
+    const andereDiensten = await tx.dienstBezetting.findMany({
+      where: {
+        medewerkerId,
+        status: { not: "AFGEZEGD" },
+        dienst: {
+          id: { not: openDienst.dienstId },
+          datum: openDienst.dienst.datum,
+          week: {
+            vestiging: {
+              organisatieId: openDienst.dienst.week.vestiging.organisatieId,
+            },
+          },
+        },
+      },
+      select: {
+        dienst: {
+          select: {
+            begintijd: true,
+            eindtijd: true,
+            week: {
+              select: {
+                vestiging: { select: { id: true, naam: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const conflict = andereDiensten.find((bezetting) => {
+      if (bezetting.dienst.week.vestiging.id === openDienst.dienst.week.vestigingId) {
+        return false;
+      }
+      const buffer = 60 * 60 * 1000;
+      return (
+        openDienst.dienst.begintijd.getTime() <
+          bezetting.dienst.eindtijd.getTime() + buffer &&
+        openDienst.dienst.eindtijd.getTime() >
+          bezetting.dienst.begintijd.getTime() - buffer
+      );
+    });
+
+    if (conflict) {
+      throw new Error(
+        `Deze medewerker heeft op dezelfde dag al een dienst in ${conflict.dienst.week.vestiging.naam}. Tussen vestigingen is 1 uur reistijd gereserveerd.`,
+      );
     }
 
     const heeftInteresse = await tx.auditLog.findFirst({
