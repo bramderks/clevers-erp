@@ -1275,7 +1275,6 @@ export async function POST(
     );
 
     let aangemaakt = 0;
-    let aangepast = 0;
     let overgeslagen = 0;
 
     const cursor =
@@ -1433,7 +1432,6 @@ export async function POST(
 
             dienstAangepast =
               true;
-            aangepast += 1;
           } else {
             await prisma.dienstBezetting.delete({
               where: {
