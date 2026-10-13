@@ -152,15 +152,24 @@ export async function POST(request: Request) {
   const dienstBezettingId = String(body.dienstBezettingId ?? "");
   const medewerkerId = String(body.medewerkerId ?? "");
 
+  // Beperk eigenaarshandelingen tot organisaties waar de gebruiker
+  // daadwerkelijk eigenaar/superadmin is, niet alleen teamleider of medewerker.
   const organisatieIds = gebruiker.organisaties
-    .filter((relatie) => relatie.actief && relatie.organisatie.actief)
+    .filter(
+      (relatie) =>
+        relatie.actief &&
+        relatie.organisatie.actief &&
+        ["eigenaar", "super admin"].includes(relatie.rol.naam.trim().toLowerCase()),
+    )
     .map((relatie) => relatie.organisatieId);
 
   if (!dienstBezettingId || !medewerkerId) {
     return NextResponse.json({ fout: "Dienst of medewerker ontbreekt." }, { status: 400 });
   }
 
-  const resultaat = await prisma.$transaction(async (tx) => {
+  let resultaat: { id: string; dienstId: string; medewerkerId: string | null; status: string } | null = null;
+  try {
+    resultaat = await prisma.$transaction(async (tx) => {
     const openDienst = await tx.dienstBezetting.findFirst({
       where: {
         id: dienstBezettingId,
@@ -353,7 +362,24 @@ export async function POST(request: Request) {
     });
 
     return bezetting;
-  });
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Open dienst kon niet worden toegewezen.";
+    if (
+      message === "Deze medewerker staat al op deze dienst." ||
+      message.includes("Tussen vestigingen is 1 uur reistijd gereserveerd.")
+    ) {
+      return NextResponse.json({ fout: message }, { status: 409 });
+    }
+    if (
+      message === "Deze medewerker heeft zich niet voor deze open dienst gemeld." ||
+      message === "Deze medewerker hoort niet bij de vestiging of heeft niet de juiste planningstags."
+    ) {
+      return NextResponse.json({ fout: message }, { status: 400 });
+    }
+    console.error("Fout bij beoordelen open dienst:", error);
+    return NextResponse.json({ fout: "De open dienst kon niet worden toegewezen." }, { status: 500 });
+  }
 
   if (!resultaat) {
     return NextResponse.json({ fout: "Dienst is niet meer open." }, { status: 409 });
