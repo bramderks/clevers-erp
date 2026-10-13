@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
@@ -8,7 +9,13 @@ export const dynamic = "force-dynamic";
 function toegestaan(request: Request) {
   const expected = process.env.CLEVERS_BESTELLEN_INTEGRATION_SECRET;
   const supplied = request.headers.get("x-clevers-integration-secret");
-  return Boolean(expected && supplied && expected.length === supplied.length && expected === supplied);
+  if (!expected || !supplied) return false;
+
+  const expectedBuffer = Buffer.from(expected);
+  const suppliedBuffer = Buffer.from(supplied);
+  if (expectedBuffer.length !== suppliedBuffer.length) return false;
+
+  return timingSafeEqual(expectedBuffer, suppliedBuffer);
 }
 
 function publiek(gebruiker: any) {
