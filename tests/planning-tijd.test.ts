@@ -127,3 +127,13 @@ test("loonkosten verdelen unieke uren zonder dubbele telling van overlappende di
   assert.equal(uren.get("dienst-b"), 0);
   assert.equal([...uren.values()].reduce((totaal, waarde) => totaal + waarde, 0), 4);
 });
+
+test("lokale daggrenzen blijven correct bij zomer- en wintertijd", async () => {
+  const { lokaleDagGrenzen } = await import("../lib/planning/tijd");
+
+  const zomertijd = lokaleDagGrenzen("2026-03-29");
+  const wintertijd = lokaleDagGrenzen("2026-10-25");
+
+  assert.equal((zomertijd.einde.getTime() - zomertijd.start.getTime()) / 3_600_000, 23);
+  assert.equal((wintertijd.einde.getTime() - wintertijd.start.getTime()) / 3_600_000, 25);
+});
