@@ -89,7 +89,7 @@ test("beschikbaarheidstestfase opent vanaf volgende week tot 1 december", () => 
   assert.equal(isTestOpenVoorWeek(2026, 43, vandaag), true);
   assert.equal(isTestOpenVoorWeek(2026, 50, vandaag), true);
   assert.equal(
-    isTestOpenVoorWeek(2026, 43, new Date("2026-12-01T00:00:00.000Z")),
+    isTestOpenVoorWeek(2026, 43, new Date("2026-11-30T23:00:00.000Z")),
     false,
   );
 });
