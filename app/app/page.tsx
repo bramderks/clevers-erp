@@ -16,7 +16,7 @@ import {
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
+import { formatDienstDatum, formatDienstTijd, kalenderDatumUTC, lokaleDatumSleutel } from "@/lib/planning/tijd";
 import PushNotificationButton from "@/components/app/PushNotificationButton";
 
 function formatUren(uren: number) {
@@ -41,12 +41,13 @@ export default async function MedewerkerAppPage() {
   }
 
   const vandaag = new Date();
+  const vandaagKalenderdatum = kalenderDatumUTC(lokaleDatumSleutel(vandaag));
 
   const isEigenaar = gebruiker.organisaties.some(
     (relatie) =>
       relatie.actief &&
       relatie.organisatie.actief &&
-      relatie.rol.naam.trim().toLowerCase() === "eigenaar",
+      ["eigenaar", "super admin"].includes(relatie.rol.naam.trim().toLowerCase()),
   );
 
   const [
@@ -59,7 +60,7 @@ export default async function MedewerkerAppPage() {
         medewerkerId,
         dienst: {
           datum: {
-            gte: vandaag,
+            gte: vandaagKalenderdatum,
           },
           ...(isEigenaar
             ? {}
