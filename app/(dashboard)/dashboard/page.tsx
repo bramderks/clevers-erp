@@ -14,6 +14,10 @@ import OwnerUpcomingServices from "@/components/dashboard/OwnerUpcomingServices"
 
 import { permissions } from "@/lib/permissions";
 import { vereisPermission } from "@/lib/requirePermission";
+import {
+  berekenBeschikbaarheidDeadline,
+  isTestOpenVoorWeek,
+} from "@/lib/beschikbaarheid/deadline";
 
 type DashboardTaak = {
   id: string;
@@ -55,16 +59,6 @@ function maandagVanWeek(
   );
 
   return datum;
-}
-
-function standaardBeschikbaarheidDeadline(
-  jaar: number,
-  weeknummer: number,
-) {
-  const deadline = maandagVanWeek(jaar, weeknummer);
-  deadline.setDate(deadline.getDate() - 28);
-  deadline.setHours(23, 59, 59, 999);
-  return deadline;
 }
 
 function datumVoorApi(
@@ -462,15 +456,14 @@ export default async function DashboardPage() {
 
           // Tijdens de afgesproken testfase zijn toekomstige weken vanaf
           // volgende week open, ook als de opgeslagen deadline al verstreken is.
-          const volgendeWeekStart = new Date(vandaagBegin);
-          const dagVanWeek = volgendeWeekStart.getDay() || 7;
-          volgendeWeekStart.setDate(volgendeWeekStart.getDate() + (8 - dagVanWeek));
-          const testEinddatum = new Date("2026-12-01T00:00:00.000Z");
-          const testOpen =
-            vandaag < testEinddatum && maandag >= volgendeWeekStart;
-          const deadline =
-            week.beschikbaarheidDeadline ??
-            standaardBeschikbaarheidDeadline(week.jaar, week.weeknummer);
+          const testOpen = isTestOpenVoorWeek(
+            week.jaar,
+            week.weeknummer,
+            vandaag,
+          );
+          const deadline = week.beschikbaarheidDeadline
+            ? new Date(week.beschikbaarheidDeadline)
+            : berekenBeschikbaarheidDeadline(week.jaar, week.weeknummer);
           if (!testOpen && deadline <= vandaag) return false;
 
           const dagen = new Set(
