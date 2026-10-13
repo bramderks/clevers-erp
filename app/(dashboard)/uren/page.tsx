@@ -20,17 +20,13 @@ async function controleerEigenaar() {
     gebruiker.organisaties.filter(
       (relatie) =>
         relatie.actief &&
-        relatie.organisatie.actief,
+        relatie.organisatie.actief &&
+        ["eigenaar", "super admin"].includes(
+          relatie.rol.naam.trim().toLowerCase(),
+        ),
     );
 
-  const isEigenaar =
-    organisaties.some(
-      (relatie) =>
-        relatie.rol.naam.toLowerCase() ===
-        "eigenaar",
-    );
-
-  if (!isEigenaar) {
+  if (organisaties.length === 0) {
     throw new Error(
       "Alleen de eigenaar kan uren controleren.",
     );
@@ -375,21 +371,13 @@ export default async function UrenPage() {
     gebruiker.organisaties.filter(
       (relatie) =>
         relatie.actief &&
-        relatie.organisatie.actief,
+        relatie.organisatie.actief &&
+        ["eigenaar", "super admin"].includes(
+          relatie.rol.naam.trim().toLowerCase(),
+        ),
     );
 
   if (organisaties.length === 0) {
-    redirect("/dashboard");
-  }
-
-  const isEigenaar =
-    organisaties.some(
-      (relatie) =>
-        relatie.rol.naam.toLowerCase() ===
-        "eigenaar",
-    );
-
-  if (!isEigenaar) {
     redirect("/dashboard");
   }
 
