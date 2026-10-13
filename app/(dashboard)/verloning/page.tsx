@@ -397,7 +397,7 @@ export default async function VerloningPage() {
                     periode.periodeStart;
 
                   return (
-                    <div className="group px-6 py-5 transition hover:bg-slate-50">
+                    <div key={periode.id} className="group px-6 py-5 transition hover:bg-slate-50">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                         <a
                           href={`/verloning/${periode.id}`}
