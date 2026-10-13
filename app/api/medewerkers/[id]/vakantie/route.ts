@@ -9,7 +9,7 @@ function deadlineVoorSeizoen(seizoenStart:Date){return new Date(seizoenStart.get
 function zomerGrenzen(jaar:number){return {start:new Date(jaar,5,1),einde:new Date(jaar,7,31,23,59,59,999)};}
 
 async function magEigenaarVoorOrganisatie(gebruiker:Awaited<ReturnType<typeof getCurrentUser>>, organisatieId:string){
- return !!gebruiker?.organisaties.some(r=>r.actief&&r.organisatie.actief&&r.organisatieId===organisatieId&&r.rol.naam.trim().toLowerCase()==="eigenaar");
+ return !!gebruiker?.organisaties.some(r=>r.actief&&r.organisatie.actief&&r.organisatieId===organisatieId&&["eigenaar", "super admin"].includes(r.rol.naam.trim().toLowerCase()));
 }
 
 export async function GET(_:Request,{params}:{params:Promise<{id:string}>}){
