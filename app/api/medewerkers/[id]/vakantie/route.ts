@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 
 function fout(fout:string,status:number){return NextResponse.json({fout},{status});}
 function datum(value:string){const d=new Date(value+"T00:00:00");return Number.isNaN(d.getTime())?null:d;}
-function dagen(start:Date,eind:Date){return Math.floor((eind.getTime()-start.getTime())/86400000)+1;}
 function deadlineVoorSeizoen(seizoenStart:Date){return new Date(seizoenStart.getFullYear(),3,30,23,59,59,999);}
 function zomerGrenzen(jaar:number){return {start:new Date(jaar,5,1),einde:new Date(jaar,7,31,23,59,59,999)};}
 
