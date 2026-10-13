@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser, isEigenaar } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { berekenGewerkteUren } from "@/lib/verloning/pauze";
+import { berekenUniekeUrenPerInterval } from "@/lib/verloning/overlappendeUren";
 
 
 function getISOWeek(datum: Date) {
@@ -102,10 +103,25 @@ export async function POST(request: NextRequest) {
     }
 
     const actueleWeekDiensten = week.diensten.filter((dienst) => dienstValtInWeek(dienst, jaar, weeknummer));
+    const urenPerBezetting = berekenUniekeUrenPerInterval(
+      actueleWeekDiensten.flatMap((dienst) =>
+        dienst.bezetting
+          .filter((bezetting) => bezetting.medewerker)
+          .map((bezetting) => ({
+            id: bezetting.id,
+            medewerkerId: bezetting.medewerker!.id,
+            vestigingId,
+            datum: dienst.datum,
+            begintijd: dienst.begintijd,
+            eindtijd: dienst.eindtijd,
+          })),
+      ),
+      berekenGewerkteUren,
+    );
     const regels = actueleWeekDiensten.flatMap((dienst) =>
       dienst.bezetting.filter((b) => b.medewerker).map((bezetting) => {
         const medewerker = bezetting.medewerker!;
-        const uren = berekenGewerkteUren(dienst.begintijd, dienst.eindtijd).gewerkteUren;
+        const uren = urenPerBezetting.get(bezetting.id) ?? 0;
         const uurloon = uurloonVoorDienst(medewerker, dienst.datum);
         return {
           datum: dienst.datum.toISOString().slice(0, 10),
