@@ -57,6 +57,16 @@ function maandagVanWeek(
   return datum;
 }
 
+function standaardBeschikbaarheidDeadline(
+  jaar: number,
+  weeknummer: number,
+) {
+  const deadline = maandagVanWeek(jaar, weeknummer);
+  deadline.setDate(deadline.getDate() - 28);
+  deadline.setHours(23, 59, 59, 999);
+  return deadline;
+}
+
 function datumVoorApi(
   datum: Date,
 ) {
@@ -217,10 +227,6 @@ export default async function DashboardPage() {
 
       prisma.week.findMany({
         where: {
-          beschikbaarheidDeadline: {
-            gt: vandaag,
-          },
-
           vestiging: {
             medewerkers: {
               some: {
@@ -453,6 +459,20 @@ export default async function DashboardPage() {
           zondag.setDate(zondag.getDate() + 6);
           if (zondag < vandaagBegin) return false;
           if (week.vestiging.seizoenEinde && maandag > new Date(week.vestiging.seizoenEinde)) return false;
+
+          // Tijdens de afgesproken testfase zijn toekomstige weken vanaf
+          // volgende week open, ook als de opgeslagen deadline al verstreken is.
+          const volgendeWeekStart = new Date(vandaagBegin);
+          const dagVanWeek = volgendeWeekStart.getDay() || 7;
+          volgendeWeekStart.setDate(volgendeWeekStart.getDate() + (8 - dagVanWeek));
+          const testEinddatum = new Date("2026-12-01T00:00:00.000Z");
+          const testOpen =
+            vandaag < testEinddatum && maandag >= volgendeWeekStart;
+          const deadline =
+            week.beschikbaarheidDeadline ??
+            standaardBeschikbaarheidDeadline(week.jaar, week.weeknummer);
+          if (!testOpen && deadline <= vandaag) return false;
+
           const dagen = new Set(
             week.beschikbaarheden.map((beschikbaarheid) =>
               datumVoorApi(new Date(beschikbaarheid.datum)),
