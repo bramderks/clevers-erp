@@ -19,7 +19,7 @@ export async function PATCH(request:Request,{params}:{params:Promise<{id:string;
  if(!["GOEDGEKEURD","AFGEWEZEN"].includes(body.status??""))return NextResponse.json({fout:"Ongeldige beoordeling."},{status:400});
  const aanvraag=await prisma.vakantieAanvraag.findFirst({where:{id:vakantieId,medewerkerId:id},select:{id:true,vestigingId:true,startDatum:true,eindDatum:true,type:true,status:true,vestiging:{select:{organisatieId:true}}}});
  if(!aanvraag)return NextResponse.json({fout:"Verlofaanvraag niet gevonden."},{status:404});
- const eigenaar=gebruiker.organisaties.some(r=>r.actief&&r.organisatie.actief&&r.organisatieId===aanvraag.vestiging.organisatieId&&r.rol.naam.trim().toLowerCase()==="eigenaar");
+ const eigenaar=gebruiker.organisaties.some(r=>r.actief&&r.organisatie.actief&&r.organisatieId===aanvraag.vestiging.organisatieId&&["eigenaar", "super admin"].includes(r.rol.naam.trim().toLowerCase()));
  if(!eigenaar)return NextResponse.json({fout:"Alleen de eigenaar van deze organisatie mag verlofaanvragen beoordelen."},{status:403});
  if(aanvraag.status!=="AANGEVRAAGD")return NextResponse.json({fout:"Deze aanvraag is al beoordeeld."},{status:400});
  const data={status:body.status,beoordeeldDoorId:gebruiker.id,beoordeeldOp:new Date(),redenAfwijzing:body.status==="AFGEWEZEN"?(body.redenAfwijzing?.trim()||null):null};
