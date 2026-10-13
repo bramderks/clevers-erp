@@ -54,6 +54,59 @@ export function datumSleutelVoorUren(datum: Date) {
   return lokaleDatumSleutel(datum);
 }
 
+export function berekenUniekeUrenPerInterval(
+  intervallen: Array<{
+    id: string;
+    medewerkerId: string;
+    vestigingId: string;
+    datum: Date;
+    begintijd: Date;
+    eindtijd: Date;
+  }>,
+  bereken: (begintijd: Date, eindtijd: Date) => { gewerkteUren: number },
+) {
+  const perMedewerkerDagVestiging = new Map<string, typeof intervallen>();
+
+  for (const interval of intervallen) {
+    const sleutel = [
+      interval.medewerkerId,
+      interval.vestigingId,
+      datumSleutelVoorUren(interval.datum),
+    ].join(":");
+    const lijst = perMedewerkerDagVestiging.get(sleutel) ?? [];
+    lijst.push(interval);
+    perMedewerkerDagVestiging.set(sleutel, lijst);
+  }
+
+  const resultaat = new Map<string, number>();
+
+  for (const lijst of perMedewerkerDagVestiging.values()) {
+    const samengevoegd = mergeTijdIntervallen(
+      lijst.map((interval) => ({
+        begintijd: interval.begintijd,
+        eindtijd: interval.eindtijd,
+      })),
+    );
+    const uniekeUren = samengevoegd.reduce(
+      (totaal, interval) =>
+        totaal + bereken(interval.begintijd, interval.eindtijd).gewerkteUren,
+      0,
+    );
+    const eerste = [...lijst].sort(
+      (a, b) =>
+        a.begintijd.getTime() - b.begintijd.getTime() ||
+        a.eindtijd.getTime() - b.eindtijd.getTime() ||
+        a.id.localeCompare(b.id),
+    )[0];
+
+    for (const interval of lijst) {
+      resultaat.set(interval.id, interval.id === eerste?.id ? uniekeUren : 0);
+    }
+  }
+
+  return resultaat;
+}
+
 export function uniekeUrenPerRegistratie(
   registraties: TijdInterval[],
 ) {
