@@ -90,6 +90,7 @@ async function haalDienstOp(id: string) {
       week: {
         select: {
           id: true,
+          status: true,
           vestigingId: true,
           jaar: true,
           weeknummer: true,
@@ -251,6 +252,13 @@ export async function PATCH(
       return NextResponse.json(
         { fout: "Dienst niet gevonden." },
         { status: 404 },
+      );
+    }
+
+    if (bestaand.week.status === "AFGESLOTEN") {
+      return NextResponse.json(
+        { fout: "Deze dienst hoort bij een afgesloten planningweek en kan niet meer worden gewijzigd." },
+        { status: 409 },
       );
     }
 
@@ -487,6 +495,13 @@ export async function DELETE(
       return NextResponse.json(
         { fout: "Dienst niet gevonden." },
         { status: 404 },
+      );
+    }
+
+    if (dienst.week.status === "AFGESLOTEN") {
+      return NextResponse.json(
+        { fout: "Deze dienst hoort bij een afgesloten planningweek en kan niet meer worden verwijderd." },
+        { status: 409 },
       );
     }
 
