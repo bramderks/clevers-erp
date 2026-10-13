@@ -1,5 +1,5 @@
 export const BESCHIKBAARHEID_TEST_EINDDATUM = new Date(
-  "2026-12-01T00:00:00.000Z",
+  "2026-11-30T23:00:00.000Z",
 );
 
 export type BeschikbaarheidDeadlineWeek = {
