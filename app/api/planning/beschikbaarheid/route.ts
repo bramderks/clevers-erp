@@ -52,6 +52,7 @@ async function haalBeschikbaarheidOp(
       week: {
         select: {
           id: true,
+          status: true,
           vestigingId: true,
           jaar: true,
           vestiging: {
@@ -237,6 +238,13 @@ export async function PATCH(
         {
           status: 404,
         },
+      );
+    }
+
+    if (bestaande.week.status === "AFGESLOTEN") {
+      return NextResponse.json(
+        { fout: "Beschikbaarheid van een afgesloten planningweek kan niet worden gewijzigd." },
+        { status: 409 },
       );
     }
 
@@ -748,6 +756,13 @@ export async function DELETE(
         {
           status: 404,
         },
+      );
+    }
+
+    if (bestaande.week.status === "AFGESLOTEN") {
+      return NextResponse.json(
+        { fout: "Beschikbaarheid van een afgesloten planningweek kan niet worden gewijzigd." },
+        { status: 409 },
       );
     }
 
