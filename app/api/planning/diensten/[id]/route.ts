@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
 import {
-  getCurrentUser,
   hasPermissionForVestiging,
   isEigenaar,
 } from "@/lib/auth";
@@ -120,63 +119,6 @@ async function haalDienstOp(id: string) {
  * ============================================================
  */
 
-async function haalDienstVolledigOp(
-  id: string,
-) {
-  return prisma.dienst.findUnique({
-    where: {
-      id,
-    },
-
-    include: {
-      week: {
-        select: {
-          id: true,
-          vestigingId: true,
-
-          vestiging: {
-            select: {
-              id: true,
-              naam: true,
-            },
-          },
-        },
-      },
-
-      tags: {
-        include: {
-          tag: true,
-        },
-
-        orderBy: {
-          tag: {
-            volgorde: "asc",
-          },
-        },
-      },
-
-      bezetting: {
-        include: {
-          medewerker: {
-            select: {
-              id: true,
-              personeelsnummer: true,
-              aanhef: true,
-              voornaam: true,
-              tussenvoegsel: true,
-              achternaam: true,
-            },
-          },
-        },
-
-        orderBy: {
-          aangemaaktOp: "asc",
-        },
-      },
-    },
-  });
-}
-
 /*
  * ============================================================
  * TAGS VERWERKEN
@@ -292,10 +234,6 @@ function isGeldigTijdsinterval(datum: Date): boolean {
   return lokaleTijdMinuten(datum) % TIJD_INTERVAL === 0;
 }
 
-function maakDatumMetTijd(datum: Date, tijd: Date): Date {
-  return nederlandseDatumTijd(lokaleDatumSleutel(datum), formatDienstTijd(tijd));
-}
-
 function kalenderDatumVanLokaleDienst(begintijd: Date): Date {
   return kalenderDatumUTC(lokaleDatumSleutel(begintijd));
 }
@@ -303,19 +241,6 @@ function kalenderDatumVanLokaleDienst(begintijd: Date): Date {
 function kalenderDatumIsGelijk(a: Date, b: Date): boolean {
   return a.getTime() === b.getTime();
 }
-
-async function normaliseerKalenderDatum(dienst: {
-  id: string;
-  datum: Date;
-  begintijd: Date;
-}) {
-  const juisteDatum = kalenderDatumVanLokaleDienst(dienst.begintijd);
-  if (kalenderDatumIsGelijk(dienst.datum, juisteDatum)) return dienst;
-  return prisma.dienst.update({
-    where: { id: dienst.id },
-    data: { datum: juisteDatum },
-  });}
-
 
 /*
  * ============================================================
