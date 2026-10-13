@@ -902,6 +902,8 @@ export default function BeschikbaarheidWeekSelector({
    * - mag ook na de deadline wijzigen.
    */
   const wijzigingToegestaan =
+    Boolean(geselecteerdeWeek) &&
+    geselecteerdeWeek?.status !== "AFGESLOTEN" &&
     magBewerken &&
     (
       !deadlineVerstreken ||
