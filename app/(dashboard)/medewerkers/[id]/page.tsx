@@ -19,6 +19,7 @@ import {
 
 import { permissions } from "@/lib/permissions";
 import { vereisPermission } from "@/lib/requirePermission";
+import { kalenderDatumUTC, lokaleDatumSleutel } from "@/lib/planning/tijd";
 
 import {
   medewerkerService,
@@ -543,13 +544,11 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
     },
   });
 
-  const vandaag = new Date();
-  vandaag.setHours(0, 0, 0, 0);
+  const vandaag = kalenderDatumUTC(lokaleDatumSleutel(new Date()));
 
   const aankomendeDiensten = medewerker.diensten
     .filter((bezetting) => {
       const datum = new Date(bezetting.dienst.datum);
-      datum.setHours(0, 0, 0, 0);
       return (
         datum >= vandaag &&
         (isEigenaar ||
