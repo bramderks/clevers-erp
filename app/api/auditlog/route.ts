@@ -20,6 +20,17 @@ export async function GET(request: Request) {
       return NextResponse.json({ fout: "Geen toegang." }, { status: 403 });
     }
 
+    // Het recordId alleen is niet voldoende: de aangeleverde vestiging
+    // moet daadwerkelijk de vestiging van deze dienst zijn.
+    const dienst = await prisma.dienst.findUnique({
+      where: { id: recordId },
+      select: { week: { select: { vestigingId: true } } },
+    });
+
+    if (!dienst || dienst.week.vestigingId !== vestigingId) {
+      return NextResponse.json({ fout: "Dienst niet gevonden in deze vestiging." }, { status: 404 });
+    }
+
     const logs = await prisma.auditLog.findMany({
       where: { recordId },
       orderBy: { aangemaaktOp: "desc" },
