@@ -156,7 +156,6 @@ export async function POST(request: NextRequest) {
     const urenMetLoon = regels.reduce((t, regel) => t + (regel.kosten == null ? 0 : regel.uren), 0);
     const gemiddeldUurloon = urenMetLoon ? totaalKosten / urenMetLoon : 0;
     const omzet = Number(week.loonkostenWeek.omzet);
-    const doelPercentage = Number(week.loonkostenWeek.doelPercentage);
     const percentageOmzet = omzet > 0 ? (totaalKosten / omzet) * 100 : null;
 
     const diensten = actueleWeekDiensten.map((dienst) => ({
