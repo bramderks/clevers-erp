@@ -44,7 +44,7 @@ jobs:
         run: npm run lint:ci
 
       - name: Audit alle dependencies
-        run: npm audit --audit-level=high
+        run: node scripts/audit-dependencies.cjs
 
       - name: Beperk installatie tot productie
         run: npm prune --omit=dev
