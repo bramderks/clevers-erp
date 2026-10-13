@@ -79,7 +79,9 @@ export async function POST(
         diensten: {
           include: {
             tags: true,
-            bezetting: true,
+            bezetting: {
+            where: { status: { not: "AFGEZEGD" } },
+          },
           },
           orderBy: [{ datum: "asc" }, { begintijd: "asc" }],
         },
@@ -117,6 +119,81 @@ export async function POST(
 
     const verschilDagen = Math.round((doelWeekStart.getTime() - beginVanISOWeek(bron.jaar, bron.weeknummer).getTime()) / 86400000);
 
+    const kopieerbareDiensten = bron.diensten.map((dienst) => {
+      const datumSleutel = verschuifKalenderdatum(dienst.datum, verschilDagen);
+      return {
+        bron: dienst,
+        datumSleutel,
+        datum: kalenderDatumUTC(datumSleutel),
+        begintijd: nederlandseDatumTijd(datumSleutel, formatDienstTijd(dienst.begintijd)),
+        eindtijd: nederlandseDatumTijd(datumSleutel, formatDienstTijd(dienst.eindtijd)),
+      };
+    });
+
+    const medewerkerIds = [...new Set(
+      kopieerbareDiensten.flatMap((dienst) =>
+        dienst.bron.bezetting
+          .map((bezetting) => bezetting.medewerkerId)
+          .filter((medewerkerId): medewerkerId is string => Boolean(medewerkerId)),
+      ),
+    )];
+    const doelDatums = [...new Map(
+      kopieerbareDiensten.map((dienst) => [dienst.datum.toISOString(), dienst.datum]),
+    ).values()];
+
+    if (medewerkerIds.length > 0 && doelDatums.length > 0) {
+      const bestaandeBezettingen = await prisma.dienstBezetting.findMany({
+        where: {
+          medewerkerId: { in: medewerkerIds },
+          status: { not: "AFGEZEGD" },
+          dienst: {
+            datum: { in: doelDatums },
+            week: {
+              vestiging: { organisatieId: bron.vestiging.organisatieId },
+            },
+          },
+        },
+        select: {
+          medewerkerId: true,
+          dienst: {
+            select: {
+              datum: true,
+              begintijd: true,
+              eindtijd: true,
+              week: {
+                select: {
+                  vestiging: { select: { id: true, naam: true } },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const buffer = 60 * 60 * 1000;
+      for (const dienst of kopieerbareDiensten) {
+        for (const bezetting of dienst.bron.bezetting) {
+          if (!bezetting.medewerkerId) continue;
+          const conflict = bestaandeBezettingen.find((bestaand) =>
+            bestaand.medewerkerId === bezetting.medewerkerId &&
+            bestaand.dienst.datum.getTime() === dienst.datum.getTime() &&
+            bestaand.dienst.week.vestiging.id !== bron.vestigingId &&
+            dienst.begintijd.getTime() < bestaand.dienst.eindtijd.getTime() + buffer &&
+            dienst.eindtijd.getTime() > bestaand.dienst.begintijd.getTime() - buffer,
+          );
+          if (conflict) {
+            return NextResponse.json(
+              {
+                fout: `De planning kan niet worden gekopieerd: een medewerker heeft rond deze dienst al een dienst in ${conflict.dienst.week.vestiging.naam}. Tussen vestigingen is 1 uur reistijd gereserveerd.`,
+                code: "ANDERE_VESTIGING_ZELFDE_DAG",
+              },
+              { status: 409 },
+            );
+          }
+        }
+      }
+    }
+
     const resultaat = await prisma.$transaction(async (tx) => {
       const doelWeek = await tx.week.create({
         data: {
@@ -128,21 +205,16 @@ export async function POST(
         },
       });
 
-      for (const dienst of bron.diensten) {
-        const datumSleutel = verschuifKalenderdatum(dienst.datum, verschilDagen);
-        const datum = kalenderDatumUTC(datumSleutel);
-        const begintijd = nederlandseDatumTijd(datumSleutel, formatDienstTijd(dienst.begintijd));
-        const eindtijd = nederlandseDatumTijd(datumSleutel, formatDienstTijd(dienst.eindtijd));
-
+      for (const dienst of kopieerbareDiensten) {
         const nieuweDienst = await tx.dienst.create({
           data: {
             weekId: doelWeek.id,
-            datum,
-            begintijd,
-            eindtijd,
-            opmerkingen: dienst.opmerkingen,
+            datum: dienst.datum,
+            begintijd: dienst.begintijd,
+            eindtijd: dienst.eindtijd,
+            opmerkingen: dienst.bron.opmerkingen,
             tags: {
-              create: dienst.tags.map((tag) => ({
+              create: dienst.bron.tags.map((tag) => ({
                 tagId: tag.tagId,
                 aantal: tag.aantal,
               })),
@@ -150,7 +222,7 @@ export async function POST(
           },
         });
 
-        for (const bezetting of dienst.bezetting) {
+        for (const bezetting of dienst.bron.bezetting) {
           await tx.dienstBezetting.create({
             data: {
               dienstId: nieuweDienst.id,
