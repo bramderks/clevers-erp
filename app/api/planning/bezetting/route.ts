@@ -303,6 +303,13 @@ export async function POST(
       );
     }
 
+    if (dienst.week.status === "AFGESLOTEN") {
+      return NextResponse.json(
+        { fout: "De bezetting van een afgesloten planningweek kan niet worden gewijzigd." },
+        { status: 409 },
+      );
+    }
+
     const eigenaar =
       await isEigenaar(
         dienst.week.vestiging.organisatieId,
