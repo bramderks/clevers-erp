@@ -43,6 +43,12 @@ jobs:
       - name: ESLint
         run: npm run lint:ci
 
+      - name: Productiebuild
+        run: npm run build
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/clevers_erp?schema=public
+          DATABASE_POOL_MAX: "1"
+
       - name: Audit alle dependencies
         run: node scripts/audit-dependencies.cjs
 
