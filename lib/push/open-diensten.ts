@@ -1,5 +1,6 @@
 import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
+import { kalenderDatumUTC, lokaleDatumSleutel } from "@/lib/planning/tijd";
 
 type OpenDienstHerinneringType = "OPEN_DIENST_72U" | "OPEN_DIENST_48U" | "OPEN_DIENST_24U";
 
@@ -41,7 +42,10 @@ export async function verstuurOpenDienstMeldingen() {
       status: "OPEN",
       medewerkerId: null,
       dienst: {
-        datum: { gte: zoekVanaf, lte: zoekTot },
+        datum: {
+          gte: kalenderDatumUTC(lokaleDatumSleutel(zoekVanaf)),
+          lte: kalenderDatumUTC(lokaleDatumSleutel(zoekTot)),
+        },
         week: {
           status: "GEPUBLICEERD",
         },
