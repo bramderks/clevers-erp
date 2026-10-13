@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  BESCHIKBAARHEID_TEST_EINDDATUM,
+  berekenBeschikbaarheidDeadline,
+  isTestOpenVoorWeek,
+  volgendeWeekStart,
+} from "@/lib/beschikbaarheid/deadline";
 
 type RouteContext = {
   params: Promise<{
@@ -99,89 +105,10 @@ function eindeVanISOWeek(
 }
 
 /*
- * ============================================================
- * BESCHIKBAARHEIDSDEADLINE
- * ============================================================
- *
- * Normaal:
- * 28 dagen vóór de maandag van de planningweek.
- *
- * Tijdelijke testperiode:
- * vanaf volgende week t/m 28 februari 2027 mogen medewerkers
- * hun beschikbaarheid voor alle toekomstige weken doorgeven.
- * Vanaf 1 maart 2027 geldt automatisch weer de normale
- * deadline van 28 dagen vóór de planningweek.
- * ============================================================
+ * Tijdens de afgesproken testfase zijn toekomstige weken vanaf
+ * volgende week open tot 1 december 2026. Daarna geldt weer de
+ * opgeslagen of standaarddeadline van 28 dagen vóór de planningweek.
  */
-
-const BESCHIKBAARHEID_TEST_EINDDATUM = new Date(
-  "2026-12-01T00:00:00.000Z",
-);
-
-function volgendeWeekStart(): Date {
-  const nu = new Date();
-  const vandaag = new Date(
-    Date.UTC(
-      nu.getUTCFullYear(),
-      nu.getUTCMonth(),
-      nu.getUTCDate(),
-      0,
-      0,
-      0,
-      0,
-    ),
-  );
-
-  const dag = vandaag.getUTCDay() || 7;
-  vandaag.setUTCDate(
-    vandaag.getUTCDate() + (8 - dag),
-  );
-
-  return vandaag;
-}
-
-function beschikbaarheidTestOpen(
-  jaar: number,
-  weeknummer: number,
-): boolean {
-  const weekStart = beginVanISOWeek(
-    jaar,
-    weeknummer,
-  );
-
-  return (
-    new Date() < BESCHIKBAARHEID_TEST_EINDDATUM &&
-    weekStart >= volgendeWeekStart()
-  );
-}
-
-function berekenBeschikbaarheidDeadline(
-  jaar: number,
-  weeknummer: number,
-): Date {
-  const beginWeek =
-    beginVanISOWeek(
-      jaar,
-      weeknummer,
-    );
-
-  const deadline = new Date(
-    beginWeek,
-  );
-
-  deadline.setUTCDate(
-    deadline.getUTCDate() - 28,
-  );
-
-  deadline.setUTCHours(
-    23,
-    59,
-    59,
-    999,
-  );
-
-  return deadline;
-}
 
 /*
  * ============================================================
@@ -459,7 +386,7 @@ export async function GET(
             );
 
           const deadline =
-            beschikbaarheidTestOpen(
+            isTestOpenVoorWeek(
               week.jaar,
               week.weeknummer,
             )
@@ -497,23 +424,16 @@ export async function GET(
             return true;
           }
 
-          const weekStart = new Date(
-            week.startdatum,
-          );
+          if (week.status === "AFGESLOTEN") {
+            return false;
+          }
 
-          if (
-            new Date() <
-              BESCHIKBAARHEID_TEST_EINDDATUM
-          ) {
-            return (
-              weekStart >= volgendeWeekStart()
-            );
+          if (isTestOpenVoorWeek(week.jaar, week.weeknummer, nu)) {
+            return true;
           }
 
           return (
-            new Date(
-              week.beschikbaarheidDeadline,
-            ).getTime() > nu.getTime()
+            new Date(week.beschikbaarheidDeadline).getTime() > nu.getTime()
           );
         });
 
