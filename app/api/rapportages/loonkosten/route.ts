@@ -30,10 +30,13 @@ export async function POST(request: NextRequest) {
       where: {
         vestigingId_jaar_weeknummer: { vestigingId, jaar, weeknummer },
       },
-      select: { id: true, status: true },
+      select: { id: true, status: true, vestiging: { select: { organisatieId: true } } },
     });
 
     if (!week) throw new Error("Deze planningweek bestaat nog niet.");
+    if (!(await isEigenaar(week.vestiging.organisatieId))) {
+      return NextResponse.json({ error: "Geen toegang tot deze vestiging." }, { status: 403 });
+    }
     if (week.status === "AFGESLOTEN") {
       return NextResponse.json({ error: "Deze planningweek is afgesloten en kan niet meer worden gewijzigd." }, { status: 409 });
     }
