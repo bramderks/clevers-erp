@@ -97,14 +97,7 @@ export async function POST(request: NextRequest) {
       throw new Error("Deze week is niet afgesloten.");
     }
 
-    const eigenaarVoorVestiging = gebruiker.organisaties.some(
-      (relatie) =>
-        relatie.actief &&
-        relatie.organisatie.actief &&
-        relatie.rol.naam.trim().toLowerCase() === "eigenaar" &&
-        relatie.organisatieId === week.vestiging.organisatieId,
-    );
-    if (!eigenaarVoorVestiging) {
+    if (!(await isEigenaar(week.vestiging.organisatieId))) {
       return NextResponse.json({ error: "Geen toegang tot deze vestiging." }, { status: 403 });
     }
 
