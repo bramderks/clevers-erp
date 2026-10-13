@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars -- legacy planning-modal helpers remain dormant while the active UI uses the dedicated duty editor. */
 "use client";
 
 import { useRouter } from "next/navigation";
