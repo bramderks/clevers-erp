@@ -24,9 +24,10 @@ export async function GET(_: Request, context: Context) {
 export async function POST(request: Request, context: Context) {
   const gebruiker = await getCurrentUser();
   if (!gebruiker) return NextResponse.json({ fout: "Niet ingelogd." }, { status: 401 });
-  if (!(await isEigenaar())) return NextResponse.json({ fout: "Alleen eigenaar." }, { status: 403 });
-
   const { id: medewerkerId } = await context.params;
+  if (!(await isEigenaarVoorMedewerker(medewerkerId))) {
+    return NextResponse.json({ fout: "Alleen een eigenaar van de organisaties van deze medewerker heeft toegang." }, { status: 403 });
+  }
   const body = await request.json();
 
   const naam = typeof body.naam === "string" ? body.naam.trim() : "";
