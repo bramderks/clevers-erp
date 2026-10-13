@@ -94,21 +94,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (week.vestiging.organisatieId !== gebruiker.organisaties.find(
-      (relatie) => relatie.actief && relatie.organisatie.actief,
-    )?.organisatieId) {
-      // isEigenaar() is organisatiebreed; de concrete week wordt hieronder
-      // nogmaals via de eigenaarrelaties gecontroleerd.
-      const eigenaarVoorVestiging = gebruiker.organisaties.some(
-        (relatie) =>
-          relatie.actief &&
-          relatie.organisatie.actief &&
-          relatie.rol.naam.trim().toLowerCase() === "eigenaar" &&
-          relatie.organisatieId === week.vestiging.organisatieId,
-      );
-      if (!eigenaarVoorVestiging) {
-        return NextResponse.json({ error: "Geen toegang tot deze vestiging." }, { status: 403 });
-      }
+    if (!(await isEigenaar(week.vestiging.organisatieId))) {
+      return NextResponse.json({ error: "Geen toegang tot deze vestiging." }, { status: 403 });
     }
 
     const regels = week.diensten.flatMap((dienst) =>
