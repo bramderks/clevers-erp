@@ -638,7 +638,7 @@ async function bepaalToegang(
    * mogen wijzigen.
    */
   const magWijzigen =
-    isEigenaar ||
+    isBeheerder ||
     (
       isEigenMedewerker &&
       !gesloten
@@ -1069,6 +1069,18 @@ export async function POST(
         medewerkerId,
         weekId,
       );
+
+    // Pas dezelfde deadline- en rolcontrole toe op weekknoppen als op
+    // gewone dagwijzigingen. Teamleiders mogen beschikbaarheid bekijken,
+    // maar niet wijzigen; medewerkers alleen vóór de weekdeadline.
+    if (!toegang.magWijzigen) {
+      return fout(
+        toegang.isTeamleider
+          ? "Een teamleider kan beschikbaarheid alleen bekijken. Alleen de eigenaar kan beschikbaarheid wijzigen."
+          : "Je hebt geen toestemming om deze beschikbaarheid te wijzigen.",
+        403,
+      );
+    }
 
     /*
      * Een teamleider mag via de expliciete knop
