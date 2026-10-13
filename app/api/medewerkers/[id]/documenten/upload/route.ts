@@ -1,7 +1,7 @@
 import { del, put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 
-import { getCurrentUser, isEigenaar } from "@/lib/auth";
+import { getCurrentUser, isEigenaarVoorMedewerker } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 type Context = { params: Promise<{ id: string }> };
@@ -12,9 +12,10 @@ const ALLOWED_TYPES = new Set(["application/pdf", "image/jpeg", "image/png", "im
 export async function POST(request: Request, context: Context) {
   const gebruiker = await getCurrentUser();
   if (!gebruiker) return NextResponse.json({ fout: "Niet ingelogd." }, { status: 401 });
-  if (!(await isEigenaar())) return NextResponse.json({ fout: "Alleen eigenaar." }, { status: 403 });
-
   const { id: medewerkerId } = await context.params;
+  if (!(await isEigenaarVoorMedewerker(medewerkerId))) {
+    return NextResponse.json({ fout: "Alleen een eigenaar van de organisaties van deze medewerker heeft toegang." }, { status: 403 });
+  }
   const medewerker = await prisma.medewerker.findUnique({ where: { id: medewerkerId }, select: { id: true } });
   if (!medewerker) return NextResponse.json({ fout: "Medewerker niet gevonden." }, { status: 404 });
 
