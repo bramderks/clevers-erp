@@ -802,44 +802,44 @@ export async function POST(
       );
     }
 
-    const overlappendeDienst =
-      await prisma.dienstBezetting.findFirst({
+    const bestaandeDiensten =
+      await prisma.dienstBezetting.findMany({
         where: {
-          medewerkerId:
-            ruilMedewerkerId,
-
-          status: {
-            notIn: [
-              "AFGEZEGD",
-            ],
-          },
-
+          medewerkerId: ruilMedewerkerId,
+          status: { not: "AFGEZEGD" },
           dienst: {
-            datum:
-              bezetting.dienst.datum,
-
-            begintijd: {
-              lt:
-                bezetting.dienst
-                  .eindtijd,
-            },
-
-            eindtijd: {
-              gt:
-                bezetting.dienst
-                  .begintijd,
+            id: { not: bezetting.dienst.id },
+            datum: bezetting.dienst.datum,
+            week: {
+              vestiging: {
+                organisatieId: vestiging.organisatieId,
+              },
             },
           },
         },
-
         select: {
-          id: true,
+          dienst: {
+            select: {
+              begintijd: true,
+              eindtijd: true,
+              week: { select: { vestigingId: true } },
+            },
+          },
         },
       });
 
-    if (overlappendeDienst) {
+    const buffer = 60 * 60 * 1000;
+    const vestigingsconflict = bestaandeDiensten.some((andere) =>
+      andere.dienst.week.vestigingId !== vestiging.id &&
+      bezetting.dienst.begintijd.getTime() <
+        andere.dienst.eindtijd.getTime() + buffer &&
+      bezetting.dienst.eindtijd.getTime() >
+        andere.dienst.begintijd.getTime() - buffer,
+    );
+
+    if (vestigingsconflict) {
       return fout(
-        "Deze medewerker heeft al een overlappende dienst.",
+        "Deze medewerker heeft een dienst bij een andere vestiging binnen één uur van deze dienst.",
         409,
       );
     }
