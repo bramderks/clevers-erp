@@ -248,6 +248,7 @@ export async function genereerVerloning(
 
   const [
     totaalUrenregistraties,
+    nietAfgekeurdeUrenregistraties,
     definitieveUrenregistraties,
   ] = await Promise.all([
     prisma.urenRegistratie.count({
@@ -265,26 +266,30 @@ export async function genereerVerloning(
           gte: periodeStart,
           lt: periodeEinde,
         },
+        status: { in: ["TE_CONTROLEREN", "DEFINITIEF"] },
+      },
+    }),
+
+    prisma.urenRegistratie.count({
+      where: {
+        datum: {
+          gte: periodeStart,
+          lt: periodeEinde,
+        },
         status: "DEFINITIEF",
       },
     }),
   ]);
 
-  if (
-    totaalUrenregistraties === 0
-  ) {
+  if (totaalUrenregistraties === 0 || definitieveUrenregistraties === 0) {
     throw new Error(
-      `De verloning van ${maand}-${jaar} kan nog niet worden gegenereerd omdat er geen urenregistraties zijn.`,
+      `De verloning van ${maand}-${jaar} kan nog niet worden gegenereerd omdat er geen definitief goedgekeurde urenregistraties zijn.`,
     );
   }
 
-  if (
-    totaalUrenregistraties !==
-    definitieveUrenregistraties
-  ) {
+  if (nietAfgekeurdeUrenregistraties !== definitieveUrenregistraties) {
     const openstaandeUren =
-      totaalUrenregistraties -
-      definitieveUrenregistraties;
+      nietAfgekeurdeUrenregistraties - definitieveUrenregistraties;
 
     throw new Error(
       `De verloning van ${maand}-${jaar} kan nog niet worden gegenereerd. Er zijn nog ${openstaandeUren} urenregistraties die niet definitief zijn.`,
