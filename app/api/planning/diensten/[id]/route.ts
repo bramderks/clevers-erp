@@ -234,14 +234,6 @@ function isGeldigTijdsinterval(datum: Date): boolean {
   return lokaleTijdMinuten(datum) % TIJD_INTERVAL === 0;
 }
 
-function kalenderDatumVanLokaleDienst(begintijd: Date): Date {
-  return kalenderDatumUTC(lokaleDatumSleutel(begintijd));
-}
-
-function kalenderDatumIsGelijk(a: Date, b: Date): boolean {
-  return a.getTime() === b.getTime();
-}
-
 /*
  * ============================================================
  * DIENST WIJZIGEN
