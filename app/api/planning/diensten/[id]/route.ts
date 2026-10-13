@@ -6,7 +6,7 @@ import {
 } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
-import { kalenderDatumUTC, lokaleDatumSleutel, formatDienstTijd, nederlandseDatumTijd, lokaleTijdMinuten } from "@/lib/planning/tijd";
+import { kalenderDatumUTC, lokaleDatumSleutel, nederlandseDatumTijd, lokaleTijdMinuten } from "@/lib/planning/tijd";
 
 type RouteContext = {
   params: Promise<{
