@@ -464,7 +464,7 @@ export default async function DashboardPage() {
           const deadline = week.beschikbaarheidDeadline
             ? new Date(week.beschikbaarheidDeadline)
             : berekenBeschikbaarheidDeadline(week.jaar, week.weeknummer);
-          if (!testOpen && deadline <= vandaag) return false;
+          if (!testOpen && vandaag > deadline) return false;
 
           const dagen = new Set(
             week.beschikbaarheden.map((beschikbaarheid) =>
