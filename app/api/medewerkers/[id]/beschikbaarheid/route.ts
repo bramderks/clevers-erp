@@ -1034,8 +1034,8 @@ export async function POST(
         const dag = new Date(weekStart);
         dag.setUTCDate(dag.getUTCDate() + index);
         const datumSleutel = dag.toISOString().slice(0, 10);
-        const begintijd = maakNederlandseDatum(datumSleutel, "11:30");
-        const eindtijd = maakNederlandseDatum(datumSleutel, "21:00");
+        const begintijd = maakNederlandseDatum(datumSleutel, "09:00");
+        const eindtijd = maakNederlandseDatum(datumSleutel, "23:00");
         if (!begintijd || !eindtijd) {
           throw new RouteFout("De standaardbeschikbaarheid kon niet worden berekend.", 400);
         }
@@ -1342,6 +1342,7 @@ export async function POST(
           id: true,
           jaar: true,
           weeknummer: true,
+          status: true,
         },
         orderBy: [
           { jaar: "asc" },
@@ -1349,10 +1350,20 @@ export async function POST(
         ],
       });
 
+      const vandaag = new Date();
+      const vandaagBegin = new Date(
+        Date.UTC(vandaag.getUTCFullYear(), vandaag.getUTCMonth(), vandaag.getUTCDate()),
+      );
+
       const relevanteWeken = weken.filter((week) => {
         const start = beginVanISOWeek(week.jaar, week.weeknummer);
         const einde = eindeVanISOWeek(week.jaar, week.weeknummer);
-        return start <= vestiging.seizoenEinde! && einde >= vestiging.seizoenStart!;
+        return (
+          week.status !== "AFGESLOTEN" &&
+          einde >= vandaagBegin &&
+          start <= vestiging.seizoenEinde! &&
+          einde >= vestiging.seizoenStart!
+        );
       });
 
       const transacties = relevanteWeken.flatMap((week) => {
@@ -1360,6 +1371,13 @@ export async function POST(
         return Array.from({ length: 7 }, (_, index) => {
           const datum = new Date(weekStart);
           datum.setUTCDate(datum.getUTCDate() + index);
+          const datumSleutel = datum.toISOString().slice(0, 10);
+          const begintijd = maakNederlandseDatum(datumSleutel, "09:00");
+          const eindtijd = maakNederlandseDatum(datumSleutel, "23:00");
+          if (!begintijd || !eindtijd) {
+            throw new RouteFout("De standaardbeschikbaarheid kon niet worden berekend.", 400);
+          }
+
           return prisma.beschikbaarheid.upsert({
             where: {
               weekId_medewerkerId_datum: {
@@ -1369,8 +1387,8 @@ export async function POST(
               },
             },
             update: {
-              begintijd: new Date(`${datum.toISOString().slice(0, 10)}T11:30:00.000Z`),
-              eindtijd: new Date(`${datum.toISOString().slice(0, 10)}T21:00:00.000Z`),
+              begintijd: begintijd,
+              eindtijd: eindtijd,
               status: "BESCHIKBAAR",
               opmerking: "Altijd beschikbaar — hele seizoen",
             },
@@ -1378,8 +1396,8 @@ export async function POST(
               weekId: week.id,
               medewerkerId,
               datum,
-              begintijd: new Date(`${datum.toISOString().slice(0, 10)}T11:30:00.000Z`),
-              eindtijd: new Date(`${datum.toISOString().slice(0, 10)}T21:00:00.000Z`),
+              begintijd: begintijd,
+              eindtijd: eindtijd,
               status: "BESCHIKBAAR",
               opmerking: "Altijd beschikbaar — hele seizoen",
             },
