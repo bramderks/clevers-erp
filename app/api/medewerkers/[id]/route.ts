@@ -483,17 +483,16 @@ export async function PATCH(
 
     const isEigenaar =
       toegestaneOrganisatieIds.length > 0 &&
-      toegestaneOrganisatieIds.some(
-        (organisatieId) =>
-          gebruiker.organisaties.some(
-            (relatie) =>
-              relatie.actief &&
-              relatie.organisatie.actief &&
-              relatie.organisatieId === organisatieId &&
-              ["eigenaar", "super admin"].includes(
-                relatie.rol.naam.trim().toLowerCase(),
-              ),
-          ),
+      toegestaneOrganisatieIds.every((organisatieId) =>
+        gebruiker.organisaties.some(
+          (relatie) =>
+            relatie.actief &&
+            relatie.organisatie.actief &&
+            relatie.organisatieId === organisatieId &&
+            ["eigenaar", "super admin"].includes(
+              relatie.rol.naam.trim().toLowerCase(),
+            ),
+        ),
       );
 
     if (!isEigenaar && !isEigenProfiel) {
