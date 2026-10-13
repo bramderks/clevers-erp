@@ -23,9 +23,6 @@ type DienstUpdateInput = {
   opmerkingen?: string | null;
 };
 
-const SLUITINGSTIJD_UUR = 23;
-const SLUITINGSTIJD_MINUUT = 0;
-
 function controleerDatum(datum: Date) {
   if (
     !(datum instanceof Date) ||
