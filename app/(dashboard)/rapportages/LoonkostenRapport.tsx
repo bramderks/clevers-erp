@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, Lock, Users, X } from "lucide-react";
 import { formatDienstDatum } from "@/lib/planning/tijd";
 
@@ -78,6 +79,8 @@ export default function LoonkostenRapport(p: {
 }) {
   const router = useRouter();
 
+  const router = useRouter();
+
   const [omzet, setOmzet] = useState(
     p.omzet ? String(p.omzet).replace(".", ",") : "",
   );
@@ -124,7 +127,7 @@ export default function LoonkostenRapport(p: {
   const navigerenForm = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    window.location.href =
+    router.push(
       "/rapportages?vestiging=" +
       encodeURIComponent(String(f.get("vestiging") || "")) +
       "&jaar=" +
