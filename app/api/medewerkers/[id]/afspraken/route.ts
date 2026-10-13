@@ -1302,6 +1302,7 @@ export async function POST(
 
             select: {
               id: true,
+              status: true,
             },
           });
 
@@ -1326,8 +1327,15 @@ export async function POST(
               },
               select: {
                 id: true,
+                status: true,
               },
             });
+        }
+
+        if (week.status === "AFGESLOTEN") {
+          overgeslagen += 1;
+          cursor.setDate(cursor.getDate() + 1);
+          continue;
         }
 
         const begintijd =
