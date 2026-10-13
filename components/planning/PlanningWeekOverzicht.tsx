@@ -1,6 +1,6 @@
 "use client";
 
-import { lokaleDatumSleutel, formatDienstTijd } from "@/lib/planning/tijd";
+import { lokaleDatumSleutel } from "@/lib/planning/tijd";
 
 import type {
   PlanningWeek,
