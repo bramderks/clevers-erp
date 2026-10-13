@@ -192,50 +192,27 @@ export async function GET() {
         (relatie) => relatie.organisatieId,
       );
 
-      const [openstaandeUren, afgekeurdeUren] = await Promise.all([
-        prisma.urenRegistratie.count({
-          where: {
-            status: "TE_CONTROLEREN",
-            vestiging: {
-              organisatieId: { in: organisatieIds },
-            },
+      const openstaandeUren = await prisma.urenRegistratie.count({
+        where: {
+          status: "TE_CONTROLEREN",
+          vestiging: {
+            organisatieId: { in: organisatieIds },
           },
-        }),
-        prisma.urenRegistratie.count({
-          where: {
-            status: "AFGEKEURD",
-            vestiging: {
-              organisatieId: { in: organisatieIds },
-            },
-          },
-        }),
-      ]);
+        },
+      });
 
-      const totaalTeBeoordelen = openstaandeUren + afgekeurdeUren;
-      if (totaalTeBeoordelen > 0) {
-        const onderdelen: string[] = [];
-        if (openstaandeUren > 0) {
-          onderdelen.push(
-            `${openstaandeUren} ${openstaandeUren === 1 ? "urenregistratie staat" : "urenregistraties staan"} klaar om te controleren en definitief te maken`,
-          );
-        }
-        if (afgekeurdeUren > 0) {
-          onderdelen.push(
-            `${afgekeurdeUren} ${afgekeurdeUren === 1 ? "afgekeurde urenregistratie vraagt" : "afgekeurde urenregistraties vragen"} om een herbeoordeling`,
-          );
-        }
-
+      if (openstaandeUren > 0) {
         taken.push({
           id: "uren-controleren",
           type: "UREN_CONTROLEREN",
           categorie: "Verloning",
           titel: "Uren controleren",
-          omschrijving: onderdelen.join(". ") + ".",
+          omschrijving: openstaandeUren + (openstaandeUren === 1 ? " urenregistratie staat" : " urenregistraties staan") + " klaar om te controleren en definitief te maken voor de verloning.",
           aangemaaktOp: new Date(),
           actie: "UREN_CONTROLEREN",
           gegevens: {
             href: "/uren",
-            aantal: totaalTeBeoordelen,
+            aantal: openstaandeUren,
           },
         });
       }
