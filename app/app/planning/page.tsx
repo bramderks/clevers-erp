@@ -6,7 +6,7 @@ import { CalendarPlus } from "lucide-react";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
+import { formatDienstDatum, formatDienstTijd, kalenderDatumUTC, lokaleDatumSleutel } from "@/lib/planning/tijd";
 
 function formatDatum(datum: Date) {
   return formatDienstDatum(datum);
@@ -29,7 +29,7 @@ export default async function AppPlanningPage() {
     redirect("/app");
   }
 
-  const vandaag = new Date();
+  const vandaag = kalenderDatumUTC(lokaleDatumSleutel(new Date()));
 
   const isEigenaar = gebruiker.organisaties.some(
     (relatie) =>
