@@ -378,14 +378,7 @@ export async function PATCH(
      */
     const data: {
       status?: PlanningStatus;
-      beschikbaarheidDeadline: Date;
-    } = {
-      beschikbaarheidDeadline:
-        berekenBeschikbaarheidDeadline(
-          bestaandeWeek.jaar,
-          bestaandeWeek.weeknummer,
-        ),
-    };
+    } = {};
 
     /*
      * --------------------------------------------------------
@@ -452,13 +445,7 @@ export async function PATCH(
      * --------------------------------------------------------
      */
 
-    if (
-      data.status === undefined &&
-      bestaandeWeek
-        .beschikbaarheidDeadline
-        ?.getTime() ===
-        data.beschikbaarheidDeadline.getTime()
-    ) {
+    if (data.status === undefined) {
       return NextResponse.json(
         {
           fout:
