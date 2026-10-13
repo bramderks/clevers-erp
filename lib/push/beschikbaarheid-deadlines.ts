@@ -1,6 +1,11 @@
 import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
 import { verstuurMail, webAppUrl } from "@/lib/mail";
+import {
+  BESCHIKBAARHEID_TEST_EINDDATUM,
+  berekenBeschikbaarheidDeadline,
+  isTestOpenVoorWeek,
+} from "@/lib/beschikbaarheid/deadline";
 
 type DeadlineHerinneringType =
   | "BESCHIKBAARHEID_7D"
@@ -75,20 +80,20 @@ export async function verstuurBeschikbaarheidDeadlineHerinneringen() {
   const vensterEinde = new Date(nu.getTime() + 10 * 60_000);
   const minimaleDeadline = new Date(nu.getTime() - 10 * 60_000);
 
+  const maximaleDeadline = new Date(
+    Math.max(
+      vensterEinde.getTime(),
+      ...HERINNERINGEN.map(
+        (herinnering) =>
+          nu.getTime() + herinnering.minuten * 60_000 + 10 * 60_000,
+      ),
+    ),
+  );
+
+  // Haal ook weken met een oude of lege opgeslagen deadline op: tijdens de
+  // testfase geldt een tijdelijke effectieve deadline, los van die opslag.
   const weken = await prisma.week.findMany({
     where: {
-      beschikbaarheidDeadline: {
-        gt: minimaleDeadline,
-        lte: new Date(
-          Math.max(
-            vensterEinde.getTime(),
-            ...HERINNERINGEN.map(
-              (herinnering) =>
-                nu.getTime() + herinnering.minuten * 60_000 + 10 * 60_000,
-            ),
-          ),
-        ),
-      },
       vestiging: {
         actief: true,
       },
@@ -97,6 +102,7 @@ export async function verstuurBeschikbaarheidDeadlineHerinneringen() {
       id: true,
       jaar: true,
       weeknummer: true,
+      status: true,
       beschikbaarheidDeadline: true,
       vestiging: {
         select: {
@@ -150,8 +156,19 @@ export async function verstuurBeschikbaarheidDeadlineHerinneringen() {
   const pushBeschikbaar = vapidInstellen();
 
   for (const week of weken) {
-    const deadline = week.beschikbaarheidDeadline;
-    if (!deadline) continue;
+    if (week.status === "AFGESLOTEN") {
+      overgeslagen += 1;
+      continue;
+    }
+
+    const deadline = isTestOpenVoorWeek(week.jaar, week.weeknummer, nu)
+      ? BESCHIKBAARHEID_TEST_EINDDATUM
+      : week.beschikbaarheidDeadline ??
+        berekenBeschikbaarheidDeadline(week.jaar, week.weeknummer);
+
+    if (deadline <= minimaleDeadline || deadline > maximaleDeadline) {
+      continue;
+    }
 
     for (const herinnering of HERINNERINGEN) {
       const doel = new Date(
