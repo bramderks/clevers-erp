@@ -69,6 +69,56 @@ export async function isEigenaar(organisatieId?: string) {
   );
 }
 
+/**
+ * Controleert eigenaarstoegang tot het volledige medewerkerprofiel.
+ * Medewerkerdocumenten en loonafspraken zijn alleen zichtbaar voor
+ * eigenaren van alle actieve organisaties waaraan de medewerker hangt.
+ */
+export async function isEigenaarVoorMedewerker(medewerkerId: string) {
+  const gebruiker = await getCurrentUser();
+  if (!gebruiker || !gebruiker.actief) return false;
+
+  const medewerker = await prisma.medewerker.findUnique({
+    where: { id: medewerkerId },
+    select: {
+      vestigingen: {
+        select: {
+          vestiging: {
+            select: {
+              actief: true,
+              organisatieId: true,
+              organisatie: { select: { actief: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!medewerker) return false;
+
+  const organisatieIds = [
+    ...new Set(
+      medewerker.vestigingen
+        .filter((relatie) => relatie.vestiging.actief && relatie.vestiging.organisatie.actief)
+        .map((relatie) => relatie.vestiging.organisatieId),
+    ),
+  ];
+
+  return (
+    organisatieIds.length > 0 &&
+    organisatieIds.every((organisatieId) =>
+      gebruiker.organisaties.some(
+        (relatie) =>
+          relatie.actief &&
+          relatie.organisatie.actief &&
+          relatie.organisatieId === organisatieId &&
+          ["eigenaar", "super admin"].includes(relatie.rol.naam.trim().toLowerCase()),
+      ),
+    )
+  );
+}
+
 export async function heeftOrganisatieToegang(organisatieId: string) {
   const gebruiker = await getCurrentUser();
   if (!gebruiker || !gebruiker.actief) return false;
