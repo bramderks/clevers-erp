@@ -1411,57 +1411,45 @@ export async function PATCH(
             );
           }
 
-          const overlappendeDienst =
-            await tx.dienstBezetting.findFirst(
-              {
-                where: {
-                  medewerkerId:
-                    ruilverzoek.ruilMedewerkerId,
-
-                  id: {
-                    not:
-                      actueleBezetting.id,
-                  },
-
-                  status: {
-                    notIn: [
-                      "AFGEZEGD",
-                    ],
-                  },
-
-                  dienst: {
-                    datum:
-                      actueleBezetting
-                        .dienst.datum,
-
-                    begintijd: {
-                      lt:
-                        actueleBezetting
-                          .dienst
-                          .eindtijd,
-                    },
-
-                    eindtijd: {
-                      gt:
-                        actueleBezetting
-                          .dienst
-                          .begintijd,
+          const andereDiensten =
+            await tx.dienstBezetting.findMany({
+              where: {
+                medewerkerId: ruilverzoek.ruilMedewerkerId,
+                id: { not: actueleBezetting.id },
+                status: { notIn: ["AFGEZEGD"] },
+                dienst: {
+                  datum: actueleBezetting.dienst.datum,
+                  week: {
+                    vestiging: {
+                      organisatieId: vestiging.organisatieId,
                     },
                   },
-                },
-
-                select: {
-                  id: true,
                 },
               },
-            );
+              select: {
+                dienst: {
+                  select: {
+                    begintijd: true,
+                    eindtijd: true,
+                    week: {
+                      select: { vestigingId: true, vestiging: { select: { naam: true } } },
+                    },
+                  },
+                },
+              },
+            });
 
-          if (
-            overlappendeDienst
-          ) {
-            throw new Error(
-              "MEDEWERKER_HEEFT_OVERLAP",
-            );
+          const buffer = 60 * 60 * 1000;
+          const vestigingsconflict = andereDiensten.find((andere) =>
+            andere.dienst.week.vestigingId !== vestiging.id &&
+            actueleBezetting.dienst.begintijd.getTime() <
+              andere.dienst.eindtijd.getTime() + buffer &&
+            actueleBezetting.dienst.eindtijd.getTime() >
+              andere.dienst.begintijd.getTime() - buffer,
+          );
+
+          if (vestigingsconflict) {
+            throw new Error("MEDEWERKER_HEEFT_VESTIGINGSCONFLICT");
           }
 
           await tx.dienstBezetting.update({
@@ -1555,6 +1543,12 @@ export async function PATCH(
         case "MEDEWERKER_HEEFT_OVERLAP":
           return fout(
             "De medewerker heeft een overlappende dienst.",
+            409,
+          );
+
+        case "MEDEWERKER_HEEFT_VESTIGINGSCONFLICT":
+          return fout(
+            "De medewerker heeft een dienst bij een andere vestiging binnen één uur van deze dienst.",
             409,
           );
 
