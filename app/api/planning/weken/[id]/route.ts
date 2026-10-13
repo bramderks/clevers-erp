@@ -279,6 +279,13 @@ export async function PATCH(
         );
       }
 
+      if (body.status === "AFGESLOTEN") {
+        return NextResponse.json(
+          { fout: "Sluit een planningweek af via de loonkostenrapportage, zodat de historische snapshot en urenregistraties correct worden vastgelegd." },
+          { status: 400 },
+        );
+      }
+
       data.status =
         body.status as PlanningStatus;
     }
