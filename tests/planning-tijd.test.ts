@@ -110,3 +110,20 @@ test("testfase overschrijft tijdelijk een verstreken beschikbaarheidsdeadline", 
     true,
   );
 });
+
+test("loonkosten verdelen unieke uren zonder dubbele telling van overlappende diensten", async () => {
+  const { berekenUniekeUrenPerInterval } = await import("../lib/verloning/overlappendeUren");
+  const begin = new Date("2026-09-30T15:00:00.000Z");
+  const einde = new Date("2026-09-30T19:00:00.000Z");
+  const uren = berekenUniekeUrenPerInterval(
+    [
+      { id: "dienst-a", medewerkerId: "medewerker-1", vestigingId: "vestiging-1", datum: new Date("2026-09-30T00:00:00.000Z"), begintijd: begin, eindtijd: einde },
+      { id: "dienst-b", medewerkerId: "medewerker-1", vestigingId: "vestiging-1", datum: new Date("2026-09-30T00:00:00.000Z"), begintijd: begin, eindtijd: einde },
+    ],
+    (start, end) => ({ gewerkteUren: (end.getTime() - start.getTime()) / 3_600_000 }),
+  );
+
+  assert.equal(uren.get("dienst-a"), 4);
+  assert.equal(uren.get("dienst-b"), 0);
+  assert.equal([...uren.values()].reduce((totaal, waarde) => totaal + waarde, 0), 4);
+});
