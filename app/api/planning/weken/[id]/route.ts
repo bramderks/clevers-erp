@@ -473,22 +473,28 @@ export async function DELETE(
 
     // Verwijderen van een week kan via cascade ook dienstbezettingen en
     // urenregistraties verwijderen. Bescherm daarom historische/geverifieerde uren.
-    const historischeUren = await prisma.dienstBezetting.findFirst({
-      where: {
-        dienst: { weekId: id },
-        OR: [
-          { status: "GEWERKT" },
-          { urenregistratie: { isNot: null } },
-        ],
-      },
-      select: { id: true },
-    });
+    const [historischeUren, loonkostenSnapshot] = await Promise.all([
+      prisma.dienstBezetting.findFirst({
+        where: {
+          dienst: { weekId: id },
+          OR: [
+            { status: "GEWERKT" },
+            { urenregistratie: { isNot: null } },
+          ],
+        },
+        select: { id: true },
+      }),
+      prisma.loonkostenWeek.findUnique({
+        where: { weekId: id },
+        select: { id: true },
+      }),
+    ]);
 
-    if (historischeUren) {
+    if (historischeUren || loonkostenSnapshot) {
       return NextResponse.json(
         {
-          fout: "Deze planningweek kan niet worden verwijderd omdat er gewerkte uren of urenregistraties aan gekoppeld zijn.",
-          code: "WEEK_HEEFT_URENREGISTRATIE",
+          fout: "Deze planningweek kan niet worden verwijderd omdat er historische uren of een afgesloten loonkostensnapshot aan gekoppeld is.",
+          code: "WEEK_HEEFT_HISTORISCHE_GEGEVENS",
         },
         { status: 409 },
       );
