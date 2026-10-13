@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { hasPermissionForVestiging, isEigenaar } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { lokaleDagGrenzen } from "@/lib/planning/tijd";
 import { verstuurDirecteDienstMelding } from "@/lib/push/dienst-direct";
 
 const TOEGESTANE_STATUSSEN = [
@@ -510,6 +511,7 @@ export async function POST(
        * vrij. De controle geldt dus één uur vóór en één uur ná
        * een bestaande dienst.
        */
+      const dagGrenzen = lokaleDagGrenzen(dienst.begintijd);
       const medewerkerDienstenZelfdeOrganisatie =
         await prisma.dienstBezetting.findMany({
           where: {
@@ -517,7 +519,7 @@ export async function POST(
             status: { not: "AFGEZEGD" },
             dienst: {
               id: { not: dienstId },
-              datum: dienst.datum,
+              begintijd: { gte: dagGrenzen.start, lt: dagGrenzen.einde },
               week: {
                 vestiging: {
                   organisatieId:
