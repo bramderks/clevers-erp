@@ -1,5 +1,6 @@
 import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
+import { kalenderDatumUTC, lokaleDatumSleutel, nederlandseDatumTijd, formatDienstTijd } from "@/lib/planning/tijd";
 
 type HerinneringType = "DIENST_24U" | "DIENST_12U" | "DIENST_2U";
 
@@ -27,14 +28,10 @@ function vapidInstellen() {
 }
 
 function datumMetTijd(datum: Date, tijd: Date) {
-  const resultaat = new Date(datum);
-  resultaat.setHours(
-    tijd.getUTCHours(),
-    tijd.getUTCMinutes(),
-    tijd.getUTCSeconds(),
-    0,
+  return nederlandseDatumTijd(
+    lokaleDatumSleutel(datum),
+    formatDienstTijd(tijd),
   );
-  return resultaat;
 }
 
 function binnenVenster(
@@ -65,8 +62,10 @@ export async function verstuurDienstHerinneringen() {
       },
       dienst: {
         datum: {
-          gte: new Date(nu.getTime() - 24 * 60 * 60 * 1000),
-          lte: zoekTot,
+          gte: kalenderDatumUTC(
+            lokaleDatumSleutel(new Date(nu.getTime() - 24 * 60 * 60 * 1000)),
+          ),
+          lte: kalenderDatumUTC(lokaleDatumSleutel(zoekTot)),
         },
         week: {
           status: "GEPUBLICEERD",
