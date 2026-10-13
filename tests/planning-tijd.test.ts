@@ -33,8 +33,8 @@ test("overlap gebruikt de bestaande bedrijfsregel", () => {
   assert.equal(tijdenOverlappen(9 * 60, 14 * 60, 13 * 60, 15 * 60), true);
 });
 
-test("standaard planning bereik blijft 09:00 tot 23:00", () => {
-  assert.equal(START_MINUTEN, 540);
+test("standaard planning bereik blijft 08:30 tot 23:00", () => {
+  assert.equal(START_MINUTEN, 510);
   assert.equal(EINDE_MINUTEN, 1380);
 });
 
