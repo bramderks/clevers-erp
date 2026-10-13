@@ -10,7 +10,6 @@ import {
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
-import { lokaleDatumSleutel } from "@/lib/planning/tijd";
 
 type Vestiging = {
   id: string;
