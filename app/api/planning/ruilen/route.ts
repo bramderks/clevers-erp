@@ -212,6 +212,7 @@ async function haalBezettingOp(
           week: {
             select: {
               id: true,
+              status: true,
               vestigingId: true,
 
               vestiging: {
@@ -487,6 +488,10 @@ export async function POST(
         "Deze vestiging is niet actief.",
         400,
       );
+    }
+
+    if (bezetting.dienst.week.status === "AFGESLOTEN") {
+      return fout("Een afgesloten planningweek kan niet meer worden geruild.", 409);
     }
 
     if (
