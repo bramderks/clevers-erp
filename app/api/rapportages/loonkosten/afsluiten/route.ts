@@ -98,6 +98,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Geen toegang tot deze vestiging." }, { status: 403 });
     }
 
+    const [openBezetting, openRuilverzoek] = await Promise.all([
+      prisma.dienstBezetting.findFirst({
+        where: {
+          dienst: { weekId: week.id },
+          medewerkerId: null,
+          status: "OPEN",
+        },
+        select: { id: true },
+      }),
+      prisma.ruilverzoek.findFirst({
+        where: {
+          status: { in: ["AANGEVRAAGD", "WACHT_OP_EIGENAAR"] },
+          dienstBezetting: { dienst: { weekId: week.id } },
+        },
+        select: { id: true },
+      }),
+    ]);
+
+    if (openBezetting) {
+      return NextResponse.json(
+        { error: "Vul of verwijder eerst alle open diensten voordat je de planningweek afsluit." },
+        { status: 409 },
+      );
+    }
+
+    if (openRuilverzoek) {
+      return NextResponse.json(
+        { error: "Beoordeel eerst alle open ruilverzoeken voordat je de planningweek afsluit." },
+        { status: 409 },
+      );
+    }
+
     const regels = week.diensten.flatMap((dienst) =>
       dienst.bezetting
         .filter((bezetting) => bezetting.medewerker)
