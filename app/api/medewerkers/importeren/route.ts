@@ -1574,7 +1574,6 @@ export async function POST(
 
       const vestigingNamen = splitsLijst(!isLeeg(rij.vestigingen) ? rij.vestigingen : rij.vestiging);
       if (!vestigingNamen.length) fouten.push({ rij: rijNummer, veld: "vestigingen", melding: "Minimaal één vestiging is verplicht." });
-      const gekozenVestigingen = vestigingNamen.map((naam) => vestigingMap.get(normaliseerVergelijking(naam))).filter((item): item is (typeof vestigingen)[number] => Boolean(item));
       const onbekend = vestigingNamen.filter((naam) => !vestigingMap.has(normaliseerVergelijking(naam)));
       if (onbekend.length) fouten.push({ rij: rijNummer, veld: "vestigingen", melding: `Vestiging(en) bestaan niet binnen de organisatie: ${onbekend.join(", ")}.` });
 
