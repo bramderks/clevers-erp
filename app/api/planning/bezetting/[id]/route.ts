@@ -45,6 +45,7 @@ async function haalBezettingOp(
           eindtijd: true,
           week: {
             select: {
+              status: true,
               vestigingId: true,
               vestiging: {
                 select: {
@@ -89,6 +90,13 @@ export async function PATCH(
           fout: "Bezetting niet gevonden.",
         },
         { status: 404 },
+      );
+    }
+
+    if (bestaandeBezetting.dienst.week.status === "AFGESLOTEN") {
+      return NextResponse.json(
+        { fout: "De bezetting van een afgesloten planningweek kan niet worden gewijzigd." },
+        { status: 409 },
       );
     }
 
@@ -488,6 +496,13 @@ export async function DELETE(
           fout: "Bezetting niet gevonden.",
         },
         { status: 404 },
+      );
+    }
+
+    if (bestaandeBezetting.dienst.week.status === "AFGESLOTEN") {
+      return NextResponse.json(
+        { fout: "De bezetting van een afgesloten planningweek kan niet worden gewijzigd." },
+        { status: 409 },
       );
     }
 
