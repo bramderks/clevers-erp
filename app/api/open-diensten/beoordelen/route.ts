@@ -194,6 +194,7 @@ export async function POST(request: Request) {
             tags: { select: { tagId: true, aantal: true } },
             week: {
               select: {
+                status: true,
                 vestigingId: true,
                 vestiging: {
                   select: { id: true, naam: true, organisatieId: true },
@@ -206,6 +207,10 @@ export async function POST(request: Request) {
     });
 
     if (!openDienst) return null;
+
+    if (openDienst.dienst.week.status === "AFGESLOTEN") {
+      throw new Error("Deze open dienst hoort bij een afgesloten planningweek.");
+    }
 
     const medewerker = await tx.medewerker.findFirst({
       where: {
@@ -365,6 +370,9 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Open dienst kon niet worden toegewezen.";
+    if (message === "Deze open dienst hoort bij een afgesloten planningweek.") {
+      return NextResponse.json({ fout: message }, { status: 409 });
+    }
     if (
       message === "Deze medewerker staat al op deze dienst." ||
       message.includes("Tussen vestigingen is 1 uur reistijd gereserveerd.")
