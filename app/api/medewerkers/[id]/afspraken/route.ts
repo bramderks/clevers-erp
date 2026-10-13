@@ -1383,6 +1383,12 @@ export async function POST(
               },
               dienst: {
                 include: {
+                  week: {
+                    select: {
+                      vestigingId: true,
+                      status: true,
+                    },
+                  },
                   bezetting: {
                     where: {
                       status: {
@@ -1399,13 +1405,28 @@ export async function POST(
             },
           });
 
+        const bufferVestigingen = 60 * 60 * 1000;
+        const vestigingsconflict = bestaandeBezettingen.some(
+          (bezetting) =>
+            bezetting.dienst.week.vestigingId !== vestigingId &&
+            begintijd.getTime() <
+              bezetting.dienst.eindtijd.getTime() + bufferVestigingen &&
+            eindtijd.getTime() >
+              bezetting.dienst.begintijd.getTime() - bufferVestigingen,
+        );
+
+        if (vestigingsconflict) {
+          overgeslagen += 1;
+          cursor.setDate(cursor.getDate() + 1);
+          continue;
+        }
+
         const overlappende =
           bestaandeBezettingen.filter(
             (bezetting) =>
-              bezetting.dienst.begintijd <
-                eindtijd &&
-              bezetting.dienst.eindtijd >
-                begintijd,
+              bezetting.dienst.week.vestigingId === vestigingId &&
+              bezetting.dienst.begintijd < eindtijd &&
+              bezetting.dienst.eindtijd > begintijd,
           );
 
         let dienstAangepast =
