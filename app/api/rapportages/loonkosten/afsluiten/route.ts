@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
           where: { dienstBezettingId: registratie.dienstBezettingId },
           select: { status: true },
         });
-        if (bestaande && ["DEFINITIEF", "AFGEKEURD"].includes(bestaande.status)) continue;
+        if (bestaande) continue;
         await tx.urenRegistratie.upsert({
           where: { dienstBezettingId: registratie.dienstBezettingId },
           create: registratie,
