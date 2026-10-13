@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser, isEigenaar } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { kalenderDatumUTC, lokaleDatumSleutel, nederlandseDatumTijd, formatDienstTijd } from "@/lib/planning/tijd";
+import { lokaleDagGrenzen } from "@/lib/planning/tijd";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -137,17 +138,15 @@ export async function POST(
           .filter((medewerkerId): medewerkerId is string => Boolean(medewerkerId)),
       ),
     )];
-    const doelDatums = [...new Map(
-      kopieerbareDiensten.map((dienst) => [dienst.datum.toISOString(), dienst.datum]),
-    ).values()];
-
-    if (medewerkerIds.length > 0 && doelDatums.length > 0) {
+    if (medewerkerIds.length > 0 && kopieerbareDiensten.length > 0) {
+      const eersteDag = lokaleDagGrenzen(kopieerbareDiensten[0].datumSleutel);
+      const laatsteDag = lokaleDagGrenzen(kopieerbareDiensten[kopieerbareDiensten.length - 1].datumSleutel);
       const bestaandeBezettingen = await prisma.dienstBezetting.findMany({
         where: {
           medewerkerId: { in: medewerkerIds },
           status: { not: "AFGEZEGD" },
           dienst: {
-            datum: { in: doelDatums },
+            begintijd: { gte: eersteDag.start, lt: laatsteDag.einde },
             week: {
               vestiging: { organisatieId: bron.vestiging.organisatieId },
             },
@@ -157,7 +156,6 @@ export async function POST(
           medewerkerId: true,
           dienst: {
             select: {
-              datum: true,
               begintijd: true,
               eindtijd: true,
               week: {
@@ -176,7 +174,7 @@ export async function POST(
           if (!bezetting.medewerkerId) continue;
           const conflict = bestaandeBezettingen.find((bestaand) =>
             bestaand.medewerkerId === bezetting.medewerkerId &&
-            bestaand.dienst.datum.getTime() === dienst.datum.getTime() &&
+            lokaleDatumSleutel(bestaand.dienst.begintijd) === dienst.datumSleutel &&
             bestaand.dienst.week.vestiging.id !== bron.vestigingId &&
             dienst.begintijd.getTime() < bestaand.dienst.eindtijd.getTime() + buffer &&
             dienst.eindtijd.getTime() > bestaand.dienst.begintijd.getTime() - buffer,
