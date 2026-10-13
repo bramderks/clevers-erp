@@ -7,6 +7,7 @@ import {
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { kalenderDatumUTC, lokaleDatumSleutel, nederlandseDatumTijd, lokaleTijdMinuten } from "@/lib/planning/tijd";
+import { lokaleDagGrenzen } from "@/lib/planning/tijd";
 
 type RouteContext = {
   params: Promise<{
@@ -365,13 +366,14 @@ export async function PATCH(
       .filter((medewerkerId): medewerkerId is string => medewerkerId !== null);
 
     if (medewerkerIds.length > 0) {
+      const dagGrenzen = lokaleDagGrenzen(begintijd);
       const andereDiensten = await prisma.dienstBezetting.findMany({
         where: {
           medewerkerId: { in: medewerkerIds },
           status: { not: "AFGEZEGD" },
           dienst: {
             id: { not: id },
-            datum: kalenderDatumUTC(lokaleDatumSleutel(datum)),
+            begintijd: { gte: dagGrenzen.start, lt: dagGrenzen.einde },
             week: {
               vestiging: {
                 organisatieId: bestaand.week.vestiging.organisatieId,
