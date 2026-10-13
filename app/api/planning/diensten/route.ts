@@ -45,6 +45,7 @@ async function haalWeekMetVestigingOp(
       id: true,
       jaar: true,
       weeknummer: true,
+      status: true,
       vestigingId: true,
 
       vestiging: {
@@ -820,6 +821,13 @@ export async function POST(
         {
           status: 404,
         },
+      );
+    }
+
+    if (week.status === "AFGESLOTEN") {
+      return NextResponse.json(
+        { fout: "Er kunnen geen diensten worden toegevoegd aan een afgesloten planningweek." },
+        { status: 409 },
       );
     }
 
