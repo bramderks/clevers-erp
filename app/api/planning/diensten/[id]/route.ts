@@ -597,6 +597,35 @@ export async function DELETE(
       );
     }
 
+    // DienstBezetting en UrenRegistratie zijn cascade-gerelateerd.
+    // Bescherm daarom historische uren en gecontroleerde diensten tegen
+    // onbedoeld verwijderen via de planningsroute.
+    const historischeRegistraties = await prisma.dienstBezetting.findMany({
+      where: { dienstId: id },
+      select: {
+        status: true,
+        urenregistratie: {
+          select: { id: true },
+        },
+      },
+    });
+
+    if (
+      historischeRegistraties.some(
+        (bezetting) =>
+          bezetting.status === "GEWERKT" ||
+          bezetting.urenregistratie !== null,
+      )
+    ) {
+      return NextResponse.json(
+        {
+          fout: "Deze dienst kan niet worden verwijderd omdat er gewerkte uren of een urenregistratie aan gekoppeld is.",
+          code: "DIENST_HEEFT_URENREGISTRATIE",
+        },
+        { status: 409 },
+      );
+    }
+
     await prisma.dienst.delete({
       where: { id },
     });
