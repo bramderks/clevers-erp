@@ -1,0 +1,56 @@
+name: Temporary dependency audit repair
+
+on:
+  push:
+    branches:
+      - deps/security-audit-fix
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and update vulnerable dependencies
+        run: |
+          npm install --ignore-scripts
+          npm audit fix
+
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+
+      - name: Run tests
+        run: npm test
+
+      - name: Run lint
+        run: npm run lint:ci
+
+      - name: Run TypeScript
+        run: npm run typecheck
+
+      - name: Verify dependency audit
+        run: npm audit --audit-level=high
+
+      - name: Commit lockfile updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          if git diff --cached --quiet; then
+            echo "No dependency lockfile changes to commit."
+            exit 0
+          fi
+          git commit -m "Fix dependency audit findings"
+          git push
