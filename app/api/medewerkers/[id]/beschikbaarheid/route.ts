@@ -572,10 +572,13 @@ async function bepaalToegang(
    * mogen wijzigen.
    */
   const magWijzigen =
-    isBeheerder ||
+    week.status !== "AFGESLOTEN" &&
     (
-      isEigenMedewerker &&
-      !gesloten
+      isBeheerder ||
+      (
+        isEigenMedewerker &&
+        !gesloten
+      )
     );
 
   return {
@@ -1003,6 +1006,10 @@ export async function POST(
         medewerkerId,
         weekId,
       );
+
+    if (toegang.week.status === "AFGESLOTEN") {
+      return fout("De beschikbaarheid van een afgesloten planningweek kan niet meer worden gewijzigd.", 409);
+    }
 
     // Pas dezelfde deadline- en rolcontrole toe op weekknoppen als op
     // gewone dagwijzigingen. Teamleiders mogen beschikbaarheid bekijken,
