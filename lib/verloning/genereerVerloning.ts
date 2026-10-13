@@ -35,14 +35,6 @@ function beginVanVolgendeMaand(jaar: number, maand: number) {
   return new Date(Date.UTC(jaar, maand, 1));
 }
 
-function beginVanControleperiode(jaar: number, maand: number) {
-  return new Date(Date.UTC(jaar, maand, 1, 0, 0, 0, 0));
-}
-
-function eindeVanControleperiode(jaar: number, maand: number) {
-  return new Date(Date.UTC(jaar, maand, 3, 23, 59, 59, 999));
-}
-
 function ligtInVerloningsMaand(datum: Date, jaar: number, maand: number) {
   const lokaleDatum = lokaleKalenderDatumUTC(datum);
   return lokaleDatum.getUTCFullYear() === jaar && lokaleDatum.getUTCMonth() === maand - 1;
