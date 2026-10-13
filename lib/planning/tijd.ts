@@ -179,6 +179,26 @@ export function lokaleDatumSleutel(datum: Date): string {
 }
 
 /**
+ * Geeft de instantgrenzen van een Nederlandse kalenderdag terug.
+ * Dit is DST-veilig: een dag kan 23 of 25 uur duren.
+ */
+export function lokaleDagGrenzen(datum: Date | string): { start: Date; einde: Date } {
+  const sleutel =
+    typeof datum === "string" && /^\d{4}-\d{2}-\d{2}$/.test(datum)
+      ? datum
+      : lokaleDatumSleutel(datum instanceof Date ? datum : new Date(datum));
+  const [jaar, maand, dag] = sleutel.split("-").map(Number);
+  const volgendeSleutel = new Date(Date.UTC(jaar, maand - 1, dag + 1))
+    .toISOString()
+    .slice(0, 10);
+
+  return {
+    start: nederlandseDatumTijd(sleutel, "00:00"),
+    einde: nederlandseDatumTijd(volgendeSleutel, "00:00"),
+  };
+}
+
+/**
  * Combineert een Nederlandse kalenderdatum en kloktijd tot één instant.
  * Werkt onafhankelijk van de timezone waarop Vercel/Node draait.
  */
