@@ -62,7 +62,7 @@ export default function VakantiePlanningPanel({medewerkerId,isEigenaar,magIndien
   return <div className="space-y-6">
     <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
       <p className="font-semibold">Meerdaags verlof in juni, juli en augustus</p>
-      <p className="mt-1">Je levert je vakantieplanning uiterlijk 30 april in. In deze periode mag je maximaal 14 dagen vakantie opnemen, ook maximaal 14 dagen aaneengesloten.</p>
+      <p className="mt-1">Je levert je vakantieplanning uiterlijk 30 april in. Afwezigheid langer dan 14 dagen aaneengesloten moet je als vakantieaanvraag indienen. De eigenaar beoordeelt deze aanvraag.</p>
     </div>
     {magIndienen && <form onSubmit={indienen} className="grid gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-2">
       <label className="text-sm font-medium text-slate-700">Vestiging<select required value={vestigingId} onChange={e=>setVestigingId(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"><option value="">Kies een vestiging</option>{vestigingen.map(v=><option key={v.id} value={v.id}>{v.naam}</option>)}</select></label>
