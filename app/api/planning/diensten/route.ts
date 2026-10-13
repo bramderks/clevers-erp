@@ -157,6 +157,7 @@ async function haalWeekVoorDatumOp(
       id: true,
       jaar: true,
       weeknummer: true,
+      status: true,
       vestigingId: true,
 
       vestiging: {
