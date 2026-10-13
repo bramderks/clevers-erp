@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  BESCHIKBAARHEID_TEST_EINDDATUM,
+  berekenBeschikbaarheidDeadline as berekenDeadline,
+  isTestOpenVoorWeek,
+} from "@/lib/beschikbaarheid/deadline";
 
 import { lokaleTijdMinuten } from "@/lib/planning/tijd";
 
@@ -202,69 +207,7 @@ function eindeVanISOWeek(
   return einde;
 }
 
-const BESCHIKBAARHEID_TEST_EINDDATUM = new Date(
-  "2026-12-01T00:00:00.000Z",
-);
 
-function volgendeWeekStart(): Date {
-  const nu = new Date();
-  const vandaag = new Date(
-    Date.UTC(
-      nu.getUTCFullYear(),
-      nu.getUTCMonth(),
-      nu.getUTCDate(),
-      0,
-      0,
-      0,
-      0,
-    ),
-  );
-
-  const dag = vandaag.getUTCDay() || 7;
-  vandaag.setUTCDate(
-    vandaag.getUTCDate() + (8 - dag),
-  );
-
-  return vandaag;
-}
-
-function isTestOpenVoorWeek(
-  jaar: number,
-  weeknummer: number,
-): boolean {
-  return (
-    new Date() < BESCHIKBAARHEID_TEST_EINDDATUM &&
-    beginVanISOWeek(jaar, weeknummer) >=
-      volgendeWeekStart()
-  );
-}
-
-function berekenDeadline(
-  jaar: number,
-  weeknummer: number,
-): Date {
-  const weekStart =
-    beginVanISOWeek(
-      jaar,
-      weeknummer,
-    );
-
-  const deadline =
-    new Date(weekStart);
-
-  deadline.setUTCDate(
-    deadline.getUTCDate() - 28,
-  );
-
-  deadline.setUTCHours(
-    23,
-    59,
-    59,
-    999,
-  );
-
-  return deadline;
-}
 
 function deadlineVerstreken(
   deadline: Date,
@@ -664,17 +607,23 @@ async function bepaalToegang(
       isEigenMedewerker,
 
     magWijzigen:
-      isEigenaar ||
+      beschikbaarheid.week.status !== "AFGESLOTEN" &&
       (
-        isEigenMedewerker &&
-        !gesloten
+        isEigenaar ||
+        (
+          isEigenMedewerker &&
+          !gesloten
+        )
       ),
 
     magVerwijderen:
-      isEigenaar ||
+      beschikbaarheid.week.status !== "AFGESLOTEN" &&
       (
-        isEigenMedewerker &&
-        !gesloten
+        isEigenaar ||
+        (
+          isEigenMedewerker &&
+          !gesloten
+        )
       ),
   };
 }
@@ -848,6 +797,10 @@ export async function PATCH(
         medewerkerId,
         beschikbaarheidId,
       );
+
+    if (toegang.beschikbaarheid.week.status === "AFGESLOTEN") {
+      throw new RouteFout("Beschikbaarheid van een afgesloten planningweek kan niet meer worden gewijzigd.", 409);
+    }
 
     if (!toegang.magWijzigen) {
       if (
@@ -1071,6 +1024,10 @@ export async function DELETE(
         medewerkerId,
         beschikbaarheidId,
       );
+
+    if (toegang.beschikbaarheid.week.status === "AFGESLOTEN") {
+      throw new RouteFout("Beschikbaarheid van een afgesloten planningweek kan niet meer worden verwijderd.", 409);
+    }
 
     if (!toegang.magVerwijderen) {
       if (
