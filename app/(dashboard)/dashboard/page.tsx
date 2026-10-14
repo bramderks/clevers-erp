@@ -856,7 +856,7 @@ export default async function DashboardPage() {
       status: { in: ["GEPLAND", "BEVESTIGD"] },
       medewerker: { actief: false },
       dienst: {
-        datum: { gte: vandaagAlsKalenderdatum },
+        datum: { gte: kalenderDatumUTC(lokaleDatumSleutel(new Date())) },
         week: {
           vestiging: {
             organisatieId: {
