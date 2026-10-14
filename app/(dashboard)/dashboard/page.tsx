@@ -796,7 +796,6 @@ export default async function DashboardPage() {
    */
 
   const vandaag = new Date();
-  const vandaagAlsKalenderdatum = kalenderDatumUTC(lokaleDatumSleutel(vandaag));
 
   const beginVorigeMaand =
     beginVanVorigeMaand(
