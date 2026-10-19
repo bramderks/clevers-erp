@@ -220,9 +220,15 @@ export async function PATCH(
       );
     }
 
-    if (bestaandeWeek.status === "AFGESLOTEN") {
+    if (
+      bestaandeWeek.status === "AFGESLOTEN" &&
+      !(
+        body.status === "GEPUBLICEERD" &&
+        Object.keys(body).every((key) => key === "status")
+      )
+    ) {
       return NextResponse.json(
-        { fout: "Een afgesloten planningweek kan niet via deze route worden heropend of gewijzigd." },
+        { fout: "Deze afgesloten week kan alleen expliciet worden heropend. Kies eerst 'Week heropenen' voordat je wijzigingen aanbrengt." },
         { status: 409 },
       );
     }
@@ -381,7 +387,8 @@ export async function PATCH(
 
     if (
       data.status === "GEPUBLICEERD" &&
-      bestaandeWeek.status !== "GEPUBLICEERD"
+      bestaandeWeek.status !== "GEPUBLICEERD" &&
+      bestaandeWeek.status !== "AFGESLOTEN"
     ) {
       const bezettingen =
         await prisma.dienstBezetting.findMany({
