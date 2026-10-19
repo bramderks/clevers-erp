@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { kalenderDatumUTC, lokaleDatumSleutel } from "@/lib/planning/tijd";
+import { berekenGewerkteUren } from "@/lib/verloning/pauze";
 import { berekenUniekeUrenPerInterval } from "@/lib/verloning/overlappendeUren";
 import PageLayout from "@/components/ui/PageLayout";
 import PageToolbar from "@/components/ui/PageToolbar";
