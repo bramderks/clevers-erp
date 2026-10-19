@@ -5,6 +5,8 @@ const PUBLIC_ROUTES = [
   "/api/login",
   "/account/activeren",
   "/api/account/activeren",
+  // Server-to-server endpoint: its own integration-secret check is the authentication layer.
+  "/api/integraties/bestellen/auth",
   "/_next",
   "/favicon.ico",
   "/logo.png",
