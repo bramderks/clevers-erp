@@ -226,7 +226,7 @@ export default async function RapportagesPage({
   // kunnen worden aangepast. Zonder deze controle bleef een oude snapshot, zoals
   // de 14 uur van Jayro, de actuele planning overschrijven.
   const actueleUrenPerMedewerker = new Map<string, number>();
-  const contractInfoPerMedewerker = new Map<string, { contractType: string; contractUren: number | null }>();
+  const contractInfoPerMedewerker = new Map<string, { contractType: string | null; contractUren: number | null }>();
   for (const dienst of actueleWeekDiensten) {
     const uren = berekenGewerkteUren(dienst.begintijd, dienst.eindtijd).gewerkteUren;
     for (const bezetting of dienst.bezetting) {

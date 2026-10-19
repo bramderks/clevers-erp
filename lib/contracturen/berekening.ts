@@ -1,3 +1,21 @@
+export function bepaalContractPeriode(datumInDienst: Date | null, fallbackStart: Date, peildatum: Date): { start: Date; einde: Date } {
+  const dag = (waarde: Date) => new Date(Date.UTC(waarde.getUTCFullYear(), waarde.getUTCMonth(), waarde.getUTCDate()));
+  const peil = dag(peildatum);
+  const anker = dag(datumInDienst ?? fallbackStart);
+  let start: Date;
+  if (anker > peil) {
+    start = anker;
+  } else {
+    start = new Date(Date.UTC(peil.getUTCFullYear(), anker.getUTCMonth(), anker.getUTCDate()));
+    if (start > peil) start = new Date(Date.UTC(peil.getUTCFullYear() - 1, anker.getUTCMonth(), anker.getUTCDate()));
+  }
+  let volgende = new Date(Date.UTC(start.getUTCFullYear() + 1, start.getUTCMonth(), start.getUTCDate()));
+  if (volgende.getUTCMonth() !== start.getUTCMonth()) volgende = new Date(Date.UTC(start.getUTCFullYear() + 1, start.getUTCMonth() + 1, 0));
+  const einde = new Date(volgende);
+  einde.setUTCDate(einde.getUTCDate() - 1);
+  return { start, einde };
+}
+
 export type ContractUrenBalansInput = {
   contractUren: number | null;
   jaarUrenNorm: number | null;

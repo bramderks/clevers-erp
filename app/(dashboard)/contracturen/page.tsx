@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { kalenderDatumUTC, lokaleDatumSleutel } from "@/lib/planning/tijd";
-import { berekenContractUren, begrensRapportageUren } from "@/lib/contracturen/berekening";
+import { berekenContractUren, bepaalContractPeriode, begrensRapportageUren } from "@/lib/contracturen/berekening";
 import { berekenGewerkteUren } from "@/lib/verloning/pauze";
 import PageLayout from "@/components/ui/PageLayout";
 import PageToolbar from "@/components/ui/PageToolbar";
@@ -75,14 +75,13 @@ export default async function ContracturenPage() {
   const perioden = medewerkers.map((medewerker) => {
     const starts = medewerker.vestigingen.map((relatie) => relatie.vestiging.seizoenStart).filter((datum): datum is Date => datum !== null).map(datumUTC);
     const eindes = medewerker.vestigingen.map((relatie) => relatie.vestiging.seizoenEinde).filter((datum): datum is Date => datum !== null).map(datumUTC);
-    return {
-      medewerkerId: medewerker.id,
-      start: starts.length ? new Date(Math.min(...starts.map((datum) => datum.getTime()))) : standaardStart,
-      einde: eindes.length ? new Date(Math.max(...eindes.map((datum) => datum.getTime()))) : standaardEinde,
-    };
+    const openingStart = starts.length ? new Date(Math.min(...starts.map((datum) => datum.getTime()))) : standaardStart;
+    const openingEinde = eindes.length ? new Date(Math.max(...eindes.map((datum) => datum.getTime()))) : standaardEinde;
+    const contractPeriode = bepaalContractPeriode(medewerker.datumInDienst ?? null, openingStart, vandaag);
+    return { medewerkerId: medewerker.id, openingStart, openingEinde, contractStart: contractPeriode.start, contractEinde: contractPeriode.einde };
   });
-  const globaleStart = new Date(Math.min(...perioden.map((periode) => periode.start.getTime())));
-  const globaleEinde = new Date(Math.max(...perioden.map((periode) => periode.einde.getTime())));
+  const globaleStart = new Date(Math.min(...perioden.map((periode) => periode.contractStart.getTime())));
+  const globaleEinde = new Date(Math.max(...perioden.map((periode) => periode.contractEinde.getTime())));
   const globaleEindeExclusief = plusDagen(globaleEinde, 1);
   const medewerkerIds = medewerkers.map((medewerker) => medewerker.id);
 
@@ -110,7 +109,7 @@ export default async function ContracturenPage() {
     const medewerkerVestigingen = medewerker.vestigingen.map((relatie) => relatie.vestiging.id);
     const eigenRegistraties = registraties.filter((registratie) =>
       registratie.medewerkerId === medewerker.id && medewerkerVestigingen.includes(registratie.vestigingId) &&
-      datumUTC(registratie.datum) >= periode.start && datumUTC(registratie.datum) <= periode.einde,
+      datumUTC(registratie.datum) >= periode.contractStart && datumUTC(registratie.datum) <= periode.contractEinde,
     );
     const gewerkteUren = eigenRegistraties.reduce((som, registratie) => som + Number(registratie.gewerkteUren), 0);
     const gewerkteUrenDezeWeek = eigenRegistraties.filter((registratie) =>
@@ -119,22 +118,26 @@ export default async function ContracturenPage() {
 
     const eigenBezettingen = bezettingen.filter((bezetting) =>
       bezetting.medewerkerId === medewerker.id && medewerkerVestigingen.includes(bezetting.dienst.week.vestigingId) &&
-      bezetting.dienst.week.status === "GEPUBLICEERD" && datumUTC(bezetting.dienst.datum) >= periode.start &&
-      datumUTC(bezetting.dienst.datum) <= periode.einde,
+      bezetting.dienst.week.status === "GEPUBLICEERD" && datumUTC(bezetting.dienst.datum) >= periode.contractStart &&
+      datumUTC(bezetting.dienst.datum) <= periode.contractEinde,
     );
     const liveIngeplandDezeWeek = eigenBezettingen.filter((bezetting) =>
       datumUTC(bezetting.dienst.datum) >= weekStart && datumUTC(bezetting.dienst.datum) < volgendeWeek,
     ).reduce((som, bezetting) => som + berekenGewerkteUren(bezetting.dienst.begintijd, bezetting.dienst.eindtijd).gewerkteUren, 0);
-    const liveIngeplandRestSeizoen = eigenBezettingen.filter((bezetting) =>
-      datumUTC(bezetting.dienst.datum) >= vandaag,
+    const liveIngeplandRestOpeningsseizoen = eigenBezettingen.filter((bezetting) =>
+      datumUTC(bezetting.dienst.datum) >= vandaag && datumUTC(bezetting.dienst.datum) >= periode.openingStart && datumUTC(bezetting.dienst.datum) <= periode.openingEinde,
     ).reduce((som, bezetting) => som + berekenGewerkteUren(bezetting.dienst.begintijd, bezetting.dienst.eindtijd).gewerkteUren, 0);
+    const liveIngeplandNaSeizoen = eigenBezettingen.filter((bezetting) =>
+      (datumUTC(bezetting.dienst.datum) < periode.openingStart || datumUTC(bezetting.dienst.datum) > periode.openingEinde) && datumUTC(bezetting.dienst.datum) >= vandaag && datumUTC(bezetting.dienst.datum) <= periode.contractEinde,
+    ).reduce((som, bezetting) => som + berekenGewerkteUren(bezetting.dienst.begintijd, bezetting.dienst.eindtijd).gewerkteUren, 0);
+    const liveIngeplandRestContractperiode = liveIngeplandRestOpeningsseizoen + liveIngeplandNaSeizoen;
 
     const resterendeWeken = new Set(weken
       .filter((week) => medewerkerVestigingen.includes(week.vestigingId))
       .filter((week) => {
         const start = isoWeekStart(week.jaar, week.weeknummer);
         const einde = plusDagen(start, 6);
-        return start <= periode.einde && einde >= periode.start && einde >= vandaag;
+        return start <= periode.openingEinde && einde >= periode.openingStart && einde >= vandaag;
       })
       .map((week) => `${week.jaar}-${week.weeknummer}`)).size;
 
@@ -142,7 +145,7 @@ export default async function ContracturenPage() {
     const jaarUrenNorm = medewerker.jaarUrenNorm == null ? null : Number(medewerker.jaarUrenNorm);
     const verlofUrenStart = medewerker.verlofUrenStart == null ? null : Number(medewerker.verlofUrenStart);
     const verlofUrenOpgenomen = medewerker.verlofUrenOpgenomen == null ? 0 : Number(medewerker.verlofUrenOpgenomen);
-    const balans = berekenContractUren({ contractUren, jaarUrenNorm, verlofUrenStart, gewerkteUren, liveIngepland: liveIngeplandRestSeizoen, resterendeOpeningsweken: resterendeWeken });
+    const balans = berekenContractUren({ contractUren, jaarUrenNorm, verlofUrenStart, gewerkteUren, liveIngepland: liveIngeplandRestContractperiode, resterendeOpeningsweken: resterendeWeken });
 
     return {
       id: medewerker.id,
@@ -157,15 +160,19 @@ export default async function ContracturenPage() {
       gewerkteUrenDezeWeek: Math.round(gewerkteUrenDezeWeek * 100) / 100,
       rapportageUrenDezeWeek: begrensRapportageUren(liveIngeplandDezeWeek, contractUren),
       liveIngeplandDezeWeek: Math.round(liveIngeplandDezeWeek * 100) / 100,
-      liveIngeplandRestSeizoen: balans.liveIngepland,
+      liveIngeplandRestOpeningsseizoen: Math.round(liveIngeplandRestOpeningsseizoen * 100) / 100,
+      liveIngeplandNaSeizoen: Math.round(liveIngeplandNaSeizoen * 100) / 100,
+      liveIngeplandRestContractperiode: balans.liveIngepland,
       resterendTeWerken: balans.resterendTeWerken,
       nogNietIngepland: balans.nogNietIngepland,
       resterendeOpeningsweken: balans.resterendeOpeningsweken,
       gemiddeldNogTeWerkenPerWeek: balans.gemiddeldNogTeWerkenPerWeek,
       gemiddeldNogInTePlannenPerWeek: balans.gemiddeldNogInTePlannenPerWeek,
       prognoseOverschot: balans.prognoseOverschot,
-      seizoenStart: periode.start,
-      seizoenEinde: periode.einde,
+      seizoenStart: periode.openingStart,
+      seizoenEinde: periode.openingEinde,
+      contractPeriodeStart: periode.contractStart,
+      contractPeriodeEinde: periode.contractEinde,
     };
   });
 
@@ -191,7 +198,7 @@ export default async function ContracturenPage() {
           <div className="overflow-x-auto">
             <table className="min-w-[1400px] w-full border-collapse text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr>
-                <th className="px-4 py-3">Medewerker</th><th className="px-4 py-3">Contract</th><th className="px-4 py-3">Jaar-/seizoensnorm</th><th className="px-4 py-3">Verlof resterend</th><th className="px-4 py-3">Goedgekeurd gewerkt</th><th className="px-4 py-3">LIVE ingepland deze week</th><th className="px-4 py-3">LIVE ingepland rest seizoen</th><th className="px-4 py-3">Nog te werken</th><th className="px-4 py-3">Nog niet ingepland</th><th className="px-4 py-3">Openingsweken</th><th className="px-4 py-3">Gem. nog nodig/week</th><th className="px-4 py-3">Gem. nog in te plannen/week</th><th className="px-4 py-3">Prognose overschot</th>
+                <th className="px-4 py-3">Medewerker</th><th className="px-4 py-3">Contract</th><th className="px-4 py-3">Jaar-/seizoensnorm</th><th className="px-4 py-3">Verlof resterend</th><th className="px-4 py-3">Goedgekeurd gewerkt</th><th className="px-4 py-3">LIVE ingepland deze week</th><th className="px-4 py-3">LIVE rest openingsseizoen</th><th className="px-4 py-3">LIVE buiten openingsseizoen</th><th className="px-4 py-3">LIVE tot contracteinde</th><th className="px-4 py-3">Nog te werken</th><th className="px-4 py-3">Nog niet ingepland</th><th className="px-4 py-3">Openingsweken</th><th className="px-4 py-3">Gem. nog nodig/week</th><th className="px-4 py-3">Gem. nog in te plannen/week</th><th className="px-4 py-3">Prognose overschot</th>
               </tr></thead>
               <tbody className="divide-y divide-slate-100">
                 {rijen.map((rij) => <tr key={rij.id} className="align-top hover:bg-slate-50">
@@ -200,7 +207,7 @@ export default async function ContracturenPage() {
                   <td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.jaarUrenNorm)}<p className="mt-1 text-xs text-slate-500">{formatDatum(rij.seizoenStart)} – {formatDatum(rij.seizoenEinde)}</p></td>
                   <td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.resterendVerlof)}<p className="mt-1 text-xs text-slate-500">start: {formatUren(rij.verlofUrenStart)} · opgenomen: {formatUren(rij.verlofUrenOpgenomen)}</p></td>
                   <td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.gewerkteUren)}<p className="mt-1 text-xs text-slate-500">deze week werkelijk: {formatUren(rij.gewerkteUrenDezeWeek)}<br/>rapportagebasis: {formatUren(rij.rapportageUrenDezeWeek)}</p></td>
-                  <td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.liveIngeplandDezeWeek)}</td><td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.liveIngeplandRestSeizoen)}</td>
+                  <td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.liveIngeplandDezeWeek)}</td><td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.liveIngeplandRestOpeningsseizoen)}</td><td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.liveIngeplandNaSeizoen)}</td><td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.liveIngeplandRestContractperiode)}<p className="mt-1 text-xs text-slate-500">contractperiode: {formatDatum(rij.contractPeriodeStart)} – {formatDatum(rij.contractPeriodeEinde)}</p></td>
                   <td className={`px-4 py-4 whitespace-nowrap font-semibold ${rij.resterendTeWerken < 0 ? "text-amber-700" : "text-slate-900"}`}>{formatUren(Math.max(0, rij.resterendTeWerken))}{rij.resterendTeWerken < 0 && <p className="mt-1 text-xs font-normal text-amber-700">Overschot gerealiseerd</p>}</td>
                   <td className={`px-4 py-4 whitespace-nowrap font-semibold ${rij.nogNietIngepland < 0 ? "text-amber-700" : "text-slate-900"}`}>{formatUren(Math.max(0, rij.nogNietIngepland))}{rij.nogNietIngepland < 0 && <p className="mt-1 text-xs font-normal text-amber-700">Overprognose: {formatUren(Math.abs(rij.nogNietIngepland))}</p>}</td>
                   <td className="px-4 py-4 whitespace-nowrap">{rij.resterendeOpeningsweken}</td><td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.gemiddeldNogTeWerkenPerWeek)}</td><td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.gemiddeldNogInTePlannenPerWeek)}</td><td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.prognoseOverschot)}</td>

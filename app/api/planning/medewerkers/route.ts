@@ -8,7 +8,7 @@ import {
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { kalenderDatumUTC, lokaleDatumSleutel } from "@/lib/planning/tijd";
-import { berekenContractUren } from "@/lib/contracturen/berekening";
+import { berekenContractUren, bepaalContractPeriode } from "@/lib/contracturen/berekening";
 import { berekenGewerkteUren } from "@/lib/verloning/pauze";
 import {
   datumSleutelVoorUren,
@@ -205,6 +205,7 @@ export async function GET(
           uurloon: true,
           contractType: true,
           contractUren: true,
+          datumInDienst: true,
           jaarUrenNorm: true,
           verlofUrenStart: true,
           verlofUrenOpgenomen: true,
@@ -346,15 +347,20 @@ export async function GET(
     const seizoenEinde = vestiging?.seizoenEinde ? new Date(Date.UTC(vestiging.seizoenEinde.getUTCFullYear(), vestiging.seizoenEinde.getUTCMonth(), vestiging.seizoenEinde.getUTCDate())) : new Date(Date.UTC(jaar, 11, 31));
     const seizoenEindeExclusief = new Date(seizoenEinde);
     seizoenEindeExclusief.setUTCDate(seizoenEindeExclusief.getUTCDate() + 1);
+    const contractPerioden = new Map(medewerkers.map((medewerker) => [medewerker.id, bepaalContractPeriode(medewerker.datumInDienst ?? null, seizoenStart, vandaag)]));
+    const globaleContractStart = new Date(Math.min(...Array.from(contractPerioden.values()).map((periode) => periode.start.getTime())));
+    const globaleContractEinde = new Date(Math.max(...Array.from(contractPerioden.values()).map((periode) => periode.einde.getTime())));
+    const globaleContractEindeExclusief = new Date(globaleContractEinde);
+    globaleContractEindeExclusief.setUTCDate(globaleContractEindeExclusief.getUTCDate() + 1);
     const medewerkerIds = medewerkers.map((medewerker) => medewerker.id);
     const [seizoenRegistraties, seizoenBezettingen, seizoenWeken] = magFinancielePlanningInzien && medewerkerIds.length > 0
       ? await Promise.all([
           prisma.urenRegistratie.findMany({
-            where: { medewerkerId: { in: medewerkerIds }, vestigingId: { in: organisatieVestigingIds }, status: "DEFINITIEF", datum: { gte: seizoenStart, lt: seizoenEindeExclusief } },
+            where: { medewerkerId: { in: medewerkerIds }, vestigingId: { in: organisatieVestigingIds }, status: "DEFINITIEF", datum: { gte: globaleContractStart, lt: globaleContractEindeExclusief } },
             select: { medewerkerId: true, datum: true, gewerkteUren: true, vestigingId: true },
           }),
           prisma.dienstBezetting.findMany({
-            where: { medewerkerId: { in: medewerkerIds }, status: { in: ["GEPLAND", "BEVESTIGD", "GEWERKT"] }, dienst: { datum: { gte: weekStart < vandaag ? weekStart : vandaag, lt: seizoenEindeExclusief }, week: { status: "GEPUBLICEERD", vestigingId: { in: organisatieVestigingIds } } } },
+            where: { medewerkerId: { in: medewerkerIds }, status: { in: ["GEPLAND", "BEVESTIGD", "GEWERKT"] }, dienst: { datum: { gte: weekStart < vandaag ? weekStart : vandaag, lt: globaleContractEindeExclusief }, week: { status: "GEPUBLICEERD", vestigingId: { in: organisatieVestigingIds } } } },
             select: { medewerkerId: true, dienst: { select: { datum: true, begintijd: true, eindtijd: true, week: { select: { status: true, jaar: true, weeknummer: true, vestigingId: true } } } } },
           }),
           prisma.week.findMany({
@@ -372,12 +378,13 @@ export async function GET(
       return vierJanuari <= seizoenEinde && weekEinde >= seizoenStart && weekEinde >= vandaag;
     }).map((week) => `${week.jaar}-${week.weeknummer}`)).size;
 
-    const contracturenBalansPerMedewerker = new Map<string, { contractUren: number | null; jaarNorm: number; teWerkenNorm: number; gewerkteUren: number; liveIngeplandDezeWeek: number; liveIngeplandRestSeizoen: number; nogNietIngepland: number; resterendeOpeningsweken: number; gemiddeldNogInTePlannenPerWeek: number | null; prognoseOverschot: number; verlofUrenStart: number | null; resterendVerlof: number | null }>();
+    const contracturenBalansPerMedewerker = new Map<string, { contractUren: number | null; jaarNorm: number; teWerkenNorm: number; gewerkteUren: number; liveIngeplandDezeWeek: number; liveIngeplandRestContractperiode: number; nogNietIngepland: number; resterendeOpeningsweken: number; gemiddeldNogInTePlannenPerWeek: number | null; prognoseOverschot: number; verlofUrenStart: number | null; resterendVerlof: number | null }>();
     for (const medewerker of medewerkers) {
       if (medewerker.contractType !== "VAST") continue;
       const eigenVestigingen = new Set(medewerker.vestigingen.map((item) => item.vestigingId));
-      const gewerkteUren = seizoenRegistraties.filter((item) => item.medewerkerId === medewerker.id && eigenVestigingen.has(item.vestigingId) && item.datum >= seizoenStart && item.datum <= seizoenEinde).reduce((som, item) => som + Number(item.gewerkteUren), 0);
-      const eigenBezettingen = seizoenBezettingen.filter((item) => item.medewerkerId === medewerker.id && eigenVestigingen.has(item.dienst.week.vestigingId) && item.dienst.week.status === "GEPUBLICEERD" && item.dienst.datum >= seizoenStart && item.dienst.datum <= seizoenEinde);
+      const contractPeriode = contractPerioden.get(medewerker.id)!;
+      const gewerkteUren = seizoenRegistraties.filter((item) => item.medewerkerId === medewerker.id && eigenVestigingen.has(item.vestigingId) && item.datum >= contractPeriode.start && item.datum <= contractPeriode.einde).reduce((som, item) => som + Number(item.gewerkteUren), 0);
+      const eigenBezettingen = seizoenBezettingen.filter((item) => item.medewerkerId === medewerker.id && eigenVestigingen.has(item.dienst.week.vestigingId) && item.dienst.week.status === "GEPUBLICEERD" && item.dienst.datum >= contractPeriode.start && item.dienst.datum <= contractPeriode.einde);
       const urenDienst = (item: (typeof eigenBezettingen)[number]) => berekenGewerkteUren(item.dienst.begintijd, item.dienst.eindtijd).gewerkteUren;
       const liveDezeWeek = eigenBezettingen.filter((item) => item.dienst.datum >= weekStart && item.dienst.datum < volgendeWeek).reduce((som, item) => som + urenDienst(item), 0);
       const liveRestSeizoen = eigenBezettingen.filter((item) => item.dienst.datum >= vandaag).reduce((som, item) => som + urenDienst(item), 0);
@@ -386,7 +393,7 @@ export async function GET(
       const verlofUrenStart = medewerker.verlofUrenStart == null ? null : Number(medewerker.verlofUrenStart);
       const verlofUrenOpgenomen = medewerker.verlofUrenOpgenomen == null ? 0 : Number(medewerker.verlofUrenOpgenomen);
       const balans = berekenContractUren({ contractUren, jaarUrenNorm, verlofUrenStart, gewerkteUren, liveIngepland: liveRestSeizoen, resterendeOpeningsweken });
-      contracturenBalansPerMedewerker.set(medewerker.id, { contractUren, jaarNorm: balans.jaarNorm, teWerkenNorm: balans.teWerkenNorm, gewerkteUren: balans.gewerkteUren, liveIngeplandDezeWeek: Math.round(liveDezeWeek * 100) / 100, liveIngeplandRestSeizoen: balans.liveIngepland, nogNietIngepland: balans.nogNietIngepland, resterendeOpeningsweken, gemiddeldNogInTePlannenPerWeek: balans.gemiddeldNogInTePlannenPerWeek, prognoseOverschot: balans.prognoseOverschot, verlofUrenStart, resterendVerlof: verlofUrenStart === null ? null : Math.max(0, verlofUrenStart - verlofUrenOpgenomen) });
+      contracturenBalansPerMedewerker.set(medewerker.id, { contractUren, jaarNorm: balans.jaarNorm, teWerkenNorm: balans.teWerkenNorm, gewerkteUren: balans.gewerkteUren, liveIngeplandDezeWeek: Math.round(liveDezeWeek * 100) / 100, liveIngeplandRestContractperiode: balans.liveIngepland, nogNietIngepland: balans.nogNietIngepland, resterendeOpeningsweken, gemiddeldNogInTePlannenPerWeek: balans.gemiddeldNogInTePlannenPerWeek, prognoseOverschot: balans.prognoseOverschot, verlofUrenStart, resterendVerlof: verlofUrenStart === null ? null : Math.max(0, verlofUrenStart - verlofUrenOpgenomen) });
     }
 
     const vorigeVerloning = await prisma.verloningsPeriode.findFirst({

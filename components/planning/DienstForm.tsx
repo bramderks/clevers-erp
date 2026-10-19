@@ -24,7 +24,7 @@ type PlanningMedewerker = {
     teWerkenNorm: number;
     gewerkteUren: number;
     liveIngeplandDezeWeek: number;
-    liveIngeplandRestSeizoen: number;
+    liveIngeplandRestContractperiode: number;
     nogNietIngepland: number;
     resterendeOpeningsweken: number;
     gemiddeldNogInTePlannenPerWeek: number | null;
@@ -2109,7 +2109,7 @@ export default function DienstForm({
                       </p>
                       {medewerker.contracturenBalans && (
                         <p className="mt-1 text-xs font-medium text-slate-700">
-                          Contract: {formatteerUrenCompact(medewerker.contracturenBalans.contractUren)} u/week · LIVE deze week: {formatteerUrenCompact(medewerker.contracturenBalans.liveIngeplandDezeWeek)} u · LIVE rest seizoen: {formatteerUrenCompact(medewerker.contracturenBalans.liveIngeplandRestSeizoen)} u
+                          Contract: {formatteerUrenCompact(medewerker.contracturenBalans.contractUren)} u/week · LIVE deze week: {formatteerUrenCompact(medewerker.contracturenBalans.liveIngeplandDezeWeek)} u · LIVE tot contracteinde: {formatteerUrenCompact(medewerker.contracturenBalans.liveIngeplandRestContractperiode)} u
                           <br />
                           Nog te plannen: {formatteerUrenCompact(Math.max(0, medewerker.contracturenBalans.nogNietIngepland))} u · gemiddeld {formatteerUrenCompact(medewerker.contracturenBalans.gemiddeldNogInTePlannenPerWeek)} u/openingsweek
                           {medewerker.contracturenBalans.nogNietIngepland < 0 && ` · prognose overschot ${formatteerUrenCompact(medewerker.contracturenBalans.prognoseOverschot)} u`}
