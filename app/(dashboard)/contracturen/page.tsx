@@ -142,7 +142,7 @@ export default async function ContracturenPage() {
         norm,
         gewerkt: Math.round(gewerkt * 100) / 100,
         resterend: resterend === null ? null : Math.round(resterend * 100) / 100,
-        verlof: jaar === vandaag.getUTCFullYear() ? resterendVerlof : 0,
+        verlof: jaar === vandaag.getUTCFullYear() ? resterendVerlof : null,
         weken,
         perWeek: urenPerWeek === null ? null : Math.round(urenPerWeek * 100) / 100,
         startSaldo,
