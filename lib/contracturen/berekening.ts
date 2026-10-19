@@ -80,16 +80,36 @@ export function begrensRapportageRegels<T extends ContractRapportageRegel>(regel
   for (const groep of groepen.values()) {
     const contractUren = Math.max(0, groep[0]?.contractUren ?? 0);
     const totaal = groep.reduce((som, regel) => som + Math.max(0, regel.uren), 0);
-    if (totaal <= contractUren || totaal <= 0) continue;
-    const factor = contractUren / totaal;
-    let toegewezen = 0;
+    if (totaal > contractUren && totaal > 0) {
+      const factor = contractUren / totaal;
+      let toegewezen = 0;
+      groep.forEach((regel, index) => {
+        const uren = index === groep.length - 1
+          ? Math.max(0, Math.round((contractUren - toegewezen + Number.EPSILON) * 100) / 100)
+          : Math.round((regel.uren * factor + Number.EPSILON) * 100) / 100;
+        regel.uren = uren;
+        toegewezen += uren;
+      });
+    }
+
+    // Een vast contract veroorzaakt een vaste wekelijkse kostenpost, ook als
+    // de medewerker minder dan de contracturen wordt ingepland. De uren blijven
+    // wel begrensd op de contractnorm voor de weekrapportage.
+    const urenMetLoon = groep.reduce((som, regel) => som + (regel.uurloon == null ? 0 : Math.max(0, regel.uren)), 0);
+    const gewogenLoon = groep.reduce((som, regel) => som + (regel.uurloon == null ? 0 : Math.max(0, regel.uren) * regel.uurloon), 0);
+    const uurloon = urenMetLoon > 0
+      ? gewogenLoon / urenMetLoon
+      : groep.find((regel) => regel.uurloon !== null)?.uurloon ?? null;
+    const vasteWeekKosten = uurloon === null ? null : contractUren * uurloon;
+    const gerapporteerdeUren = groep.reduce((som, regel) => som + Math.max(0, regel.uren), 0);
     groep.forEach((regel, index) => {
-      const uren = index === groep.length - 1
-        ? Math.max(0, Math.round((contractUren - toegewezen + Number.EPSILON) * 100) / 100)
-        : Math.round((regel.uren * factor + Number.EPSILON) * 100) / 100;
-      regel.uren = uren;
-      toegewezen += uren;
-      regel.kosten = regel.uurloon == null ? null : uren * regel.uurloon;
+      if (vasteWeekKosten === null) {
+        regel.kosten = null;
+      } else if (gerapporteerdeUren > 0) {
+        regel.kosten = Math.round((vasteWeekKosten * Math.max(0, regel.uren) / gerapporteerdeUren + Number.EPSILON) * 100) / 100;
+      } else {
+        regel.kosten = index === 0 ? vasteWeekKosten : 0;
+      }
     });
   }
   return regels;

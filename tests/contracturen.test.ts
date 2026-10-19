@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
 
-import { berekenContractUren, bepaalContractPeriode, berekenDienstUren, begrensRapportageUren } from "../lib/contracturen/berekening";
+import { berekenContractUren, bepaalContractPeriode, berekenDienstUren, begrensRapportageUren, begrensRapportageRegels } from "../lib/contracturen/berekening";
 
 test("rapportage begrenst vaste uren op contracturen maar laat werkelijke uren ongemoeid", () => {
   assert.equal(begrensRapportageUren(25, 15), 15);
@@ -71,4 +71,12 @@ test("contractperiode blijft op de laatste kalenderdag van februari bij een schr
   const periode = bepaalContractPeriode(new Date("2024-02-29T00:00:00.000Z"), new Date("2024-02-29T00:00:00.000Z"), new Date("2026-10-19T12:00:00.000Z"));
   assert.equal(periode.start.toISOString().slice(0, 10), "2026-02-28");
   assert.equal(periode.einde.toISOString().slice(0, 10), "2027-02-27");
+});
+
+
+test("vaste contractkosten blijven gelijk als een medewerker minder dan contracturen werkt", () => {
+  const regels = [{ medewerkerId: "vast-minder", uren: 10, uurloon: 20, kosten: 200, contractType: "VAST", contractUren: 15 }];
+  begrensRapportageRegels(regels);
+  assert.equal(regels[0].uren, 10);
+  assert.equal(regels[0].kosten, 300);
 });
