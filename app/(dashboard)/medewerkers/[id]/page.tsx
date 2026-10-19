@@ -820,7 +820,7 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
                     {medewerker.contractType === "VAST" && <>
                       <div><dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Jaar-/seizoensnorm</dt><dd className="mt-1 text-sm text-slate-700">{medewerker.jaarUrenNorm != null ? `${medewerker.jaarUrenNorm} uur` : medewerker.contractUren != null ? `${Number(medewerker.contractUren) * 52} uur (berekend)` : "Nog niet ingevuld"}</dd></div>
                       <div><dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Verlof bij start seizoen</dt><dd className="mt-1 text-sm text-slate-700">{medewerker.verlofUrenStart != null ? `${medewerker.verlofUrenStart} uur` : "Nog niet ingevuld"}</dd></div>
-                      <div><dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Opgenomen verlof</dt><dd className="mt-1 text-sm text-slate-700">{medewerker.verlofUrenOpgenomen ?? 0} uur</dd></div>
+                      <div><dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Opgenomen verlof</dt><dd className="mt-1 text-sm text-slate-700">{Number(medewerker.verlofUrenOpgenomen ?? 0)} uur</dd></div>
                     </>}
                     <div><dt className="text-xs font-medium uppercase tracking-wide text-slate-400">In dienst</dt><dd className="mt-1 text-sm text-slate-700">{formatteerDatum(medewerker.datumInDienst)}</dd></div>
                     <div><dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Uit dienst</dt><dd className="mt-1 text-sm text-slate-700">{formatteerDatum(medewerker.datumUitDienst)}</dd></div>
