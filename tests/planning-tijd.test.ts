@@ -137,3 +137,16 @@ test("lokale daggrenzen blijven correct bij zomer- en wintertijd", async () => {
   assert.equal((zomertijd.einde.getTime() - zomertijd.start.getTime()) / 3_600_000, 23);
   assert.equal((wintertijd.einde.getTime() - wintertijd.start.getTime()) / 3_600_000, 25);
 });
+
+
+test("vaste contracturen begrenzen alleen de rapportagebasis, niet de werkelijk gewerkte uren", async () => {
+  const { begrensRapportageUren, berekenContractUren } = await import("../lib/contracturen/berekening");
+  assert.equal(begrensRapportageUren(25, 15), 15);
+  assert.equal(begrensRapportageUren(10, 15), 10);
+  const balans = berekenContractUren({ contractUren: 16, jaarUrenNorm: null, verlofUrenStart: 80, gewerkteUren: 700, liveIngepland: 30, resterendeOpeningsweken: 5 });
+  assert.equal(balans.jaarNorm, 832);
+  assert.equal(balans.teWerkenNorm, 752);
+  assert.equal(balans.resterendTeWerken, 52);
+  assert.equal(balans.nogNietIngepland, 22);
+  assert.equal(balans.gemiddeldNogTeWerkenPerWeek, 10.4);
+});

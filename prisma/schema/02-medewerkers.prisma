@@ -54,6 +54,13 @@ model Medewerker {
 
   contractUren Decimal? @db.Decimal(5, 2)
 
+  /// Jaar-/seizoensnorm in betaalde contracturen. Leeg = contractUren * 52.
+  jaarUrenNorm Decimal? @db.Decimal(7, 2)
+
+  /// Verloftegoed bij start van de urenperiode en handmatig bijgehouden opname.
+  verlofUrenStart Decimal? @db.Decimal(7, 2)
+  verlofUrenOpgenomen Decimal? @default(0) @db.Decimal(7, 2)
+
   /// Legacy/fallback uurloon. Nieuwe loonafspraken worden opgeslagen in MedewerkerLoonPeriode.
   uurloon Decimal? @db.Decimal(8, 2)
 

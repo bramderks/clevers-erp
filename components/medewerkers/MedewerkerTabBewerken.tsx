@@ -64,6 +64,10 @@ type Medewerker = {
     | string
     | null;
 
+  jaarUrenNorm: number | string | null;
+  verlofUrenStart: number | string | null;
+  verlofUrenOpgenomen: number | string | null;
+
   uurloon:
     | number
     | string
@@ -129,6 +133,9 @@ type FormState = {
     | "VAST";
 
   contractUren: string;
+  jaarUrenNorm: string;
+  verlofUrenStart: string;
+  verlofUrenOpgenomen: string;
 
   uurloon: string;
 
@@ -206,12 +213,24 @@ function maakFormulier(
       "",
 
     contractUren:
-      medewerker.contractUren !==
-      null
-        ? String(
-            medewerker.contractUren,
-          )
+      medewerker.contractUren !== null && medewerker.contractUren !== undefined
+        ? String(medewerker.contractUren)
         : "",
+
+    jaarUrenNorm:
+      medewerker.jaarUrenNorm !== null && medewerker.jaarUrenNorm !== undefined
+        ? String(medewerker.jaarUrenNorm)
+        : medewerker.contractType === "VAST" && medewerker.contractUren != null
+          ? String(Number(medewerker.contractUren) * 52)
+          : "",
+    verlofUrenStart:
+      medewerker.verlofUrenStart !== null && medewerker.verlofUrenStart !== undefined
+        ? String(medewerker.verlofUrenStart)
+        : "",
+    verlofUrenOpgenomen:
+      medewerker.verlofUrenOpgenomen !== null && medewerker.verlofUrenOpgenomen !== undefined
+        ? String(medewerker.verlofUrenOpgenomen)
+        : "0",
 
     uurloon:
       medewerker.uurloon !== null
@@ -653,6 +672,17 @@ export default function MedewerkerTabBewerken({
 
         data.contractUren =
           contractUren;
+
+        const leesUrenveld = (waarde: string, naam: string): number | null => {
+          if (!waarde.trim()) return null;
+          const getal = Number(waarde);
+          if (!Number.isFinite(getal) || getal < 0 || getal > 10000) throw new Error(`${naam} moet een geldig positief aantal uren zijn.`);
+          return Math.round(getal * 100) / 100;
+        };
+        data.jaarUrenNorm = form.contractType === "VAST" ? leesUrenveld(form.jaarUrenNorm || (contractUren !== null ? String(contractUren * 52) : ""), "Jaar-/seizoensnorm") : null;
+        data.verlofUrenStart = form.contractType === "VAST" ? leesUrenveld(form.verlofUrenStart, "Verlofuren bij start seizoen") : null;
+        data.verlofUrenOpgenomen = form.contractType === "VAST" ? (leesUrenveld(form.verlofUrenOpgenomen, "Opgenomen verlofuren") ?? 0) : 0;
+        if (form.contractType === "VAST" && data.verlofUrenStart !== null && data.verlofUrenOpgenomen !== null && Number(data.verlofUrenOpgenomen) > Number(data.verlofUrenStart)) throw new Error("Opgenomen verlofuren kunnen niet hoger zijn dan het ingevoerde starttegoed.");
 
         data.datumInDienst =
           form.datumInDienst ||
@@ -1190,6 +1220,19 @@ export default function MedewerkerTabBewerken({
               )
             }
           />
+
+          {form.contractType === "VAST" && (
+            <div className="col-span-full rounded-xl border border-cyan-200 bg-cyan-50/50 p-4">
+              <h3 className="text-base font-semibold text-slate-900">Jaar-/seizoensuren en verlof</h3>
+              <p className="mt-1 text-sm text-slate-600">De jaarurennorm wordt standaard berekend als contracturen × 52. Het starttegoed aan verlof wordt van de daadwerkelijk te werken jaaruren afgetrokken. Opgenomen verlof wordt apart bijgehouden.</p>
+              <div className="mt-4 grid gap-5 md:grid-cols-3">
+                <Input label="Jaar-/seizoensnorm (uur)" name="jaarUrenNorm" type="number" min="0" step="0.25" value={form.jaarUrenNorm || (form.contractUren ? String(Number(form.contractUren) * 52) : "")} onChange={(event) => updateField("jaarUrenNorm", event.target.value)} />
+                <Input label="Verlofuren bij start seizoen" name="verlofUrenStart" type="number" min="0" step="0.25" value={form.verlofUrenStart} onChange={(event) => updateField("verlofUrenStart", event.target.value)} />
+                <Input label="Opgenomen verlofuren" name="verlofUrenOpgenomen" type="number" min="0" step="0.25" value={form.verlofUrenOpgenomen} onChange={(event) => updateField("verlofUrenOpgenomen", event.target.value)} />
+              </div>
+              <p className="mt-3 text-xs text-slate-500">Opgenomen verlof wordt hier bijgehouden; controleer dat dit aansluit op de goedgekeurde verlofaanvragen. Deze velden wijzigen de geregistreerde gewerkte uren niet.</p>
+            </div>
+          )}
 
           <Input
             label="Datum in dienst"

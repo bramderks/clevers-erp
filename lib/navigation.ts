@@ -80,6 +80,13 @@ export const navigation = [
       },
 
       {
+        title: "Contracturen",
+        href: "/contracturen",
+        icon: ClipboardClock,
+        ownerOnly: true,
+      },
+
+      {
         title: "Uren controleren",
         href: "/uren",
         icon: ClipboardClock,

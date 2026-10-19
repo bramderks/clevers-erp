@@ -401,6 +401,9 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
       medewerker.contractUren != null
         ? medewerker.contractUren.toString()
         : null,
+    jaarUrenNorm: medewerker.jaarUrenNorm != null ? medewerker.jaarUrenNorm.toString() : null,
+    verlofUrenStart: medewerker.verlofUrenStart != null ? medewerker.verlofUrenStart.toString() : null,
+    verlofUrenOpgenomen: medewerker.verlofUrenOpgenomen != null ? medewerker.verlofUrenOpgenomen.toString() : "0",
     uurloon:
       medewerker.uurloon != null
         ? medewerker.uurloon.toString()
@@ -813,7 +816,12 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
                 <Card title="Dienstverband" description="Gegevens van het huidige dienstverband.">
                   <dl className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                     <div><dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Contracttype</dt><dd className="mt-1 text-sm text-slate-700">{medewerker.contractType ?? "Nog niet ingevuld"}</dd></div>
-                    <div><dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Contracturen</dt><dd className="mt-1 text-sm text-slate-700">{medewerker.contractUren != null ? `${medewerker.contractUren} uur` : "Nog niet ingevuld"}</dd></div>
+                    <div><dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Contracturen</dt><dd className="mt-1 text-sm text-slate-700">{medewerker.contractUren != null ? `${medewerker.contractUren} uur per week` : "Nog niet ingevuld"}</dd></div>
+                    {medewerker.contractType === "VAST" && <>
+                      <div><dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Jaar-/seizoensnorm</dt><dd className="mt-1 text-sm text-slate-700">{medewerker.jaarUrenNorm != null ? `${medewerker.jaarUrenNorm} uur` : medewerker.contractUren != null ? `${Number(medewerker.contractUren) * 52} uur (berekend)` : "Nog niet ingevuld"}</dd></div>
+                      <div><dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Verlof bij start seizoen</dt><dd className="mt-1 text-sm text-slate-700">{medewerker.verlofUrenStart != null ? `${medewerker.verlofUrenStart} uur` : "Nog niet ingevuld"}</dd></div>
+                      <div><dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Opgenomen verlof</dt><dd className="mt-1 text-sm text-slate-700">{medewerker.verlofUrenOpgenomen ?? 0} uur</dd></div>
+                    </>}
                     <div><dt className="text-xs font-medium uppercase tracking-wide text-slate-400">In dienst</dt><dd className="mt-1 text-sm text-slate-700">{formatteerDatum(medewerker.datumInDienst)}</dd></div>
                     <div><dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Uit dienst</dt><dd className="mt-1 text-sm text-slate-700">{formatteerDatum(medewerker.datumUitDienst)}</dd></div>
                   </dl>

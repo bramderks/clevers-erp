@@ -697,6 +697,8 @@ export async function PATCH(
     }
 
     if (section === "contract") {
+      if (!isEigenaar) return NextResponse.json({ error: "Alleen een eigenaar mag contracturen en verlofgegevens wijzigen." }, { status: 403 });
+
       const datumInDienst =
         maakDatum(
           data.datumInDienst,
@@ -722,25 +724,19 @@ export async function PATCH(
         );
       }
 
-      const updateData = {
-        contractType:
-          controleerContractType(
-            data.contractType,
-          ),
-        contractUren:
-          maakNummer(
-            data.contractUren,
-            "Contracturen",
-          ),
-        datumInDienst,
-        datumUitDienst,
-      };
+      const contractType = controleerContractType(data.contractType);
+      const contractUren = maakNummer(data.contractUren, "Contracturen");
+      const jaarUrenNorm = contractType === "VAST" ? maakNummer(data.jaarUrenNorm, "Jaar-/seizoensnorm") : null;
+      const verlofUrenStart = contractType === "VAST" ? maakNummer(data.verlofUrenStart, "Verlofuren bij start seizoen") : null;
+      const verlofUrenOpgenomen = contractType === "VAST" ? (maakNummer(data.verlofUrenOpgenomen, "Opgenomen verlofuren") ?? 0) : 0;
+      if (contractType === "VAST" && jaarUrenNorm === null && contractUren === null) throw new Error("Vul contracturen per week of een jaar-/seizoensnorm in.");
+      if (verlofUrenStart !== null && verlofUrenOpgenomen > verlofUrenStart) throw new Error("Opgenomen verlofuren kunnen niet hoger zijn dan het starttegoed.");
 
-      const resultaat =
-        await medewerkerService.update(
-          id,
-          updateData,
-        );
+      const resultaat = await prisma.medewerker.update({
+        where: { id },
+        data: { contractType, contractUren, jaarUrenNorm, verlofUrenStart, verlofUrenOpgenomen, datumInDienst, datumUitDienst },
+        select: { id: true },
+      });
 
       return NextResponse.json({
         id: resultaat.id,
