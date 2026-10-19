@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { kalenderDatumUTC, lokaleDatumSleutel } from "@/lib/planning/tijd";
-import { berekenContractUren, bepaalContractPeriode, begrensRapportageUren } from "@/lib/contracturen/berekening";
 import { berekenGewerkteUren } from "@/lib/verloning/pauze";
 import { berekenUniekeUrenPerInterval } from "@/lib/verloning/overlappendeUren";
 import PageLayout from "@/components/ui/PageLayout";
@@ -11,6 +10,8 @@ import PageToolbar from "@/components/ui/PageToolbar";
 import StartSaldoForm from "@/components/contracturen/StartSaldoForm";
 
 export const dynamic = "force-dynamic";
+
+const JAREN = [2026, 2027, 2028] as const;
 
 function datumUTC(datum: Date) {
   return new Date(Date.UTC(datum.getUTCFullYear(), datum.getUTCMonth(), datum.getUTCDate()));
@@ -25,17 +26,23 @@ function maandagVanWeek(datum: Date) {
   resultaat.setUTCDate(resultaat.getUTCDate() - ((resultaat.getUTCDay() + 6) % 7));
   return resultaat;
 }
-function isoWeekStart(jaar: number, weeknummer: number) {
-  const maandag = maandagVanWeek(new Date(Date.UTC(jaar, 0, 4)));
-  maandag.setUTCDate(maandag.getUTCDate() + (weeknummer - 1) * 7);
-  return maandag;
-}
 function formatUren(uren: number | null | undefined) {
   if (uren === null || uren === undefined || !Number.isFinite(uren)) return "—";
-  return new Intl.NumberFormat("nl-NL", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(uren) + " uur";
+  return new Intl.NumberFormat("nl-NL", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(uren);
 }
-function formatDatum(datum: Date) {
-  return new Intl.DateTimeFormat("nl-NL", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }).format(datum);
+function wekenInJaar(jaar: number) {
+  const laatsteDag = new Date(Date.UTC(jaar, 11, 31));
+  const donderdag = new Date(laatsteDag);
+  donderdag.setUTCDate(donderdag.getUTCDate() + 4 - (donderdag.getUTCDay() || 7));
+  const eersteDonderdag = new Date(Date.UTC(jaar, 0, 4));
+  eersteDonderdag.setUTCDate(eersteDonderdag.getUTCDate() + 4 - (eersteDonderdag.getUTCDay() || 7));
+  return 1 + Math.round((donderdag.getTime() - eersteDonderdag.getTime()) / 604800000);
+}
+function resterendeWekenInJaar(jaar: number, vandaag: Date) {
+  if (jaar < vandaag.getUTCFullYear()) return 0;
+  if (jaar > vandaag.getUTCFullYear()) return wekenInJaar(jaar);
+  const jaarEinde = new Date(Date.UTC(jaar, 11, 31));
+  return Math.max(1, Math.ceil((jaarEinde.getTime() - maandagVanWeek(vandaag).getTime() + 1) / 604800000));
 }
 
 export default async function ContracturenPage() {
@@ -48,11 +55,8 @@ export default async function ContracturenPage() {
   if (organisatieIds.length === 0) redirect("/dashboard");
 
   const vandaag = kalenderDatumUTC(lokaleDatumSleutel(new Date()));
-  const weekStart = maandagVanWeek(vandaag);
-  const volgendeWeek = plusDagen(weekStart, 7);
-  const huidigJaar = vandaag.getUTCFullYear();
-  const standaardStart = new Date(Date.UTC(huidigJaar, 0, 1));
-  const standaardEinde = new Date(Date.UTC(huidigJaar, 11, 31));
+  const jaarStart = new Date(Date.UTC(JAREN[0], 0, 1));
+  const jaarEindeExclusief = new Date(Date.UTC(JAREN[JAREN.length - 1] + 1, 0, 1));
 
   const medewerkers = await prisma.medewerker.findMany({
     where: {
@@ -64,47 +68,21 @@ export default async function ContracturenPage() {
     include: {
       vestigingen: {
         where: { vestiging: { actief: true, organisatieId: { in: organisatieIds } } },
-        include: { vestiging: { select: { id: true, naam: true, organisatieId: true, seizoenStart: true, seizoenEinde: true } } },
+        include: { vestiging: { select: { id: true } } },
       },
     },
   });
 
   if (medewerkers.length === 0) {
-    return <PageLayout><PageToolbar title="Contracturen" /><div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm"><h2 className="text-lg font-semibold text-slate-900">Geen vaste medewerkers gevonden</h2><p className="mt-2 text-sm text-slate-600">Zodra een medewerker een actief vast contract heeft en aan een vestiging is gekoppeld, verschijnt de urenbalans hier.</p></div></PageLayout>;
+    return <PageLayout><PageToolbar title="Contracturen" /><div className="rounded-2xl border border-slate-200 bg-white p-8"><h2 className="text-lg font-semibold text-slate-900">Geen vaste medewerkers gevonden</h2><p className="mt-2 text-sm text-slate-600">Actieve medewerkers met een vast contract verschijnen hier.</p></div></PageLayout>;
   }
 
-  const vestigingIds = Array.from(new Set(medewerkers.flatMap((medewerker) => medewerker.vestigingen.map((relatie) => relatie.vestiging.id))));
-  const perioden = medewerkers.map((medewerker) => {
-    const starts = medewerker.vestigingen.map((relatie) => relatie.vestiging.seizoenStart).filter((datum): datum is Date => datum !== null).map(datumUTC);
-    const eindes = medewerker.vestigingen.map((relatie) => relatie.vestiging.seizoenEinde).filter((datum): datum is Date => datum !== null).map(datumUTC);
-    const openingStart = starts.length ? new Date(Math.min(...starts.map((datum) => datum.getTime()))) : standaardStart;
-    const openingEinde = eindes.length ? new Date(Math.max(...eindes.map((datum) => datum.getTime()))) : standaardEinde;
-    const contractPeriode = bepaalContractPeriode(medewerker.datumInDienst ?? null, openingStart, vandaag);
-    return { medewerkerId: medewerker.id, openingStart, openingEinde, contractStart: contractPeriode.start, contractEinde: contractPeriode.einde };
-  });
-  const globaleStart = new Date(Math.min(...perioden.map((periode) => periode.contractStart.getTime())));
-  const globaleEinde = new Date(Math.max(...perioden.map((periode) => periode.contractEinde.getTime())));
-  const globaleEindeExclusief = plusDagen(globaleEinde, 1);
   const medewerkerIds = medewerkers.map((medewerker) => medewerker.id);
-
-  const [registraties, bezettingen, weken] = await Promise.all([
-    prisma.urenRegistratie.findMany({
-      where: { medewerkerId: { in: medewerkerIds }, vestigingId: { in: vestigingIds }, status: "DEFINITIEF", datum: { gte: globaleStart, lt: globaleEindeExclusief } },
-      select: { id: true, medewerkerId: true, vestigingId: true, datum: true, gewerkteUren: true, werkelijkeBegintijd: true, werkelijkeEindtijd: true },
-    }),
-    prisma.dienstBezetting.findMany({
-      where: {
-        medewerkerId: { in: medewerkerIds },
-        status: { in: ["GEPLAND", "BEVESTIGD", "GEWERKT"] },
-        dienst: { datum: { gte: weekStart, lt: globaleEindeExclusief }, week: { status: "GEPUBLICEERD", vestigingId: { in: vestigingIds } } },
-      },
-      select: { medewerkerId: true, dienst: { select: { datum: true, begintijd: true, eindtijd: true, week: { select: { status: true, jaar: true, weeknummer: true, vestigingId: true } } } } },
-    }),
-    prisma.week.findMany({
-      where: { vestigingId: { in: vestigingIds }, jaar: { gte: globaleStart.getUTCFullYear() - 1, lte: globaleEinde.getUTCFullYear() + 1 } },
-      select: { vestigingId: true, jaar: true, weeknummer: true },
-    }),
-  ]);
+  const vestigingIds = Array.from(new Set(medewerkers.flatMap((medewerker) => medewerker.vestigingen.map((relatie) => relatie.vestiging.id))));
+  const registraties = await prisma.urenRegistratie.findMany({
+    where: { medewerkerId: { in: medewerkerIds }, vestigingId: { in: vestigingIds }, status: "DEFINITIEF", datum: { gte: jaarStart, lt: jaarEindeExclusief } },
+    select: { id: true, medewerkerId: true, vestigingId: true, datum: true, gewerkteUren: true, werkelijkeBegintijd: true, werkelijkeEindtijd: true },
+  });
 
   const uniekeUrenPerRegistratie = berekenUniekeUrenPerInterval(
     registraties.filter((registratie) => registratie.werkelijkeBegintijd && registratie.werkelijkeEindtijd).map((registratie) => ({
@@ -118,131 +96,107 @@ export default async function ContracturenPage() {
     berekenGewerkteUren,
   );
 
-  const rijen = medewerkers.map((medewerker) => {
-    const periode = perioden.find((item) => item.medewerkerId === medewerker.id)!;
+  const rijen = medewerkers.flatMap((medewerker) => {
     const medewerkerVestigingen = medewerker.vestigingen.map((relatie) => relatie.vestiging.id);
     const eigenRegistraties = registraties.filter((registratie) =>
-      registratie.medewerkerId === medewerker.id && medewerkerVestigingen.includes(registratie.vestigingId) &&
-      datumUTC(registratie.datum) >= periode.contractStart && datumUTC(registratie.datum) <= periode.contractEinde,
+      registratie.medewerkerId === medewerker.id && medewerkerVestigingen.includes(registratie.vestigingId),
     );
     const urenRegistratie = (registratie: (typeof eigenRegistraties)[number]) =>
       registratie.werkelijkeBegintijd && registratie.werkelijkeEindtijd
         ? (uniekeUrenPerRegistratie.get(registratie.id) ?? 0)
         : Number(registratie.gewerkteUren);
-    const gewerkteUren = eigenRegistraties.reduce((som, registratie) => som + urenRegistratie(registratie), 0);
-    const startSaldoUren = medewerker.contractUrenStartSaldo == null ? null : Number(medewerker.contractUrenStartSaldo);
-    const startSaldoPeildatum = medewerker.contractUrenStartPeildatum ? datumUTC(medewerker.contractUrenStartPeildatum) : null;
-    const registratiesSindsStartSaldo = startSaldoPeildatum === null ? eigenRegistraties : eigenRegistraties.filter((registratie) => datumUTC(registratie.datum) >= startSaldoPeildatum);
-    const gewerkteUrenSindsStartSaldo = registratiesSindsStartSaldo.reduce((som, registratie) => som + urenRegistratie(registratie), 0);
-    const gewerkteUrenDezeWeek = eigenRegistraties.filter((registratie) =>
-      datumUTC(registratie.datum) >= weekStart && datumUTC(registratie.datum) < volgendeWeek,
-    ).reduce((som, registratie) => som + urenRegistratie(registratie), 0);
+    const startSaldo = medewerker.contractUrenStartSaldo == null ? null : Number(medewerker.contractUrenStartSaldo);
+    const peildatum = medewerker.contractUrenStartPeildatum ? datumUTC(medewerker.contractUrenStartPeildatum) : null;
+    const contractUrenPerWeek = medewerker.contractUren == null ? null : Number(medewerker.contractUren);
+    const jaarNormIngesteld = medewerker.jaarUrenNorm == null ? null : Number(medewerker.jaarUrenNorm);
+    const verlofStart = medewerker.verlofUrenStart == null ? 0 : Number(medewerker.verlofUrenStart);
+    const verlofOpgenomen = medewerker.verlofUrenOpgenomen == null ? 0 : Number(medewerker.verlofUrenOpgenomen);
+    const resterendVerlof = Math.max(0, verlofStart - verlofOpgenomen);
 
-    const eigenBezettingen = bezettingen.filter((bezetting) =>
-      bezetting.medewerkerId === medewerker.id && medewerkerVestigingen.includes(bezetting.dienst.week.vestigingId) &&
-      bezetting.dienst.week.status === "GEPUBLICEERD" && datumUTC(bezetting.dienst.datum) >= periode.contractStart &&
-      datumUTC(bezetting.dienst.datum) <= periode.contractEinde,
-    );
-    const liveIngeplandDezeWeek = eigenBezettingen.filter((bezetting) =>
-      datumUTC(bezetting.dienst.datum) >= weekStart && datumUTC(bezetting.dienst.datum) < volgendeWeek,
-    ).reduce((som, bezetting) => som + berekenGewerkteUren(bezetting.dienst.begintijd, bezetting.dienst.eindtijd).gewerkteUren, 0);
-    const liveIngeplandRestOpeningsseizoen = eigenBezettingen.filter((bezetting) =>
-      datumUTC(bezetting.dienst.datum) >= vandaag && datumUTC(bezetting.dienst.datum) >= periode.openingStart && datumUTC(bezetting.dienst.datum) <= periode.openingEinde,
-    ).reduce((som, bezetting) => som + berekenGewerkteUren(bezetting.dienst.begintijd, bezetting.dienst.eindtijd).gewerkteUren, 0);
-    const liveIngeplandNaSeizoen = eigenBezettingen.filter((bezetting) =>
-      (datumUTC(bezetting.dienst.datum) < periode.openingStart || datumUTC(bezetting.dienst.datum) > periode.openingEinde) && datumUTC(bezetting.dienst.datum) >= vandaag && datumUTC(bezetting.dienst.datum) <= periode.contractEinde,
-    ).reduce((som, bezetting) => som + berekenGewerkteUren(bezetting.dienst.begintijd, bezetting.dienst.eindtijd).gewerkteUren, 0);
-    const liveIngeplandRestContractperiode = liveIngeplandRestOpeningsseizoen + liveIngeplandNaSeizoen;
+    return JAREN.map((jaar) => {
+      const start = new Date(Date.UTC(jaar, 0, 1));
+      const einde = new Date(Date.UTC(jaar + 1, 0, 1));
+      const gewerkt = eigenRegistraties.filter((registratie) => {
+        const datum = datumUTC(registratie.datum);
+        return datum >= start && datum < einde;
+      }).reduce((som, registratie) => som + urenRegistratie(registratie), 0);
+      const norm = jaarNormIngesteld ?? (contractUrenPerWeek === null ? null : contractUrenPerWeek * 52);
+      const isStartSaldoJaar = startSaldo !== null && peildatum !== null && peildatum.getUTCFullYear() === jaar;
+      const gewerktSindsPeildatum = isStartSaldoJaar
+        ? eigenRegistraties.filter((registratie) => {
+            const datum = datumUTC(registratie.datum);
+            return datum >= peildatum! && datum < einde;
+          }).reduce((som, registratie) => som + urenRegistratie(registratie), 0)
+        : 0;
+      const resterend = norm === null ? null : isStartSaldoJaar
+        ? startSaldo! - gewerktSindsPeildatum
+        : norm - (jaar === vandaag.getUTCFullYear() ? verlofStart : 0) - gewerkt;
+      const weken = resterendeWekenInJaar(jaar, vandaag);
+      const urenPerWeek = resterend === null ? null : weken > 0 ? Math.max(0, resterend) / weken : 0;
 
-    const resterendeWeken = new Set(weken
-      .filter((week) => medewerkerVestigingen.includes(week.vestigingId))
-      .filter((week) => {
-        const start = isoWeekStart(week.jaar, week.weeknummer);
-        const einde = plusDagen(start, 6);
-        return start <= periode.openingEinde && einde >= periode.openingStart && einde >= vandaag;
-      })
-      .map((week) => `${week.jaar}-${week.weeknummer}`)).size;
-
-    const contractUren = medewerker.contractUren == null ? null : Number(medewerker.contractUren);
-    const jaarUrenNorm = medewerker.jaarUrenNorm == null ? null : Number(medewerker.jaarUrenNorm);
-    const verlofUrenStart = medewerker.verlofUrenStart == null ? null : Number(medewerker.verlofUrenStart);
-    const verlofUrenOpgenomen = medewerker.verlofUrenOpgenomen == null ? 0 : Number(medewerker.verlofUrenOpgenomen);
-    const balans = berekenContractUren({ contractUren, jaarUrenNorm, verlofUrenStart, gewerkteUren, startSaldoUren, gewerkteUrenSindsStartSaldo, liveIngepland: liveIngeplandRestContractperiode, resterendeOpeningsweken: resterendeWeken });
-
-    return {
-      id: medewerker.id,
-      naam: [medewerker.voornaam, medewerker.tussenvoegsel, medewerker.achternaam].filter(Boolean).join(" "),
-      contractUren,
-      jaarUrenNorm: balans.jaarNorm,
-      normOntbreekt: contractUren === null && jaarUrenNorm === null,
-      verlofUrenStart,
-      verlofUrenOpgenomen,
-      resterendVerlof: verlofUrenStart === null ? null : Math.max(0, verlofUrenStart - verlofUrenOpgenomen),
-      startSaldoUren,
-      startSaldoPeildatum,
-      startSaldoNotitie: medewerker.contractUrenStartNotitie,
-      gewerkteUrenSindsStartSaldo: Math.round(gewerkteUrenSindsStartSaldo * 100) / 100,
-      gewerkteUren: balans.gewerkteUren,
-      gewerkteUrenDezeWeek: Math.round(gewerkteUrenDezeWeek * 100) / 100,
-      rapportageUrenDezeWeek: begrensRapportageUren(liveIngeplandDezeWeek, contractUren),
-      liveIngeplandDezeWeek: Math.round(liveIngeplandDezeWeek * 100) / 100,
-      liveIngeplandRestOpeningsseizoen: Math.round(liveIngeplandRestOpeningsseizoen * 100) / 100,
-      liveIngeplandNaSeizoen: Math.round(liveIngeplandNaSeizoen * 100) / 100,
-      liveIngeplandRestContractperiode: balans.liveIngepland,
-      resterendTeWerken: balans.resterendTeWerken,
-      nogNietIngepland: balans.nogNietIngepland,
-      resterendeOpeningsweken: balans.resterendeOpeningsweken,
-      gemiddeldNogTeWerkenPerWeek: balans.gemiddeldNogTeWerkenPerWeek,
-      gemiddeldNogInTePlannenPerWeek: balans.gemiddeldNogInTePlannenPerWeek,
-      prognoseOverschot: balans.prognoseOverschot,
-      seizoenStart: periode.openingStart,
-      seizoenEinde: periode.openingEinde,
-      contractPeriodeStart: periode.contractStart,
-      contractPeriodeEinde: periode.contractEinde,
-    };
+      return {
+        id: `${medewerker.id}-${jaar}`,
+        medewerkerId: medewerker.id,
+        naam: [medewerker.voornaam, medewerker.tussenvoegsel, medewerker.achternaam].filter(Boolean).join(" "),
+        jaar,
+        norm,
+        gewerkt: Math.round(gewerkt * 100) / 100,
+        resterend: resterend === null ? null : Math.round(resterend * 100) / 100,
+        verlof: jaar === vandaag.getUTCFullYear() ? resterendVerlof : 0,
+        weken,
+        perWeek: urenPerWeek === null ? null : Math.round(urenPerWeek * 100) / 100,
+        startSaldo,
+        peildatum,
+        startSaldoNotitie: medewerker.contractUrenStartNotitie,
+        normOntbreekt: norm === null,
+      };
+    });
   });
-
-  const totalen = rijen.reduce((som, rij) => ({
-    medewerkers: som.medewerkers + 1,
-    tekort: som.tekort + Math.max(0, rij.nogNietIngepland),
-    overschot: som.overschot + rij.prognoseOverschot,
-  }), { medewerkers: 0, tekort: 0, overschot: 0 });
 
   return (
     <PageLayout>
       <PageToolbar title="Contracturen" />
-      <div className="space-y-6">
-        <p className="text-sm text-slate-600">Realtime urenbalans voor vaste contracten. Alleen LIVE-gepubliceerde diensten tellen mee in de prognose. De urenregistratie telt alleen goedgekeurde uren met status DEFINITIEF mee.</p>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">Vaste medewerkers</p><p className="mt-2 text-2xl font-semibold text-slate-900">{totalen.medewerkers}</p></div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">Nog niet ingepland</p><p className="mt-2 text-2xl font-semibold text-slate-900">{formatUren(totalen.tekort)}</p></div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">Prognose overschot</p><p className="mt-2 text-2xl font-semibold text-amber-700">{formatUren(totalen.overschot)}</p></div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">Peildatum</p><p className="mt-2 text-lg font-semibold text-slate-900">{formatDatum(vandaag)}</p></div>
-        </div>
+      <div className="space-y-5">
+        <p className="text-sm text-slate-600">Jaaroverzicht voor vaste contracten. Gewerkte uren zijn definitief goedgekeurde registraties; geplande uren tellen alleen mee uit gepubliceerde weken.</p>
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-5 py-4"><h2 className="font-semibold text-slate-900">Urenbalans per medewerker</h2><p className="mt-1 text-sm text-slate-500">Prognose wordt direct bijgewerkt na publicatie van een week en na goedkeuring van uren.</p></div>
+          <div className="border-b border-slate-200 px-5 py-4">
+            <h2 className="font-semibold text-slate-900">Jaarbalans per medewerker</h2>
+            <p className="mt-1 text-sm text-slate-500">Per jaar zie je de norm, gewerkte uren en wat er gemiddeld nog per week nodig is.</p>
+          </div>
           <div className="overflow-x-auto">
-            <table className="min-w-[1400px] w-full border-collapse text-left text-sm">
+            <table className="w-full min-w-[900px] border-collapse text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr>
-                <th className="px-4 py-3">Medewerker</th><th className="px-4 py-3">Contract</th><th className="px-4 py-3">Jaar-/seizoensnorm</th><th className="px-4 py-3">Verlof resterend</th><th className="px-4 py-3">Goedgekeurd gewerkt</th><th className="px-4 py-3">LIVE ingepland deze week</th><th className="px-4 py-3">LIVE rest openingsseizoen</th><th className="px-4 py-3">LIVE buiten openingsseizoen</th><th className="px-4 py-3">LIVE tot contracteinde</th><th className="px-4 py-3">Nog te werken</th><th className="px-4 py-3">Nog niet ingepland</th><th className="px-4 py-3">Openingsweken</th><th className="px-4 py-3">Gem. nog nodig/week</th><th className="px-4 py-3">Gem. nog in te plannen/week</th><th className="px-4 py-3">Prognose overschot</th>
+                <th className="px-4 py-3">Medewerker</th>
+                <th className="px-4 py-3">Jaar</th>
+                <th className="px-4 py-3 text-right">Totaal jaar (uur)</th>
+                <th className="px-4 py-3 text-right">Gewerkt (uur)</th>
+                <th className="px-4 py-3 text-right">Resterend (uur)</th>
+                <th className="px-4 py-3 text-right">Verlofuren</th>
+                <th className="px-4 py-3 text-right">Resterende weken</th>
+                <th className="px-4 py-3 text-right">Nog te werken per week</th>
               </tr></thead>
               <tbody className="divide-y divide-slate-100">
-                {rijen.map((rij) => <tr key={rij.id} className="align-top hover:bg-slate-50">
-                  <td className="px-4 py-4 font-semibold text-slate-900"><a className="hover:underline" href={`/medewerkers/${encodeURIComponent(rij.id)}?tab=contract`}>{rij.naam}</a>{rij.normOntbreekt && <p className="mt-1 text-xs font-normal text-amber-700">Contracturen/norm ontbreekt</p>}<StartSaldoForm medewerkerId={rij.id} medewerkerNaam={rij.naam} startSaldo={rij.startSaldoUren} peildatum={rij.startSaldoPeildatum ? rij.startSaldoPeildatum.toISOString().slice(0, 10) : null} notitie={rij.startSaldoNotitie} /></td>
-                  <td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.contractUren)}<p className="mt-1 text-xs text-slate-500">per week</p></td>
-                  <td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.jaarUrenNorm)}<p className="mt-1 text-xs text-slate-500">{formatDatum(rij.seizoenStart)} – {formatDatum(rij.seizoenEinde)}</p></td>
-                  <td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.resterendVerlof)}<p className="mt-1 text-xs text-slate-500">start: {formatUren(rij.verlofUrenStart)} · opgenomen: {formatUren(rij.verlofUrenOpgenomen)}</p></td>
-                  <td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.gewerkteUren)}{rij.startSaldoPeildatum && <p className="mt-1 text-xs text-slate-500">sinds peildatum: {formatUren(rij.gewerkteUrenSindsStartSaldo)}</p>}<p className="mt-1 text-xs text-slate-500">deze week werkelijk: {formatUren(rij.gewerkteUrenDezeWeek)}<br/>rapportagebasis: {formatUren(rij.rapportageUrenDezeWeek)}</p></td>
-                  <td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.liveIngeplandDezeWeek)}</td><td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.liveIngeplandRestOpeningsseizoen)}</td><td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.liveIngeplandNaSeizoen)}</td><td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.liveIngeplandRestContractperiode)}<p className="mt-1 text-xs text-slate-500">contractperiode: {formatDatum(rij.contractPeriodeStart)} – {formatDatum(rij.contractPeriodeEinde)}</p></td>
-                  <td className={`px-4 py-4 whitespace-nowrap font-semibold ${rij.resterendTeWerken < 0 ? "text-amber-700" : "text-slate-900"}`}>{formatUren(Math.max(0, rij.resterendTeWerken))}{rij.resterendTeWerken < 0 && <p className="mt-1 text-xs font-normal text-amber-700">Overschot gerealiseerd</p>}</td>
-                  <td className={`px-4 py-4 whitespace-nowrap font-semibold ${rij.nogNietIngepland < 0 ? "text-amber-700" : "text-slate-900"}`}>{formatUren(Math.max(0, rij.nogNietIngepland))}{rij.nogNietIngepland < 0 && <p className="mt-1 text-xs font-normal text-amber-700">Overprognose: {formatUren(Math.abs(rij.nogNietIngepland))}</p>}</td>
-                  <td className="px-4 py-4 whitespace-nowrap">{rij.resterendeOpeningsweken}</td><td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.gemiddeldNogTeWerkenPerWeek)}</td><td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.gemiddeldNogInTePlannenPerWeek)}</td><td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.prognoseOverschot)}</td>
+                {rijen.map((rij) => <tr key={rij.id} className="align-middle hover:bg-slate-50">
+                  <td className="px-4 py-3 font-medium text-slate-900">
+                    <a className="hover:underline" href={`/medewerkers/${encodeURIComponent(rij.medewerkerId)}?tab=contract`}>{rij.naam}</a>
+                    {rij.jaar === JAREN[0] && <details className="mt-2 text-xs font-normal text-slate-600">
+                      <summary className="cursor-pointer select-none text-slate-500 hover:text-slate-800">Startsaldo aanpassen</summary>
+                      <StartSaldoForm medewerkerId={rij.medewerkerId} medewerkerNaam={rij.naam} startSaldo={rij.startSaldo} peildatum={rij.peildatum ? rij.peildatum.toISOString().slice(0, 10) : null} notitie={rij.startSaldoNotitie} />
+                    </details>}
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-slate-700">{rij.jaar}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{formatUren(rij.norm)}{rij.normOntbreekt && <p className="text-xs text-amber-700">Contractnorm ontbreekt</p>}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{formatUren(rij.gewerkt)}</td>
+                  <td className={`px-4 py-3 text-right font-semibold tabular-nums ${rij.resterend !== null && rij.resterend < 0 ? "text-amber-700" : "text-slate-900"}`}>{formatUren(rij.resterend)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{formatUren(rij.verlof)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{rij.weken}</td>
+                  <td className="px-4 py-3 text-right font-semibold tabular-nums">{formatUren(rij.perWeek)}</td>
                 </tr>)}
               </tbody>
             </table>
           </div>
         </div>
-        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900"><strong>Rekenregels:</strong> jaar-/seizoensnorm = ingevulde norm of contracturen × 52. Als een startsaldo is ingevuld, geldt dat als resterend te werken saldo op de gekozen peildatum en worden alleen definitief goedgekeurde uren vanaf die datum ervan afgetrokken; zonder startsaldo wordt de jaar-/seizoensnorm gebruikt. De wekelijkse rapportagebasis wordt begrensd op contracturen. Alleen diensten in weken met status GEPUBLICEERD tellen mee als LIVE ingepland. De actuele verlofstand wordt getoond op basis van het ingevulde starttegoed en de geregistreerde opgenomen verlofuren.</div>
+        <p className="text-xs text-slate-500">De jaaruren zijn contracturen per week × 52, tenzij een eigen jaarurennorm is ingevuld. Het startsaldo geldt alleen voor het jaar waarin de peildatum valt. Verlofuren tonen het resterende verloftegoed voor het huidige jaar. Toekomstige jaren beginnen met de volledige jaarurennorm.</p>
       </div>
     </PageLayout>
   );
