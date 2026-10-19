@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { kalenderDatumUTC, lokaleDatumSleutel } from "@/lib/planning/tijd";
-import { berekenGewerkteUren } from "@/lib/verloning/pauze";
 import { berekenUniekeUrenPerInterval } from "@/lib/verloning/overlappendeUren";
 import PageLayout from "@/components/ui/PageLayout";
 import PageToolbar from "@/components/ui/PageToolbar";
@@ -79,24 +78,10 @@ export default async function ContracturenPage() {
 
   const medewerkerIds = medewerkers.map((medewerker) => medewerker.id);
   const vestigingIds = Array.from(new Set(medewerkers.flatMap((medewerker) => medewerker.vestigingen.map((relatie) => relatie.vestiging.id))));
-  const [registraties, bezettingen, weken] = await Promise.all([
-    prisma.urenRegistratie.findMany({
-      where: { medewerkerId: { in: medewerkerIds }, vestigingId: { in: vestigingIds }, status: "DEFINITIEF", datum: { gte: jaarStart, lt: jaarEindeExclusief } },
-      select: { id: true, medewerkerId: true, vestigingId: true, datum: true, gewerkteUren: true, werkelijkeBegintijd: true, werkelijkeEindtijd: true },
-    }),
-    prisma.dienstBezetting.findMany({
-      where: {
-        medewerkerId: { in: medewerkerIds },
-        status: { in: ["GEPLAND", "BEVESTIGD", "GEWERKT"] },
-        dienst: { datum: { gte: jaarStart, lt: jaarEindeExclusief }, week: { status: "GEPUBLICEERD", vestigingId: { in: vestigingIds } } },
-      },
-      select: { medewerkerId: true, dienst: { select: { datum: true, begintijd: true, eindtijd: true, week: { select: { vestigingId: true } } } } },
-    }),
-    prisma.week.findMany({
-      where: { vestigingId: { in: vestigingIds }, jaar: { gte: JAREN[0], lte: JAREN[JAREN.length - 1] } },
-      select: { vestigingId: true, jaar: true, weeknummer: true },
-    }),
-  ]);
+  const registraties = await prisma.urenRegistratie.findMany({
+    where: { medewerkerId: { in: medewerkerIds }, vestigingId: { in: vestigingIds }, status: "DEFINITIEF", datum: { gte: jaarStart, lt: jaarEindeExclusief } },
+    select: { id: true, medewerkerId: true, vestigingId: true, datum: true, gewerkteUren: true, werkelijkeBegintijd: true, werkelijkeEindtijd: true },
+  });
 
   const uniekeUrenPerRegistratie = berekenUniekeUrenPerInterval(
     registraties.filter((registratie) => registratie.werkelijkeBegintijd && registratie.werkelijkeEindtijd).map((registratie) => ({
@@ -147,12 +132,7 @@ export default async function ContracturenPage() {
         : norm - (jaar === vandaag.getUTCFullYear() ? verlofStart : 0) - gewerkt;
       const weken = resterendeWekenInJaar(jaar, vandaag);
       const urenPerWeek = resterend === null ? null : weken > 0 ? Math.max(0, resterend) / weken : 0;
-      const ingepland = bezettingen.filter((bezetting) => {
-        const datum = datumUTC(bezetting.dienst.datum);
-        return bezetting.medewerkerId === medewerker.id &&
-          medewerkerVestigingen.includes(bezetting.dienst.week.vestigingId) &&
-          datum >= (datum > vandaag ? datum : vandaag) && datum >= start && datum < einde;
-      }).reduce((som, bezetting) => som + berekenGewerkteUren(bezetting.dienst.begintijd, bezetting.dienst.eindtijd).gewerkteUren, 0);
+
       return {
         id: `${medewerker.id}-${jaar}`,
         medewerkerId: medewerker.id,
@@ -164,7 +144,6 @@ export default async function ContracturenPage() {
         verlof: jaar === vandaag.getUTCFullYear() ? resterendVerlof : 0,
         weken,
         perWeek: urenPerWeek === null ? null : Math.round(urenPerWeek * 100) / 100,
-        ingepland: Math.round(ingepland * 100) / 100,
         startSaldo,
         peildatum,
         startSaldoNotitie: medewerker.contractUrenStartNotitie,
