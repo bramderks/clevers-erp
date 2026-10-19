@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { kalenderDatumUTC, lokaleDatumSleutel } from "@/lib/planning/tijd";
 import { berekenContractUren, bepaalContractPeriode, begrensRapportageUren } from "@/lib/contracturen/berekening";
 import { berekenGewerkteUren } from "@/lib/verloning/pauze";
+import { berekenUniekeUrenPerInterval } from "@/lib/verloning/overlappendeUren";
 import PageLayout from "@/components/ui/PageLayout";
 import PageToolbar from "@/components/ui/PageToolbar";
 
@@ -88,7 +89,7 @@ export default async function ContracturenPage() {
   const [registraties, bezettingen, weken] = await Promise.all([
     prisma.urenRegistratie.findMany({
       where: { medewerkerId: { in: medewerkerIds }, vestigingId: { in: vestigingIds }, status: "DEFINITIEF", datum: { gte: globaleStart, lt: globaleEindeExclusief } },
-      select: { medewerkerId: true, vestigingId: true, datum: true, gewerkteUren: true },
+      select: { id: true, medewerkerId: true, vestigingId: true, datum: true, gewerkteUren: true, werkelijkeBegintijd: true, werkelijkeEindtijd: true },
     }),
     prisma.dienstBezetting.findMany({
       where: {
@@ -104,6 +105,18 @@ export default async function ContracturenPage() {
     }),
   ]);
 
+  const uniekeUrenPerRegistratie = berekenUniekeUrenPerInterval(
+    registraties.filter((registratie) => registratie.werkelijkeBegintijd && registratie.werkelijkeEindtijd).map((registratie) => ({
+      id: registratie.id,
+      medewerkerId: registratie.medewerkerId,
+      vestigingId: registratie.vestigingId,
+      datum: registratie.datum,
+      begintijd: registratie.werkelijkeBegintijd!,
+      eindtijd: registratie.werkelijkeEindtijd!,
+    })),
+    berekenGewerkteUren,
+  );
+
   const rijen = medewerkers.map((medewerker) => {
     const periode = perioden.find((item) => item.medewerkerId === medewerker.id)!;
     const medewerkerVestigingen = medewerker.vestigingen.map((relatie) => relatie.vestiging.id);
@@ -111,10 +124,14 @@ export default async function ContracturenPage() {
       registratie.medewerkerId === medewerker.id && medewerkerVestigingen.includes(registratie.vestigingId) &&
       datumUTC(registratie.datum) >= periode.contractStart && datumUTC(registratie.datum) <= periode.contractEinde,
     );
-    const gewerkteUren = eigenRegistraties.reduce((som, registratie) => som + Number(registratie.gewerkteUren), 0);
+    const urenRegistratie = (registratie: (typeof eigenRegistraties)[number]) =>
+      registratie.werkelijkeBegintijd && registratie.werkelijkeEindtijd
+        ? (uniekeUrenPerRegistratie.get(registratie.id) ?? 0)
+        : Number(registratie.gewerkteUren);
+    const gewerkteUren = eigenRegistraties.reduce((som, registratie) => som + urenRegistratie(registratie), 0);
     const gewerkteUrenDezeWeek = eigenRegistraties.filter((registratie) =>
       datumUTC(registratie.datum) >= weekStart && datumUTC(registratie.datum) < volgendeWeek,
-    ).reduce((som, registratie) => som + Number(registratie.gewerkteUren), 0);
+    ).reduce((som, registratie) => som + urenRegistratie(registratie), 0);
 
     const eigenBezettingen = bezettingen.filter((bezetting) =>
       bezetting.medewerkerId === medewerker.id && medewerkerVestigingen.includes(bezetting.dienst.week.vestigingId) &&

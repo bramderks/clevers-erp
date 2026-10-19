@@ -65,3 +65,10 @@ test("contractperiode volgt de huidige 12-maandsperiode zonder UTC-datumverschui
   assert.equal(periode.start.toISOString().slice(0, 10), "2026-02-28");
   assert.equal(periode.einde.toISOString().slice(0, 10), "2027-02-27");
 });
+
+
+test("contractperiode blijft op de laatste kalenderdag van februari bij een schrikkeldag-anker", () => {
+  const periode = bepaalContractPeriode(new Date("2024-02-29T00:00:00.000Z"), new Date("2024-02-29T00:00:00.000Z"), new Date("2026-10-19T12:00:00.000Z"));
+  assert.equal(periode.start.toISOString().slice(0, 10), "2026-02-28");
+  assert.equal(periode.einde.toISOString().slice(0, 10), "2027-02-27");
+});

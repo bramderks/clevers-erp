@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { kalenderDatumUTC, lokaleDatumSleutel } from "@/lib/planning/tijd";
 import { berekenContractUren, bepaalContractPeriode } from "@/lib/contracturen/berekening";
 import { berekenGewerkteUren } from "@/lib/verloning/pauze";
+import { berekenUniekeUrenPerInterval } from "@/lib/verloning/overlappendeUren";
 import {
   datumSleutelVoorUren,
   urenVanSamengevoegdeIntervallen,
@@ -357,7 +358,7 @@ export async function GET(
       ? await Promise.all([
           prisma.urenRegistratie.findMany({
             where: { medewerkerId: { in: medewerkerIds }, vestigingId: { in: organisatieVestigingIds }, status: "DEFINITIEF", datum: { gte: globaleContractStart, lt: globaleContractEindeExclusief } },
-            select: { medewerkerId: true, datum: true, gewerkteUren: true, vestigingId: true },
+            select: { id: true, medewerkerId: true, datum: true, gewerkteUren: true, werkelijkeBegintijd: true, werkelijkeEindtijd: true, vestigingId: true },
           }),
           prisma.dienstBezetting.findMany({
             where: { medewerkerId: { in: medewerkerIds }, status: { in: ["GEPLAND", "BEVESTIGD", "GEWERKT"] }, dienst: { datum: { gte: weekStart < vandaag ? weekStart : vandaag, lt: globaleContractEindeExclusief }, week: { status: "GEPUBLICEERD", vestigingId: { in: organisatieVestigingIds } } } },
@@ -378,12 +379,24 @@ export async function GET(
       return vierJanuari <= seizoenEinde && weekEinde >= seizoenStart && weekEinde >= vandaag;
     }).map((week) => `${week.jaar}-${week.weeknummer}`)).size;
 
+    const uniekeUrenPerRegistratie = berekenUniekeUrenPerInterval(
+      seizoenRegistraties.filter((registratie) => registratie.werkelijkeBegintijd && registratie.werkelijkeEindtijd).map((registratie) => ({
+        id: registratie.id,
+        medewerkerId: registratie.medewerkerId,
+        vestigingId: registratie.vestigingId,
+        datum: registratie.datum,
+        begintijd: registratie.werkelijkeBegintijd!,
+        eindtijd: registratie.werkelijkeEindtijd!,
+      })),
+      berekenGewerkteUren,
+    );
+
     const contracturenBalansPerMedewerker = new Map<string, { contractUren: number | null; jaarNorm: number; teWerkenNorm: number; gewerkteUren: number; liveIngeplandDezeWeek: number; liveIngeplandRestContractperiode: number; nogNietIngepland: number; resterendeOpeningsweken: number; gemiddeldNogInTePlannenPerWeek: number | null; prognoseOverschot: number; verlofUrenStart: number | null; resterendVerlof: number | null }>();
     for (const medewerker of medewerkers) {
       if (medewerker.contractType !== "VAST") continue;
       const eigenVestigingen = new Set(medewerker.vestigingen.map((item) => item.vestigingId));
       const contractPeriode = contractPerioden.get(medewerker.id)!;
-      const gewerkteUren = seizoenRegistraties.filter((item) => item.medewerkerId === medewerker.id && eigenVestigingen.has(item.vestigingId) && item.datum >= contractPeriode.start && item.datum <= contractPeriode.einde).reduce((som, item) => som + Number(item.gewerkteUren), 0);
+      const gewerkteUren = seizoenRegistraties.filter((item) => item.medewerkerId === medewerker.id && eigenVestigingen.has(item.vestigingId) && item.datum >= contractPeriode.start && item.datum <= contractPeriode.einde).reduce((som, item) => som + (item.werkelijkeBegintijd && item.werkelijkeEindtijd ? (uniekeUrenPerRegistratie.get(item.id) ?? 0) : Number(item.gewerkteUren)), 0);
       const eigenBezettingen = seizoenBezettingen.filter((item) => item.medewerkerId === medewerker.id && eigenVestigingen.has(item.dienst.week.vestigingId) && item.dienst.week.status === "GEPUBLICEERD" && item.dienst.datum >= contractPeriode.start && item.dienst.datum <= contractPeriode.einde);
       const urenDienst = (item: (typeof eigenBezettingen)[number]) => berekenGewerkteUren(item.dienst.begintijd, item.dienst.eindtijd).gewerkteUren;
       const liveDezeWeek = eigenBezettingen.filter((item) => item.dienst.datum >= weekStart && item.dienst.datum < volgendeWeek).reduce((som, item) => som + urenDienst(item), 0);

@@ -1,16 +1,21 @@
 export function bepaalContractPeriode(datumInDienst: Date | null, fallbackStart: Date, peildatum: Date): { start: Date; einde: Date } {
   const dag = (waarde: Date) => new Date(Date.UTC(waarde.getUTCFullYear(), waarde.getUTCMonth(), waarde.getUTCDate()));
+  const jubileum = (jaar: number, maand: number, dagnummer: number) => {
+    const datum = new Date(Date.UTC(jaar, maand, dagnummer));
+    // Een contract dat op 29 februari begon, valt in niet-schrikkeljaren terug op 28 februari.
+    if (datum.getUTCMonth() !== maand) return new Date(Date.UTC(jaar, maand + 1, 0));
+    return datum;
+  };
   const peil = dag(peildatum);
   const anker = dag(datumInDienst ?? fallbackStart);
   let start: Date;
-  if (anker > peil) {
+  if (datumInDienst !== null && anker > peil) {
     start = anker;
   } else {
-    start = new Date(Date.UTC(peil.getUTCFullYear(), anker.getUTCMonth(), anker.getUTCDate()));
-    if (start > peil) start = new Date(Date.UTC(peil.getUTCFullYear() - 1, anker.getUTCMonth(), anker.getUTCDate()));
+    start = jubileum(peil.getUTCFullYear(), anker.getUTCMonth(), anker.getUTCDate());
+    if (start > peil) start = jubileum(peil.getUTCFullYear() - 1, anker.getUTCMonth(), anker.getUTCDate());
   }
-  let volgende = new Date(Date.UTC(start.getUTCFullYear() + 1, start.getUTCMonth(), start.getUTCDate()));
-  if (volgende.getUTCMonth() !== start.getUTCMonth()) volgende = new Date(Date.UTC(start.getUTCFullYear() + 1, start.getUTCMonth() + 1, 0));
+  const volgende = jubileum(start.getUTCFullYear() + 1, start.getUTCMonth(), start.getUTCDate());
   const einde = new Date(volgende);
   einde.setUTCDate(einde.getUTCDate() - 1);
   return { start, einde };
