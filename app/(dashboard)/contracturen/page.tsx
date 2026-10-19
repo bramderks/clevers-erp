@@ -127,7 +127,7 @@ export default async function ContracturenPage() {
     ).reduce((som, bezetting) => som + berekenGewerkteUren(bezetting.dienst.begintijd, bezetting.dienst.eindtijd).gewerkteUren, 0);
     const liveIngeplandRestSeizoen = eigenBezettingen.filter((bezetting) =>
       datumUTC(bezetting.dienst.datum) >= vandaag,
-    ).reduce((som, bezetting) => som + berekenDienstUren(bezetting.dienst.begintijd, bezetting.dienst.eindtijd), 0);
+    ).reduce((som, bezetting) => som + berekenGewerkteUren(bezetting.dienst.begintijd, bezetting.dienst.eindtijd).gewerkteUren, 0);
 
     const resterendeWeken = new Set(weken
       .filter((week) => medewerkerVestigingen.includes(week.vestigingId))

@@ -197,6 +197,8 @@ export default async function RapportagesPage({
                       voornaam: true,
                       achternaam: true,
                       uurloon: true,
+                      contractType: true,
+                      contractUren: true,
                       loonperiodes: {
                         where: { actief: true },
                         select: { uurloon: true, periodeStart: true, periodeEinde: true },
