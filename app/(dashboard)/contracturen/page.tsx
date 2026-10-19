@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { kalenderDatumUTC, lokaleDatumSleutel } from "@/lib/planning/tijd";
-import { berekenContractUren, berekenDienstUren, begrensRapportageUren } from "@/lib/contracturen/berekening";
+import { berekenContractUren, begrensRapportageUren } from "@/lib/contracturen/berekening";
+import { berekenGewerkteUren } from "@/lib/verloning/pauze";
 import PageLayout from "@/components/ui/PageLayout";
 import PageToolbar from "@/components/ui/PageToolbar";
 
@@ -123,7 +124,7 @@ export default async function ContracturenPage() {
     );
     const liveIngeplandDezeWeek = eigenBezettingen.filter((bezetting) =>
       datumUTC(bezetting.dienst.datum) >= weekStart && datumUTC(bezetting.dienst.datum) < volgendeWeek,
-    ).reduce((som, bezetting) => som + berekenDienstUren(bezetting.dienst.begintijd, bezetting.dienst.eindtijd), 0);
+    ).reduce((som, bezetting) => som + berekenGewerkteUren(bezetting.dienst.begintijd, bezetting.dienst.eindtijd).gewerkteUren, 0);
     const liveIngeplandRestSeizoen = eigenBezettingen.filter((bezetting) =>
       datumUTC(bezetting.dienst.datum) >= vandaag,
     ).reduce((som, bezetting) => som + berekenDienstUren(bezetting.dienst.begintijd, bezetting.dienst.eindtijd), 0);
@@ -154,7 +155,7 @@ export default async function ContracturenPage() {
       resterendVerlof: verlofUrenStart === null ? null : Math.max(0, verlofUrenStart - verlofUrenOpgenomen),
       gewerkteUren: balans.gewerkteUren,
       gewerkteUrenDezeWeek: Math.round(gewerkteUrenDezeWeek * 100) / 100,
-      rapportageUrenDezeWeek: begrensRapportageUren(gewerkteUrenDezeWeek, contractUren),
+      rapportageUrenDezeWeek: begrensRapportageUren(liveIngeplandDezeWeek, contractUren),
       liveIngeplandDezeWeek: Math.round(liveIngeplandDezeWeek * 100) / 100,
       liveIngeplandRestSeizoen: balans.liveIngepland,
       resterendTeWerken: balans.resterendTeWerken,

@@ -44,3 +44,17 @@ test("diensturen worden zonder locale datumverschuiving berekend", () => {
   assert.equal(berekenDienstUren("2026-10-19T15:00:00.000Z", "2026-10-19T19:00:00.000Z"), 4);
   assert.equal(berekenDienstUren("2026-10-19T19:00:00.000Z", "2026-10-19T15:00:00.000Z"), 0);
 });
+
+
+test("wekelijkse rapportageregels worden per vaste medewerker op contracturen begrensd", async () => {
+  const { begrensRapportageRegels } = await import("../lib/contracturen/berekening");
+  const regels = [
+    { medewerkerId: "vast-1", uren: 10, uurloon: 20, kosten: 200, contractType: "VAST", contractUren: 15 },
+    { medewerkerId: "vast-1", uren: 15, uurloon: 20, kosten: 300, contractType: "VAST", contractUren: 15 },
+    { medewerkerId: "flex-1", uren: 25, uurloon: 20, kosten: 500, contractType: "FLEX", contractUren: 15 },
+  ];
+  begrensRapportageRegels(regels);
+  assert.equal(regels.filter((regel) => regel.medewerkerId === "vast-1").reduce((som, regel) => som + regel.uren, 0), 15);
+  assert.equal(regels.filter((regel) => regel.medewerkerId === "vast-1").reduce((som, regel) => som + (regel.kosten ?? 0), 0), 300);
+  assert.equal(regels.find((regel) => regel.medewerkerId === "flex-1")?.uren, 25);
+});

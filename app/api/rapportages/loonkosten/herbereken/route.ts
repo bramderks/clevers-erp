@@ -3,6 +3,7 @@ import { getCurrentUser, isEigenaar } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { berekenGewerkteUren } from "@/lib/verloning/pauze";
 import { berekenUniekeUrenPerInterval } from "@/lib/verloning/overlappendeUren";
+import { begrensRapportageRegels } from "@/lib/contracturen/berekening";
 
 
 function getISOWeek(datum: Date) {
@@ -79,6 +80,8 @@ export async function POST(request: NextRequest) {
                     voornaam: true,
                     achternaam: true,
                     uurloon: true,
+                    contractType: true,
+                    contractUren: true,
                     loonperiodes: {
                       where: { actief: true },
                       select: { uurloon: true, periodeStart: true, periodeEinde: true },
@@ -130,9 +133,13 @@ export async function POST(request: NextRequest) {
           uren,
           uurloon,
           kosten: uurloon == null ? null : uren * uurloon,
+          contractType: medewerker.contractType,
+          contractUren: medewerker.contractUren == null ? null : Number(medewerker.contractUren),
         };
       }),
     );
+
+    begrensRapportageRegels(regels);
 
     const dagenMap = new Map<string, { datum: string; uren: number; kosten: number; ontbrekendUurloon: number }>();
     const medewerkersMap = new Map<string, {
@@ -187,7 +194,7 @@ export async function POST(request: NextRequest) {
     }));
 
     const snapshot = {
-      versie: 5,
+      versie: 6,
       vastgelegdOp: new Date().toISOString(),
       dagen,
       medewerkers,

@@ -109,6 +109,7 @@ type RapportBron = {
   medewerkers: Medewerker[];
   diensten: DienstDetail[];
   afgeslotenOp: string | null;
+  snapshotVersie?: number;
 };
 
 function uitSnapshot(loonkosten: {
@@ -145,6 +146,7 @@ function uitSnapshot(loonkosten: {
     medewerkers: snapshot.medewerkers,
     diensten: snapshot.diensten ?? [],
     afgeslotenOp: loonkosten.afgeslotenOp.toISOString(),
+    snapshotVersie: snapshot.versie ?? 0,
   };
 }
 
@@ -222,16 +224,35 @@ export default async function RapportagesPage({
   // kunnen worden aangepast. Zonder deze controle bleef een oude snapshot, zoals
   // de 14 uur van Jayro, de actuele planning overschrijven.
   const actueleUrenPerMedewerker = new Map<string, number>();
+  const contractInfoPerMedewerker = new Map<string, { contractType: string; contractUren: number | null }>();
   for (const dienst of actueleWeekDiensten) {
     const uren = berekenGewerkteUren(dienst.begintijd, dienst.eindtijd).gewerkteUren;
     for (const bezetting of dienst.bezetting) {
       if (!bezetting.medewerker) continue;
+      contractInfoPerMedewerker.set(bezetting.medewerker.id, {
+        contractType: bezetting.medewerker.contractType,
+        contractUren: bezetting.medewerker.contractUren == null ? null : Number(bezetting.medewerker.contractUren),
+      });
       actueleUrenPerMedewerker.set(
         bezetting.medewerker.id,
         (actueleUrenPerMedewerker.get(bezetting.medewerker.id) ?? 0) + uren,
       );
     }
   }
+
+  const actueleRapportageUrenPerMedewerker = new Map<string, number>();
+  for (const [medewerkerId, uren] of actueleUrenPerMedewerker) {
+    const contract = contractInfoPerMedewerker.get(medewerkerId);
+    actueleRapportageUrenPerMedewerker.set(medewerkerId,
+      contract?.contractType === "VAST" && contract.contractUren !== null
+        ? Math.min(uren, Math.max(0, contract.contractUren))
+        : uren,
+    );
+  }
+
+  const urenVoorSnapshotVergelijking = (opgeslagenBron?.snapshotVersie ?? 0) >= 6
+    ? actueleRapportageUrenPerMedewerker
+    : actueleUrenPerMedewerker;
 
   const snapshotHeeftVerkeerdeWeekdiensten = Boolean(
     opgeslagenBron?.diensten.some((dienst) => !dienstValtInWeek({ begintijd: new Date(dienst.begintijd) }, jaar, weeknummer)),
@@ -241,7 +262,7 @@ export default async function RapportagesPage({
     (
       opgeslagenBron.medewerkers.some(
         (medewerker) =>
-          Math.abs((actueleUrenPerMedewerker.get(medewerker.medewerkerId) ?? 0) - medewerker.uren) > 0.001,
+          Math.abs((urenVoorSnapshotVergelijking.get(medewerker.medewerkerId) ?? 0) - medewerker.uren) > 0.001,
       ) ||
       Array.from(actueleUrenPerMedewerker.keys()).some(
         (medewerkerId) => !opgeslagenBron.medewerkers.some((medewerker) => medewerker.medewerkerId === medewerkerId),

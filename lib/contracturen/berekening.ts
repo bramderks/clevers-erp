@@ -43,6 +43,35 @@ export function berekenContractUren(input: ContractUrenBalansInput) {
   };
 }
 
+export type ContractRapportageRegel = { medewerkerId: string; uren: number; uurloon: number | null; kosten: number | null; contractType?: string | null; contractUren?: number | null };
+
+/** Begrenst uitsluitend de rapportage-uren voor vaste contracten; de bronregistraties blijven ongewijzigd. */
+export function begrensRapportageRegels<T extends ContractRapportageRegel>(regels: T[]): T[] {
+  const groepen = new Map<string, T[]>();
+  for (const regel of regels) {
+    if (regel.contractType !== "VAST" || regel.contractUren == null || !Number.isFinite(regel.contractUren)) continue;
+    const groep = groepen.get(regel.medewerkerId) ?? [];
+    groep.push(regel);
+    groepen.set(regel.medewerkerId, groep);
+  }
+  for (const groep of groepen.values()) {
+    const contractUren = Math.max(0, groep[0]?.contractUren ?? 0);
+    const totaal = groep.reduce((som, regel) => som + Math.max(0, regel.uren), 0);
+    if (totaal <= contractUren || totaal <= 0) continue;
+    const factor = contractUren / totaal;
+    let toegewezen = 0;
+    groep.forEach((regel, index) => {
+      const uren = index === groep.length - 1
+        ? Math.max(0, Math.round((contractUren - toegewezen + Number.EPSILON) * 100) / 100)
+        : Math.round((regel.uren * factor + Number.EPSILON) * 100) / 100;
+      regel.uren = uren;
+      toegewezen += uren;
+      regel.kosten = regel.uurloon == null ? null : uren * regel.uurloon;
+    });
+  }
+  return regels;
+}
+
 export function berekenDienstUren(begintijd: Date | string, eindtijd: Date | string): number {
   const begin = begintijd instanceof Date ? begintijd.getTime() : new Date(begintijd).getTime();
   const einde = eindtijd instanceof Date ? eindtijd.getTime() : new Date(eindtijd).getTime();

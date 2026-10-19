@@ -18,6 +18,20 @@ type PlanningMedewerker = {
   id: string;
   isBeheerder?: boolean;
   personeelsnummer: string | null;
+  contracturenBalans?: {
+    contractUren: number | null;
+    jaarNorm: number;
+    teWerkenNorm: number;
+    gewerkteUren: number;
+    liveIngeplandDezeWeek: number;
+    liveIngeplandRestSeizoen: number;
+    nogNietIngepland: number;
+    resterendeOpeningsweken: number;
+    gemiddeldNogInTePlannenPerWeek: number | null;
+    prognoseOverschot: number;
+    verlofUrenStart: number | null;
+    resterendVerlof: number | null;
+  };
   aanhef:
     | "DHR"
     | "MEVR"
@@ -132,6 +146,11 @@ function tijdNaarMinuten(
   }
 
   return uren * 60 + minuten;
+}
+
+function formatteerUrenCompact(uren: number | null | undefined) {
+  if (uren === null || uren === undefined || !Number.isFinite(uren)) return "—";
+  return new Intl.NumberFormat("nl-NL", { maximumFractionDigits: 2 }).format(uren);
 }
 
 function volledigeNaam(
@@ -2088,6 +2107,14 @@ export default function DienstForm({
                         {heeftBhv &&
                           " · ✓ BHV"}
                       </p>
+                      {medewerker.contracturenBalans && (
+                        <p className="mt-1 text-xs font-medium text-slate-700">
+                          Contract: {formatteerUrenCompact(medewerker.contracturenBalans.contractUren)} u/week · LIVE deze week: {formatteerUrenCompact(medewerker.contracturenBalans.liveIngeplandDezeWeek)} u · LIVE rest seizoen: {formatteerUrenCompact(medewerker.contracturenBalans.liveIngeplandRestSeizoen)} u
+                          <br />
+                          Nog te plannen: {formatteerUrenCompact(Math.max(0, medewerker.contracturenBalans.nogNietIngepland))} u · gemiddeld {formatteerUrenCompact(medewerker.contracturenBalans.gemiddeldNogInTePlannenPerWeek)} u/openingsweek
+                          {medewerker.contracturenBalans.nogNietIngepland < 0 && ` · prognose overschot ${formatteerUrenCompact(medewerker.contracturenBalans.prognoseOverschot)} u`}
+                        </p>
+                      )}
                     </div>
 
                     <input
