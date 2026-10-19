@@ -28,6 +28,8 @@ export type ContractUrenBalansInput = {
   gewerkteUren: number;
   liveIngepland: number;
   resterendeOpeningsweken: number;
+  startSaldoUren?: number | null;
+  gewerkteUrenSindsStartSaldo?: number;
 };
 
 export function begrensRapportageUren(gewerkteUren: number, contractUren: number | null): number {
@@ -43,10 +45,14 @@ export function berekenContractUren(input: ContractUrenBalansInput) {
   const verlofUrenStart = input.verlofUrenStart !== null && Number.isFinite(input.verlofUrenStart)
     ? Math.max(0, input.verlofUrenStart)
     : 0;
-  const teWerkenNorm = Math.max(0, jaarNorm - verlofUrenStart);
+  const startSaldoUren = input.startSaldoUren !== null && input.startSaldoUren !== undefined && Number.isFinite(input.startSaldoUren)
+    ? Math.max(0, input.startSaldoUren)
+    : null;
+  const teWerkenNorm = startSaldoUren ?? Math.max(0, jaarNorm - verlofUrenStart);
   const gewerkteUren = Math.max(0, Number.isFinite(input.gewerkteUren) ? input.gewerkteUren : 0);
+  const gewerkteUrenSindsStartSaldo = Math.max(0, Number.isFinite(input.gewerkteUrenSindsStartSaldo) ? input.gewerkteUrenSindsStartSaldo! : gewerkteUren);
   const liveIngepland = Math.max(0, Number.isFinite(input.liveIngepland) ? input.liveIngepland : 0);
-  const resterendTeWerken = afrondenUren(teWerkenNorm - gewerkteUren);
+  const resterendTeWerken = afrondenUren(teWerkenNorm - (startSaldoUren === null ? gewerkteUren : gewerkteUrenSindsStartSaldo));
   const nogNietIngepland = afrondenUren(resterendTeWerken - liveIngepland);
   const weken = Math.max(0, Math.floor(input.resterendeOpeningsweken));
   return {
@@ -54,6 +60,8 @@ export function berekenContractUren(input: ContractUrenBalansInput) {
     jaarNorm: afrondenUren(jaarNorm),
     verlofUrenStart: afrondenUren(verlofUrenStart),
     teWerkenNorm: afrondenUren(teWerkenNorm),
+    startSaldoUren: startSaldoUren === null ? null : afrondenUren(startSaldoUren),
+    gewerkteUrenSindsStartSaldo: afrondenUren(gewerkteUrenSindsStartSaldo),
     gewerkteUren: afrondenUren(gewerkteUren),
     liveIngepland: afrondenUren(liveIngepland),
     resterendTeWerken,

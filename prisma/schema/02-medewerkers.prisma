@@ -61,6 +61,12 @@ model Medewerker {
   verlofUrenStart Decimal? @db.Decimal(7, 2)
   verlofUrenOpgenomen Decimal? @default(0) @db.Decimal(7, 2)
 
+  /// Handmatig startsaldo van de nog te werken contracturen op een peildatum.
+  /// Goedgekeurde urenregistraties vanaf deze datum worden hiervan afgetrokken.
+  contractUrenStartSaldo Decimal? @db.Decimal(7, 2)
+  contractUrenStartPeildatum DateTime?
+  contractUrenStartNotitie String?
+
   /// Legacy/fallback uurloon. Nieuwe loonafspraken worden opgeslagen in MedewerkerLoonPeriode.
   uurloon Decimal? @db.Decimal(8, 2)
 

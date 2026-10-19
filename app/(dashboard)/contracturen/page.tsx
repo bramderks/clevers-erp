@@ -8,6 +8,7 @@ import { berekenGewerkteUren } from "@/lib/verloning/pauze";
 import { berekenUniekeUrenPerInterval } from "@/lib/verloning/overlappendeUren";
 import PageLayout from "@/components/ui/PageLayout";
 import PageToolbar from "@/components/ui/PageToolbar";
+import StartSaldoForm from "@/components/contracturen/StartSaldoForm";
 
 export const dynamic = "force-dynamic";
 
@@ -129,6 +130,10 @@ export default async function ContracturenPage() {
         ? (uniekeUrenPerRegistratie.get(registratie.id) ?? 0)
         : Number(registratie.gewerkteUren);
     const gewerkteUren = eigenRegistraties.reduce((som, registratie) => som + urenRegistratie(registratie), 0);
+    const startSaldoUren = medewerker.contractUrenStartSaldo == null ? null : Number(medewerker.contractUrenStartSaldo);
+    const startSaldoPeildatum = medewerker.contractUrenStartPeildatum ? datumUTC(medewerker.contractUrenStartPeildatum) : null;
+    const registratiesSindsStartSaldo = startSaldoPeildatum === null ? eigenRegistraties : eigenRegistraties.filter((registratie) => datumUTC(registratie.datum) >= startSaldoPeildatum);
+    const gewerkteUrenSindsStartSaldo = registratiesSindsStartSaldo.reduce((som, registratie) => som + urenRegistratie(registratie), 0);
     const gewerkteUrenDezeWeek = eigenRegistraties.filter((registratie) =>
       datumUTC(registratie.datum) >= weekStart && datumUTC(registratie.datum) < volgendeWeek,
     ).reduce((som, registratie) => som + urenRegistratie(registratie), 0);
@@ -162,7 +167,7 @@ export default async function ContracturenPage() {
     const jaarUrenNorm = medewerker.jaarUrenNorm == null ? null : Number(medewerker.jaarUrenNorm);
     const verlofUrenStart = medewerker.verlofUrenStart == null ? null : Number(medewerker.verlofUrenStart);
     const verlofUrenOpgenomen = medewerker.verlofUrenOpgenomen == null ? 0 : Number(medewerker.verlofUrenOpgenomen);
-    const balans = berekenContractUren({ contractUren, jaarUrenNorm, verlofUrenStart, gewerkteUren, liveIngepland: liveIngeplandRestContractperiode, resterendeOpeningsweken: resterendeWeken });
+    const balans = berekenContractUren({ contractUren, jaarUrenNorm, verlofUrenStart, gewerkteUren, startSaldoUren, gewerkteUrenSindsStartSaldo, liveIngepland: liveIngeplandRestContractperiode, resterendeOpeningsweken: resterendeWeken });
 
     return {
       id: medewerker.id,
@@ -173,6 +178,10 @@ export default async function ContracturenPage() {
       verlofUrenStart,
       verlofUrenOpgenomen,
       resterendVerlof: verlofUrenStart === null ? null : Math.max(0, verlofUrenStart - verlofUrenOpgenomen),
+      startSaldoUren,
+      startSaldoPeildatum,
+      startSaldoNotitie: medewerker.contractUrenStartNotitie,
+      gewerkteUrenSindsStartSaldo: Math.round(gewerkteUrenSindsStartSaldo * 100) / 100,
       gewerkteUren: balans.gewerkteUren,
       gewerkteUrenDezeWeek: Math.round(gewerkteUrenDezeWeek * 100) / 100,
       rapportageUrenDezeWeek: begrensRapportageUren(liveIngeplandDezeWeek, contractUren),
@@ -219,11 +228,11 @@ export default async function ContracturenPage() {
               </tr></thead>
               <tbody className="divide-y divide-slate-100">
                 {rijen.map((rij) => <tr key={rij.id} className="align-top hover:bg-slate-50">
-                  <td className="px-4 py-4 font-semibold text-slate-900"><a className="hover:underline" href={`/medewerkers/${encodeURIComponent(rij.id)}?tab=contract`}>{rij.naam}</a>{rij.normOntbreekt && <p className="mt-1 text-xs font-normal text-amber-700">Contracturen/norm ontbreekt</p>}</td>
+                  <td className="px-4 py-4 font-semibold text-slate-900"><a className="hover:underline" href={`/medewerkers/${encodeURIComponent(rij.id)}?tab=contract`}>{rij.naam}</a>{rij.normOntbreekt && <p className="mt-1 text-xs font-normal text-amber-700">Contracturen/norm ontbreekt</p>}<StartSaldoForm medewerkerId={rij.id} medewerkerNaam={rij.naam} startSaldo={rij.startSaldoUren} peildatum={rij.startSaldoPeildatum ? rij.startSaldoPeildatum.toISOString().slice(0, 10) : null} notitie={rij.startSaldoNotitie} /></td>
                   <td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.contractUren)}<p className="mt-1 text-xs text-slate-500">per week</p></td>
                   <td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.jaarUrenNorm)}<p className="mt-1 text-xs text-slate-500">{formatDatum(rij.seizoenStart)} – {formatDatum(rij.seizoenEinde)}</p></td>
                   <td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.resterendVerlof)}<p className="mt-1 text-xs text-slate-500">start: {formatUren(rij.verlofUrenStart)} · opgenomen: {formatUren(rij.verlofUrenOpgenomen)}</p></td>
-                  <td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.gewerkteUren)}<p className="mt-1 text-xs text-slate-500">deze week werkelijk: {formatUren(rij.gewerkteUrenDezeWeek)}<br/>rapportagebasis: {formatUren(rij.rapportageUrenDezeWeek)}</p></td>
+                  <td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.gewerkteUren)}{rij.startSaldoPeildatum && <p className="mt-1 text-xs text-slate-500">sinds peildatum: {formatUren(rij.gewerkteUrenSindsStartSaldo)}</p>}<p className="mt-1 text-xs text-slate-500">deze week werkelijk: {formatUren(rij.gewerkteUrenDezeWeek)}<br/>rapportagebasis: {formatUren(rij.rapportageUrenDezeWeek)}</p></td>
                   <td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.liveIngeplandDezeWeek)}</td><td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.liveIngeplandRestOpeningsseizoen)}</td><td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.liveIngeplandNaSeizoen)}</td><td className="px-4 py-4 whitespace-nowrap">{formatUren(rij.liveIngeplandRestContractperiode)}<p className="mt-1 text-xs text-slate-500">contractperiode: {formatDatum(rij.contractPeriodeStart)} – {formatDatum(rij.contractPeriodeEinde)}</p></td>
                   <td className={`px-4 py-4 whitespace-nowrap font-semibold ${rij.resterendTeWerken < 0 ? "text-amber-700" : "text-slate-900"}`}>{formatUren(Math.max(0, rij.resterendTeWerken))}{rij.resterendTeWerken < 0 && <p className="mt-1 text-xs font-normal text-amber-700">Overschot gerealiseerd</p>}</td>
                   <td className={`px-4 py-4 whitespace-nowrap font-semibold ${rij.nogNietIngepland < 0 ? "text-amber-700" : "text-slate-900"}`}>{formatUren(Math.max(0, rij.nogNietIngepland))}{rij.nogNietIngepland < 0 && <p className="mt-1 text-xs font-normal text-amber-700">Overprognose: {formatUren(Math.abs(rij.nogNietIngepland))}</p>}</td>
@@ -233,7 +242,7 @@ export default async function ContracturenPage() {
             </table>
           </div>
         </div>
-        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900"><strong>Rekenregels:</strong> jaar-/seizoensnorm = ingevulde norm of contracturen × 52; te werken uren = jaar-/seizoensnorm − verloftegoed bij start seizoen; alle definitief goedgekeurde uren tellen mee voor de jaarbalans en verloning. De wekelijkse rapportagebasis wordt begrensd op contracturen. Alleen diensten in weken met status GEPUBLICEERD tellen mee als LIVE ingepland. De actuele verlofstand wordt getoond op basis van het ingevulde starttegoed en de geregistreerde opgenomen verlofuren.</div>
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900"><strong>Rekenregels:</strong> jaar-/seizoensnorm = ingevulde norm of contracturen × 52. Als een startsaldo is ingevuld, geldt dat als resterend te werken saldo op de gekozen peildatum en worden alleen definitief goedgekeurde uren vanaf die datum ervan afgetrokken; zonder startsaldo wordt de jaar-/seizoensnorm gebruikt. De wekelijkse rapportagebasis wordt begrensd op contracturen. Alleen diensten in weken met status GEPUBLICEERD tellen mee als LIVE ingepland. De actuele verlofstand wordt getoond op basis van het ingevulde starttegoed en de geregistreerde opgenomen verlofuren.</div>
       </div>
     </PageLayout>
   );

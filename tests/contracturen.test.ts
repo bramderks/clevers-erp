@@ -80,3 +80,22 @@ test("vaste contractkosten blijven gelijk als een medewerker minder dan contract
   assert.equal(regels[0].uren, 10);
   assert.equal(regels[0].kosten, 300);
 });
+
+test("startsaldo per peildatum trekt alleen goedgekeurde uren vanaf die datum af", () => {
+  const balans = berekenContractUren({
+    contractUren: 16,
+    jaarUrenNorm: 832,
+    verlofUrenStart: 0,
+    gewerkteUren: 250,
+    gewerkteUrenSindsStartSaldo: 42.5,
+    startSaldoUren: 175.25,
+    liveIngepland: 24,
+    resterendeOpeningsweken: 10,
+  });
+  assert.equal(balans.jaarNorm, 832);
+  assert.equal(balans.teWerkenNorm, 175.25);
+  assert.equal(balans.gewerkteUren, 250);
+  assert.equal(balans.gewerkteUrenSindsStartSaldo, 42.5);
+  assert.equal(balans.resterendTeWerken, 132.75);
+  assert.equal(balans.nogNietIngepland, 108.75);
+});
