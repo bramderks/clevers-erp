@@ -1686,6 +1686,10 @@ export default function BeschikbaarheidWeekSelector({
         return volgende;
       });
 
+      // Een weekkeuze is een begininstelling, geen definitieve vergrendeling.
+      // Laat de medewerker na opslaan direct de afzonderlijke dagen aanpassen.
+      setBewerken(true);
+
       const nieuweStatus = await haalWeekStatusOp(medewerkerId, week.id);
       setWeekStatussen((vorige) => ({
         ...vorige,
@@ -1768,6 +1772,9 @@ export default function BeschikbaarheidWeekSelector({
         }
         return volgende;
       });
+
+      // Ook na "hele week niet beschikbaar" moeten dagen weer wijzigbaar zijn.
+      setBewerken(true);
 
       const nieuweStatus = await haalWeekStatusOp(medewerkerId, week.id);
       setWeekStatussen((vorige) => ({
