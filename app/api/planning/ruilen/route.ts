@@ -25,6 +25,17 @@ type RuilActie =
   | "ANNULEREN"
   | "GOEDKEUREN";
 
+
+async function synchroniseerRuilMarkering(dienstBezettingId: string) {
+  const actieveVerzoeken = await prisma.ruilverzoek.count({
+    where: { dienstBezettingId, status: { in: ["AANGEVRAAGD", "WACHT_OP_EIGENAAR"] } },
+  });
+  await prisma.dienstBezetting.update({
+    where: { id: dienstBezettingId },
+    data: { isRuilAangeboden: actieveVerzoeken > 0 },
+  });
+}
+
 function configureerPush() {
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
@@ -656,6 +667,8 @@ export async function POST(
         ),
       );
 
+      await prisma.dienstBezetting.update({ where: { id: dienstBezettingId }, data: { isRuilAangeboden: true } });
+
       for (const ruilverzoek of ruilverzoeken) {
         const ontvanger =
           await prisma.medewerker.findUnique({
@@ -873,6 +886,7 @@ export async function POST(
       );
     }
 
+    await prisma.dienstBezetting.update({ where: { id: dienstBezettingId }, data: { isRuilAangeboden: true } });
     return NextResponse.json(ruilverzoek, { status: 201 });
   } catch (error) {
     console.error(
@@ -1039,6 +1053,8 @@ export async function PATCH(
           status: "GEANNULEERD",
         },
       });
+
+      await synchroniseerRuilMarkering(ruilverzoek.dienstBezettingId);
 
       return NextResponse.json({
         geannuleerd: true,
@@ -1208,6 +1224,7 @@ export async function PATCH(
             select: RUIL_SELECT,
           });
 
+        await synchroniseerRuilMarkering(ruilverzoek.dienstBezettingId);
         return NextResponse.json(
           bijgewerkt,
         );
@@ -1495,6 +1512,8 @@ export async function PATCH(
           });
         },
       );
+
+    await synchroniseerRuilMarkering(ruilverzoek.dienstBezettingId);
 
     await prisma.auditLog.create({
       data: {
