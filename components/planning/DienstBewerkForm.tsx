@@ -1804,6 +1804,19 @@ export default function DienstBewerkForm({
                           bezetting.status,
                         )}
                       </span>
+                      {medewerker && bezetting.status !== "GEWERKT" && bezetting.status !== "AFGEZEGD" && (
+                        <button type="button" disabled={opslaanBezig} onClick={async () => {
+                          setFout(null);
+                          try {
+                            const response = await fetch(`/api/planning/bezetting/${encodeURIComponent(bezetting.id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(bezetting.status === "ZIEK_GEMELD" ? { actie: "HERSTEL_ZIEKMELDING" } : { status: "ZIEK_GEMELD" }) });
+                            const data = await response.json();
+                            if (!response.ok) throw new Error(data?.fout ?? "Ziekmelding kon niet worden opgeslagen.");
+                            onGewijzigd?.();
+                          } catch (error) { setFout(error instanceof Error ? error.message : "Ziekmelding kon niet worden opgeslagen."); }
+                        }} className={`mt-2 rounded-lg border px-3 py-1.5 text-xs font-semibold ${bezetting.status === "ZIEK_GEMELD" ? "border-purple-300 bg-white text-purple-800" : "border-purple-200 bg-purple-50 text-purple-800 hover:bg-purple-100"}`}>
+                          {bezetting.status === "ZIEK_GEMELD" ? "Ziekmelding herstellen" : "Meld ziek"}
+                        </button>
+                      )}
                     </div>
 
                     {bezetting.status !==
