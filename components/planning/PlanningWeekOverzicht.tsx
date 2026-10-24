@@ -662,7 +662,7 @@ function duurInUren(dienst: PlanningDienst) {
 
 function berekenLoonkosten(dienst: PlanningDienst) {
   return dienst.bezetting.reduce((totaal, bezetting) => {
-    if (bezetting.status === "AFGEZEGD" || !bezetting.medewerker || bezetting.medewerker.uurloon == null) return totaal;
+    if (bezetting.status === "AFGEZEGD" || bezetting.status === "ZIEK_GEMELD" || !bezetting.medewerker || bezetting.medewerker.uurloon == null) return totaal;
     return totaal + duurInUren(dienst) * Number(bezetting.medewerker.uurloon);
   }, 0);
 }
@@ -671,6 +671,7 @@ function bepaalDienstStatus(dienst: PlanningDienst) {
   const actieveBezetting = dienst.bezetting.filter(
     (bezetting) =>
       bezetting.status !== "AFGEZEGD" &&
+      bezetting.status !== "ZIEK_GEMELD" &&
       bezetting.medewerker !== null,
   );
 
@@ -708,6 +709,14 @@ function bepaalDienstStatus(dienst: PlanningDienst) {
 }
 
 function dienstStatusStyling(dienst: PlanningDienst) {
+  if (dienst.bezetting.some((bezetting) => bezetting.status === "ZIEK_GEMELD")) {
+    return {
+      kaart: "border-purple-300 bg-purple-100 hover:border-purple-400 hover:bg-purple-200",
+      badge: "bg-purple-200 text-purple-800",
+      label: "Ziekgemeld",
+    };
+  }
+
   const status = bepaalDienstStatus(dienst);
 
   switch (status) {
@@ -783,7 +792,7 @@ export default function PlanningWeekOverzicht({
   const weekUren = week.diensten.reduce(
     (totaal, dienst) =>
       totaal +
-      dienst.bezetting.filter((b) => b.status !== "AFGEZEGD" && b.medewerker).length *
+      dienst.bezetting.filter((b) => b.status !== "AFGEZEGD" && b.status !== "ZIEK_GEMELD" && b.medewerker).length *
         duurInUren(dienst),
     0,
   );
