@@ -309,6 +309,13 @@ model DienstBezetting {
 
   status String @default("OPEN")
 
+  /// Dienst is tijdelijk ter ruil aangeboden; blijft bij de oorspronkelijke medewerker tot eigenaar goedkeurt.
+  isRuilAangeboden Boolean @default(false)
+
+  /// Bewaart de oorspronkelijke status en datum van ziekmelding voor herstel en dossierhistorie.
+  statusVoorZiekmelding String?
+  ziekgemeldOp DateTime?
+
   dienst Dienst @relation(fields: [dienstId], references: [id], onDelete: Cascade)
   medewerker Medewerker? @relation(fields: [medewerkerId], references: [id], onDelete: SetNull)
 
