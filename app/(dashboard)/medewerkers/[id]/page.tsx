@@ -531,6 +531,25 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
       ])
     : [[], []];
 
+  const ziekgemeldeDiensten = (isEigenaar || isEigenProfiel)
+    ? await prisma.dienstBezetting.findMany({
+        where: { medewerkerId: medewerker.id, ziekgemeldOp: { not: null } },
+        orderBy: { ziekgemeldOp: "desc" },
+        select: {
+          id: true,
+          ziekgemeldOp: true,
+          dienst: {
+            select: {
+              datum: true,
+              begintijd: true,
+              eindtijd: true,
+              week: { select: { vestiging: { select: { naam: true } } } },
+            },
+          },
+        },
+      })
+    : [];
+
   await prisma.vakantieAanvraag.findMany({
     where: { medewerkerId: medewerker.id },
     orderBy: [{ startDatum: "asc" }, { aangevraagdOp: "desc" }],
@@ -947,7 +966,19 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
               medewerkerId={medewerker.id}
               vestigingen={vestigingen}
               tags={beschikbareTags}
-              dossier={dossierItems.map((item) => ({ ...item, datum: item.datum.toISOString() }))}
+              dossier={[
+                ...dossierItems.map((item) => ({ ...item, datum: item.datum.toISOString() })),
+                ...ziekgemeldeDiensten.map((item) => ({
+                  id: `ziekmelding-${item.id}`,
+                  type: "ZIEKMELDING",
+                  titel: "Ziekgemelde dienst",
+                  omschrijving: `Dienst op ${lokaleDatumSleutel(item.dienst.datum)} (${new Intl.DateTimeFormat("nl-NL", { timeZone: "Europe/Amsterdam", hour: "2-digit", minute: "2-digit" }).format(item.dienst.begintijd)}–${new Intl.DateTimeFormat("nl-NL", { timeZone: "Europe/Amsterdam", hour: "2-digit", minute: "2-digit" }).format(item.dienst.eindtijd)}) bij ${item.dienst.week.vestiging.naam}.`,
+                  kanaal: "Planning",
+                  documentNaam: null,
+                  documentUrl: null,
+                  datum: (item.ziekgemeldOp ?? item.dienst.datum).toISOString(),
+                })),
+              ]}
               alleenLezen={isEigenProfiel && !isEigenaar}
               vasteUren={vasteUrenAfspraken.map((afspraak) => ({
                 ...afspraak,
