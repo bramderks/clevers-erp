@@ -695,6 +695,7 @@ export async function POST(
       opmerkingen,
       tags,
       openDienst,
+      isReserve,
     } = body;
 
     /*
@@ -1204,6 +1205,8 @@ export async function POST(
               0,
               0,
             ),
+
+          isReserve: isReserve === true,
 
           opmerkingen:
             typeof opmerkingen ===
