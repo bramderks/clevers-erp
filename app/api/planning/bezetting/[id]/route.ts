@@ -472,6 +472,20 @@ export async function PATCH(
         },
       });
 
+    if (data.status === "ZIEK_GEMELD") {
+      await prisma.ruilverzoek.updateMany({
+        where: {
+          dienstBezettingId: id,
+          status: { in: ["AANGEVRAAGD", "WACHT_OP_EIGENAAR"] },
+        },
+        data: { status: "GEANNULEERD" },
+      });
+      await prisma.dienstBezetting.update({
+        where: { id },
+        data: { isRuilAangeboden: false },
+      });
+    }
+
     return NextResponse.json(
       bezetting,
     );
