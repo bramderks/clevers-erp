@@ -533,7 +533,7 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
 
   const ziekgemeldeDiensten = (isEigenaar || isEigenProfiel)
     ? await prisma.dienstBezetting.findMany({
-        where: { medewerkerId: medewerker.id, ziekgemeldOp: { not: null } },
+        where: { medewerkerId: medewerker.id, OR: [{ ziekgemeldOp: { not: null } }, { status: "ZIEK_GEMELD" }] },
         orderBy: { ziekgemeldOp: "desc" },
         select: {
           id: true,
