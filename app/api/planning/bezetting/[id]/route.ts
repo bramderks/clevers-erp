@@ -39,6 +39,8 @@ async function haalBezettingOp(
       dienstId: true,
       medewerkerId: true,
       status: true,
+      statusVoorZiekmelding: true,
+      ziekgemeldOp: true,
 
       dienst: {
         select: {
@@ -237,7 +239,17 @@ export async function PATCH(
     const data: {
       medewerkerId?: string | null;
       status?: BezettingStatus;
+      statusVoorZiekmelding?: string | null;
+      ziekgemeldOp?: Date | null;
     } = {};
+
+    if (body.actie === "HERSTEL_ZIEKMELDING") {
+      if (bestaandeBezetting.status !== "ZIEK_GEMELD") {
+        return NextResponse.json({ fout: "Deze dienst is niet als ziekgemeld gemarkeerd." }, { status: 409 });
+      }
+      data.status = (bestaandeBezetting.statusVoorZiekmelding as BezettingStatus | null) ?? "GEPLAND";
+      data.statusVoorZiekmelding = null;
+    }
 
     if (
       body.medewerkerId !== undefined
@@ -421,8 +433,13 @@ export async function PATCH(
         );
       }
 
-      data.status =
-        body.status as BezettingStatus;
+      data.status = body.status as BezettingStatus;
+      if (body.status === "ZIEK_GEMELD" && bestaandeBezetting.status !== "ZIEK_GEMELD") {
+        data.statusVoorZiekmelding = bestaandeBezetting.status;
+        data.ziekgemeldOp = new Date();
+      } else if (body.status !== "ZIEK_GEMELD" && bestaandeBezetting.status === "ZIEK_GEMELD") {
+        data.statusVoorZiekmelding = null;
+      }
     }
 
     if (Object.keys(data).length === 0) {
