@@ -81,6 +81,7 @@ export const dienstRepository = {
     begintijd: Date;
     eindtijd: Date;
     opmerkingen?: string | null;
+    isReserve?: boolean;
   }) {
     return prisma.dienst.create({
       data: {
@@ -90,6 +91,7 @@ export const dienstRepository = {
         eindtijd: data.eindtijd,
         opmerkingen:
           data.opmerkingen ?? null,
+        isReserve: data.isReserve ?? false,
       },
       include: {
         week: {
@@ -118,6 +120,7 @@ export const dienstRepository = {
       begintijd?: Date;
       eindtijd?: Date;
       opmerkingen?: string | null;
+      isReserve?: boolean;
     },
   ) {
     return prisma.dienst.update({
