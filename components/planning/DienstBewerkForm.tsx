@@ -668,6 +668,8 @@ export default function DienstBewerkForm({
     dienst.opmerkingen ?? "",
   );
 
+  const [isReserve, setIsReserve] = useState(dienst.isReserve === true);
+
   const [tags, setTags] =
     useState<PlanningTag[]>([]);
 
@@ -1175,6 +1177,8 @@ export default function DienstBewerkForm({
                 opmerkingen.trim() ||
                 null,
 
+              isReserve,
+
               tags: Object.entries(
                 geselecteerdeTags,
               ).map(
@@ -1490,6 +1494,13 @@ export default function DienstBewerkForm({
       {/* ======================================================
           DIENST BEWERKEN
           ====================================================== */}
+
+      <section className="rounded-xl border border-sky-200 bg-sky-50 p-4">
+        <label className="flex cursor-pointer items-start gap-3">
+          <input type="checkbox" checked={isReserve} onChange={(event) => setIsReserve(event.target.checked)} disabled={opslaanBezig} className="mt-1" />
+          <span><span className="block text-sm font-semibold text-slate-900">Deze dienst als reservedienst plannen</span><span className="mt-1 block text-xs leading-5 text-slate-600">Reservediensten worden blauw weergegeven op het planbord.</span></span>
+        </label>
+      </section>
 
       <section className="rounded-xl border bg-white p-6 shadow-sm">
         <div className="mb-5">
