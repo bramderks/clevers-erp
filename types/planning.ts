@@ -92,6 +92,9 @@ export type Dienst = {
 
   opmerkingen: string | null;
 
+  /** Als reservedienst ingepland; blauw op het planbord. */
+  isReserve?: boolean;
+
   /** Aantal medewerkers dat zich voor open posities heeft gemeld. */
   openInteresseAantal?: number;
 
