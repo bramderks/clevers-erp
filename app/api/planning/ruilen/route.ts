@@ -271,6 +271,16 @@ export async function GET(
       },
     });
 
+    await prisma.dienstBezetting.updateMany({
+      where: {
+        isRuilAangeboden: true,
+        ruilverzoeken: {
+          none: { status: { in: ["AANGEVRAAGD", "WACHT_OP_EIGENAAR"] } },
+        },
+      },
+      data: { isRuilAangeboden: false },
+    });
+
     const status =
       searchParams.get("status");
 
@@ -1279,6 +1289,7 @@ export async function PATCH(
             select: RUIL_SELECT,
           });
 
+        await synchroniseerRuilMarkering(ruilverzoek.dienstBezettingId);
         return NextResponse.json(
           bijgewerkt,
         );
