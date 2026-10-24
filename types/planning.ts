@@ -75,6 +75,8 @@ export type DienstBezetting = {
   dienstId: string;
   medewerkerId: string | null;
   status: DienstBezettingStatus;
+  isRuilAangeboden?: boolean;
+  ziekgemeldOp?: string | null;
 
   medewerker: PlanningMedewerker | null;
 
