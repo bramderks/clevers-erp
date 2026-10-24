@@ -14,7 +14,8 @@ export type DienstBezettingStatus =
   | "GEPLAND"
   | "BEVESTIGD"
   | "AFGEZEGD"
-  | "GEWERKT";
+  | "GEWERKT"
+  | "ZIEK_GEMELD";
 
 export type PlanningTag = {
   id: string;
