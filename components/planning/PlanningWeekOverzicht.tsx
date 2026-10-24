@@ -709,19 +709,27 @@ function bepaalDienstStatus(dienst: PlanningDienst) {
 }
 
 function dienstStatusStyling(dienst: PlanningDienst) {
-  if (dienst.isReserve) {
-    return {
-      kaart: "border-sky-300 bg-sky-100 hover:border-sky-400 hover:bg-sky-200",
-      badge: "bg-sky-200 text-sky-800",
-      label: "Reservedienst",
-    };
-  }
-
   if (dienst.bezetting.some((bezetting) => bezetting.status === "ZIEK_GEMELD")) {
     return {
       kaart: "border-purple-300 bg-purple-100 hover:border-purple-400 hover:bg-purple-200",
       badge: "bg-purple-200 text-purple-800",
       label: "Ziekgemeld",
+    };
+  }
+
+  if (dienst.bezetting.some((bezetting) => bezetting.isRuilAangeboden)) {
+    return {
+      kaart: "border-yellow-300 bg-yellow-100 hover:border-yellow-400 hover:bg-yellow-200",
+      badge: "bg-yellow-200 text-yellow-900",
+      label: "Ter ruil aangeboden",
+    };
+  }
+
+  if (dienst.isReserve) {
+    return {
+      kaart: "border-sky-300 bg-sky-100 hover:border-sky-400 hover:bg-sky-200",
+      badge: "bg-sky-200 text-sky-800",
+      label: "Reservedienst",
     };
   }
 
