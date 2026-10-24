@@ -14,7 +14,8 @@ export type DienstBezettingStatus =
   | "GEPLAND"
   | "BEVESTIGD"
   | "AFGEZEGD"
-  | "GEWERKT";
+  | "GEWERKT"
+  | "ZIEK_GEMELD";
 
 export type PlanningTag = {
   id: string;
@@ -74,6 +75,8 @@ export type DienstBezetting = {
   dienstId: string;
   medewerkerId: string | null;
   status: DienstBezettingStatus;
+  isRuilAangeboden?: boolean;
+  ziekgemeldOp?: string | null;
 
   medewerker: PlanningMedewerker | null;
 
@@ -90,6 +93,9 @@ export type Dienst = {
   eindtijd: string;
 
   opmerkingen: string | null;
+
+  /** Als reservedienst ingepland; blauw op het planbord. */
+  isReserve?: boolean;
 
   /** Aantal medewerkers dat zich voor open posities heeft gemeld. */
   openInteresseAantal?: number;

@@ -163,7 +163,7 @@ export async function genereerVerloning(
   const alleBezettingen = await prisma.dienstBezetting.findMany({
     where: {
       medewerkerId: { not: null },
-      status: { not: "AFGEZEGD" },
+      status: { notIn: ["AFGEZEGD", "ZIEK_GEMELD"] },
       dienst: {
         datum: { gte: zoekStart, lt: zoekEinde },
       },

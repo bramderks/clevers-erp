@@ -577,6 +577,8 @@ export default function DienstForm({
     setAlsOpenDienst,
   ] = useState(false);
 
+  const [isReserve, setIsReserve] = useState(false);
+
   const [
     opmerkingen,
     setOpmerkingen,
@@ -1499,6 +1501,7 @@ export default function DienstForm({
                 null,
 
               openDienst: alsOpenDienst,
+              isReserve,
 
               tags: Object.entries(
                 geselecteerdeTags,
@@ -1729,6 +1732,22 @@ export default function DienstForm({
             </span>
           </label>
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4">
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            checked={isReserve}
+            onChange={(event) => setIsReserve(event.target.checked)}
+            disabled={laden}
+            className="mt-1"
+          />
+          <span>
+            <span className="block text-sm font-semibold text-slate-900">Deze dienst als reservedienst plannen</span>
+            <span className="mt-1 block text-xs leading-5 text-slate-600">De dienst wordt blauw weergegeven in de planning, zodat duidelijk is dat het om reserve gaat en niet om een open dienst of een ruilverzoek.</span>
+          </span>
+        </label>
       </div>
 
       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
