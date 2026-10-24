@@ -247,6 +247,9 @@ model Dienst {
 
   opmerkingen String?
 
+  /// Geeft aan dat deze dienst als reserve is ingepland.
+  isReserve Boolean @default(false)
+
   week Week @relation(fields: [weekId], references: [id], onDelete: Cascade)
 
   tags DienstTag[]
