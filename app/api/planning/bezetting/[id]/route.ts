@@ -15,6 +15,7 @@ const TOEGESTANE_STATUSSEN = [
   "BEVESTIGD",
   "AFGEZEGD",
   "GEWERKT",
+  "ZIEK_GEMELD",
 ] as const;
 
 type BezettingStatus =
