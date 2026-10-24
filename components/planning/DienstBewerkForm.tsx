@@ -238,6 +238,9 @@ function statusLabel(
     case "GEWERKT":
       return "Gewerkt";
 
+    case "ZIEK_GEMELD":
+      return "Ziekgemeld";
+
     default:
       return status;
   }
@@ -256,6 +259,9 @@ function statusKlassen(
 
     case "AFGEZEGD":
       return "border-slate-200 bg-slate-100 text-slate-500";
+
+    case "ZIEK_GEMELD":
+      return "border-purple-200 bg-purple-100 text-purple-800";
 
     case "OPEN":
       return "border-blue-200 bg-blue-50 text-blue-700";
