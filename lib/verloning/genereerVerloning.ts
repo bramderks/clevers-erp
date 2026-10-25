@@ -257,6 +257,7 @@ export async function genereerVerloning(
           gte: periodeStart,
           lt: periodeEinde,
         },
+        dienstBezetting: { is: { status: { not: "ZIEK_GEMELD" } } },
       },
     }),
 
@@ -267,6 +268,7 @@ export async function genereerVerloning(
           lt: periodeEinde,
         },
         status: { in: ["TE_CONTROLEREN", "DEFINITIEF"] },
+        dienstBezetting: { is: { status: { not: "ZIEK_GEMELD" } } },
       },
     }),
 
@@ -277,6 +279,7 @@ export async function genereerVerloning(
           lt: periodeEinde,
         },
         status: "DEFINITIEF",
+        dienstBezetting: { is: { status: { not: "ZIEK_GEMELD" } } },
       },
     }),
   ]);
