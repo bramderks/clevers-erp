@@ -978,7 +978,7 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
                   documentUrl: null,
                   datum: (item.ziekgemeldOp ?? item.dienst.datum).toISOString(),
                 })),
-              ]}
+              ].sort((a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime())}
               alleenLezen={isEigenProfiel && !isEigenaar}
               vasteUren={vasteUrenAfspraken.map((afspraak) => ({
                 ...afspraak,
