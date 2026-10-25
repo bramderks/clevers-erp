@@ -2131,7 +2131,7 @@ export default function DienstForm({
                         <p className="mt-1 text-xs font-medium text-slate-700">
                           Contract: {formatteerUrenCompact(medewerker.contracturenBalans.contractUren)} u/week · Actueel saldo na gewerkte uren: {formatteerUrenCompact(medewerker.contracturenBalans.resterendTeWerken)} u
                           <br />
-                          LIVE deze week: {formatteerUrenCompact(medewerker.contracturenBalans.liveIngeplandDezeWeek)} u · LIVE tot contracteinde: {formatteerUrenCompact(medewerker.contracturenBalans.liveIngeplandRestContractperiode)} u
+                          LIVE deze week: {formatteerUrenCompact(medewerker.contracturenBalans.liveIngeplandDezeWeek)} u · LIVE tot einde jaar: {formatteerUrenCompact(medewerker.contracturenBalans.liveIngeplandRestContractperiode)} u
                           <br />
                           Nog te plannen na huidige planning: {formatteerUrenCompact(Math.max(0, medewerker.contracturenBalans.nogNietIngepland))} u · gemiddeld {formatteerUrenCompact(medewerker.contracturenBalans.gemiddeldNogInTePlannenPerWeek)} u/openingsweek
                           {medewerker.contracturenBalans.nogNietIngepland < 0 && ` · prognose overschot ${formatteerUrenCompact(medewerker.contracturenBalans.prognoseOverschot)} u`}
