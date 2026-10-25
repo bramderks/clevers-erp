@@ -353,7 +353,7 @@ export async function GET(
     const contractPerioden = new Map(medewerkers.map((medewerker) => [medewerker.id, bepaalContractPeriode(medewerker.datumInDienst ?? null, seizoenStart, vandaag)]));
     const huidigJaarStart = new Date(Date.UTC(jaar, 0, 1));
     const huidigJaarEinde = new Date(Date.UTC(jaar + 1, 0, 1));
-    const contractStartTimestamps = Array.from(contractPerioden.values()).map((periode) => periode.start.getTime());
+    const contractStartTimestamps = [huidigJaarStart.getTime(), ...Array.from(contractPerioden.values()).map((periode) => periode.start.getTime())];
     for (const medewerker of medewerkers) {
       if (medewerker.contractUrenStartPeildatum) contractStartTimestamps.push(kalenderDatumUTC(lokaleDatumSleutel(medewerker.contractUrenStartPeildatum)).getTime());
     }
