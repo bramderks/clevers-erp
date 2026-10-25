@@ -153,26 +153,6 @@ export async function PATCH(request: Request) {
         data: { status: "HERSTELD", hersteldOp },
       });
 
-      const toekomstigeZiekeDiensten = await tx.dienstBezetting.findMany({
-        where: {
-          ziekmeldingId: melding.id,
-          status: "ZIEK_GEMELD",
-          dienst: { begintijd: { gte: hersteldOp } },
-        },
-        select: { id: true, statusVoorZiekmelding: true },
-      });
-
-      for (const bezetting of toekomstigeZiekeDiensten) {
-        await tx.dienstBezetting.update({
-          where: { id: bezetting.id },
-          data: {
-            status: bezetting.statusVoorZiekmelding ?? "GEPLAND",
-            statusVoorZiekmelding: null,
-            ziekmeldingId: null,
-          },
-        });
-      }
-
       await tx.auditLog.create({
         data: {
           systeemGebruikerId: gebruiker.id,
