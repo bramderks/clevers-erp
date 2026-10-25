@@ -241,6 +241,7 @@ export async function PATCH(
       status?: BezettingStatus;
       statusVoorZiekmelding?: string | null;
       ziekgemeldOp?: Date | null;
+      ziekmeldingId?: string | null;
     } = {};
 
     if (body.actie === "HERSTEL_ZIEKMELDING") {
@@ -249,6 +250,7 @@ export async function PATCH(
       }
       data.status = (bestaandeBezetting.statusVoorZiekmelding as BezettingStatus | null) ?? "GEPLAND";
       data.statusVoorZiekmelding = null;
+      data.ziekmeldingId = null;
     }
 
     if (
@@ -439,6 +441,7 @@ export async function PATCH(
         data.ziekgemeldOp = new Date();
       } else if (body.status !== "ZIEK_GEMELD" && bestaandeBezetting.status === "ZIEK_GEMELD") {
         data.statusVoorZiekmelding = null;
+        data.ziekmeldingId = null;
       }
     }
 
