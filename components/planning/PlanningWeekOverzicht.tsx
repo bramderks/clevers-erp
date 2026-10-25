@@ -759,9 +759,9 @@ function dienstStatusStyling(dienst: PlanningDienst) {
     case "OPEN":
       return {
         kaart:
-          "border-yellow-300 bg-yellow-50 hover:border-yellow-400 hover:bg-yellow-100",
+          "border-orange-300 bg-orange-50 hover:border-orange-400 hover:bg-orange-100",
         badge:
-          "bg-yellow-100 text-yellow-800",
+          "bg-orange-100 text-orange-800",
         label:
           dienst.openInteresseAantal && dienst.openInteresseAantal > 0
             ? `Open · ${dienst.openInteresseAantal} gemeld`
