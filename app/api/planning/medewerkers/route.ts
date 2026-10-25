@@ -407,9 +407,8 @@ export async function GET(
       const urenDienst = (item: (typeof eigenBezettingen)[number]) => berekenGewerkteUren(item.dienst.begintijd, item.dienst.eindtijd).gewerkteUren;
       // Contracturen tellen unieke werktijd per medewerker en dag. Meerdere functies
       // of vestigingen met overlappende tijden mogen het saldo niet dubbel verlagen.
-      const eigenBezettingenVanafVandaag = eigenBezettingen.filter((item) => item.dienst.datum >= vandaag);
       const uniekeIngeplandeUren = berekenUniekeUrenPerInterval(
-        eigenBezettingenVanafVandaag.map((item, index) => ({
+        eigenBezettingen.map((item, index) => ({
           id: `${medewerker.id}:dienst:${index}`,
           medewerkerId: item.medewerkerId,
           // Eén gezamenlijke sleutel zorgt dat overlap ook over vestigingen heen
@@ -426,12 +425,12 @@ export async function GET(
         })),
         berekenGewerkteUren,
       );
-      const liveDezeWeek = eigenBezettingen.filter((item) => item.dienst.datum >= weekStart && item.dienst.datum < volgendeWeek)
-        .reduce((som, item, index) => som + (uniekeIngeplandeUren.get(`${medewerker.id}:dienst:${eigenBezettingenVanafVandaag.indexOf(item)}`) ?? 0), 0);
-      const liveRestSeizoen = eigenBezettingenVanafVandaag.reduce(
-        (som, item, index) => som + (uniekeIngeplandeUren.get(`${medewerker.id}:dienst:${index}`) ?? 0),
-        0,
-      );
+      const liveDezeWeek = eigenBezettingen
+        .filter((item) => item.dienst.datum >= weekStart && item.dienst.datum < volgendeWeek)
+        .reduce((som, item) => som + (uniekeIngeplandeUren.get(`${medewerker.id}:dienst:${eigenBezettingen.indexOf(item)}`) ?? 0), 0);
+      const liveRestSeizoen = eigenBezettingen
+        .filter((item) => item.dienst.datum >= vandaag)
+        .reduce((som, item) => som + (uniekeIngeplandeUren.get(`${medewerker.id}:dienst:${eigenBezettingen.indexOf(item)}`) ?? 0), 0);
       const contractUren = medewerker.contractUren == null ? null : Number(medewerker.contractUren);
       const jaarUrenNorm = medewerker.jaarUrenNorm == null ? null : Number(medewerker.jaarUrenNorm);
       const verlofUrenStart = medewerker.verlofUrenStart == null ? null : Number(medewerker.verlofUrenStart);
