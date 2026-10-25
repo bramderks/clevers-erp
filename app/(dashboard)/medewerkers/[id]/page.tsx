@@ -537,6 +537,7 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
         orderBy: { ziekgemeldOp: "desc" },
         select: {
           id: true,
+          status: true,
           ziekgemeldOp: true,
           dienst: {
             select: {
@@ -962,31 +963,54 @@ export default async function MedewerkerPage({ params, searchParams }: PageProps
           )}
 
           {actieveTab === "afspraken" && (isEigenaar || isEigenProfiel) && (
-            <MedewerkerAfsprakenPanel
-              medewerkerId={medewerker.id}
-              vestigingen={vestigingen}
-              tags={beschikbareTags}
-              dossier={[
-                ...dossierItems.map((item) => ({ ...item, datum: item.datum.toISOString() })),
-                ...ziekgemeldeDiensten.map((item) => ({
-                  id: `ziekmelding-${item.id}`,
-                  type: "ZIEKMELDING",
-                  titel: "Ziekgemelde dienst",
-                  omschrijving: `Dienst op ${lokaleDatumSleutel(item.dienst.datum)} (${new Intl.DateTimeFormat("nl-NL", { timeZone: "Europe/Amsterdam", hour: "2-digit", minute: "2-digit" }).format(item.dienst.begintijd)}–${new Intl.DateTimeFormat("nl-NL", { timeZone: "Europe/Amsterdam", hour: "2-digit", minute: "2-digit" }).format(item.dienst.eindtijd)}) bij ${item.dienst.week.vestiging.naam}.`,
-                  kanaal: "Planning",
-                  documentNaam: null,
-                  documentUrl: null,
-                  datum: (item.ziekgemeldOp ?? item.dienst.datum).toISOString(),
-                })),
-              ].sort((a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime())}
-              alleenLezen={isEigenProfiel && !isEigenaar}
-              vasteUren={vasteUrenAfspraken.map((afspraak) => ({
-                ...afspraak,
-                startDatum: afspraak.startDatum.toISOString(),
-                eindDatum: afspraak.eindDatum.toISOString(),
-                akkoordOp: afspraak.akkoordOp.toISOString(),
-              }))}
-            />
+            <div className="space-y-6">
+              <Card
+                title="Diensten van ziekte"
+                description="Overzicht van diensten die als ziekgemeld zijn geregistreerd, inclusief herstelde meldingen."
+              >
+                {ziekgemeldeDiensten.length === 0 ? (
+                  <p className="text-sm text-slate-500">Er zijn nog geen ziekgemelde diensten geregistreerd.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {ziekgemeldeDiensten.map((item) => (
+                      <div key={item.id} className="flex flex-col gap-3 rounded-xl border border-violet-200 bg-violet-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="font-semibold text-slate-900">
+                            {new Intl.DateTimeFormat("nl-NL", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Amsterdam" }).format(new Date(item.dienst.datum))}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-700">
+                            {new Intl.DateTimeFormat("nl-NL", { timeZone: "Europe/Amsterdam", hour: "2-digit", minute: "2-digit" }).format(item.dienst.begintijd)}
+                            {" – "}
+                            {new Intl.DateTimeFormat("nl-NL", { timeZone: "Europe/Amsterdam", hour: "2-digit", minute: "2-digit" }).format(item.dienst.eindtijd)}
+                            {" · "}
+                            {item.dienst.week.vestiging.naam}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            Ziekgemeld op: {item.ziekgemeldOp ? new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Amsterdam" }).format(item.ziekgemeldOp) : "Datum niet beschikbaar"}
+                          </p>
+                        </div>
+                        <span className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold ${item.status === "ZIEK_GEMELD" ? "bg-violet-100 text-violet-800" : "bg-slate-100 text-slate-600"}`}>
+                          {item.status === "ZIEK_GEMELD" ? "Ziekgemeld" : "Hersteld"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+              <MedewerkerAfsprakenPanel
+                medewerkerId={medewerker.id}
+                vestigingen={vestigingen}
+                tags={beschikbareTags}
+                dossier={dossierItems.map((item) => ({ ...item, datum: item.datum.toISOString() }))}
+                alleenLezen={isEigenProfiel && !isEigenaar}
+                vasteUren={vasteUrenAfspraken.map((afspraak) => ({
+                  ...afspraak,
+                  startDatum: afspraak.startDatum.toISOString(),
+                  eindDatum: afspraak.eindDatum.toISOString(),
+                  akkoordOp: afspraak.akkoordOp.toISOString(),
+                }))}
+              />
+            </div>
           )}
 
           {actieveTab === "verloning" && (
