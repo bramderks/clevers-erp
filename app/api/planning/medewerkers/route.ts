@@ -410,7 +410,7 @@ export async function GET(
       const uniekeIngeplandeUren = berekenUniekeUrenPerInterval(
         eigenBezettingen.map((item, index) => ({
           id: `${medewerker.id}:dienst:${index}`,
-          medewerkerId: item.medewerkerId,
+          medewerkerId: item.medewerkerId ?? medewerker.id,
           // Eén gezamenlijke sleutel zorgt dat overlap ook over vestigingen heen
           // maar één keer meetelt voor het contracturensaldo.
           vestigingId: "contracturen",
