@@ -107,6 +107,44 @@ export async function POST(request: Request) {
         },
       });
 
+      const eindeVerwachteAfwezigheid = verwachtHersteldOp
+        ? new Date(verwachtHersteldOp.getTime() + 24 * 60 * 60 * 1000)
+        : null;
+      const teMarkerenDiensten = await tx.dienstBezetting.findMany({
+        where: {
+          medewerkerId: gebruiker.medewerker!.id,
+          status: { in: ["GEPLAND", "BEVESTIGD"] },
+          dienst: {
+            begintijd: {
+              gte: ziekVanaf,
+              ...(eindeVerwachteAfwezigheid ? { lt: eindeVerwachteAfwezigheid } : {}),
+            },
+            week: { status: { not: "AFGESLOTEN" } },
+          },
+        },
+        select: { id: true, status: true },
+      });
+
+      for (const bezetting of teMarkerenDiensten) {
+        await tx.dienstBezetting.update({
+          where: { id: bezetting.id },
+          data: {
+            status: "ZIEK_GEMELD",
+            statusVoorZiekmelding: bezetting.status,
+            ziekgemeldOp: nieuw.aangemaaktOp,
+            ziekmeldingId: nieuw.id,
+            isRuilAangeboden: false,
+          },
+        });
+        await tx.ruilverzoek.updateMany({
+          where: {
+            dienstBezettingId: bezetting.id,
+            status: { in: ["AANGEVRAAGD", "WACHT_OP_EIGENAAR"] },
+          },
+          data: { status: "GEANNULEERD" },
+        });
+      }
+
       await tx.auditLog.create({
         data: {
           systeemGebruikerId: gebruiker.id,
