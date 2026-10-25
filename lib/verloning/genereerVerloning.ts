@@ -314,6 +314,11 @@ export async function genereerVerloning(
             lt: periodeEinde,
           },
           status: "DEFINITIEF",
+          // Een dienst die als ziekgemeld staat, mag ook niet via een
+          // eerder definitief gemaakte urenregistratie alsnog worden verloond.
+          dienstBezetting: {
+            is: { status: { not: "ZIEK_GEMELD" } },
+          },
         },
 
         select: {
