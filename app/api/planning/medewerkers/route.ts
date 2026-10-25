@@ -367,7 +367,7 @@ export async function GET(
             select: { id: true, medewerkerId: true, datum: true, gewerkteUren: true, werkelijkeBegintijd: true, werkelijkeEindtijd: true, vestigingId: true },
           }),
           prisma.dienstBezetting.findMany({
-            where: { medewerkerId: { in: medewerkerIds }, status: { in: ["GEPLAND", "BEVESTIGD", "GEWERKT"] }, dienst: { datum: { gte: weekStart < vandaag ? weekStart : vandaag, lt: globaleContractEindeExclusief }, week: { status: "GEPUBLICEERD", vestigingId: { in: organisatieVestigingIds } } } },
+            where: { medewerkerId: { in: medewerkerIds }, status: { in: ["GEPLAND", "BEVESTIGD", "GEWERKT"] }, dienst: { datum: { gte: weekStart < vandaag ? weekStart : vandaag, lt: globaleContractEindeExclusief }, week: { vestigingId: { in: organisatieVestigingIds } } } },
             select: { medewerkerId: true, dienst: { select: { datum: true, begintijd: true, eindtijd: true, week: { select: { status: true, jaar: true, weeknummer: true, vestigingId: true } } } } },
           }),
           prisma.week.findMany({
@@ -403,7 +403,7 @@ export async function GET(
       const eigenVestigingen = new Set(medewerker.vestigingen.map((item) => item.vestigingId));
       const contractPeriode = contractPerioden.get(medewerker.id)!;
       const gewerkteUren = seizoenRegistraties.filter((item) => item.medewerkerId === medewerker.id && eigenVestigingen.has(item.vestigingId) && item.datum >= contractPeriode.start && item.datum <= contractPeriode.einde).reduce((som, item) => som + (item.werkelijkeBegintijd && item.werkelijkeEindtijd ? (uniekeUrenPerRegistratie.get(item.id) ?? 0) : Number(item.gewerkteUren)), 0);
-      const eigenBezettingen = seizoenBezettingen.filter((item) => item.medewerkerId === medewerker.id && eigenVestigingen.has(item.dienst.week.vestigingId) && item.dienst.week.status === "GEPUBLICEERD" && item.dienst.datum >= contractPeriode.start && item.dienst.datum <= contractPeriode.einde);
+      const eigenBezettingen = seizoenBezettingen.filter((item) => item.medewerkerId === medewerker.id && eigenVestigingen.has(item.dienst.week.vestigingId) && item.dienst.datum >= contractPeriode.start && item.dienst.datum <= contractPeriode.einde);
       const urenDienst = (item: (typeof eigenBezettingen)[number]) => berekenGewerkteUren(item.dienst.begintijd, item.dienst.eindtijd).gewerkteUren;
       // Contracturen tellen unieke werktijd per medewerker en dag. Meerdere functies
       // of vestigingen met overlappende tijden mogen het saldo niet dubbel verlagen.
