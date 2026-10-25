@@ -42,7 +42,9 @@
     "web-push": "^3.6.4",
     "xlsx": "npm:@stackline/xlsx@1.0.6",
     "zod": "4.6.7",
-    "@vercel/oidc": "3.8.8"
+    "@vercel/oidc": "3.8.8",
+    "undici": "6.29.1",
+    "@vercel/cli-config": "0.2.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
