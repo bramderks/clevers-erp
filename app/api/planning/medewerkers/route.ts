@@ -405,8 +405,33 @@ export async function GET(
       const gewerkteUren = seizoenRegistraties.filter((item) => item.medewerkerId === medewerker.id && eigenVestigingen.has(item.vestigingId) && item.datum >= contractPeriode.start && item.datum <= contractPeriode.einde).reduce((som, item) => som + (item.werkelijkeBegintijd && item.werkelijkeEindtijd ? (uniekeUrenPerRegistratie.get(item.id) ?? 0) : Number(item.gewerkteUren)), 0);
       const eigenBezettingen = seizoenBezettingen.filter((item) => item.medewerkerId === medewerker.id && eigenVestigingen.has(item.dienst.week.vestigingId) && item.dienst.week.status === "GEPUBLICEERD" && item.dienst.datum >= contractPeriode.start && item.dienst.datum <= contractPeriode.einde);
       const urenDienst = (item: (typeof eigenBezettingen)[number]) => berekenGewerkteUren(item.dienst.begintijd, item.dienst.eindtijd).gewerkteUren;
-      const liveDezeWeek = eigenBezettingen.filter((item) => item.dienst.datum >= weekStart && item.dienst.datum < volgendeWeek).reduce((som, item) => som + urenDienst(item), 0);
-      const liveRestSeizoen = eigenBezettingen.filter((item) => item.dienst.datum >= vandaag).reduce((som, item) => som + urenDienst(item), 0);
+      // Contracturen tellen unieke werktijd per medewerker en dag. Meerdere functies
+      // of vestigingen met overlappende tijden mogen het saldo niet dubbel verlagen.
+      const eigenBezettingenVanafVandaag = eigenBezettingen.filter((item) => item.dienst.datum >= vandaag);
+      const uniekeIngeplandeUren = berekenUniekeUrenPerInterval(
+        eigenBezettingenVanafVandaag.map((item, index) => ({
+          id: `${medewerker.id}:dienst:${index}`,
+          medewerkerId: item.medewerkerId,
+          // Eén gezamenlijke sleutel zorgt dat overlap ook over vestigingen heen
+          // maar één keer meetelt voor het contracturensaldo.
+          vestigingId: "contracturen",
+          datum: item.dienst.datum,
+          begintijd: item.dienst.begintijd,
+          eindtijd: item.dienst.eindtijd ?? new Date(Date.UTC(
+            item.dienst.datum.getUTCFullYear(),
+            item.dienst.datum.getUTCMonth(),
+            item.dienst.datum.getUTCDate(),
+            23, 0, 0,
+          )),
+        })),
+        berekenGewerkteUren,
+      );
+      const liveDezeWeek = eigenBezettingen.filter((item) => item.dienst.datum >= weekStart && item.dienst.datum < volgendeWeek)
+        .reduce((som, item, index) => som + (uniekeIngeplandeUren.get(`${medewerker.id}:dienst:${eigenBezettingenVanafVandaag.indexOf(item)}`) ?? 0), 0);
+      const liveRestSeizoen = eigenBezettingenVanafVandaag.reduce(
+        (som, item, index) => som + (uniekeIngeplandeUren.get(`${medewerker.id}:dienst:${index}`) ?? 0),
+        0,
+      );
       const contractUren = medewerker.contractUren == null ? null : Number(medewerker.contractUren);
       const jaarUrenNorm = medewerker.jaarUrenNorm == null ? null : Number(medewerker.jaarUrenNorm);
       const verlofUrenStart = medewerker.verlofUrenStart == null ? null : Number(medewerker.verlofUrenStart);
