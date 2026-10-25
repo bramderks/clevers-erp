@@ -315,6 +315,9 @@ model DienstBezetting {
   /// Bewaart de oorspronkelijke status en datum van ziekmelding voor herstel en dossierhistorie.
   statusVoorZiekmelding String?
   ziekgemeldOp DateTime?
+  ziekmeldingId String?
+
+  ziekmelding Ziekmelding? @relation(fields: [ziekmeldingId], references: [id], onDelete: SetNull)
 
   dienst Dienst @relation(fields: [dienstId], references: [id], onDelete: Cascade)
   medewerker Medewerker? @relation(fields: [medewerkerId], references: [id], onDelete: SetNull)
