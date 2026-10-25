@@ -15,6 +15,7 @@ const TOEGESTANE_STATUSSEN = [
   "BEVESTIGD",
   "AFGEZEGD",
   "GEWERKT",
+  "ZIEK_GEMELD",
 ] as const;
 
 type BezettingStatus =
@@ -38,6 +39,8 @@ async function haalBezettingOp(
       dienstId: true,
       medewerkerId: true,
       status: true,
+      statusVoorZiekmelding: true,
+      ziekgemeldOp: true,
 
       dienst: {
         select: {
@@ -236,7 +239,19 @@ export async function PATCH(
     const data: {
       medewerkerId?: string | null;
       status?: BezettingStatus;
+      statusVoorZiekmelding?: string | null;
+      ziekgemeldOp?: Date | null;
+      ziekmeldingId?: string | null;
     } = {};
+
+    if (body.actie === "HERSTEL_ZIEKMELDING") {
+      if (bestaandeBezetting.status !== "ZIEK_GEMELD") {
+        return NextResponse.json({ fout: "Deze dienst is niet als ziekgemeld gemarkeerd." }, { status: 409 });
+      }
+      data.status = (bestaandeBezetting.statusVoorZiekmelding as BezettingStatus | null) ?? "GEPLAND";
+      data.statusVoorZiekmelding = null;
+      data.ziekmeldingId = null;
+    }
 
     if (
       body.medewerkerId !== undefined
@@ -420,8 +435,14 @@ export async function PATCH(
         );
       }
 
-      data.status =
-        body.status as BezettingStatus;
+      data.status = body.status as BezettingStatus;
+      if (body.status === "ZIEK_GEMELD" && bestaandeBezetting.status !== "ZIEK_GEMELD") {
+        data.statusVoorZiekmelding = bestaandeBezetting.status;
+        data.ziekgemeldOp = new Date();
+      } else if (body.status !== "ZIEK_GEMELD" && bestaandeBezetting.status === "ZIEK_GEMELD") {
+        data.statusVoorZiekmelding = null;
+        data.ziekmeldingId = null;
+      }
     }
 
     if (Object.keys(data).length === 0) {
@@ -453,6 +474,20 @@ export async function PATCH(
           },
         },
       });
+
+    if (data.status === "ZIEK_GEMELD") {
+      await prisma.ruilverzoek.updateMany({
+        where: {
+          dienstBezettingId: id,
+          status: { in: ["AANGEVRAAGD", "WACHT_OP_EIGENAAR"] },
+        },
+        data: { status: "GEANNULEERD" },
+      });
+      await prisma.dienstBezetting.update({
+        where: { id },
+        data: { isRuilAangeboden: false },
+      });
+    }
 
     return NextResponse.json(
       bezetting,

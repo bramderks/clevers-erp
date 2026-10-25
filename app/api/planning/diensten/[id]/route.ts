@@ -293,6 +293,7 @@ export async function PATCH(
       eindtijd?: unknown;
       opmerkingen?: unknown;
       tags?: unknown;
+      isReserve?: unknown;
     };
 
     try {
@@ -421,9 +422,14 @@ export async function PATCH(
       }
     }
 
+    if (body.isReserve !== undefined && typeof body.isReserve !== "boolean") {
+      return NextResponse.json({ fout: "isReserve moet een boolean zijn." }, { status: 400 });
+    }
+
     const bijgewerkt = await prisma.dienst.update({
       where: { id },
       data: {
+        ...(typeof body.isReserve === "boolean" ? { isReserve: body.isReserve } : {}),
         datum: kalenderDatumUTC(lokaleDatumSleutel(datum)),
         begintijd,
         eindtijd,

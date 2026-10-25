@@ -16,11 +16,6 @@ const JAREN = [2026, 2027, 2028] as const;
 function datumUTC(datum: Date) {
   return new Date(Date.UTC(datum.getUTCFullYear(), datum.getUTCMonth(), datum.getUTCDate()));
 }
-function plusDagen(datum: Date, aantal: number) {
-  const resultaat = new Date(datum);
-  resultaat.setUTCDate(resultaat.getUTCDate() + aantal);
-  return resultaat;
-}
 function maandagVanWeek(datum: Date) {
   const resultaat = datumUTC(datum);
   resultaat.setUTCDate(resultaat.getUTCDate() - ((resultaat.getUTCDay() + 6) % 7));

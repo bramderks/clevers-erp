@@ -238,6 +238,9 @@ function statusLabel(
     case "GEWERKT":
       return "Gewerkt";
 
+    case "ZIEK_GEMELD":
+      return "Ziekgemeld";
+
     default:
       return status;
   }
@@ -256,6 +259,9 @@ function statusKlassen(
 
     case "AFGEZEGD":
       return "border-slate-200 bg-slate-100 text-slate-500";
+
+    case "ZIEK_GEMELD":
+      return "border-purple-200 bg-purple-100 text-purple-800";
 
     case "OPEN":
       return "border-blue-200 bg-blue-50 text-blue-700";
@@ -661,6 +667,8 @@ export default function DienstBewerkForm({
   ] = useState(
     dienst.opmerkingen ?? "",
   );
+
+  const [isReserve, setIsReserve] = useState(dienst.isReserve === true);
 
   const [tags, setTags] =
     useState<PlanningTag[]>([]);
@@ -1169,6 +1177,8 @@ export default function DienstBewerkForm({
                 opmerkingen.trim() ||
                 null,
 
+              isReserve,
+
               tags: Object.entries(
                 geselecteerdeTags,
               ).map(
@@ -1485,6 +1495,13 @@ export default function DienstBewerkForm({
           DIENST BEWERKEN
           ====================================================== */}
 
+      <section className="rounded-xl border border-sky-200 bg-sky-50 p-4">
+        <label className="flex cursor-pointer items-start gap-3">
+          <input type="checkbox" checked={isReserve} onChange={(event) => setIsReserve(event.target.checked)} disabled={opslaanBezig} className="mt-1" />
+          <span><span className="block text-sm font-semibold text-slate-900">Deze dienst als reservedienst plannen</span><span className="mt-1 block text-xs leading-5 text-slate-600">Reservediensten worden blauw weergegeven op het planbord.</span></span>
+        </label>
+      </section>
+
       <section className="rounded-xl border bg-white p-6 shadow-sm">
         <div className="mb-5">
           <h2 className="text-lg font-semibold text-slate-900">
@@ -1787,6 +1804,19 @@ export default function DienstBewerkForm({
                           bezetting.status,
                         )}
                       </span>
+                      {medewerker && bezetting.status !== "GEWERKT" && bezetting.status !== "AFGEZEGD" && (
+                        <button type="button" disabled={opslaanBezig} onClick={async () => {
+                          setFout(null);
+                          try {
+                            const response = await fetch(`/api/planning/bezetting/${encodeURIComponent(bezetting.id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(bezetting.status === "ZIEK_GEMELD" ? { actie: "HERSTEL_ZIEKMELDING" } : { status: "ZIEK_GEMELD" }) });
+                            const data = await response.json();
+                            if (!response.ok) throw new Error(data?.fout ?? "Ziekmelding kon niet worden opgeslagen.");
+                            onGewijzigd?.();
+                          } catch (error) { setFout(error instanceof Error ? error.message : "Ziekmelding kon niet worden opgeslagen."); }
+                        }} className={`mt-2 rounded-lg border px-3 py-1.5 text-xs font-semibold ${bezetting.status === "ZIEK_GEMELD" ? "border-purple-300 bg-white text-purple-800" : "border-purple-200 bg-purple-50 text-purple-800 hover:bg-purple-100"}`}>
+                          {bezetting.status === "ZIEK_GEMELD" ? "Ziekmelding herstellen" : "Meld ziek"}
+                        </button>
+                      )}
                     </div>
 
                     {bezetting.status !==

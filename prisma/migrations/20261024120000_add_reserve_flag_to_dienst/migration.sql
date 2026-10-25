@@ -1,0 +1,2 @@
+ALTER TABLE "Dienst"
+ADD COLUMN "isReserve" BOOLEAN NOT NULL DEFAULT false;

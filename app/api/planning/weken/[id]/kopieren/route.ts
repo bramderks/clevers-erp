@@ -211,6 +211,7 @@ export async function POST(
             begintijd: dienst.begintijd,
             eindtijd: dienst.eindtijd,
             opmerkingen: dienst.bron.opmerkingen,
+            isReserve: dienst.bron.isReserve,
             tags: {
               create: dienst.bron.tags.map((tag) => ({
                 tagId: tag.tagId,

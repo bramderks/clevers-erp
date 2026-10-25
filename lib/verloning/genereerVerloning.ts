@@ -163,7 +163,7 @@ export async function genereerVerloning(
   const alleBezettingen = await prisma.dienstBezetting.findMany({
     where: {
       medewerkerId: { not: null },
-      status: { not: "AFGEZEGD" },
+      status: { notIn: ["AFGEZEGD", "ZIEK_GEMELD"] },
       dienst: {
         datum: { gte: zoekStart, lt: zoekEinde },
       },
@@ -257,6 +257,7 @@ export async function genereerVerloning(
           gte: periodeStart,
           lt: periodeEinde,
         },
+        dienstBezetting: { is: { status: { not: "ZIEK_GEMELD" } } },
       },
     }),
 
@@ -267,6 +268,7 @@ export async function genereerVerloning(
           lt: periodeEinde,
         },
         status: { in: ["TE_CONTROLEREN", "DEFINITIEF"] },
+        dienstBezetting: { is: { status: { not: "ZIEK_GEMELD" } } },
       },
     }),
 
@@ -277,6 +279,7 @@ export async function genereerVerloning(
           lt: periodeEinde,
         },
         status: "DEFINITIEF",
+        dienstBezetting: { is: { status: { not: "ZIEK_GEMELD" } } },
       },
     }),
   ]);
@@ -311,6 +314,11 @@ export async function genereerVerloning(
             lt: periodeEinde,
           },
           status: "DEFINITIEF",
+          // Een dienst die als ziekgemeld staat, mag ook niet via een
+          // eerder definitief gemaakte urenregistratie alsnog worden verloond.
+          dienstBezetting: {
+            is: { status: { not: "ZIEK_GEMELD" } },
+          },
         },
 
         select: {

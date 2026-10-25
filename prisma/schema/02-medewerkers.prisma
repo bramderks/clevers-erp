@@ -212,6 +212,8 @@ model Ziekmelding {
   medewerkerId String
   medewerker Medewerker @relation(fields: [medewerkerId], references: [id], onDelete: Cascade)
 
+  dienstBezettingen DienstBezetting[]
+
   ziekVanaf DateTime
   verwachtHersteldOp DateTime?
   hersteldOp DateTime?
