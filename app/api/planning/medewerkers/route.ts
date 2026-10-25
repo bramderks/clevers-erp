@@ -210,6 +210,8 @@ export async function GET(
           jaarUrenNorm: true,
           verlofUrenStart: true,
           verlofUrenOpgenomen: true,
+          contractUrenStartSaldo: true,
+          contractUrenStartPeildatum: true,
           vestigingen: { select: { vestigingId: true } },
           loonperiodes: {
             where: { actief: true },
@@ -349,7 +351,11 @@ export async function GET(
     const seizoenEindeExclusief = new Date(seizoenEinde);
     seizoenEindeExclusief.setUTCDate(seizoenEindeExclusief.getUTCDate() + 1);
     const contractPerioden = new Map(medewerkers.map((medewerker) => [medewerker.id, bepaalContractPeriode(medewerker.datumInDienst ?? null, seizoenStart, vandaag)]));
-    const globaleContractStart = new Date(Math.min(...Array.from(contractPerioden.values()).map((periode) => periode.start.getTime())));
+    const contractStartTimestamps = Array.from(contractPerioden.values()).map((periode) => periode.start.getTime());
+    for (const medewerker of medewerkers) {
+      if (medewerker.contractUrenStartPeildatum) contractStartTimestamps.push(kalenderDatumUTC(lokaleDatumSleutel(medewerker.contractUrenStartPeildatum)).getTime());
+    }
+    const globaleContractStart = new Date(Math.min(...contractStartTimestamps));
     const globaleContractEinde = new Date(Math.max(...Array.from(contractPerioden.values()).map((periode) => periode.einde.getTime())));
     const globaleContractEindeExclusief = new Date(globaleContractEinde);
     globaleContractEindeExclusief.setUTCDate(globaleContractEindeExclusief.getUTCDate() + 1);
@@ -391,7 +397,7 @@ export async function GET(
       berekenGewerkteUren,
     );
 
-    const contracturenBalansPerMedewerker = new Map<string, { contractUren: number | null; jaarNorm: number; teWerkenNorm: number; gewerkteUren: number; liveIngeplandDezeWeek: number; liveIngeplandRestContractperiode: number; nogNietIngepland: number; resterendeOpeningsweken: number; gemiddeldNogInTePlannenPerWeek: number | null; prognoseOverschot: number; verlofUrenStart: number | null; resterendVerlof: number | null }>();
+    const contracturenBalansPerMedewerker = new Map<string, { contractUren: number | null; jaarNorm: number; teWerkenNorm: number; gewerkteUren: number; resterendTeWerken: number; liveIngeplandDezeWeek: number; liveIngeplandRestContractperiode: number; nogNietIngepland: number; resterendeOpeningsweken: number; gemiddeldNogInTePlannenPerWeek: number | null; prognoseOverschot: number; verlofUrenStart: number | null; resterendVerlof: number | null }>();
     for (const medewerker of medewerkers) {
       if (medewerker.contractType !== "VAST") continue;
       const eigenVestigingen = new Set(medewerker.vestigingen.map((item) => item.vestigingId));
@@ -405,8 +411,40 @@ export async function GET(
       const jaarUrenNorm = medewerker.jaarUrenNorm == null ? null : Number(medewerker.jaarUrenNorm);
       const verlofUrenStart = medewerker.verlofUrenStart == null ? null : Number(medewerker.verlofUrenStart);
       const verlofUrenOpgenomen = medewerker.verlofUrenOpgenomen == null ? 0 : Number(medewerker.verlofUrenOpgenomen);
-      const balans = berekenContractUren({ contractUren, jaarUrenNorm, verlofUrenStart, gewerkteUren, liveIngepland: liveRestSeizoen, resterendeOpeningsweken });
-      contracturenBalansPerMedewerker.set(medewerker.id, { contractUren, jaarNorm: balans.jaarNorm, teWerkenNorm: balans.teWerkenNorm, gewerkteUren: balans.gewerkteUren, liveIngeplandDezeWeek: Math.round(liveDezeWeek * 100) / 100, liveIngeplandRestContractperiode: balans.liveIngepland, nogNietIngepland: balans.nogNietIngepland, resterendeOpeningsweken, gemiddeldNogInTePlannenPerWeek: balans.gemiddeldNogInTePlannenPerWeek, prognoseOverschot: balans.prognoseOverschot, verlofUrenStart, resterendVerlof: verlofUrenStart === null ? null : Math.max(0, verlofUrenStart - verlofUrenOpgenomen) });
+      const startSaldoUren = medewerker.contractUrenStartSaldo == null ? null : Number(medewerker.contractUrenStartSaldo);
+      const startSaldoPeildatum = medewerker.contractUrenStartPeildatum
+        ? kalenderDatumUTC(lokaleDatumSleutel(medewerker.contractUrenStartPeildatum))
+        : null;
+      const gewerkteUrenSindsStartSaldo = startSaldoPeildatum
+        ? seizoenRegistraties
+            .filter((item) => item.medewerkerId === medewerker.id && eigenVestigingen.has(item.vestigingId) && item.datum >= startSaldoPeildatum && item.datum <= contractPeriode.einde)
+            .reduce((som, item) => som + (item.werkelijkeBegintijd && item.werkelijkeEindtijd ? (uniekeUrenPerRegistratie.get(item.id) ?? 0) : Number(item.gewerkteUren)), 0)
+        : gewerkteUren;
+      const balans = berekenContractUren({
+        contractUren,
+        jaarUrenNorm,
+        verlofUrenStart,
+        gewerkteUren,
+        liveIngepland: liveRestSeizoen,
+        resterendeOpeningsweken,
+        startSaldoUren,
+        gewerkteUrenSindsStartSaldo,
+      });
+      contracturenBalansPerMedewerker.set(medewerker.id, {
+        contractUren,
+        jaarNorm: balans.jaarNorm,
+        teWerkenNorm: balans.teWerkenNorm,
+        gewerkteUren: balans.gewerkteUren,
+        resterendTeWerken: balans.resterendTeWerken,
+        liveIngeplandDezeWeek: Math.round(liveDezeWeek * 100) / 100,
+        liveIngeplandRestContractperiode: balans.liveIngepland,
+        nogNietIngepland: balans.nogNietIngepland,
+        resterendeOpeningsweken,
+        gemiddeldNogInTePlannenPerWeek: balans.gemiddeldNogInTePlannenPerWeek,
+        prognoseOverschot: balans.prognoseOverschot,
+        verlofUrenStart,
+        resterendVerlof: verlofUrenStart === null ? null : Math.max(0, verlofUrenStart - verlofUrenOpgenomen),
+      });
     }
 
     const vorigeVerloning = await prisma.verloningsPeriode.findFirst({
