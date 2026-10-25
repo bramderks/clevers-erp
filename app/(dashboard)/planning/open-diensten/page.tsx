@@ -142,7 +142,7 @@ export default function OpenDienstenPage() {
                 className={`rounded-2xl border p-5 shadow-sm ${
                   urgent
                     ? "border-red-200 bg-red-50"
-                    : "border-orange-400 bg-orange-200"
+                    : "border-orange-600 bg-orange-300"
                 }`}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -173,7 +173,7 @@ export default function OpenDienstenPage() {
                     className={`rounded-full px-3 py-1 text-xs font-bold ${
                       urgent
                         ? "bg-red-100 text-red-800"
-                        : "bg-orange-300 text-orange-950"
+                        : "bg-orange-500 text-white"
                     }`}
                   >
                     {urgent
