@@ -1,0 +1,27 @@
+name: Resolve dependency advisories
+on:
+  push:
+    branches: [feature/ziekmelding-reservediensten]
+permissions:
+  contents: write
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          token: ${{ github.token }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Apply compatible security fixes
+        run: npm audit fix --ignore-scripts
+      - name: Commit resolved dependency tree
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet -- package.json package-lock.json; then
+            git add package.json package-lock.json
+            git commit -m "Resolve remaining dependency security advisories"
+            git push origin HEAD:feature/ziekmelding-reservediensten
+          fi
