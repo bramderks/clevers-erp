@@ -1386,7 +1386,7 @@ export default function PlanningOverzicht({
 
     const bevestigd =
       window.confirm(
-        `Week ${huidigeWeek.weeknummer} · ${huidigeWeek.jaar} heropenen? De week wordt weer LIVE en kan daarna door de eigenaar worden gewijzigd. De eerder gemaakte loonkostensnapshot wordt hiermee niet automatisch opnieuw afgesloten.`,
+        `Week ${huidigeWeek.weeknummer} · ${huidigeWeek.jaar} heropenen? De week wordt weer LIVE. Automatisch aangemaakte urenregistraties die nog op 'te controleren' staan worden teruggedraaid, zodat je de planning kunt aanpassen. Definitieve uren en verwerkte verloningen worden beschermd. Na je wijzigingen kun je de week opnieuw afsluiten.`,
       );
 
     if (!bevestigd) {
