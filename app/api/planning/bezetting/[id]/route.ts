@@ -223,16 +223,24 @@ export async function PATCH(
       );
     }
 
-    if (
-      bestaandeBezetting.status ===
-      "GEWERKT"
-    ) {
+    // Een gewerkte bezetting mag alleen aan een andere medewerker
+    // worden toegewezen via een expliciete eigenaarshandeling. De bestaande
+    // UrenRegistratie blijft gekoppeld aan de oorspronkelijke medewerker en
+    // wordt door deze wijziging niet aangepast.
+    const isHistorischeHerindeling =
+      bestaandeBezetting.status === "GEWERKT" &&
+      typeof body.medewerkerId === "string" &&
+      body.medewerkerId.length > 0 &&
+      Object.keys(body).every((key) => key === "medewerkerId");
+
+    if (bestaandeBezetting.status === "GEWERKT" && !isHistorischeHerindeling) {
       return NextResponse.json(
         {
           fout:
-            "Deze bezetting kan niet meer worden gewijzigd omdat de dienst als gewerkt is geregistreerd.",
+            "Een gewerkte dienst kan alleen opnieuw worden toegewezen aan een andere medewerker. De historische urenregistratie blijft bij de oorspronkelijke medewerker.",
+          code: "GEWERKTE_DIENST_HISTORISCHE_UREN",
         },
-        { status: 400 },
+        { status: 409 },
       );
     }
 
