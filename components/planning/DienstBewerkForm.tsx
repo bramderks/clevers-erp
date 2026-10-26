@@ -1281,26 +1281,38 @@ export default function DienstBewerkForm({
       setFout(null);
       setSucces(null);
 
-      const response =
-        await fetch(
-          "/api/planning/bezetting",
+      const gewerkteBezetting = dienst.bezetting.find(
+        (bezetting) => bezetting.status === "GEWERKT",
+      );
+
+      let response: Response;
+      if (gewerkteBezetting) {
+        const akkoord = window.confirm(
+          "Deze dienst heeft al een urenregistratie. De medewerker op de planning wordt vervangen, maar de bestaande geregistreerde uren blijven bij de oorspronkelijke medewerker staan en worden niet aangepast. Wil je doorgaan?",
+        );
+        if (!akkoord) return;
+
+        response = await fetch(
+          `/api/planning/bezetting/${encodeURIComponent(gewerkteBezetting.id)}`,
           {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
             credentials: "include",
-
-            body: JSON.stringify({
-              dienstId: dienst.id,
-              medewerkerId,
-              status: "BEVESTIGD",
-            }),
+            body: JSON.stringify({ medewerkerId }),
           },
         );
+      } else {
+        response = await fetch("/api/planning/bezetting", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            dienstId: dienst.id,
+            medewerkerId,
+            status: "BEVESTIGD",
+          }),
+        });
+      }
 
       const data: unknown =
         await response.json();
@@ -1315,7 +1327,9 @@ export default function DienstBewerkForm({
       }
 
       setSucces(
-        "Medewerker direct bevestigd aan de dienst.",
+        dienst.bezetting.some((bezetting) => bezetting.status === "GEWERKT")
+          ? "Planningmedewerker gewijzigd. De bestaande urenregistratie is ongewijzigd gebleven bij de oorspronkelijke medewerker."
+          : "Medewerker direct bevestigd aan de dienst.",
       );
 
       onGewijzigd?.();
