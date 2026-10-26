@@ -609,6 +609,19 @@ HEADER
     </section>
   )}
 
+  {dienst.bezetting.some((bezetting) => bezetting.urenregistratie?.status === "AFGEKEURD") && (
+    <section className="rounded-xl border border-red-300 bg-red-50 p-5 shadow-sm">
+      <h2 className="font-semibold text-red-900">Afgekeurde uren — correctie nodig</h2>
+      {dienst.bezetting.filter((bezetting) => bezetting.urenregistratie?.status === "AFGEKEURD").map((bezetting) => (
+        <p key={bezetting.id} className="mt-2 text-sm text-red-800">
+          {bezetting.medewerker ? formatName(bezetting.medewerker) + ": " : ""}
+          {bezetting.urenregistratie?.opmerking || "Geen reden opgegeven."}
+        </p>
+      ))}
+      <p className="mt-2 text-sm text-red-800">Pas de dienst aan, meld de medewerker ziek of verwijder de dienst. Na opslaan worden de uren opnieuw ter controle aangeboden. Afgekeurde uren worden niet verloond.</p>
+    </section>
+  )}
+
   {/* ======================================================
       TAGS
       ====================================================== */}
