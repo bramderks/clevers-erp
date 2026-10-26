@@ -9,11 +9,13 @@ import type { Dienst } from "@/types/planning";
 type DienstBewerkToggleProps = {
   dienst: Dienst;
   vestigingId: string;
+  terugNaarUrenControle?: boolean;
 };
 
 export default function DienstBewerkToggle({
   dienst,
   vestigingId,
+  terugNaarUrenControle = false,
 }: DienstBewerkToggleProps) {
   const [bewerken, setBewerken] =
     useState(false);
@@ -62,7 +64,11 @@ export default function DienstBewerkToggle({
         dienst={dienst}
         vestigingId={vestigingId}
         onGewijzigd={() => {
-          window.location.reload();
+          if (terugNaarUrenControle) {
+            window.location.assign("/uren");
+          } else {
+            window.location.reload();
+          }
         }}
       />
     </div>
