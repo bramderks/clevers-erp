@@ -381,6 +381,121 @@ export async function PATCH(
       );
     }
 
+    const heropentAfgeslotenWeek =
+      bestaandeWeek.status === "AFGESLOTEN" &&
+      data.status === "GEPUBLICEERD";
+
+    if (heropentAfgeslotenWeek) {
+      const loonkostenSnapshot = await prisma.loonkostenWeek.findUnique({
+        where: { weekId: id },
+        select: { snapshot: true },
+      });
+
+      const snapshotData =
+        loonkostenSnapshot?.snapshot &&
+        typeof loonkostenSnapshot.snapshot === "object" &&
+        !Array.isArray(loonkostenSnapshot.snapshot)
+          ? loonkostenSnapshot.snapshot as { gegenereerdeUrenregistratieIds?: unknown }
+          : null;
+
+      const heeftRollbackMetadata = Array.isArray(
+        snapshotData?.gegenereerdeUrenregistratieIds,
+      );
+      const opgeslagenIds = heeftRollbackMetadata
+        ? (snapshotData!.gegenereerdeUrenregistratieIds as unknown[]).filter(
+            (value): value is string => typeof value === "string",
+          )
+        : [];
+
+      // Voor oude snapshots van vóór de rollback-metadata is er geen exacte
+      // herkomstlijst. Verwijder in dat geval alleen nog openstaande,
+      // niet-goedgekeurde registraties die aan deze week gekoppeld zijn.
+      const terugTeDraaien = heeftRollbackMetadata
+        ? await prisma.urenRegistratie.findMany({
+            where: { id: { in: opgeslagenIds } },
+            select: { id: true, status: true, datum: true },
+          })
+        : await prisma.urenRegistratie.findMany({
+            where: {
+              dienstBezetting: { dienst: { weekId: id } },
+              status: "TE_CONTROLEREN",
+            },
+            select: { id: true, status: true, datum: true },
+          });
+
+      if (terugTeDraaien.some((registratie) => registratie.status !== "TE_CONTROLEREN")) {
+        return NextResponse.json(
+          {
+            fout: "Deze week bevat urenregistraties die inmiddels definitief zijn of afgekeurd. Controleer die registraties eerst; ze worden niet automatisch teruggedraaid.",
+            code: "WEEK_HEEFT_BEVESTIGDE_UREN",
+          },
+          { status: 409 },
+        );
+      }
+
+      const maanden = Array.from(new Map(
+        terugTeDraaien.map((registratie) => {
+          const jaar = registratie.datum.getUTCFullYear();
+          const maand = registratie.datum.getUTCMonth() + 1;
+          return [`${jaar}-${maand}`, { jaar, maand }];
+        }),
+      ).values());
+
+      if (maanden.length > 0) {
+        const periodes = await prisma.verloningsPeriode.findMany({
+          where: { OR: maanden.map(({ jaar, maand }) => ({ jaar, maand })) },
+          select: { jaar: true, maand: true, status: true },
+        });
+
+        if (periodes.some((periode) => periode.status !== "AANGEMAAKT")) {
+          return NextResponse.json(
+            {
+              fout: "Deze week valt in een verloningsperiode die al klaarstaat of verwerkt is. De verloning moet eerst veilig worden teruggezet voordat urenregistraties kunnen worden teruggedraaid.",
+              code: "VERLONINGSPERIODE_NIET_WIJZIGBAAR",
+            },
+            { status: 409 },
+          );
+        }
+      }
+
+      const week = await prisma.$transaction(async (tx) => {
+        if (terugTeDraaien.length > 0) {
+          const ids = terugTeDraaien.map((registratie) => registratie.id);
+          const verwijderResultaat = await tx.urenRegistratie.deleteMany({
+            where: {
+              id: { in: ids },
+              status: "TE_CONTROLEREN",
+            },
+          });
+
+          if (verwijderResultaat.count !== ids.length) {
+            throw new Error(
+              "Niet alle automatisch aangemaakte urenregistraties konden veilig worden teruggedraaid. De week is niet heropend.",
+            );
+          }
+        }
+
+        // De oude snapshot blijft bewaard voor auditdoeleinden, maar is niet
+        // langer actief: zonder afgeslotenOp gebruikt het rapport actuele data.
+        await tx.loonkostenWeek.updateMany({
+          where: { weekId: id },
+          data: { afgeslotenOp: null, afgeslotenDoorId: null },
+        });
+
+        return tx.week.update({
+          where: { id },
+          data,
+        });
+      });
+
+      revalidatePath("/app");
+      revalidatePath("/app/planning");
+      revalidatePath("/dashboard");
+      revalidatePath("/rapportages");
+
+      return NextResponse.json(week);
+    }
+
     const week = await prisma.week.update({
       where: {
         id,
