@@ -544,10 +544,26 @@ export async function PATCH(
           });
         }
       } else {
+        // Een afgekeurde registratie moet bij opslaan altijd opnieuw
+        // worden gesynchroniseerd met de actuele dienst. Zo blijven geen
+        // oude tijden staan wanneer de dienst al eerder is aangepast.
+        const afgekeurdeRegistraties = bestaandeRegistraties.filter(
+          (registratie) => registratie.status === "AFGEKEURD",
+        );
+        const berekening = berekenGewerkteUren(begintijd, eindtijd);
         for (const registratie of bestaandeRegistraties) {
           await tx.urenRegistratie.update({
             where: { id: registratie.id },
             data: {
+              ...(afgekeurdeRegistraties.some((afgekeurd) => afgekeurd.id === registratie.id)
+                ? {
+                    datum: lokaleKalenderDatumUTC(begintijd),
+                    werkelijkeBegintijd: begintijd,
+                    werkelijkeEindtijd: eindtijd,
+                    pauzeMinuten: berekening.pauzeMinuten,
+                    gewerkteUren: berekening.gewerkteUren,
+                  }
+                : {}),
               status: "TE_CONTROLEREN",
               gecontroleerdDoorId: null,
               gecontroleerdOp: null,
