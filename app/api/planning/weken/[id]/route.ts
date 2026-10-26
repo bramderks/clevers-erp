@@ -381,15 +381,20 @@ export async function PATCH(
       );
     }
 
+    // De rapportage beschouwt een week als afgesloten zodra de loonkosten-snapshot
+    // een afgeslotenOp heeft. Herstel ook oude/inconsistente records waarbij de
+    // weekstatus al GEPUBLICEERD is, maar de snapshot nog actief afgesloten staat.
+    const loonkostenSnapshot = await prisma.loonkostenWeek.findUnique({
+      where: { weekId: id },
+      select: { snapshot: true, afgeslotenOp: true },
+    });
+
     const heropentAfgeslotenWeek =
-      bestaandeWeek.status === "AFGESLOTEN" &&
-      data.status === "GEPUBLICEERD";
+      data.status === "GEPUBLICEERD" &&
+      (bestaandeWeek.status === "AFGESLOTEN" ||
+        loonkostenSnapshot?.afgeslotenOp != null);
 
     if (heropentAfgeslotenWeek) {
-      const loonkostenSnapshot = await prisma.loonkostenWeek.findUnique({
-        where: { weekId: id },
-        select: { snapshot: true },
-      });
 
       const snapshotData =
         loonkostenSnapshot?.snapshot &&
