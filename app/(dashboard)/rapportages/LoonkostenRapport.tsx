@@ -87,6 +87,7 @@ export default function LoonkostenRapport(p: {
   );
   const [busy, setBusy] = useState(false);
   const [melding, setMelding] = useState("");
+  const [bevestigHeropenen, setBevestigHeropenen] = useState(false);
   const gesloten = Boolean(p.afgeslotenOp);
   const bovenNorm = p.percentageOmzet != null && p.percentageOmzet > p.doelPercentage;
   const meter = Math.min(100, Math.max(0, p.percentageOmzet ?? 0));
@@ -182,15 +183,9 @@ export default function LoonkostenRapport(p: {
       window.location.reload();
     } catch (error) {
       setMelding(error instanceof Error ? error.message : "Herberekenen mislukt.");
-    } finally {
-      setBusy(false);
-    }
-  };
+    } finally {    if (!gesloten || !p.weekId || busy) return;
 
-  const heropenen = async () => {
-    if (!gesloten || !p.weekId) return;
-    if (!window.confirm(
-      `Week ${p.weeknummer} · ${p.jaar} heropenen? Nog te controleren urenregistraties die bij het afsluiten zijn aangemaakt, worden teruggedraaid. Definitieve uren en verwerkte verloningen blijven beschermd. Je kunt de planning daarna wijzigen en de week opnieuw afsluiten.`,
+    setBusy(true);en en de week opnieuw afsluiten.`,
     )) return;
 
     setBusy(true);
@@ -490,9 +485,21 @@ export default function LoonkostenRapport(p: {
             <p className="mt-1 text-xs text-slate-500">Heropen de week om de planning te wijzigen. De actieve snapshot wordt dan buiten gebruik gezet; de afsluitregistraties die nog gecontroleerd moeten worden, worden teruggedraaid.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button onClick={heropenen} disabled={busy || !p.weekId} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40">
-              <Unlock size={17} /> {busy ? "Bezig..." : "Week heropenen"}
-            </button>
+            {!bevestigHeropenen ? (
+              <button type="button" onClick={() => { setMelding(""); setBevestigHeropenen(true); }} disabled={busy || !p.weekId} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40">
+                <Unlock size={17} /> Week heropenen
+              </button>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3">
+                <p className="basis-full text-sm text-amber-950">Openstaande, nog te controleren urenregistraties die bij het afsluiten zijn aangemaakt, worden teruggedraaid. Definitieve uren en verwerkte verloningen blijven beschermd.</p>
+                <button type="button" onClick={heropenen} disabled={busy} className="rounded-xl bg-amber-700 px-4 py-2 font-semibold text-white hover:bg-amber-800 disabled:opacity-50">
+                  {busy ? "Week heropenen..." : "Ja, heropen week"}
+                </button>
+                <button type="button" onClick={() => { setBevestigHeropenen(false); setMelding(""); }} disabled={busy} className="rounded-xl border border-slate-300 bg-white px-4 py-2 font-semibold text-slate-700 disabled:opacity-50">
+                  Annuleren
+                </button>
+              </div>
+            )}
             <button onClick={herberekenen} disabled={busy} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">
               {busy ? "Bezig..." : "Snapshot herberekenen"}
             </button>
