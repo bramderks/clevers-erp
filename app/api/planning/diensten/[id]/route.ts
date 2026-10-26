@@ -540,50 +540,26 @@ export async function PATCH(
         },
       });
 
-      if (tijdenGewijzigd) {
-        const berekening = berekenGewerkteUren(begintijd, eindtijd);
-        for (const registratie of bestaandeRegistraties) {
-          await tx.urenRegistratie.update({
-            where: { id: registratie.id },
-            data: {
-              datum: lokaleKalenderDatumUTC(begintijd),
-              werkelijkeBegintijd: begintijd,
-              werkelijkeEindtijd: eindtijd,
-              pauzeMinuten: berekening.pauzeMinuten,
-              gewerkteUren: berekening.gewerkteUren,
-              status: "TE_CONTROLEREN",
-              gecontroleerdDoorId: null,
-              gecontroleerdOp: null,
-            },
-          });
-        }
-      } else {
-        // Een afgekeurde registratie moet bij opslaan altijd opnieuw
-        // worden gesynchroniseerd met de actuele dienst. Zo blijven geen
-        // oude tijden staan wanneer de dienst al eerder is aangepast.
-        const afgekeurdeRegistraties = bestaandeRegistraties.filter(
-          (registratie) => registratie.status === "AFGEKEURD",
-        );
-        const berekening = berekenGewerkteUren(begintijd, eindtijd);
-        for (const registratie of bestaandeRegistraties) {
-          await tx.urenRegistratie.update({
-            where: { id: registratie.id },
-            data: {
-              ...(afgekeurdeRegistraties.some((afgekeurd) => afgekeurd.id === registratie.id)
-                ? {
-                    datum: lokaleKalenderDatumUTC(begintijd),
-                    werkelijkeBegintijd: begintijd,
-                    werkelijkeEindtijd: eindtijd,
-                    pauzeMinuten: berekening.pauzeMinuten,
-                    gewerkteUren: berekening.gewerkteUren,
-                  }
-                : {}),
-              status: "TE_CONTROLEREN",
-              gecontroleerdDoorId: null,
-              gecontroleerdOp: null,
-            },
-          });
-        }
+      // Elke registratie die opnieuw ter controle komt, moet volledig
+      // worden gesynchroniseerd met de actuele dienst. Ook als de dienst
+      // eerder is gewijzigd, kunnen de registratie en afkeur-opmerking nog
+      // oude gegevens bevatten.
+      const berekening = berekenGewerkteUren(begintijd, eindtijd);
+      for (const registratie of bestaandeRegistraties) {
+        await tx.urenRegistratie.update({
+          where: { id: registratie.id },
+          data: {
+            datum: lokaleKalenderDatumUTC(begintijd),
+            werkelijkeBegintijd: begintijd,
+            werkelijkeEindtijd: eindtijd,
+            pauzeMinuten: berekening.pauzeMinuten,
+            gewerkteUren: berekening.gewerkteUren,
+            opmerking: null,
+            status: "TE_CONTROLEREN",
+            gecontroleerdDoorId: null,
+            gecontroleerdOp: null,
+          },
+        });
       }
 
       const conceptPeriodeIds = verloningsPeriodes
