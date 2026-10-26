@@ -42,6 +42,9 @@ async function haalBezettingOp(
       status: true,
       statusVoorZiekmelding: true,
       ziekgemeldOp: true,
+      urenregistratie: {
+        select: { id: true },
+      },
 
       dienst: {
         select: {
@@ -228,13 +231,19 @@ export async function PATCH(
     // worden toegewezen via een expliciete eigenaarshandeling. De bestaande
     // UrenRegistratie blijft gekoppeld aan de oorspronkelijke medewerker en
     // wordt door deze wijziging niet aangepast.
+    const heeftUrenregistratie =
+      bestaandeBezetting.urenregistratie !== null;
+
     const isHistorischeHerindeling =
-      bestaandeBezetting.status === "GEWERKT" &&
+      (bestaandeBezetting.status === "GEWERKT" || heeftUrenregistratie) &&
       typeof body.medewerkerId === "string" &&
       body.medewerkerId.length > 0 &&
       Object.keys(body).every((key) => key === "medewerkerId");
 
-    if (bestaandeBezetting.status === "GEWERKT" && !isHistorischeHerindeling) {
+    if (
+      (bestaandeBezetting.status === "GEWERKT" || heeftUrenregistratie) &&
+      !isHistorischeHerindeling
+    ) {
       return NextResponse.json(
         {
           fout:
@@ -482,12 +491,14 @@ export async function PATCH(
         },
       });
 
-      // Bij een eigenaarshandeling op een gewerkte dienst moet de
-      // urenregistratie dezelfde medewerker volgen. Maak de registratie
+      // Bij een eigenaarshandeling op een gewerkte dienst of een bezetting
+      // met gekoppelde urenregistratie moet de urenregistratie dezelfde
+      // medewerker volgen. Maak de registratie
       // opnieuw controleerbaar en herbereken tijden/pauze/uren vanuit de
       // dienst; zo kan oude, goedgekeurde verloning niet ongemerkt blijven staan.
       if (
         isHistorischeHerindeling &&
+        heeftUrenregistratie &&
         typeof body.medewerkerId === "string" &&
         body.medewerkerId !== bestaandeBezetting.medewerkerId
       ) {
