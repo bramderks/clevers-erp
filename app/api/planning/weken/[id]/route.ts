@@ -412,21 +412,33 @@ export async function PATCH(
           )
         : [];
 
-      // Voor oude snapshots van vóór de rollback-metadata is er geen exacte
-      // herkomstlijst. Verwijder in dat geval alleen nog openstaande,
-      // niet-goedgekeurde registraties die aan deze week gekoppeld zijn.
-      const terugTeDraaien = heeftRollbackMetadata
+      // De rollback-ID's bevatten alleen registraties die deze afsluitactie
+      // nieuw heeft aangemaakt. Er kunnen echter al voorlopige registraties
+      // aan een dienst gekoppeld zijn; die werden bij afsluiten bewust niet
+      // overschreven en staan dus niet in die lijst. Bij heropenen moeten ook
+      // die voorlopige registraties vervallen, anders blijft de bezetting
+      // geblokkeerd bij wijzigen/verwijderen van de dienst.
+      const registratiesUitSnapshot = heeftRollbackMetadata && opgeslagenIds.length > 0
         ? await prisma.urenRegistratie.findMany({
             where: { id: { in: opgeslagenIds } },
             select: { id: true, status: true, datum: true },
           })
-        : await prisma.urenRegistratie.findMany({
-            where: {
-              dienstBezetting: { dienst: { weekId: id } },
-              status: "TE_CONTROLEREN",
-            },
-            select: { id: true, status: true, datum: true },
-          });
+        : [];
+
+      const overigeVoorlopigeRegistraties = await prisma.urenRegistratie.findMany({
+        where: {
+          dienstBezetting: { dienst: { weekId: id } },
+          status: "TE_CONTROLEREN",
+        },
+        select: { id: true, status: true, datum: true },
+      });
+
+      const registratiesPerId = new Map(
+        [...registratiesUitSnapshot, ...overigeVoorlopigeRegistraties].map(
+          (registratie) => [registratie.id, registratie],
+        ),
+      );
+      const terugTeDraaien = Array.from(registratiesPerId.values());
 
       if (terugTeDraaien.some((registratie) => registratie.status !== "TE_CONTROLEREN")) {
         return NextResponse.json(
