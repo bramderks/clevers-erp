@@ -87,6 +87,7 @@ default:
 
 export default async function DienstPagina({
 params,
+searchParams,
 }: RouteProps) {
 const gebruiker = await getCurrentUser();
 
