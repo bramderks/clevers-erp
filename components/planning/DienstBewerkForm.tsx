@@ -1839,7 +1839,7 @@ export default function DienstBewerkForm({
                       "GEWERKT" &&
                     bezetting.status !==
                       "AFGEZEGD" &&
-                    bezetting.urenregistratie == null && (
+                    (bezetting.urenregistratie == null || bezetting.urenregistratie.status === "AFGEKEURD") && (
                       <button
                         type="button"
                         onClick={() =>
@@ -1852,7 +1852,7 @@ export default function DienstBewerkForm({
                           bezetting.id
                         }
                         className="rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        title="Medewerker verwijderen"
+                        title={bezetting.urenregistratie?.status === "AFGEKEURD" ? "Afgekeurde uren en medewerker verwijderen" : "Medewerker verwijderen"}
                       >
                         {bezettingBezig ===
                         bezetting.id
