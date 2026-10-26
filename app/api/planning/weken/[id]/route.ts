@@ -388,54 +388,45 @@ export async function PATCH(
       data,
     });
 
-    if (
-      data.status === "GEPUBLICEERD" &&
-      bestaandeWeek.status !== "GEPUBLICEERD" &&
-      bestaandeWeek.status !== "AFGESLOTEN"
-    ) {
-      const bezettingen =
-        await prisma.dienstBezetting.findMany({
-          where: {
-            dienst: {
-              weekId: id,
-            },
-            OR: [
-              {
-                medewerkerId: { not: null },
-                status: {
-                  in: ["GEPLAND", "BEVESTIGD"],
-                },
-              },
-              {
-                status: "OPEN",
-                medewerkerId: null,
-              },
-            ],
-          },
-          select: {
-            id: true,
-            status: true,
-          },
-        });
-
-      for (const bezetting of bezettingen) {
-        try {
-          if (bezetting.status === "OPEN") {
-            await verstuurDirecteOpenDienstMelding(bezetting.id);
-          } else {
-            await verstuurDirecteDienstMelding(bezetting.id);
-          }
-        } catch (pushError) {
-          console.error(
-            "Publicatiepush kon niet worden verwerkt:",
-            pushError,
-          );
-        }
-      }
-
+    if (data.status === "GEPUBLICEERD") {
+      // Een heropende week moet direct uit eventuele servercache worden
+      // gehaald. Anders kan de eigenaar nog een afgesloten week zien en
+      // krijgen dienstbewerkingen onterecht de indruk dat de week op slot zit.
       revalidatePath("/app");
       revalidatePath("/app/planning");
       revalidatePath("/dashboard");
+
+      // Heropenen is geen nieuwe publicatie: stuur dan geen dubbele
+      // pushmeldingen naar medewerkers. Meldingen zijn alleen voor de
+      // eerste publicatie van een week.
+      if (bestaandeWeek.status !== "GEPUBLICEERD" && bestaandeWeek.status !== "AFGESLOTEN") {
+        const bezettingen =
+          await prisma.dienstBezetting.findMany({
+            where: {
+              dienst: { weekId: id },
+              OR: [
+                {
+                  medewerkerId: { not: null },
+                  status: { in: ["GEPLAND", "BEVESTIGD"] },
+                },
+                { status: "OPEN", medewerkerId: null },
+              ],
+            },
+            select: { id: true, status: true },
+          });
+
+        for (const bezetting of bezettingen) {
+          try {
+            if (bezetting.status === "OPEN") {
+              await verstuurDirecteOpenDienstMelding(bezetting.id);
+            } else {
+              await verstuurDirecteDienstMelding(bezetting.id);
+            }
+          } catch (pushError) {
+            console.error("Publicatiepush kon niet worden verwerkt:", pushError);
+          }
+        }
+      }
     }
 
     return NextResponse.json(week);
