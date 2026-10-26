@@ -84,7 +84,7 @@ export type DienstBezetting = {
   gewerkteUren?: number | null;
 
   /** Aanwezig als er een gekoppelde urenregistratie bestaat. */
-  urenregistratie?: { id: string } | null;
+  urenregistratie?: { id: string; status?: string; opmerking?: string | null } | null;
 };
 
 export type Dienst = {
