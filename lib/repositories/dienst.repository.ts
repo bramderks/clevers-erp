@@ -25,6 +25,9 @@ export const dienstRepository = {
         bezetting: {
           include: {
             medewerker: true,
+            urenregistratie: {
+              select: { id: true },
+            },
           },
           orderBy: {
             aangemaaktOp: "asc",
@@ -58,6 +61,9 @@ export const dienstRepository = {
         bezetting: {
           include: {
             medewerker: true,
+            urenregistratie: {
+              select: { id: true },
+            },
           },
           orderBy: {
             aangemaaktOp: "asc",
@@ -107,6 +113,9 @@ export const dienstRepository = {
         bezetting: {
           include: {
             medewerker: true,
+            urenregistratie: {
+              select: { id: true },
+            },
           },
         },
       },
@@ -142,6 +151,9 @@ export const dienstRepository = {
         bezetting: {
           include: {
             medewerker: true,
+            urenregistratie: {
+              select: { id: true },
+            },
           },
         },
       },
