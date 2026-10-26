@@ -1281,19 +1281,21 @@ export default function DienstBewerkForm({
       setFout(null);
       setSucces(null);
 
-      const gewerkteBezetting = dienst.bezetting.find(
-        (bezetting) => bezetting.status === "GEWERKT",
+      const bezettingMetRegistratie = dienst.bezetting.find(
+        (bezetting) =>
+          bezetting.status === "GEWERKT" ||
+          bezetting.urenregistratie != null,
       );
 
       let response: Response;
-      if (gewerkteBezetting) {
+      if (bezettingMetRegistratie) {
         const akkoord = window.confirm(
-          "Deze dienst heeft al een urenregistratie. De medewerker op de planning wordt vervangen, maar de bestaande geregistreerde uren blijven bij de oorspronkelijke medewerker staan en worden niet aangepast. Wil je doorgaan?",
+          "Deze dienst heeft een urenregistratie. De registratie wordt aan de nieuwe medewerker gekoppeld en teruggezet op 'te controleren'. De eigenaar moet de uren opnieuw goedkeuren voordat ze worden meegenomen in de verloning. Doorgaan?",
         );
         if (!akkoord) return;
 
         response = await fetch(
-          `/api/planning/bezetting/${encodeURIComponent(gewerkteBezetting.id)}`,
+          `/api/planning/bezetting/${encodeURIComponent(bezettingMetRegistratie.id)}`,
           {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
@@ -1327,8 +1329,8 @@ export default function DienstBewerkForm({
       }
 
       setSucces(
-        dienst.bezetting.some((bezetting) => bezetting.status === "GEWERKT")
-          ? "Planningmedewerker gewijzigd. De bestaande urenregistratie is ongewijzigd gebleven bij de oorspronkelijke medewerker."
+        bezettingMetRegistratie
+          ? "Medewerker gewijzigd. De urenregistratie volgt de nieuwe medewerker en staat weer op 'te controleren'."
           : "Medewerker direct bevestigd aan de dienst.",
       );
 
@@ -1836,7 +1838,8 @@ export default function DienstBewerkForm({
                     {bezetting.status !==
                       "GEWERKT" &&
                     bezetting.status !==
-                      "AFGEZEGD" && (
+                      "AFGEZEGD" &&
+                    bezetting.urenregistratie == null && (
                       <button
                         type="button"
                         onClick={() =>
