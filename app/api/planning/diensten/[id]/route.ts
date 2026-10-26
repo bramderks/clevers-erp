@@ -435,12 +435,23 @@ export async function PATCH(
       bestaand.begintijd.getTime() !== begintijd.getTime() ||
       bestaand.eindtijd.getTime() !== eindtijd.getTime();
 
-    const bestaandeRegistraties = tijdenGewijzigd
-      ? await prisma.urenRegistratie.findMany({
-          where: { dienstBezetting: { dienstId: id } },
-          select: { id: true, datum: true },
-        })
-      : [];
+    const alleRegistraties = await prisma.urenRegistratie.findMany({
+      where: { dienstBezetting: { dienstId: id } },
+      select: { id: true, datum: true, status: true },
+    });
+
+    if (tijdenGewijzigd && alleRegistraties.some((registratie) => !["TE_CONTROLEREN", "AFGEKEURD"].includes(registratie.status))) {
+      return NextResponse.json(
+        { fout: "Deze dienst heeft al definitief gecontroleerde uren. Heropen eerst de verloning of corrigeer de urenregistratie voordat je de diensttijden wijzigt.", code: "DEFINITIEVE_UREN_NIET_WIJZIGBAAR" },
+        { status: 409 },
+      );
+    }
+
+    const bestaandeRegistraties = alleRegistraties.filter((registratie) =>
+      tijdenGewijzigd
+        ? ["TE_CONTROLEREN", "AFGEKEURD"].includes(registratie.status)
+        : registratie.status === "AFGEKEURD",
+    );
 
     const maandSleutels = new Map<string, { jaar: number; maand: number }>();
     for (const registratie of bestaandeRegistraties) {
@@ -526,6 +537,17 @@ export async function PATCH(
               werkelijkeEindtijd: eindtijd,
               pauzeMinuten: berekening.pauzeMinuten,
               gewerkteUren: berekening.gewerkteUren,
+              status: "TE_CONTROLEREN",
+              gecontroleerdDoorId: null,
+              gecontroleerdOp: null,
+            },
+          });
+        }
+      } else {
+        for (const registratie of bestaandeRegistraties) {
+          await tx.urenRegistratie.update({
+            where: { id: registratie.id },
+            data: {
               status: "TE_CONTROLEREN",
               gecontroleerdDoorId: null,
               gecontroleerdOp: null,
