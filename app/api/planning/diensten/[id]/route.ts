@@ -612,12 +612,9 @@ export async function DELETE(
       );
     }
 
-    // Bij het afsluiten van een planningweek worden automatisch
-    // urenregistraties met status TE_CONTROLEREN aangemaakt. Na expliciet
-    // heropenen moet een eigenaar een dienst kunnen verwijderen zolang die
-    // uren nog niet definitief zijn en de maandverloning nog concept is.
-    // Definitieve/afgekeurde registraties en verloningen die al klaarstaan
-    // of verwerkt zijn blijven beschermd.
+    // Uren die nog ter controle staan of expliciet zijn afgekeurd mogen
+    // samen met de dienst worden verwijderd. Definitieve uren en perioden
+    // die al klaarstaan of verwerkt zijn blijven beschermd.
     const bezettingen = await prisma.dienstBezetting.findMany({
       where: { dienstId: id },
       select: {
@@ -636,7 +633,7 @@ export async function DELETE(
       (bezetting) => bezetting.status === "GEWERKT" && bezetting.urenregistratie === null,
     );
     const heeftNietConceptRegistratie = registraties.some(
-      (registratie) => registratie.status !== "TE_CONTROLEREN",
+      (registratie) => !["TE_CONTROLEREN", "AFGEKEURD"].includes(registratie.status),
     );
 
     if (heeftGewerkteDienstZonderRegistratie || heeftNietConceptRegistratie) {
