@@ -7,7 +7,8 @@ import {
 } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
-import { lokaleDagGrenzen } from "@/lib/planning/tijd";
+import { lokaleDagGrenzen, lokaleKalenderDatumUTC } from "@/lib/planning/tijd";
+import { berekenGewerkteUren } from "@/lib/verloning/pauze";
 
 const TOEGESTANE_STATUSSEN = [
   "OPEN",
@@ -463,11 +464,9 @@ export async function PATCH(
       );
     }
 
-    const bezetting =
-      await prisma.dienstBezetting.update({
-        where: {
-          id,
-        },
+    const bezetting = await prisma.$transaction(async (tx) => {
+      const bijgewerkt = await tx.dienstBezetting.update({
+        where: { id },
         data,
         include: {
           medewerker: {
@@ -482,6 +481,47 @@ export async function PATCH(
           },
         },
       });
+
+      // Bij een eigenaarshandeling op een gewerkte dienst moet de
+      // urenregistratie dezelfde medewerker volgen. Maak de registratie
+      // opnieuw controleerbaar en herbereken tijden/pauze/uren vanuit de
+      // dienst; zo kan oude, goedgekeurde verloning niet ongemerkt blijven staan.
+      if (
+        isHistorischeHerindeling &&
+        typeof body.medewerkerId === "string" &&
+        body.medewerkerId !== bestaandeBezetting.medewerkerId
+      ) {
+        const registratie = await tx.urenRegistratie.findUnique({
+          where: { dienstBezettingId: id },
+          select: { id: true },
+        });
+
+        if (registratie) {
+          const berekening = berekenGewerkteUren(
+            bestaandeBezetting.dienst.begintijd,
+            bestaandeBezetting.dienst.eindtijd,
+          );
+
+          await tx.urenRegistratie.update({
+            where: { id: registratie.id },
+            data: {
+              medewerkerId: body.medewerkerId,
+              vestigingId,
+              datum: lokaleKalenderDatumUTC(bestaandeBezetting.dienst.begintijd),
+              werkelijkeBegintijd: bestaandeBezetting.dienst.begintijd,
+              werkelijkeEindtijd: bestaandeBezetting.dienst.eindtijd,
+              pauzeMinuten: berekening.pauzeMinuten,
+              gewerkteUren: berekening.gewerkteUren,
+              status: "TE_CONTROLEREN",
+              gecontroleerdDoorId: null,
+              gecontroleerdOp: null,
+            },
+          });
+        }
+      }
+
+      return bijgewerkt;
+    });
 
     if (data.status === "ZIEK_GEMELD") {
       await prisma.ruilverzoek.updateMany({
