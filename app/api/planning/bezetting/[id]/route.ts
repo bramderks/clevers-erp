@@ -227,10 +227,9 @@ export async function PATCH(
       );
     }
 
-    // Een gewerkte bezetting mag alleen aan een andere medewerker
-    // worden toegewezen via een expliciete eigenaarshandeling. De bestaande
-    // UrenRegistratie blijft gekoppeld aan de oorspronkelijke medewerker en
-    // wordt door deze wijziging niet aangepast.
+    // Een bezetting met urenregistratie wordt alleen via een expliciete
+    // eigenaarshandeling heringedeeld. De gekoppelde urenregistratie volgt
+    // de nieuwe medewerker en moet daarna opnieuw worden gecontroleerd.
     const heeftUrenregistratie =
       bestaandeBezetting.urenregistratie !== null;
 
@@ -252,6 +251,36 @@ export async function PATCH(
         },
         { status: 409 },
       );
+    }
+
+    let conceptVerloningsPeriodeId: string | null = null;
+    if (
+      isHistorischeHerindeling &&
+      heeftUrenregistratie &&
+      body.medewerkerId !== bestaandeBezetting.medewerkerId
+    ) {
+      const registratieVoorControle = await prisma.urenRegistratie.findUnique({
+        where: { dienstBezettingId: id },
+        select: { datum: true },
+      });
+      if (registratieVoorControle) {
+        const jaar = registratieVoorControle.datum.getUTCFullYear();
+        const maand = registratieVoorControle.datum.getUTCMonth() + 1;
+        const periode = await prisma.verloningsPeriode.findUnique({
+          where: { jaar_maand: { jaar, maand } },
+          select: { id: true, status: true },
+        });
+        if (periode && periode.status !== "AANGEMAAKT") {
+          return NextResponse.json(
+            {
+              fout: "Deze uren vallen in een verloningsperiode die al klaarstaat of verwerkt is. Heropen eerst de verloning voordat je de medewerker wijzigt.",
+              code: "VERLONINGSPERIODE_NIET_WIJZIGBAAR",
+            },
+            { status: 409 },
+          );
+        }
+        conceptVerloningsPeriodeId = periode?.id ?? null;
+      }
     }
 
     const data: {
@@ -528,6 +557,12 @@ export async function PATCH(
               gecontroleerdOp: null,
             },
           });
+
+          if (conceptVerloningsPeriodeId) {
+            await tx.verloningsRegel.deleteMany({
+              where: { verloningsPeriodeId: conceptVerloningsPeriodeId },
+            });
+          }
         }
       }
 
