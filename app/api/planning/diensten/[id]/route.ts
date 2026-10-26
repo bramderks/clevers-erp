@@ -612,35 +612,72 @@ export async function DELETE(
       );
     }
 
-    // DienstBezetting en UrenRegistratie zijn cascade-gerelateerd.
-    // Bescherm daarom historische uren en gecontroleerde diensten tegen
-    // onbedoeld verwijderen via de planningsroute.
-    const historischeRegistraties = await prisma.dienstBezetting.findMany({
+    // Bij het afsluiten van een planningweek worden automatisch
+    // urenregistraties met status TE_CONTROLEREN aangemaakt. Na expliciet
+    // heropenen moet een eigenaar een dienst kunnen verwijderen zolang die
+    // uren nog niet definitief zijn en de maandverloning nog concept is.
+    // Definitieve/afgekeurde registraties en verloningen die al klaarstaan
+    // of verwerkt zijn blijven beschermd.
+    const bezettingen = await prisma.dienstBezetting.findMany({
       where: { dienstId: id },
       select: {
         status: true,
         urenregistratie: {
-          select: { id: true },
+          select: { id: true, status: true, datum: true },
         },
       },
     });
 
-    if (
-      historischeRegistraties.some(
-        (bezetting) =>
-          bezetting.status === "GEWERKT" ||
-          bezetting.urenregistratie !== null,
-      )
-    ) {
+    const registraties = bezettingen
+      .map((bezetting) => bezetting.urenregistratie)
+      .filter((registratie): registratie is NonNullable<typeof registratie> => registratie !== null);
+
+    const heeftGewerkteDienstZonderRegistratie = bezettingen.some(
+      (bezetting) => bezetting.status === "GEWERKT" && bezetting.urenregistratie === null,
+    );
+    const heeftNietConceptRegistratie = registraties.some(
+      (registratie) => registratie.status !== "TE_CONTROLEREN",
+    );
+
+    if (heeftGewerkteDienstZonderRegistratie || heeftNietConceptRegistratie) {
       return NextResponse.json(
         {
-          fout: "Deze dienst kan niet worden verwijderd omdat er gewerkte uren of een urenregistratie aan gekoppeld is.",
-          code: "DIENST_HEEFT_URENREGISTRATIE",
+          fout: "Deze dienst heeft uren die al definitief zijn, zijn afgekeurd of niet veilig automatisch kunnen worden verwijderd. Controleer eerst de urenregistratie.",
+          code: "DIENST_HEEFT_DEFINITIEVE_UREN",
         },
         { status: 409 },
       );
     }
 
+    const maandSleutels = Array.from(new Map(
+      registraties.map((registratie) => {
+        const jaar = registratie.datum.getUTCFullYear();
+        const maand = registratie.datum.getUTCMonth() + 1;
+        return [`${jaar}-${maand}`, { jaar, maand }];
+      }),
+    ).values());
+
+    const verloningsPeriodes = maandSleutels.length > 0
+      ? await prisma.verloningsPeriode.findMany({
+          where: {
+            OR: maandSleutels.map(({ jaar, maand }) => ({ jaar, maand })),
+          },
+          select: { jaar: true, maand: true, status: true },
+        })
+      : [];
+
+    if (verloningsPeriodes.some((periode) => periode.status !== "AANGEMAAKT")) {
+      return NextResponse.json(
+        {
+          fout: "Deze dienst valt in een verloningsperiode die al klaarstaat of verwerkt is. Pas eerst de verloning aan voordat je de dienst verwijdert.",
+          code: "VERLONINGSPERIODE_NIET_WIJZIGBAAR",
+        },
+        { status: 409 },
+      );
+    }
+
+    // Prisma verwijdert de gekoppelde, nog niet definitieve registraties
+    // via de bestaande cascade-relatie in dezelfde databasebewerking.
     await prisma.dienst.delete({
       where: { id },
     });
