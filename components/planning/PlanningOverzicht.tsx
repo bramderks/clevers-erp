@@ -1790,7 +1790,7 @@ export default function PlanningOverzicht({
 
     const bevestiging =
       window.confirm(
-        "Weet je zeker dat je deze dienst wilt verwijderen?",
+        "Weet je zeker dat je deze dienst wilt verwijderen? Eventuele urenregistraties die nog op ‘te controleren’ staan worden mee verwijderd. Definitieve uren en verwerkte verloningen blijven beschermd.",
       );
 
     if (!bevestiging) {
