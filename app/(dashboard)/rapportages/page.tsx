@@ -504,6 +504,7 @@ export default async function RapportagesPage({
         jaar={jaar}
         weeknummer={weeknummer}
         weekBestaat={Boolean(week)}
+        weekId={week?.id ?? null}
         weekStatus={week?.status ?? null}
         afgeslotenOp={bron.afgeslotenOp}
         omzet={bron.omzet}
