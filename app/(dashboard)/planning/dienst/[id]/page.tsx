@@ -232,6 +232,8 @@ id,
         urenregistratie: {
           select: {
             id: true,
+            status: true,
+            opmerking: true,
           },
         },
       },
@@ -588,6 +590,13 @@ HEADER
                     achternaam:
                       bezetting.medewerker.achternaam,
                     tags: [],
+                  }
+                : null,
+              urenregistratie: bezetting.urenregistratie
+                ? {
+                    id: bezetting.urenregistratie.id,
+                    status: bezetting.urenregistratie.status,
+                    opmerking: bezetting.urenregistratie.opmerking,
                   }
                 : null,
             })),
