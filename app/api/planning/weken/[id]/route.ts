@@ -127,6 +127,9 @@ export async function GET(
                       achternaam: true,
                     },
                   },
+                  urenregistratie: {
+                    select: { id: true },
+                  },
                 },
                 orderBy: {
                   aangemaaktOp: "asc",
