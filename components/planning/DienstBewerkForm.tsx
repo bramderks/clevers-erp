@@ -1820,7 +1820,7 @@ export default function DienstBewerkForm({
                           bezetting.status,
                         )}
                       </span>
-                      {medewerker && bezetting.status !== "GEWERKT" && bezetting.status !== "AFGEZEGD" && (
+                      {medewerker && (bezetting.status !== "GEWERKT" || bezetting.urenregistratie?.status === "AFGEKEURD") && bezetting.status !== "AFGEZEGD" && (
                         <button type="button" disabled={opslaanBezig} onClick={async () => {
                           setFout(null);
                           try {
