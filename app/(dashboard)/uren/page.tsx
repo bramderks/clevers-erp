@@ -282,6 +282,9 @@ async function keurUrenAf(
               organisatieId: true,
             },
           },
+          dienstBezetting: {
+            select: { dienstId: true },
+          },
         },
       },
     );
@@ -326,6 +329,8 @@ async function keurUrenAf(
 
   revalidatePath("/uren");
   revalidatePath("/dashboard");
+  revalidatePath("/planning");
+  redirect("/planning/dienst/" + registratie.dienstBezetting.dienstId + "?urenAfgekeurd=1");
 }
 
 function formatDatum(
