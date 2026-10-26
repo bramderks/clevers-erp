@@ -183,10 +183,13 @@ export default function LoonkostenRapport(p: {
       window.location.reload();
     } catch (error) {
       setMelding(error instanceof Error ? error.message : "Herberekenen mislukt.");
-    } finally {    if (!gesloten || !p.weekId || busy) return;
+    } finally {
+      setBusy(false);
+    }
+  };
 
-    setBusy(true);en en de week opnieuw afsluiten.`,
-    )) return;
+  const heropenen = async () => {
+    if (!gesloten || !p.weekId || busy) return;
 
     setBusy(true);
     setMelding("");
