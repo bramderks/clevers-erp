@@ -437,7 +437,13 @@ export async function PATCH(
 
     const alleRegistraties = await prisma.urenRegistratie.findMany({
       where: { dienstBezetting: { dienstId: id } },
-      select: { id: true, datum: true, status: true },
+      select: {
+        id: true,
+        datum: true,
+        status: true,
+        werkelijkeBegintijd: true,
+        werkelijkeEindtijd: true,
+      },
     });
 
     if (tijdenGewijzigd && alleRegistraties.some((registratie) => !["TE_CONTROLEREN", "AFGEKEURD"].includes(registratie.status))) {
@@ -447,10 +453,18 @@ export async function PATCH(
       );
     }
 
+    // Synchroniseer ook als de dienst al eerder is gewijzigd maar de
+    // gekoppelde urenregistratie nog de oude tijden bevat. In dat geval
+    // kan tijdenGewijzigd false zijn, terwijl de registratie nog achterloopt.
+    const registratieLooptAchter = (registratie: (typeof alleRegistraties)[number]) =>
+      lokaleDatumSleutel(registratie.werkelijkeBegintijd) !== lokaleDatumSleutel(begintijd) ||
+      lokaleDatumSleutel(registratie.werkelijkeEindtijd) !== lokaleDatumSleutel(eindtijd) ||
+      lokaleTijdMinuten(registratie.werkelijkeBegintijd) !== lokaleTijdMinuten(begintijd) ||
+      lokaleTijdMinuten(registratie.werkelijkeEindtijd) !== lokaleTijdMinuten(eindtijd);
+
     const bestaandeRegistraties = alleRegistraties.filter((registratie) =>
-      tijdenGewijzigd
-        ? ["TE_CONTROLEREN", "AFGEKEURD"].includes(registratie.status)
-        : registratie.status === "AFGEKEURD",
+      ["TE_CONTROLEREN", "AFGEKEURD"].includes(registratie.status) &&
+      (tijdenGewijzigd || registratieLooptAchter(registratie) || registratie.status === "AFGEKEURD"),
     );
 
     const maandSleutels = new Map<string, { jaar: number; maand: number }>();
