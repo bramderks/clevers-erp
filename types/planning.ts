@@ -82,6 +82,9 @@ export type DienstBezetting = {
 
   /** Netto daadwerkelijk geregistreerde uren voor deze dienst. */
   gewerkteUren?: number | null;
+
+  /** Aanwezig als er een gekoppelde urenregistratie bestaat. */
+  urenregistratie?: { id: string } | null;
 };
 
 export type Dienst = {

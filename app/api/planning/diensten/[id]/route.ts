@@ -6,8 +6,9 @@ import {
 } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
-import { kalenderDatumUTC, lokaleDatumSleutel, nederlandseDatumTijd, lokaleTijdMinuten } from "@/lib/planning/tijd";
+import { kalenderDatumUTC, lokaleDatumSleutel, lokaleKalenderDatumUTC, nederlandseDatumTijd, lokaleTijdMinuten } from "@/lib/planning/tijd";
 import { lokaleDagGrenzen } from "@/lib/planning/tijd";
+import { berekenGewerkteUren } from "@/lib/verloning/pauze";
 
 type RouteContext = {
   params: Promise<{
@@ -87,6 +88,9 @@ async function haalDienstOp(id: string) {
     },
     select: {
       id: true,
+      datum: true,
+      begintijd: true,
+      eindtijd: true,
 
       week: {
         select: {
@@ -426,49 +430,120 @@ export async function PATCH(
       return NextResponse.json({ fout: "isReserve moet een boolean zijn." }, { status: 400 });
     }
 
-    const bijgewerkt = await prisma.dienst.update({
-      where: { id },
-      data: {
-        ...(typeof body.isReserve === "boolean" ? { isReserve: body.isReserve } : {}),
-        datum: kalenderDatumUTC(lokaleDatumSleutel(datum)),
-        begintijd,
-        eindtijd,
-        opmerkingen,
-        tags: {
-          deleteMany: {},
-          create: dienstTags.map((tag) => ({
-            tagId: tag.tagId,
-            aantal: tag.aantal,
-          })),
+    const tijdenGewijzigd =
+      lokaleDatumSleutel(bestaand.datum) !== lokaleDatumSleutel(datum) ||
+      bestaand.begintijd.getTime() !== begintijd.getTime() ||
+      bestaand.eindtijd.getTime() !== eindtijd.getTime();
+
+    const bestaandeRegistraties = tijdenGewijzigd
+      ? await prisma.urenRegistratie.findMany({
+          where: { dienstBezetting: { dienstId: id } },
+          select: { id: true, datum: true },
+        })
+      : [];
+
+    const maandSleutels = new Map<string, { jaar: number; maand: number }>();
+    for (const registratie of bestaandeRegistraties) {
+      for (const sleutelDatum of [registratie.datum, begintijd]) {
+        const [jaar, maand] = lokaleDatumSleutel(sleutelDatum).split("-").map(Number);
+        maandSleutels.set(`${jaar}-${maand}`, { jaar, maand });
+      }
+    }
+
+    const verloningsPeriodes = maandSleutels.size > 0
+      ? await prisma.verloningsPeriode.findMany({
+          where: {
+            OR: Array.from(maandSleutels.values()).map(({ jaar, maand }) => ({ jaar, maand })),
+          },
+          select: { id: true, jaar: true, maand: true, status: true },
+        })
+      : [];
+
+    if (verloningsPeriodes.some((periode) => periode.status !== "AANGEMAAKT")) {
+      return NextResponse.json(
+        {
+          fout: "De uren van deze dienst vallen in een verloningsperiode die al klaarstaat of verwerkt is. Heropen eerst de verloning voordat je de diensttijden wijzigt.",
+          code: "VERLONINGSPERIODE_NIET_WIJZIGBAAR",
         },
-      },
-      include: {
-        week: {
-          select: {
-            id: true,
-            vestigingId: true,
+        { status: 409 },
+      );
+    }
+
+    const bijgewerkt = await prisma.$transaction(async (tx) => {
+      const dienst = await tx.dienst.update({
+        where: { id },
+        data: {
+          ...(typeof body.isReserve === "boolean" ? { isReserve: body.isReserve } : {}),
+          datum: kalenderDatumUTC(lokaleDatumSleutel(datum)),
+          begintijd,
+          eindtijd,
+          opmerkingen,
+          tags: {
+            deleteMany: {},
+            create: dienstTags.map((tag) => ({
+              tagId: tag.tagId,
+              aantal: tag.aantal,
+            })),
           },
         },
-        tags: {
-          include: { tag: true },
-          orderBy: { tag: { volgorde: "asc" } },
-        },
-        bezetting: {
-          include: {
-            medewerker: {
-              select: {
-                id: true,
-                personeelsnummer: true,
-                aanhef: true,
-                voornaam: true,
-                tussenvoegsel: true,
-                achternaam: true,
-              },
+        include: {
+          week: {
+            select: {
+              id: true,
+              vestigingId: true,
             },
           },
-          orderBy: { aangemaaktOp: "asc" },
+          tags: {
+            include: { tag: true },
+            orderBy: { tag: { volgorde: "asc" } },
+          },
+          bezetting: {
+            include: {
+              medewerker: {
+                select: {
+                  id: true,
+                  personeelsnummer: true,
+                  aanhef: true,
+                  voornaam: true,
+                  tussenvoegsel: true,
+                  achternaam: true,
+                },
+              },
+            },
+            orderBy: { aangemaaktOp: "asc" },
+          },
         },
-      },
+      });
+
+      if (tijdenGewijzigd) {
+        const berekening = berekenGewerkteUren(begintijd, eindtijd);
+        for (const registratie of bestaandeRegistraties) {
+          await tx.urenRegistratie.update({
+            where: { id: registratie.id },
+            data: {
+              datum: lokaleKalenderDatumUTC(begintijd),
+              werkelijkeBegintijd: begintijd,
+              werkelijkeEindtijd: eindtijd,
+              pauzeMinuten: berekening.pauzeMinuten,
+              gewerkteUren: berekening.gewerkteUren,
+              status: "TE_CONTROLEREN",
+              gecontroleerdDoorId: null,
+              gecontroleerdOp: null,
+            },
+          });
+        }
+      }
+
+      const conceptPeriodeIds = verloningsPeriodes
+        .filter((periode) => periode.status === "AANGEMAAKT")
+        .map((periode) => periode.id);
+      if (conceptPeriodeIds.length > 0) {
+        await tx.verloningsRegel.deleteMany({
+          where: { verloningsPeriodeId: { in: conceptPeriodeIds } },
+        });
+      }
+
+      return dienst;
     });
 
     return NextResponse.json(bijgewerkt);
@@ -537,35 +612,72 @@ export async function DELETE(
       );
     }
 
-    // DienstBezetting en UrenRegistratie zijn cascade-gerelateerd.
-    // Bescherm daarom historische uren en gecontroleerde diensten tegen
-    // onbedoeld verwijderen via de planningsroute.
-    const historischeRegistraties = await prisma.dienstBezetting.findMany({
+    // Bij het afsluiten van een planningweek worden automatisch
+    // urenregistraties met status TE_CONTROLEREN aangemaakt. Na expliciet
+    // heropenen moet een eigenaar een dienst kunnen verwijderen zolang die
+    // uren nog niet definitief zijn en de maandverloning nog concept is.
+    // Definitieve/afgekeurde registraties en verloningen die al klaarstaan
+    // of verwerkt zijn blijven beschermd.
+    const bezettingen = await prisma.dienstBezetting.findMany({
       where: { dienstId: id },
       select: {
         status: true,
         urenregistratie: {
-          select: { id: true },
+          select: { id: true, status: true, datum: true },
         },
       },
     });
 
-    if (
-      historischeRegistraties.some(
-        (bezetting) =>
-          bezetting.status === "GEWERKT" ||
-          bezetting.urenregistratie !== null,
-      )
-    ) {
+    const registraties = bezettingen
+      .map((bezetting) => bezetting.urenregistratie)
+      .filter((registratie): registratie is NonNullable<typeof registratie> => registratie !== null);
+
+    const heeftGewerkteDienstZonderRegistratie = bezettingen.some(
+      (bezetting) => bezetting.status === "GEWERKT" && bezetting.urenregistratie === null,
+    );
+    const heeftNietConceptRegistratie = registraties.some(
+      (registratie) => registratie.status !== "TE_CONTROLEREN",
+    );
+
+    if (heeftGewerkteDienstZonderRegistratie || heeftNietConceptRegistratie) {
       return NextResponse.json(
         {
-          fout: "Deze dienst kan niet worden verwijderd omdat er gewerkte uren of een urenregistratie aan gekoppeld is.",
-          code: "DIENST_HEEFT_URENREGISTRATIE",
+          fout: "Deze dienst heeft uren die al definitief zijn, zijn afgekeurd of niet veilig automatisch kunnen worden verwijderd. Controleer eerst de urenregistratie.",
+          code: "DIENST_HEEFT_DEFINITIEVE_UREN",
         },
         { status: 409 },
       );
     }
 
+    const maandSleutels = Array.from(new Map(
+      registraties.map((registratie) => {
+        const jaar = registratie.datum.getUTCFullYear();
+        const maand = registratie.datum.getUTCMonth() + 1;
+        return [`${jaar}-${maand}`, { jaar, maand }];
+      }),
+    ).values());
+
+    const verloningsPeriodes = maandSleutels.length > 0
+      ? await prisma.verloningsPeriode.findMany({
+          where: {
+            OR: maandSleutels.map(({ jaar, maand }) => ({ jaar, maand })),
+          },
+          select: { jaar: true, maand: true, status: true },
+        })
+      : [];
+
+    if (verloningsPeriodes.some((periode) => periode.status !== "AANGEMAAKT")) {
+      return NextResponse.json(
+        {
+          fout: "Deze dienst valt in een verloningsperiode die al klaarstaat of verwerkt is. Pas eerst de verloning aan voordat je de dienst verwijdert.",
+          code: "VERLONINGSPERIODE_NIET_WIJZIGBAAR",
+        },
+        { status: 409 },
+      );
+    }
+
+    // Prisma verwijdert de gekoppelde, nog niet definitieve registraties
+    // via de bestaande cascade-relatie in dezelfde databasebewerking.
     await prisma.dienst.delete({
       where: { id },
     });

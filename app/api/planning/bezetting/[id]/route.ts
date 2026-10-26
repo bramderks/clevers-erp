@@ -7,7 +7,8 @@ import {
 } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
-import { lokaleDagGrenzen } from "@/lib/planning/tijd";
+import { lokaleDagGrenzen, lokaleKalenderDatumUTC } from "@/lib/planning/tijd";
+import { berekenGewerkteUren } from "@/lib/verloning/pauze";
 
 const TOEGESTANE_STATUSSEN = [
   "OPEN",
@@ -41,6 +42,9 @@ async function haalBezettingOp(
       status: true,
       statusVoorZiekmelding: true,
       ziekgemeldOp: true,
+      urenregistratie: {
+        select: { id: true },
+      },
 
       dienst: {
         select: {
@@ -223,17 +227,60 @@ export async function PATCH(
       );
     }
 
+    // Een bezetting met urenregistratie wordt alleen via een expliciete
+    // eigenaarshandeling heringedeeld. De gekoppelde urenregistratie volgt
+    // de nieuwe medewerker en moet daarna opnieuw worden gecontroleerd.
+    const heeftUrenregistratie =
+      bestaandeBezetting.urenregistratie !== null;
+
+    const isHistorischeHerindeling =
+      (bestaandeBezetting.status === "GEWERKT" || heeftUrenregistratie) &&
+      typeof body.medewerkerId === "string" &&
+      body.medewerkerId.length > 0 &&
+      Object.keys(body).every((key) => key === "medewerkerId");
+
     if (
-      bestaandeBezetting.status ===
-      "GEWERKT"
+      (bestaandeBezetting.status === "GEWERKT" || heeftUrenregistratie) &&
+      !isHistorischeHerindeling
     ) {
       return NextResponse.json(
         {
           fout:
-            "Deze bezetting kan niet meer worden gewijzigd omdat de dienst als gewerkt is geregistreerd.",
+            "Een gewerkte dienst kan alleen opnieuw worden toegewezen aan een andere medewerker. De historische urenregistratie blijft bij de oorspronkelijke medewerker.",
+          code: "GEWERKTE_DIENST_HISTORISCHE_UREN",
         },
-        { status: 400 },
+        { status: 409 },
       );
+    }
+
+    let conceptVerloningsPeriodeId: string | null = null;
+    if (
+      isHistorischeHerindeling &&
+      heeftUrenregistratie &&
+      body.medewerkerId !== bestaandeBezetting.medewerkerId
+    ) {
+      const registratieVoorControle = await prisma.urenRegistratie.findUnique({
+        where: { dienstBezettingId: id },
+        select: { datum: true },
+      });
+      if (registratieVoorControle) {
+        const jaar = registratieVoorControle.datum.getUTCFullYear();
+        const maand = registratieVoorControle.datum.getUTCMonth() + 1;
+        const periode = await prisma.verloningsPeriode.findUnique({
+          where: { jaar_maand: { jaar, maand } },
+          select: { id: true, status: true },
+        });
+        if (periode && periode.status !== "AANGEMAAKT") {
+          return NextResponse.json(
+            {
+              fout: "Deze uren vallen in een verloningsperiode die al klaarstaat of verwerkt is. Heropen eerst de verloning voordat je de medewerker wijzigt.",
+              code: "VERLONINGSPERIODE_NIET_WIJZIGBAAR",
+            },
+            { status: 409 },
+          );
+        }
+        conceptVerloningsPeriodeId = periode?.id ?? null;
+      }
     }
 
     const data: {
@@ -455,11 +502,9 @@ export async function PATCH(
       );
     }
 
-    const bezetting =
-      await prisma.dienstBezetting.update({
-        where: {
-          id,
-        },
+    const bezetting = await prisma.$transaction(async (tx) => {
+      const bijgewerkt = await tx.dienstBezetting.update({
+        where: { id },
         data,
         include: {
           medewerker: {
@@ -474,6 +519,55 @@ export async function PATCH(
           },
         },
       });
+
+      // Bij een eigenaarshandeling op een gewerkte dienst of een bezetting
+      // met gekoppelde urenregistratie moet de urenregistratie dezelfde
+      // medewerker volgen. Maak de registratie
+      // opnieuw controleerbaar en herbereken tijden/pauze/uren vanuit de
+      // dienst; zo kan oude, goedgekeurde verloning niet ongemerkt blijven staan.
+      if (
+        isHistorischeHerindeling &&
+        heeftUrenregistratie &&
+        typeof body.medewerkerId === "string" &&
+        body.medewerkerId !== bestaandeBezetting.medewerkerId
+      ) {
+        const registratie = await tx.urenRegistratie.findUnique({
+          where: { dienstBezettingId: id },
+          select: { id: true },
+        });
+
+        if (registratie) {
+          const berekening = berekenGewerkteUren(
+            bestaandeBezetting.dienst.begintijd,
+            bestaandeBezetting.dienst.eindtijd,
+          );
+
+          await tx.urenRegistratie.update({
+            where: { id: registratie.id },
+            data: {
+              medewerkerId: body.medewerkerId,
+              vestigingId,
+              datum: lokaleKalenderDatumUTC(bestaandeBezetting.dienst.begintijd),
+              werkelijkeBegintijd: bestaandeBezetting.dienst.begintijd,
+              werkelijkeEindtijd: bestaandeBezetting.dienst.eindtijd,
+              pauzeMinuten: berekening.pauzeMinuten,
+              gewerkteUren: berekening.gewerkteUren,
+              status: "TE_CONTROLEREN",
+              gecontroleerdDoorId: null,
+              gecontroleerdOp: null,
+            },
+          });
+
+          if (conceptVerloningsPeriodeId) {
+            await tx.verloningsRegel.deleteMany({
+              where: { verloningsPeriodeId: conceptVerloningsPeriodeId },
+            });
+          }
+        }
+      }
+
+      return bijgewerkt;
+    });
 
     if (data.status === "ZIEK_GEMELD") {
       await prisma.ruilverzoek.updateMany({

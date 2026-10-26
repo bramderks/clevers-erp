@@ -638,7 +638,7 @@
 
       const bevestiging =
         window.confirm(
-          "Deze dienst verwijderen?",
+          "Deze dienst verwijderen? Eventuele urenregistraties die nog op ‘te controleren’ staan worden mee verwijderd. Definitieve uren en verwerkte verloningen blijven beschermd.",
         );
 
       if (!bevestiging) {

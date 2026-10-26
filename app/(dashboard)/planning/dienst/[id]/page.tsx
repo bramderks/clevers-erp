@@ -227,6 +227,13 @@ id,
             achternaam: true,
           },
         },
+        // Nodig om te voorkomen dat het formulier een bezetting met
+        // gekoppelde urenregistratie ten onrechte als verwijderbaar toont.
+        urenregistratie: {
+          select: {
+            id: true,
+          },
+        },
       },
 
       orderBy: {

@@ -1281,26 +1281,40 @@ export default function DienstBewerkForm({
       setFout(null);
       setSucces(null);
 
-      const response =
-        await fetch(
-          "/api/planning/bezetting",
+      const bezettingMetRegistratie = dienst.bezetting.find(
+        (bezetting) =>
+          bezetting.status === "GEWERKT" ||
+          bezetting.urenregistratie != null,
+      );
+
+      let response: Response;
+      if (bezettingMetRegistratie) {
+        const akkoord = window.confirm(
+          "Deze dienst heeft een urenregistratie. De registratie wordt aan de nieuwe medewerker gekoppeld en teruggezet op 'te controleren'. De eigenaar moet de uren opnieuw goedkeuren voordat ze worden meegenomen in de verloning. Doorgaan?",
+        );
+        if (!akkoord) return;
+
+        response = await fetch(
+          `/api/planning/bezetting/${encodeURIComponent(bezettingMetRegistratie.id)}`,
           {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
             credentials: "include",
-
-            body: JSON.stringify({
-              dienstId: dienst.id,
-              medewerkerId,
-              status: "BEVESTIGD",
-            }),
+            body: JSON.stringify({ medewerkerId }),
           },
         );
+      } else {
+        response = await fetch("/api/planning/bezetting", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            dienstId: dienst.id,
+            medewerkerId,
+            status: "BEVESTIGD",
+          }),
+        });
+      }
 
       const data: unknown =
         await response.json();
@@ -1315,7 +1329,9 @@ export default function DienstBewerkForm({
       }
 
       setSucces(
-        "Medewerker direct bevestigd aan de dienst.",
+        bezettingMetRegistratie
+          ? "Medewerker gewijzigd. De urenregistratie volgt de nieuwe medewerker en staat weer op 'te controleren'."
+          : "Medewerker direct bevestigd aan de dienst.",
       );
 
       onGewijzigd?.();
@@ -1822,7 +1838,8 @@ export default function DienstBewerkForm({
                     {bezetting.status !==
                       "GEWERKT" &&
                     bezetting.status !==
-                      "AFGEZEGD" && (
+                      "AFGEZEGD" &&
+                    bezetting.urenregistratie == null && (
                       <button
                         type="button"
                         onClick={() =>

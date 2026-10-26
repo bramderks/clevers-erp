@@ -449,20 +449,9 @@ export const dienstService = {
       id,
     );
 
-    const heeftGewerkteBezetting =
-      bestaandeDienst.bezetting.some(
-        (bezetting) =>
-          bezetting.status ===
-          "GEWERKT",
-      );
-
-    if (
-      heeftGewerkteBezetting
-    ) {
-      throw new Error(
-        "Deze dienst kan niet meer worden gewijzigd omdat de dienst als gewerkt is geregistreerd.",
-      );
-    }
+    // De planning mag na registratie nog worden gecorrigeerd.
+    // UrenRegistratie bewaart de werkelijk gewerkte tijden en wordt
+    // hier bewust niet aangepast. Verwijderen blijft apart beschermd.
 
     return dienstRepository.update(
       id,

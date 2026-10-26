@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, Lock, Users, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, Lock, Unlock, Users, X } from "lucide-react";
 import { formatDienstDatum } from "@/lib/planning/tijd";
 
 type Vestiging = { id: string; naam: string };
@@ -46,6 +46,7 @@ export default function LoonkostenRapport(p: {
   jaar: number;
   weeknummer: number;
   weekBestaat: boolean;
+  weekId: string | null;
   weekStatus: string | null;
   afgeslotenOp: string | null;
   omzet: number;
@@ -181,6 +182,32 @@ export default function LoonkostenRapport(p: {
       window.location.reload();
     } catch (error) {
       setMelding(error instanceof Error ? error.message : "Herberekenen mislukt.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const heropenen = async () => {
+    if (!gesloten || !p.weekId) return;
+    if (!window.confirm(
+      `Week ${p.weeknummer} · ${p.jaar} heropenen? Nog te controleren urenregistraties die bij het afsluiten zijn aangemaakt, worden teruggedraaid. Definitieve uren en verwerkte verloningen blijven beschermd. Je kunt de planning daarna wijzigen en de week opnieuw afsluiten.`,
+    )) return;
+
+    setBusy(true);
+    setMelding("");
+    try {
+      const response = await fetch(`/api/planning/weken/${encodeURIComponent(p.weekId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "GEPUBLICEERD" }),
+      });
+      const resultaat = await response.json();
+      if (!response.ok) {
+        throw new Error(resultaat.error || resultaat.fout || "Heropenen mislukt.");
+      }
+      window.location.reload();
+    } catch (error) {
+      setMelding(error instanceof Error ? error.message : "Heropenen mislukt.");
     } finally {
       setBusy(false);
     }
@@ -455,16 +482,21 @@ export default function LoonkostenRapport(p: {
       )}
 
       {gesloten ? (
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-100 p-4 text-sm text-slate-700">
+        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-100 p-4 text-sm text-slate-700 lg:flex-row lg:items-center">
           <Lock size={19} className="shrink-0" />
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="font-semibold">Week afgesloten</p>
             <p className="mt-0.5">De loonkostenrapportage is definitief vastgelegd op {new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium", timeStyle: "short" }).format(new Date(p.afgeslotenOp!))}.</p>
-            <p className="mt-1 text-xs text-slate-500">De snapshot kan hieronder eenmalig opnieuw worden berekend met de huidige centrale pauze- en loonregels.</p>
+            <p className="mt-1 text-xs text-slate-500">Heropen de week om de planning te wijzigen. De actieve snapshot wordt dan buiten gebruik gezet; de afsluitregistraties die nog gecontroleerd moeten worden, worden teruggedraaid.</p>
           </div>
-          <button onClick={herberekenen} disabled={busy} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">
-            {busy ? "Herberekenen..." : "Snapshot herstellen"}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={heropenen} disabled={busy || !p.weekId} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40">
+              <Unlock size={17} /> {busy ? "Bezig..." : "Week heropenen"}
+            </button>
+            <button onClick={herberekenen} disabled={busy} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">
+              {busy ? "Bezig..." : "Snapshot herberekenen"}
+            </button>
+          </div>
         </div>
       ) : (
         <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">

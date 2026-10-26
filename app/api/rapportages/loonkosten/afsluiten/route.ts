@@ -243,6 +243,7 @@ export async function POST(request: NextRequest) {
     };
 
     await prisma.$transaction(async (tx) => {
+      const aangemaakteRegistratieIds: string[] = [];
       // Het afsluiten van een planningweek is het controlemoment voor de
       // geplande uren. Maak daarom voor iedere bezette dienst een
       // urenregistratie aan als die nog niet bestaat. Bestaande registraties
@@ -272,8 +273,10 @@ export async function POST(request: NextRequest) {
           where: { dienstBezettingId: registratie.dienstBezettingId },
           select: { status: true },
         });
+        // Een bestaande registratie is niet door deze afsluiting aangemaakt;
+        // laat die intact en neem haar niet op in de rollback-lijst.
         if (bestaande) continue;
-        await tx.urenRegistratie.upsert({
+        const aangemaakt = await tx.urenRegistratie.upsert({
           where: { dienstBezettingId: registratie.dienstBezettingId },
           create: registratie,
           update: {
@@ -290,6 +293,7 @@ export async function POST(request: NextRequest) {
             gecontroleerdOp: null,
           },
         });
+        aangemaakteRegistratieIds.push(aangemaakt.id);
       }
 
       await tx.loonkostenWeek.upsert({
@@ -301,7 +305,10 @@ export async function POST(request: NextRequest) {
           totaalKosten,
           gemiddeldUurloon,
           percentageOmzet,
-          snapshot,
+          snapshot: {
+            ...snapshot,
+            gegenereerdeUrenregistratieIds: aangemaakteRegistratieIds,
+          },
           afgeslotenOp: new Date(),
           afgeslotenDoorId: gebruiker.id,
         },
@@ -313,7 +320,10 @@ export async function POST(request: NextRequest) {
           totaalKosten,
           gemiddeldUurloon,
           percentageOmzet,
-          snapshot,
+          snapshot: {
+            ...snapshot,
+            gegenereerdeUrenregistratieIds: aangemaakteRegistratieIds,
+          },
           afgeslotenOp: new Date(),
           afgeslotenDoorId: gebruiker.id,
         },
