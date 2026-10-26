@@ -43,7 +43,7 @@ async function haalBezettingOp(
       statusVoorZiekmelding: true,
       ziekgemeldOp: true,
       urenregistratie: {
-        select: { id: true },
+        select: { id: true, status: true },
       },
 
       dienst: {
@@ -239,9 +239,15 @@ export async function PATCH(
       body.medewerkerId.length > 0 &&
       Object.keys(body).every((key) => key === "medewerkerId");
 
+    const isAfgekeurdeZiekmelding =
+      bestaandeBezetting.urenregistratie?.status === "AFGEKEURD" &&
+      body.status === "ZIEK_GEMELD" &&
+      Object.keys(body).every((key) => key === "status");
+
     if (
       (bestaandeBezetting.status === "GEWERKT" || heeftUrenregistratie) &&
-      !isHistorischeHerindeling
+      !isHistorischeHerindeling &&
+      !isAfgekeurdeZiekmelding
     ) {
       return NextResponse.json(
         {
@@ -520,6 +526,12 @@ export async function PATCH(
         },
       });
 
+      if (isAfgekeurdeZiekmelding && bestaandeBezetting.urenregistratie) {
+        await tx.urenRegistratie.delete({
+          where: { id: bestaandeBezetting.urenregistratie.id },
+        });
+      }
+
       // Bij een eigenaarshandeling op een gewerkte dienst of een bezetting
       // met gekoppelde urenregistratie moet de urenregistratie dezelfde
       // medewerker volgen. Maak de registratie
@@ -676,9 +688,14 @@ export async function DELETE(
       );
     }
 
+    const gekoppeldeRegistratie = await prisma.urenRegistratie.findUnique({
+      where: { dienstBezettingId: id },
+      select: { id: true, status: true },
+    });
+
     if (
-      bestaandeBezetting.status ===
-      "GEWERKT"
+      bestaandeBezetting.status === "GEWERKT" &&
+      gekoppeldeRegistratie?.status !== "AFGEKEURD"
     ) {
       return NextResponse.json(
         {
@@ -689,12 +706,7 @@ export async function DELETE(
       );
     }
 
-    const urenregistratie = await prisma.urenRegistratie.findUnique({
-      where: { dienstBezettingId: id },
-      select: { id: true },
-    });
-
-    if (urenregistratie) {
+    if (gekoppeldeRegistratie && gekoppeldeRegistratie.status !== "AFGEKEURD") {
       return NextResponse.json(
         {
           fout: "Deze bezetting kan niet worden verwijderd omdat er een urenregistratie aan gekoppeld is.",
@@ -704,10 +716,11 @@ export async function DELETE(
       );
     }
 
-    await prisma.dienstBezetting.delete({
-      where: {
-        id,
-      },
+    await prisma.$transaction(async (tx) => {
+      if (gekoppeldeRegistratie?.status === "AFGEKEURD") {
+        await tx.urenRegistratie.delete({ where: { id: gekoppeldeRegistratie.id } });
+      }
+      await tx.dienstBezetting.delete({ where: { id } });
     });
 
     return NextResponse.json({
