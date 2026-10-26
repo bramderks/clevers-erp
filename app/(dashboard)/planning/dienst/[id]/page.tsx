@@ -20,6 +20,9 @@ type RouteProps = {
 params: Promise<{
 id: string;
 }>;
+searchParams: Promise<{
+  urenAfgekeurd?: string;
+}>;
 };
 
 function formatTime(date: Date) {
@@ -92,6 +95,8 @@ redirect("/login");
 }
 
 const { id } = await params;
+const query = await searchParams;
+const terugNaarUrenControle = query.urenAfgekeurd === "1";
 
 if (!id) {
 return (
@@ -604,6 +609,7 @@ HEADER
           vestigingId={
             dienst.week.vestigingId
           }
+          terugNaarUrenControle={terugNaarUrenControle}
         />
       </div>
     </section>
