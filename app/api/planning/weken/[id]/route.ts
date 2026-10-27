@@ -438,17 +438,25 @@ export async function PATCH(
           (registratie) => [registratie.id, registratie],
         ),
       );
-      const terugTeDraaien = Array.from(registratiesPerId.values());
+      const gekoppeldeRegistraties = Array.from(registratiesPerId.values());
 
-      if (terugTeDraaien.some((registratie) => registratie.status !== "TE_CONTROLEREN")) {
+      // Definitieve uren mogen nooit automatisch worden teruggedraaid.
+      // Afgekeurde uren zijn juist correcties in behandeling: behoud ze bij
+      // het heropenen, zodat de eigenaar de dienst kan corrigeren en de
+      // gekoppelde registratie daarna opnieuw gesynchroniseerd kan worden.
+      if (gekoppeldeRegistraties.some((registratie) => registratie.status === "DEFINITIEF")) {
         return NextResponse.json(
           {
-            fout: "Deze week bevat urenregistraties die inmiddels definitief zijn of afgekeurd. Controleer die registraties eerst; ze worden niet automatisch teruggedraaid.",
-            code: "WEEK_HEEFT_BEVESTIGDE_UREN",
+            fout: "Deze week bevat definitief goedgekeurde uren. Heropenen zou historische uren aantasten; corrigeer die uren via de urenregistratie/verloning.",
+            code: "WEEK_HEEFT_DEFINITIEVE_UREN",
           },
           { status: 409 },
         );
       }
+
+      const terugTeDraaien = gekoppeldeRegistraties.filter(
+        (registratie) => registratie.status === "TE_CONTROLEREN",
+      );
 
       const maanden = Array.from(new Map(
         terugTeDraaien.map((registratie) => {
