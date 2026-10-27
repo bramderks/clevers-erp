@@ -1423,11 +1423,15 @@ export default function PlanningOverzicht({
       onGewijzigd?.();
       router.refresh();
     } catch (error) {
-      setFout(
+      const bericht =
         error instanceof Error
           ? error.message
-          : "De planning kon niet worden heropend.",
-      );
+          : "De planning kon niet worden heropend.";
+      setFout(bericht);
+      // PlanningOverzicht toont foutmeldingen niet overal inline. Geef de
+      // reden daarom direct zichtbaar terug, zodat het niet lijkt alsof de
+      // knop niets doet.
+      window.alert(bericht);
     } finally {
       setPublicerenBezig(false);
     }
