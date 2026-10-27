@@ -440,20 +440,9 @@ export async function PATCH(
       );
       const gekoppeldeRegistraties = Array.from(registratiesPerId.values());
 
-      // Definitieve uren mogen nooit automatisch worden teruggedraaid.
-      // Afgekeurde uren zijn juist correcties in behandeling: behoud ze bij
-      // het heropenen, zodat de eigenaar de dienst kan corrigeren en de
-      // gekoppelde registratie daarna opnieuw gesynchroniseerd kan worden.
-      if (gekoppeldeRegistraties.some((registratie) => registratie.status === "DEFINITIEF")) {
-        return NextResponse.json(
-          {
-            fout: "Deze week bevat definitief goedgekeurde uren. Heropenen zou historische uren aantasten; corrigeer die uren via de urenregistratie/verloning.",
-            code: "WEEK_HEEFT_DEFINITIEVE_UREN",
-          },
-          { status: 409 },
-        );
-      }
-
+      // Heropenen wijzigt alleen de planningstatus en draait uitsluitend
+      // voorlopige registraties terug. Afgekeurde en definitieve registraties
+      // blijven bestaan; definitieve uren worden nooit aangepast of verwijderd.
       const terugTeDraaien = gekoppeldeRegistraties.filter(
         (registratie) => registratie.status === "TE_CONTROLEREN",
       );
