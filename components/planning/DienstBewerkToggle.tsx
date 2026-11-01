@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import DienstBewerkForm from "@/components/planning/DienstBewerkForm";
 
@@ -17,6 +18,7 @@ export default function DienstBewerkToggle({
   vestigingId,
   terugNaarUrenControle = false,
 }: DienstBewerkToggleProps) {
+  const router = useRouter();
   const [bewerken, setBewerken] =
     useState(false);
 
@@ -65,9 +67,9 @@ export default function DienstBewerkToggle({
         vestigingId={vestigingId}
         onGewijzigd={() => {
           if (terugNaarUrenControle) {
-            window.location.assign("/uren");
+            router.push("/uren");
           } else {
-            window.location.reload();
+            router.refresh();
           }
         }}
       />
