@@ -69,6 +69,7 @@ export default async function AppPlanningPage() {
             begintijd: true,
             eindtijd: true,
             opmerkingen: true,
+            isReserve: true,
             week: {
               select: {
                 vestiging: {
@@ -132,9 +133,16 @@ export default async function AppPlanningPage() {
               key={bezetting.id}
               className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200"
             >
-              <p className="font-bold capitalize text-slate-900">
-                {formatDatum(bezetting.dienst.datum)}
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-bold capitalize text-slate-900">
+                  {formatDatum(bezetting.dienst.datum)}
+                </p>
+                {bezetting.dienst.isReserve && (
+                  <span className="rounded-full bg-sky-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-sky-800">
+                    Reservedienst
+                  </span>
+                )}
+              </div>
               <p className="mt-1 text-sm text-slate-500">
                 {bezetting.dienst.week.vestiging.naam}
               </p>

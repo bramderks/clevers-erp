@@ -149,6 +149,7 @@ const RUIL_SELECT = {
           begintijd: true,
           eindtijd: true,
           opmerkingen: true,
+          isReserve: true,
 
           week: {
             select: {
@@ -213,6 +214,7 @@ async function haalBezettingOp(
           datum: true,
           begintijd: true,
           eindtijd: true,
+          isReserve: true,
 
           tags: {
             select: {

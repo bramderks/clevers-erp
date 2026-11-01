@@ -19,6 +19,7 @@ type Ruil = {
       datum: string;
       begintijd: string;
       eindtijd: string;
+      isReserve: boolean;
       week: { vestiging: { naam: string } };
     };
   };
@@ -209,9 +210,19 @@ export default function AppRuilenPage() {
           ) : (
             items.map((item) => (
               <section key={item.id} className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                <p className="font-bold capitalize text-slate-900">{fmtDatum(item.dienstBezetting.dienst.datum)}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-bold capitalize text-slate-900">{fmtDatum(item.dienstBezetting.dienst.datum)}</p>
+                  {item.dienstBezetting.dienst.isReserve && (
+                    <span className="rounded-full bg-sky-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-sky-800">
+                      Reservedienst
+                    </span>
+                  )}
+                </div>
                 <p className="mt-1 text-sm text-slate-500">
                   {item.dienstBezetting.dienst.week.vestiging.naam} · {naam(item.aanvrager)} → {naam(item.ruilMedewerker)}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-slate-700">
+                  {new Intl.DateTimeFormat("nl-NL", { hour: "2-digit", minute: "2-digit" }).format(new Date(item.dienstBezetting.dienst.begintijd))} – {new Intl.DateTimeFormat("nl-NL", { hour: "2-digit", minute: "2-digit" }).format(new Date(item.dienstBezetting.dienst.eindtijd))}
                 </p>
                 <div className="mt-3 rounded-2xl bg-slate-50 p-3">
                   <p className="text-sm font-semibold text-slate-700">Status: {item.status}</p>
