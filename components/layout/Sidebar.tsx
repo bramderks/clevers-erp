@@ -45,7 +45,8 @@ export default async function Sidebar() {
     actieveRelaties.some(
       (relatie) =>
         relatie.rol?.naam
-          ?.toLowerCase() ===
+          ?.trim()
+          .toLowerCase() ===
         "eigenaar",
     );
 
