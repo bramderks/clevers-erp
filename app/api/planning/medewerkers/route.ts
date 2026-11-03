@@ -351,12 +351,19 @@ export async function GET(
     const seizoenEindeExclusief = new Date(seizoenEinde);
     seizoenEindeExclusief.setUTCDate(seizoenEindeExclusief.getUTCDate() + 1);
     const contractPerioden = new Map(medewerkers.map((medewerker) => [medewerker.id, bepaalContractPeriode(medewerker.datumInDienst ?? null, seizoenStart, vandaag)]));
-    const contractStartTimestamps = Array.from(contractPerioden.values()).map((periode) => periode.start.getTime());
+    const huidigJaarStart = new Date(Date.UTC(jaar, 0, 1));
+    const huidigJaarEinde = new Date(Date.UTC(jaar + 1, 0, 1));
+    const contractStartTimestamps = [huidigJaarStart.getTime(), ...Array.from(contractPerioden.values()).map((periode) => periode.start.getTime())];
     for (const medewerker of medewerkers) {
       if (medewerker.contractUrenStartPeildatum) contractStartTimestamps.push(kalenderDatumUTC(lokaleDatumSleutel(medewerker.contractUrenStartPeildatum)).getTime());
     }
     const globaleContractStart = new Date(Math.min(...contractStartTimestamps));
-    const globaleContractEinde = new Date(Math.max(...Array.from(contractPerioden.values()).map((periode) => periode.einde.getTime())));
+    // De contracturenpagina toont de jaarbalans per kalenderjaar. Zorg dat de
+    // planning alle uren en diensten tot en met het einde van datzelfde jaar kan meenemen.
+    const globaleContractEinde = new Date(Math.max(
+      huidigJaarEinde.getTime() - 86400000,
+      ...Array.from(contractPerioden.values()).map((periode) => periode.einde.getTime()),
+    ));
     const globaleContractEindeExclusief = new Date(globaleContractEinde);
     globaleContractEindeExclusief.setUTCDate(globaleContractEindeExclusief.getUTCDate() + 1);
     const medewerkerIds = medewerkers.map((medewerker) => medewerker.id);
@@ -401,17 +408,45 @@ export async function GET(
     for (const medewerker of medewerkers) {
       if (medewerker.contractType !== "VAST") continue;
       const eigenVestigingen = new Set(medewerker.vestigingen.map((item) => item.vestigingId));
-      const contractPeriode = contractPerioden.get(medewerker.id)!;
-      const gewerkteUren = seizoenRegistraties.filter((item) => item.medewerkerId === medewerker.id && eigenVestigingen.has(item.vestigingId) && item.datum >= contractPeriode.start && item.datum <= contractPeriode.einde).reduce((som, item) => som + (item.werkelijkeBegintijd && item.werkelijkeEindtijd ? (uniekeUrenPerRegistratie.get(item.id) ?? 0) : Number(item.gewerkteUren)), 0);
-      const eigenBezettingen = seizoenBezettingen.filter((item) => item.medewerkerId === medewerker.id && eigenVestigingen.has(item.dienst.week.vestigingId) && item.dienst.datum >= contractPeriode.start && item.dienst.datum <= contractPeriode.einde);
-      // Contracturen tellen unieke werktijd per medewerker en dag. Meerdere functies
-      // of vestigingen met overlappende tijden mogen het saldo niet dubbel verlagen.
+
+      // De balans moet exact dezelfde basis volgen als het tabblad Contracturen:
+      // huidig kalenderjaar, met het handmatige startsaldo alleen in het jaar van de peildatum.
+      const startSaldoUren = medewerker.contractUrenStartSaldo == null ? null : Number(medewerker.contractUrenStartSaldo);
+      const startSaldoPeildatum = medewerker.contractUrenStartPeildatum
+        ? kalenderDatumUTC(lokaleDatumSleutel(medewerker.contractUrenStartPeildatum))
+        : null;
+      const isStartSaldoJaar = startSaldoUren !== null
+        && startSaldoPeildatum !== null
+        && startSaldoPeildatum.getUTCFullYear() === jaar;
+
+      const eigenJaarRegistraties = seizoenRegistraties.filter((item) =>
+        item.medewerkerId === medewerker.id
+        && eigenVestigingen.has(item.vestigingId)
+        && item.datum >= huidigJaarStart
+        && item.datum < huidigJaarEinde
+      );
+      const urenRegistratie = (item: (typeof seizoenRegistraties)[number]) =>
+        item.werkelijkeBegintijd && item.werkelijkeEindtijd
+          ? (uniekeUrenPerRegistratie.get(item.id) ?? 0)
+          : Number(item.gewerkteUren);
+      const gewerkteUren = eigenJaarRegistraties.reduce((som, item) => som + urenRegistratie(item), 0);
+      const gewerkteUrenSindsStartSaldo = isStartSaldoJaar
+        ? eigenJaarRegistraties
+            .filter((item) => item.datum >= startSaldoPeildatum!)
+            .reduce((som, item) => som + urenRegistratie(item), 0)
+        : gewerkteUren;
+
+      const eigenBezettingen = seizoenBezettingen.filter((item) =>
+        item.medewerkerId === medewerker.id
+        && eigenVestigingen.has(item.dienst.week.vestigingId)
+        && item.dienst.datum >= huidigJaarStart
+        && item.dienst.datum < huidigJaarEinde
+      );
+      // Overlappende diensten van dezelfde medewerker tellen maar één keer mee.
       const uniekeIngeplandeUren = berekenUniekeUrenPerInterval(
         eigenBezettingen.map((item, index) => ({
           id: `${medewerker.id}:dienst:${index}`,
           medewerkerId: item.medewerkerId ?? medewerker.id,
-          // Eén gezamenlijke sleutel zorgt dat overlap ook over vestigingen heen
-          // maar één keer meetelt voor het contracturensaldo.
           vestigingId: "contracturen",
           datum: item.dienst.datum,
           begintijd: item.dienst.begintijd,
@@ -424,33 +459,27 @@ export async function GET(
         })),
         berekenGewerkteUren,
       );
+      const urenDienst = (item: (typeof eigenBezettingen)[number]) =>
+        uniekeIngeplandeUren.get(`${medewerker.id}:dienst:${eigenBezettingen.indexOf(item)}`) ?? 0;
       const liveDezeWeek = eigenBezettingen
         .filter((item) => item.dienst.datum >= weekStart && item.dienst.datum < volgendeWeek)
-        .reduce((som, item) => som + (uniekeIngeplandeUren.get(`${medewerker.id}:dienst:${eigenBezettingen.indexOf(item)}`) ?? 0), 0);
+        .reduce((som, item) => som + urenDienst(item), 0);
       const liveRestSeizoen = eigenBezettingen
         .filter((item) => item.dienst.datum >= vandaag)
-        .reduce((som, item) => som + (uniekeIngeplandeUren.get(`${medewerker.id}:dienst:${eigenBezettingen.indexOf(item)}`) ?? 0), 0);
+        .reduce((som, item) => som + urenDienst(item), 0);
+
       const contractUren = medewerker.contractUren == null ? null : Number(medewerker.contractUren);
       const jaarUrenNorm = medewerker.jaarUrenNorm == null ? null : Number(medewerker.jaarUrenNorm);
       const verlofUrenStart = medewerker.verlofUrenStart == null ? null : Number(medewerker.verlofUrenStart);
       const verlofUrenOpgenomen = medewerker.verlofUrenOpgenomen == null ? 0 : Number(medewerker.verlofUrenOpgenomen);
-      const startSaldoUren = medewerker.contractUrenStartSaldo == null ? null : Number(medewerker.contractUrenStartSaldo);
-      const startSaldoPeildatum = medewerker.contractUrenStartPeildatum
-        ? kalenderDatumUTC(lokaleDatumSleutel(medewerker.contractUrenStartPeildatum))
-        : null;
-      const gewerkteUrenSindsStartSaldo = startSaldoPeildatum
-        ? seizoenRegistraties
-            .filter((item) => item.medewerkerId === medewerker.id && eigenVestigingen.has(item.vestigingId) && item.datum >= startSaldoPeildatum && item.datum <= contractPeriode.einde)
-            .reduce((som, item) => som + (item.werkelijkeBegintijd && item.werkelijkeEindtijd ? (uniekeUrenPerRegistratie.get(item.id) ?? 0) : Number(item.gewerkteUren)), 0)
-        : gewerkteUren;
       const balans = berekenContractUren({
         contractUren,
         jaarUrenNorm,
-        verlofUrenStart,
+        verlofUrenStart: isStartSaldoJaar ? null : verlofUrenStart,
         gewerkteUren,
         liveIngepland: liveRestSeizoen,
         resterendeOpeningsweken,
-        startSaldoUren,
+        startSaldoUren: isStartSaldoJaar ? startSaldoUren : null,
         gewerkteUrenSindsStartSaldo,
       });
       contracturenBalansPerMedewerker.set(medewerker.id, {
