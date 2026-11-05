@@ -302,7 +302,7 @@ Clevers`;
           systeemGebruikerId: gebruiker.id,
           type: herinnering.type,
           sleutel: sleutelBasis + ":push",
-          titel: "Clevers — beschikbaarheid",
+          titel: "Beschikbaarheid doorgeven",
           body: "De deadline voor " + weeknaam + " is " + herinnering.tekst + ". Geef je beschikbaarheid door.",
           href,
           geplandVoor: doel,
