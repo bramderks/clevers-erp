@@ -137,14 +137,3 @@ export async function verstuurPushNaarGebruiker(input: CentralePushInput) {
 
   return { verstuurd, fouten, overgeslagen, apparaten: subscriptions.length };
 }
-
- bestaande verzendroutes lopen via deze centrale module. */
-export const webpush = {
-  setVapidDetails: configureerVapidDetails,
-  sendNotification: verstuurCentralePush,
-};
-
-function configureerVapidDetails(subject: string, publicKey: string, privateKey: string) {
-  webPushClient.setVapidDetails(subject, publicKey, privateKey);
-  vapidConfigured = true;
-}
