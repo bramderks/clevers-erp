@@ -17,26 +17,39 @@ export async function POST(request: NextRequest) {
 
   if (!endpoint || !p256dh || !auth) return fout("Ongeldige push subscription.", 400);
 
-  await prisma.pushSubscription.upsert({
-    where: { endpoint },
-    create: {
-      systeemGebruikerId: gebruiker.id,
-      endpoint,
-      p256dh,
-      auth,
-      actief: true,
-      laatsteFoutOp: null,
-    },
-    update: {
-      systeemGebruikerId: gebruiker.id,
-      p256dh,
-      auth,
-      actief: true,
-      laatsteFoutOp: null,
-    },
+  // Per account is één actief pushapparaat leidend. Bij activering op een
+  // nieuwe telefoon verhuist de registratie dus van het oude apparaat mee.
+  await prisma.$transaction(async (tx) => {
+    await tx.pushSubscription.updateMany({
+      where: {
+        systeemGebruikerId: gebruiker.id,
+        endpoint: { not: endpoint },
+        actief: true,
+      },
+      data: { actief: false },
+    });
+
+    await tx.pushSubscription.upsert({
+      where: { endpoint },
+      create: {
+        systeemGebruikerId: gebruiker.id,
+        endpoint,
+        p256dh,
+        auth,
+        actief: true,
+        laatsteFoutOp: null,
+      },
+      update: {
+        systeemGebruikerId: gebruiker.id,
+        p256dh,
+        auth,
+        actief: true,
+        laatsteFoutOp: null,
+      },
+    });
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, apparaatVerplaatst: true });
 }
 
 export async function DELETE(request: NextRequest) {
