@@ -784,6 +784,7 @@ export default function DienstBewerkForm({
     setOpmerkingen(
       dienst.opmerkingen ?? "",
     );
+    setIsReserve(dienst.isReserve === true);
 
     const bestaandeTags: Record<
       string,
@@ -807,6 +808,7 @@ export default function DienstBewerkForm({
     dienst.begintijd,
     dienst.eindtijd,
     dienst.opmerkingen,
+    dienst.isReserve,
     dienst.tags,
   ]);
 
@@ -1562,6 +1564,7 @@ export default function DienstBewerkForm({
         </label>
       </section>
 
+      {dienst.isReserve && (
       <section className="rounded-xl border border-sky-200 bg-sky-50 p-5 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -1573,6 +1576,7 @@ export default function DienstBewerkForm({
           </button>
         </div>
       </section>
+      )}
 
       <section className="rounded-xl border bg-white p-6 shadow-sm">
         <div className="mb-5">
