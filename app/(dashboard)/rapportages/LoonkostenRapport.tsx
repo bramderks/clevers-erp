@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, Unlock, Users, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, Lock, Unlock, Users, X } from "lucide-react";
 import { formatDienstDatum } from "@/lib/planning/tijd";
 
 type Vestiging = { id: string; naam: string };
