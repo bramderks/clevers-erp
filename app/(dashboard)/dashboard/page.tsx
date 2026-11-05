@@ -147,7 +147,9 @@ export default async function DashboardPage() {
    * ============================================================
    */
 
-  if (isMedewerker) {
+  // Een Super Admin/Eigenaar kan ook een medewerkersprofiel hebben.
+  // De beheerdersrol gaat altijd vóór het persoonlijke medewerkerdashboard.
+  if (isMedewerker && !isEigenaarOfSuperAdmin) {
     const medewerkerId =
       gebruiker.medewerker!.id;
 
