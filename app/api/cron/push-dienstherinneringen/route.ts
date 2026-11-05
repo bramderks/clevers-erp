@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verstuurDienstHerinneringen } from "@/lib/push/dienst-herinneringen";
 import { verstuurOpenDienstMeldingen } from "@/lib/push/open-diensten";
 import { verstuurBeschikbaarheidDeadlineHerinneringen } from "@/lib/push/beschikbaarheid-deadlines";
+import { verstuurDagelijkseUrenControleHerinnering } from "@/lib/push/eigenaar-herinneringen";
 
 export const dynamic = "force-dynamic";
 
@@ -54,10 +55,12 @@ export async function GET(request: NextRequest) {
       dienstHerinneringen,
       openDienstMeldingen,
       beschikbaarheidDeadlineHerinneringen,
+      dagelijkseUrenControleHerinnering,
     ] = await Promise.all([
       verstuurDienstHerinneringen(),
       verstuurOpenDienstMeldingen(),
       verstuurBeschikbaarheidDeadlineHerinneringen(),
+      verstuurDagelijkseUrenControleHerinnering(),
     ]);
 
     return NextResponse.json({
@@ -65,6 +68,7 @@ export async function GET(request: NextRequest) {
       dienstHerinneringen,
       openDienstMeldingen,
       beschikbaarheidDeadlineHerinneringen,
+      dagelijkseUrenControleHerinnering,
     });
   } catch (error) {
     console.error("Pushmeldingen planning mislukt:", error);
