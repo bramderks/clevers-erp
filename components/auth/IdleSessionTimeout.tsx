@@ -13,6 +13,7 @@ export default function IdleSessionTimeout() {
   useEffect(() => {
     let logoutTimer: ReturnType<typeof setTimeout> | undefined;
     let lastHeartbeat = 0;
+    let lastRecordedActivity = 0;
     let loggingOut = false;
 
     const getLastActivity = () => {
@@ -43,6 +44,8 @@ export default function IdleSessionTimeout() {
 
     const registerActivity = () => {
       const now = Date.now();
+      if (now - lastRecordedActivity < 1000) return;
+      lastRecordedActivity = now;
       window.localStorage.setItem(ACTIVITY_KEY, String(now));
       scheduleLogout();
 
@@ -66,6 +69,7 @@ export default function IdleSessionTimeout() {
 
     const events: (keyof WindowEventMap)[] = [
       "pointerdown",
+      "pointermove",
       "keydown",
       "scroll",
       "touchstart",
