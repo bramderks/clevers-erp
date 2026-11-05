@@ -889,13 +889,6 @@ export default function PlanningOverzicht({
   });
   const [weekAfsluitenBezig, setWeekAfsluitenBezig] = useState(false);
 
-  const [weekAfsluitBevestigingen, setWeekAfsluitBevestigingen] = useState({
-    urenAkkoord: false,
-    planningDefinitief: false,
-    weekAfsluiten: false,
-  });
-  const [weekAfsluitenBezig, setWeekAfsluitenBezig] = useState(false);
-
   /*
    * ============================================================
    * HUIDIGE WEEK SELECTEREN
