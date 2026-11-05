@@ -49,7 +49,7 @@ jobs:
 
       - name: Verwerk dienstherinneringen
         env:
-          APP_URL: https://clevers-erp-clevers-nijmegen-roermond.vercel.app
+          APP_URL: https://erp.iselto.nl
           OIDC_TOKEN: ${{ steps.oidc.outputs.token }}
         run: |
           if [ -z "$OIDC_TOKEN" ]; then

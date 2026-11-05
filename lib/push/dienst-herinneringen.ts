@@ -1,4 +1,4 @@
-import webpush from "web-push";
+import { configureerCentralePush, verstuurPushNaarGebruiker } from "@/lib/push/service";
 import { prisma } from "@/lib/prisma";
 import { kalenderDatumUTC, lokaleDatumSleutel, nederlandseDatumTijd, formatDienstTijd } from "@/lib/planning/tijd";
 
@@ -12,20 +12,6 @@ const HERINNERINGEN: Array<{
   { type: "DIENST_12U", minuten: 12 * 60 },
   { type: "DIENST_2U", minuten: 2 * 60 },
 ];
-
-function vapidInstellen() {
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  const privateKey = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT;
-
-  if (!publicKey || !privateKey || !subject) {
-    return false;
-  }
-
-  webpush.setVapidDetails(subject, publicKey, privateKey);
-
-  return true;
-}
 
 function datumMetTijd(datum: Date, tijd: Date) {
   return nederlandseDatumTijd(
@@ -47,7 +33,7 @@ function binnenVenster(
 }
 
 export async function verstuurDienstHerinneringen() {
-  if (!vapidInstellen()) {
+  if (!configureerCentralePush()) {
     throw new Error("VAPID-configuratie ontbreekt.");
   }
 
@@ -110,97 +96,24 @@ export async function verstuurDienstHerinneringen() {
 
       if (!binnenVenster(nu, doel, 5)) continue;
 
-      const subscriptions = await prisma.pushSubscription.findMany({
-        where: {
-          systeemGebruikerId: bezetting.medewerker.systeemGebruikerId,
-          actief: true,
-        },
+      const result = await verstuurPushNaarGebruiker({
+        systeemGebruikerId: bezetting.medewerker.systeemGebruikerId,
+        type: herinnering.type,
+        sleutel: "dienst:" + bezetting.id + ":" + herinnering.type,
+        titel: "Clevers — dienstherinnering",
+        body:
+          herinnering.type === "DIENST_24U"
+            ? "Je dienst begint over ongeveer 24 uur."
+            : herinnering.type === "DIENST_12U"
+              ? "Je dienst begint over ongeveer 12 uur."
+              : "Je dienst begint over ongeveer 2 uur.",
+        href: "/app/planning",
+        dienstBezettingId: bezetting.id,
+        geplandVoor: doel,
       });
-
-      for (const subscription of subscriptions) {
-        const sleutel =
-          `dienst:${bezetting.id}:${herinnering.type}:${subscription.id}`;
-
-        const bestaand = await prisma.pushMelding.findUnique({
-          where: { sleutel },
-          select: { id: true },
-        });
-
-        if (bestaand) {
-          overgeslagen += 1;
-          continue;
-        }
-
-        const melding = await prisma.pushMelding.create({
-          data: {
-            type: herinnering.type,
-            sleutel,
-            pushSubscriptionId: subscription.id,
-            systeemGebruikerId: bezetting.medewerker.systeemGebruikerId,
-            dienstBezettingId: bezetting.id,
-            geplandVoor: doel,
-          },
-        });
-
-        try {
-          await webpush.sendNotification(
-            {
-              endpoint: subscription.endpoint,
-              keys: {
-                p256dh: subscription.p256dh,
-                auth: subscription.auth,
-              },
-            },
-            JSON.stringify({
-              title: "Clevers — dienstherinnering",
-              body:
-                herinnering.type === "DIENST_24U"
-                  ? "Je dienst begint over ongeveer 24 uur."
-                  : herinnering.type === "DIENST_12U"
-                    ? "Je dienst begint over ongeveer 12 uur."
-                    : "Je dienst begint over ongeveer 2 uur.",
-              href: "/app/planning",
-            }),
-          );
-
-          await prisma.pushMelding.update({
-            where: { id: melding.id },
-            data: {
-              verstuurdOp: new Date(),
-              foutmelding: null,
-            },
-          });
-
-          verstuurd += 1;
-        } catch (error) {
-          const statusCode =
-            typeof error === "object" &&
-            error !== null &&
-            "statusCode" in error
-              ? Number((error as { statusCode?: unknown }).statusCode)
-              : null;
-
-          const foutmelding =
-            error instanceof Error ? error.message : "Onbekende pushfout.";
-
-          await prisma.pushMelding.update({
-            where: { id: melding.id },
-            data: { foutmelding },
-          });
-
-          if (statusCode === 404 || statusCode === 410) {
-            await prisma.pushSubscription.update({
-              where: { id: subscription.id },
-              data: {
-                actief: false,
-                laatsteFoutOp: new Date(),
-              },
-            });
-          }
-
-          fouten += 1;
-        }
-      }
+      verstuurd += result.verstuurd;
+      fouten += result.fouten;
+      overgeslagen += result.overgeslagen;
     }
   }
 
