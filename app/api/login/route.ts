@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/prisma";
-import { maakToken } from "@/lib/auth";
+import { INACTIVITEIT_TIMEOUT_SECONDEN, maakActiviteitToken, maakToken } from "@/lib/auth";
 
 export async function POST(request: Request) {
   const requestId = crypto.randomUUID();
@@ -94,6 +94,15 @@ export async function POST(request: Request) {
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 12,
+    });
+    cookieStore.set({
+      name: "activity",
+      value: await maakActiviteitToken(gebruiker.id),
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: INACTIVITEIT_TIMEOUT_SECONDEN,
     });
 
     await prisma.systeemGebruiker.update({

@@ -19,13 +19,33 @@ export async function controleerToken(token: string) {
   return payload;
 }
 
+export const INACTIVITEIT_TIMEOUT_SECONDEN = 5 * 60;
+
+export async function maakActiviteitToken(gebruikerId: string) {
+  return new SignJWT({ sub: gebruikerId, type: "activity" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime(`${INACTIVITEIT_TIMEOUT_SECONDEN}s`)
+    .sign(getAuthSecret());
+}
+
+export async function controleerActiviteitToken(token: string, gebruikerId: string) {
+  try {
+    const { payload } = await jwtVerify(token, getAuthSecret());
+    return payload.sub === gebruikerId && payload.type === "activity";
+  } catch {
+    return false;
+  }
+}
+
 export async function getCurrentUser() {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
-  if (!token) return null;
+  const activiteitToken = cookieStore.get("activity")?.value;
+  if (!token || !activiteitToken) return null;
   try {
     const payload = await controleerToken(token);
-    if (!payload.sub) return null;
+    if (!payload.sub || !(await controleerActiviteitToken(activiteitToken, payload.sub))) return null;
     const gebruiker = await prisma.systeemGebruiker.findUnique({
       where: { id: payload.sub as string },
       include: {
@@ -261,4 +281,5 @@ export async function hasPermissionForVestiging(permission: Permission, vestigin
 export async function logout() {
   const cookieStore = await cookies();
   cookieStore.delete("token");
+  cookieStore.delete("activity");
 }
