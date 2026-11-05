@@ -1445,39 +1445,6 @@ export default function PlanningOverzicht({
     }
   }
 
-  async function sluitHuidigeWeek() {
-    if (!isEigenaar || !huidigeWeek || huidigeWeek.status === "AFGESLOTEN" ||
-      !huidigeWeek.loonkostenWeek || !Object.values(weekAfsluitBevestigingen).every(Boolean) ||
-      weekAfsluitenBezig) return;
-
-    try {
-      setWeekAfsluitenBezig(true);
-      setFout(null);
-      const response = await fetch("/api/rapportages/loonkosten/afsluiten", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          vestigingId,
-          jaar: huidigeWeek.jaar,
-          weeknummer: huidigeWeek.weeknummer,
-          omzet: huidigeWeek.loonkostenWeek.omzet,
-          doelPercentage: huidigeWeek.loonkostenWeek.doelPercentage,
-          bevestigingen: weekAfsluitBevestigingen,
-        }),
-      });
-      const data = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(data?.error ?? "De week kon niet worden afgesloten.");
-      setWeekAfsluitBevestigingen({ urenAkkoord: false, planningDefinitief: false, weekAfsluiten: false });
-      onGewijzigd?.();
-      router.refresh();
-    } catch (error) {
-      setFout(error instanceof Error ? error.message : "De week kon niet worden afgesloten.");
-    } finally {
-      setWeekAfsluitenBezig(false);
-    }
-  }
-
   async function heropenHuidigeWeek() {
     if (
       !isEigenaar ||
