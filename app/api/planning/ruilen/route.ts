@@ -52,7 +52,7 @@ async function stuurEigenaarPushVoorRuil(
   for (const eigenaar of eigenaren) {
     await stuurPush(
       eigenaar.systeemGebruikerId,
-      "RUIL_INGediend",
+      "RUIL_INGEDIEND",
       "ruil-ingediend:" + dienstBezettingId,
       "Ruilverzoek ingediend",
       aanvragerNaam + " heeft een dienst ter ruil aangeboden: " + dienstTekst,
