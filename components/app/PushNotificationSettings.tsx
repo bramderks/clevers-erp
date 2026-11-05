@@ -59,29 +59,41 @@ export default function PushNotificationSettings() {
         if (actief) setEmailBezig(false);
       }
 
-      // Pushstatus mag de rest van de instellingenpagina nooit blokkeren.
+      // Pushstatus krijgt maximaal 3 seconden. Sommige mobiele browsers
+      // laten Service Worker-API's anders onbeperkt hangen.
       try {
         if (beschikbaar) {
           const huidigeToestemming = Notification.permission;
           if (actief) setToestemming(huidigeToestemming);
 
           if (huidigeToestemming === "granted") {
-            // Gebruik getRegistration in plaats van .ready: .ready kan
-            // onbeperkt wachten wanneer registratie mislukt of ontbreekt.
-            const registratie = await navigator.serviceWorker.getRegistration("/");
-            if (registratie) {
+            const controle = async () => {
+              const registratie =
+                await navigator.serviceWorker.getRegistration("/");
+              if (!registratie) return false;
               const subscription =
                 await registratie.pushManager.getSubscription();
-              if (actief) setIngeschakeld(Boolean(subscription));
-            }
+              return Boolean(subscription);
+            };
+
+            const timeout = new Promise<never>((_, reject) => {
+              window.setTimeout(
+                () => reject(new Error("controle duurt te lang")),
+                3000,
+              );
+            });
+            const status = await Promise.race([controle(), timeout]);
+            if (actief) setIngeschakeld(status);
           }
         }
       } catch (error) {
         if (actief) {
           setMelding(
-            error instanceof Error
-              ? `Pushstatus kon niet worden gecontroleerd: ${error.message}`
-              : "Pushstatus kon niet worden gecontroleerd.",
+            error instanceof Error && error.message === "controle duurt te lang"
+              ? "Pushstatus is tijdelijk niet beschikbaar. Je e-mailinstellingen werken gewoon."
+              : error instanceof Error
+                ? `Pushstatus kon niet worden gecontroleerd: ${error.message}`
+                : "Pushstatus kon niet worden gecontroleerd.",
           );
         }
       } finally {
