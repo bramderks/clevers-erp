@@ -1008,14 +1008,6 @@ export default function PlanningOverzicht({
     });
   }, [huidigeWeek?.id]);
 
-  useEffect(() => {
-    setWeekAfsluitBevestigingen({
-      urenAkkoord: false,
-      planningDefinitief: false,
-      weekAfsluiten: false,
-    });
-  }, [huidigeWeek?.id]);
-
   /*
    * ============================================================
    * TAGS LADEN
@@ -2037,6 +2029,27 @@ export default function PlanningOverzicht({
             WEEKWEERGAVE
             ====================================================== */}
 
+        <PlanningWeekOverzicht
+          week={huidigeWeek}
+          isEigenaar={isEigenaar}
+          onNieuweDienst={
+            isEigenaar
+              ? openNieuweDienst
+              : undefined
+          }
+          onWijzigDienst={
+            isEigenaar
+              ? handleWijzigDienst
+              : undefined
+          }
+          onVerwijderDienst={
+            isEigenaar &&
+            kanVerwijderen
+              ? handleVerwijderDienst
+              : undefined
+          }
+        />
+
         {isEigenaar && huidigeWeek && huidigeWeek.status !== "AFGESLOTEN" && (
           <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -2085,65 +2098,6 @@ export default function PlanningOverzicht({
           </div>
         )}
 
-        {isEigenaar && huidigeWeek && huidigeWeek.status !== "AFGESLOTEN" && (
-          <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">Week afsluiten · week {huidigeWeek.weeknummer}</h2>
-                <p className="mt-1 text-sm text-slate-600">De week wordt pas definitief afgesloten wanneer alle drie de controlepunten zijn bevestigd.</p>
-              </div>
-              {huidigeWeek.loonkostenWeek ? (
-                <div className="flex gap-4 text-sm">
-                  <div><p className="text-xs text-slate-500">Omzet deze week</p><p className="font-bold text-slate-900">{new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(huidigeWeek.loonkostenWeek.omzet)}</p></div>
-                  <div><p className="text-xs text-slate-500">Norm loonkosten</p><p className="font-bold text-slate-900">{huidigeWeek.loonkostenWeek.doelPercentage.toLocaleString("nl-NL", { maximumFractionDigits: 1 })}%</p></div>
-                </div>
-              ) : <p className="text-sm text-amber-700">Sla eerst de omzet en norm op in de rapportage.</p>}
-            </div>
-            <div className="mt-4 grid gap-3">
-              {([
-                ["urenAkkoord", "Alle uren akkoord?"],
-                ["planningDefinitief", "Planning definitief?"],
-                ["weekAfsluiten", "Ik bevestig dat deze week afgesloten mag worden."],
-              ] as const).map(([key, label]) => (
-                <label key={key} className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-800 hover:bg-slate-50">
-                  <input type="checkbox" checked={weekAfsluitBevestigingen[key]}
-                    onChange={(event) => setWeekAfsluitBevestigingen((huidig) => ({ ...huidig, [key]: event.target.checked }))}
-                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500" disabled={weekAfsluitenBezig} />
-                  <span>{label}</span>
-                </label>
-              ))}
-            </div>
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs text-slate-500">{Object.values(weekAfsluitBevestigingen).filter(Boolean).length} van 3 bevestigingen aangevinkt</p>
-              <button type="button" onClick={() => void sluitHuidigeWeek()}
-                disabled={weekAfsluitenBezig || !huidigeWeek.loonkostenWeek || !Object.values(weekAfsluitBevestigingen).every(Boolean)}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40">
-                {weekAfsluitenBezig ? "Week afsluiten..." : "Week afsluiten"}
-              </button>
-            </div>
-          </div>
-        )}
-
-        <PlanningWeekOverzicht
-          week={huidigeWeek}
-          isEigenaar={isEigenaar}
-          onNieuweDienst={
-            isEigenaar
-              ? openNieuweDienst
-              : undefined
-          }
-          onWijzigDienst={
-            isEigenaar
-              ? handleWijzigDienst
-              : undefined
-          }
-          onVerwijderDienst={
-            isEigenaar &&
-            kanVerwijderen
-              ? handleVerwijderDienst
-              : undefined
-          }
-        />
       </section>
 
       {/* ========================================================
