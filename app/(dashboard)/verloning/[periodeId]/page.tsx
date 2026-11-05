@@ -148,7 +148,6 @@ export default async function VerloningDetailPage({
                 voornaam: true,
                 tussenvoegsel: true,
                 achternaam: true,
-                personeelsnummer: true,
                 actief: true,
               },
             },
@@ -723,16 +722,6 @@ export default async function VerloningDetailPage({
                             regel.medewerker,
                           )}
                       </h3>
-
-                      {regel.medewerker
-                        .personeelsnummer && (
-                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                          {
-                            regel.medewerker
-                              .personeelsnummer
-                          }
-                        </span>
-                      )}
 
                       {!regel.medewerker
                         .actief && (
