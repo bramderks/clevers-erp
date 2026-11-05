@@ -784,6 +784,7 @@ export default function DienstBewerkForm({
     setOpmerkingen(
       dienst.opmerkingen ?? "",
     );
+    setIsReserve(dienst.isReserve === true);
 
     const bestaandeTags: Record<
       string,
@@ -807,6 +808,7 @@ export default function DienstBewerkForm({
     dienst.begintijd,
     dienst.eindtijd,
     dienst.opmerkingen,
+    dienst.isReserve,
     dienst.tags,
   ]);
 
@@ -1242,6 +1244,50 @@ export default function DienstBewerkForm({
     }
   }
 
+  async function zetOmNaarGeplandeDienst() {
+    const akkoord = window.confirm(
+      "Deze reservedienst definitief omzetten naar een geplande dienst? De medewerker blijft gekoppeld en de dienst wordt groen weergegeven.",
+    );
+    if (!akkoord) return;
+
+    setFout(null);
+    setSucces(null);
+    setOpslaanBezig(true);
+    try {
+      const response = await fetch(`/api/planning/diensten/${encodeURIComponent(dienst.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          datum,
+          begintijd,
+          eindtijd,
+          opmerkingen: opmerkingen.trim() || null,
+          isReserve: false,
+          tags: Object.entries(geselecteerdeTags).map(([tagId, aantal]) => ({ tagId, aantal })),
+        }),
+      });
+      const tekst = await response.text();
+      let data: unknown = null;
+      if (tekst.trim()) {
+        try { data = JSON.parse(tekst) as unknown; } catch {
+          throw new Error("De server gaf een ongeldig antwoord terug.");
+        }
+      }
+      if (!response.ok) {
+        throw new Error(foutmeldingUitResponse(data, "De reservedienst kon niet worden omgezet."));
+      }
+      if (data === null) throw new Error("De server heeft de omzetting niet bevestigd.");
+      setIsReserve(false);
+      setSucces("Reservedienst is omgezet naar een geplande dienst.");
+      onGewijzigd?.();
+    } catch (error) {
+      setFout(error instanceof Error ? error.message : "De reservedienst kon niet worden omgezet.");
+    } finally {
+      setOpslaanBezig(false);
+    }
+  }
+
   /*
    * ============================================================
    * MEDEWERKER TOEVOEGEN
@@ -1517,6 +1563,20 @@ export default function DienstBewerkForm({
           <span><span className="block text-sm font-semibold text-slate-900">Deze dienst als reservedienst plannen</span><span className="mt-1 block text-xs leading-5 text-slate-600">Reservediensten worden blauw weergegeven op het planbord.</span></span>
         </label>
       </section>
+
+      {dienst.isReserve && (
+      <section className="rounded-xl border border-sky-200 bg-sky-50 p-5 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-semibold text-sky-950">Reservedienst definitief maken</h2>
+            <p className="mt-1 text-sm text-sky-800">Zet deze reservedienst om naar een normale geplande dienst. De medewerker blijft gekoppeld en de dienst krijgt de groene planningstatus.</p>
+          </div>
+          <button type="button" onClick={() => void zetOmNaarGeplandeDienst()} disabled={opslaanBezig || !dienst.isReserve} className="shrink-0 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">
+            {opslaanBezig ? "Omzetten..." : "Omzetten naar geplande dienst"}
+          </button>
+        </div>
+      </section>
+      )}
 
       <section className="rounded-xl border bg-white p-6 shadow-sm">
         <div className="mb-5">

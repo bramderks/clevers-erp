@@ -85,7 +85,7 @@ export async function verstuurDirecteDienstMelding(dienstBezettingId: string) {
     systeemGebruikerId,
     type: "DIENST_DIRECT",
     sleutel: "dienst-direct:" + bezetting.id,
-    titel: "Clevers — je bent ingepland",
+    titel: "Je bent ingepland",
     body: datum + ", " + begintijd + "–" + eindtijd + " in " + vestigingNaam + ".",
     href: "/app/planning",
     dienstBezettingId: bezetting.id,

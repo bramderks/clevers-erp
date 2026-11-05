@@ -17,7 +17,7 @@ export async function POST() {
       systeemGebruikerId: gebruiker.id,
       type: "PUSH_TEST",
       sleutel: "push-test:" + gebruiker.id + ":" + Date.now(),
-      titel: "Clevers — testmelding",
+      titel: "Testmelding",
       body: "Pushmeldingen werken. Dit is een testmelding.",
       href: "/dashboard",
     });
