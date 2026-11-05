@@ -167,7 +167,7 @@ export default function PushNotificationSettings() {
       }
 
       setIngeschakeld(true);
-      setMelding("Meldingen zijn ingeschakeld op dit apparaat.");
+      setMelding("Meldingen zijn naar dit apparaat overgezet. Een eerder gekoppelde telefoon ontvangt geen pushmeldingen meer.");
     } catch (error) {
       setMelding(
         error instanceof Error
@@ -357,9 +357,9 @@ export default function PushNotificationSettings() {
                 <div className="rounded-2xl bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-900">Pushmeldingen</p>
                   <p className="mt-1 text-sm leading-5 text-slate-500">
-                    Push is optioneel en werkt alleen als je dit op je apparaat en in je
-                    browser toestaat. Gebruik je Clevers op meerdere apparaten, dan stel
-                    je pushmeldingen per apparaat afzonderlijk in.
+                    Pushmeldingen zijn gekoppeld aan één apparaat per account. Schakel
+                    meldingen op een nieuwe telefoon in om ze naar dat toestel over te
+                    zetten. Het vorige toestel ontvangt daarna geen pushmeldingen meer.
                   </p>
                 </div>
         </>
