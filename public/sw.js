@@ -9,14 +9,20 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("push", (event) => {
   if (!event.data) return;
 
-  const data = event.data.json();
+  let data;
+  try {
+    data = event.data.json();
+  } catch {
+    data = { body: event.data.text() };
+  }
+
   event.waitUntil(
     self.registration.showNotification(data.title || "Clevers", {
       body: data.body || "",
       icon: "/logo.png",
       badge: "/logo.png",
       data: {
-        href: data.href || "/app",
+        href: data.href || "/dashboard",
       },
     }),
   );
@@ -24,7 +30,25 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  event.waitUntil(
-    self.clients.openWindow(event.notification.data?.href || "/app"),
-  );
+  const href = event.notification.data?.href || "/dashboard";
+
+  event.waitUntil((async () => {
+    const clients = await self.clients.matchAll({
+      type: "window",
+      includeUncontrolled: true,
+    });
+
+    for (const client of clients) {
+      const url = new URL(client.url);
+      if (url.origin === self.location.origin) {
+        await client.focus();
+        if (url.pathname !== href) {
+          await client.navigate(href);
+        }
+        return;
+      }
+    }
+
+    await self.clients.openWindow(href);
+  })());
 });
