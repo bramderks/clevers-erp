@@ -1,4 +1,4 @@
-import webpush from "web-push";
+import { webpush } from "@/lib/push/service";
 import { prisma } from "@/lib/prisma";
 import { verstuurMail, webAppUrl } from "@/lib/mail";
 import {

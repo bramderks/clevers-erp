@@ -1,4 +1,4 @@
-import webpush from "web-push";
+import { webpush } from "@/lib/push/service";
 import { NextResponse } from "next/server";
 
 import { getCurrentUser } from "@/lib/auth";

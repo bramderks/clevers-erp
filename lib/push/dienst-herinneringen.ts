@@ -1,4 +1,4 @@
-import webpush from "web-push";
+import { webpush } from "@/lib/push/service";
 import { prisma } from "@/lib/prisma";
 import { kalenderDatumUTC, lokaleDatumSleutel, nederlandseDatumTijd, formatDienstTijd } from "@/lib/planning/tijd";
 
@@ -121,18 +121,9 @@ export async function verstuurDienstHerinneringen() {
         const sleutel =
           `dienst:${bezetting.id}:${herinnering.type}:${subscription.id}`;
 
-        const bestaand = await prisma.pushMelding.findUnique({
+        const melding = await prisma.pushMelding.upsert({
           where: { sleutel },
-          select: { id: true },
-        });
-
-        if (bestaand) {
-          overgeslagen += 1;
-          continue;
-        }
-
-        const melding = await prisma.pushMelding.create({
-          data: {
+          create: {
             type: herinnering.type,
             sleutel,
             pushSubscriptionId: subscription.id,
@@ -140,7 +131,9 @@ export async function verstuurDienstHerinneringen() {
             dienstBezettingId: bezetting.id,
             geplandVoor: doel,
           },
+          update: {},
         });
+        if (melding.verstuurdOp) { overgeslagen += 1; continue; }
 
         try {
           await webpush.sendNotification(

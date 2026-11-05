@@ -1,4 +1,4 @@
-import webpush from "web-push";
+import { webpush } from "@/lib/push/service";
 import { prisma } from "@/lib/prisma";
 import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 import { verstuurMail, webAppUrl } from "@/lib/mail";
@@ -96,11 +96,9 @@ export async function verstuurDirecteDienstMelding(dienstBezettingId: string) {
   }
   for (const subscription of subscriptions) {
     const sleutel = "dienst-direct:" + bezetting.id + ":" + subscription.id;
-    const bestaand = await prisma.pushMelding.findUnique({ where: { sleutel }, select: { id: true } });
-    if (bestaand) continue;
-
-    const melding = await prisma.pushMelding.create({
-      data: {
+    const melding = await prisma.pushMelding.upsert({
+          where: { sleutel },
+          create: {
         type: "DIENST_DIRECT",
         sleutel,
         pushSubscriptionId: subscription.id,
@@ -108,7 +106,9 @@ export async function verstuurDirecteDienstMelding(dienstBezettingId: string) {
         dienstBezettingId: bezetting.id,
         geplandVoor: new Date(),
       },
-    });
+          update: {},
+        });
+        if (melding.verstuurdOp) continue;
 
     try {
       await webpush.sendNotification(

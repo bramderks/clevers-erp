@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import webpush from "web-push";
+import { webpush } from "@/lib/push/service";
 
 import {
   getCurrentUser,
@@ -60,13 +60,9 @@ async function stuurPush(
   });
   for (const subscription of subscriptions) {
     const meldingSleutel = `${sleutel}:${subscription.id}`;
-    const bestaande = await prisma.pushMelding.findUnique({
+    const melding = await prisma.pushMelding.upsert({
       where: { sleutel: meldingSleutel },
-      select: { id: true },
-    });
-    if (bestaande) continue;
-    const melding = await prisma.pushMelding.create({
-      data: {
+      create: {
         type,
         sleutel: meldingSleutel,
         pushSubscriptionId: subscription.id,
@@ -74,7 +70,9 @@ async function stuurPush(
         dienstBezettingId,
         geplandVoor: new Date(),
       },
+      update: {},
     });
+    if (melding.verstuurdOp) continue;
     try {
       await webpush.sendNotification(
         {

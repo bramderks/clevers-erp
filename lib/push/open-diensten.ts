@@ -1,4 +1,4 @@
-import webpush from "web-push";
+import { webpush } from "@/lib/push/service";
 import { prisma } from "@/lib/prisma";
 import { kalenderDatumUTC, lokaleDatumSleutel } from "@/lib/planning/tijd";
 
@@ -116,17 +116,9 @@ export async function verstuurOpenDienstMeldingen() {
 
         for (const subscription of subscriptions) {
           const sleutel = `open-dienst:${bezetting.id}:${venster.type}:${subscription.id}`;
-          const bestaand = await prisma.pushMelding.findUnique({
-            where: { sleutel },
-            select: { id: true },
-          });
-          if (bestaand) {
-            overgeslagen += 1;
-            continue;
-          }
-
-          const melding = await prisma.pushMelding.create({
-            data: {
+          const melding = await prisma.pushMelding.upsert({
+          where: { sleutel },
+          create: {
               type: venster.type,
               sleutel,
               pushSubscriptionId: subscription.id,
@@ -134,7 +126,9 @@ export async function verstuurOpenDienstMeldingen() {
               dienstBezettingId: bezetting.id,
               geplandVoor: doel,
             },
-          });
+          update: {},
+        });
+        if (melding.verstuurdOp) { overgeslagen += 1; continue; }
 
           try {
             await webpush.sendNotification(
@@ -240,14 +234,9 @@ export async function verstuurDirecteOpenDienstMelding(
 
     for (const subscription of subscriptions) {
       const sleutel = `open-dienst-direct:${bezetting.id}:${subscription.id}`;
-      const bestaand = await prisma.pushMelding.findUnique({
-        where: { sleutel },
-        select: { id: true },
-      });
-      if (bestaand) continue;
-
-      const melding = await prisma.pushMelding.create({
-        data: {
+      const melding = await prisma.pushMelding.upsert({
+          where: { sleutel },
+          create: {
           type: "OPEN_DIENST_DIRECT",
           sleutel,
           pushSubscriptionId: subscription.id,
@@ -255,7 +244,9 @@ export async function verstuurDirecteOpenDienstMelding(
           dienstBezettingId: bezetting.id,
           geplandVoor: new Date(),
         },
-      });
+          update: {},
+        });
+        if (melding.verstuurdOp) continue;
 
       try {
         await webpush.sendNotification(
@@ -329,21 +320,18 @@ export async function verstuurNieuweTaakMeldingen(
 
     for (const subscription of subscriptions) {
       const sleutel = `taak-nieuw:${systeemGebruikerId}:${taak.id}:${subscription.id}`;
-      const bestaand = await prisma.pushMelding.findUnique({
-        where: { sleutel },
-        select: { id: true },
-      });
-      if (bestaand) continue;
-
-      const melding = await prisma.pushMelding.create({
-        data: {
+      const melding = await prisma.pushMelding.upsert({
+          where: { sleutel },
+          create: {
           type: "TAAK_NIEUW",
           sleutel,
           pushSubscriptionId: subscription.id,
           systeemGebruikerId,
           geplandVoor: new Date(),
         },
-      });
+          update: {},
+        });
+        if (melding.verstuurdOp) continue;
 
       try {
         await webpush.sendNotification(
