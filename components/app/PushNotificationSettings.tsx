@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, BellOff, Loader2 } from "lucide-react";
+import { Bell, BellOff } from "lucide-react";
 
 function base64UrlNaarUint8Array(waarde: string) {
   const padding = "=".repeat((4 - (waarde.length % 4)) % 4);
@@ -15,7 +15,7 @@ export default function PushNotificationSettings() {
   const [toestemming, setToestemming] =
     useState<NotificationPermission | "unknown">("unknown");
   const [ingeschakeld, setIngeschakeld] = useState(false);
-  const [bezig, setBezig] = useState(true);
+  const [bezig, setBezig] = useState(false);
   const [melding, setMelding] = useState<string | null>(null);
   const [testBezig, setTestBezig] = useState(false);
   const [emailAan, setEmailAan] = useState(true);
@@ -283,12 +283,6 @@ export default function PushNotificationSettings() {
       </div>
 
       {ondersteund ? (
-        bezig ? (
-          <div className="flex items-center gap-2 text-sm text-slate-500">
-            <Loader2 size={18} className="animate-spin" />
-            Pushinstellingen controleren...
-          </div>
-        ) : (
         <>
                 <div className="flex flex-wrap items-center gap-3">
                   <div
@@ -354,7 +348,6 @@ export default function PushNotificationSettings() {
                   </p>
                 </div>
         </>
-        )
       ) : (
         <div className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-800">
           Deze browser ondersteunt geen pushmeldingen. Je persoonlijke e-mailinstellingen blijven gewoon beschikbaar.
