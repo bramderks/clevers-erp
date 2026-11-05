@@ -212,6 +212,7 @@ async function haalBezettingOp(
                 select: {
                   id: true,
                   organisatieId: true,
+                  naam: true,
                   actief: true,
                 },
               },
