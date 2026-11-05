@@ -40,6 +40,7 @@ export default function LoginForm() {
         return;
       }
 
+      window.localStorage.setItem("clevers:last-activity", String(Date.now()));
       router.push("/dashboard");
       router.refresh();
     } catch {
