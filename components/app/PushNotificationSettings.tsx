@@ -22,43 +22,77 @@ export default function PushNotificationSettings() {
   const [emailBezig, setEmailBezig] = useState(true);
 
   useEffect(() => {
+    let actief = true;
+
     async function laad() {
       const beschikbaar =
         "Notification" in window &&
         "serviceWorker" in navigator &&
         "PushManager" in window;
 
-      setOndersteund(beschikbaar);
+      if (actief) setOndersteund(beschikbaar);
 
+      // Persoonlijke e-mailinstellingen laden onafhankelijk van push.
       try {
-        const emailResponse = await fetch("/api/instellingen/meldingen", { credentials: "include" });
-        if (emailResponse.ok) {
-          const emailData = await emailResponse.json();
-          setEmailAan(emailData.emailMeldingenAan !== false);
+        const emailResponse = await fetch("/api/instellingen/meldingen", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        if (!emailResponse.ok) {
+          throw new Error(
+            emailResponse.status === 401
+              ? "Je sessie is verlopen. Log opnieuw in."
+              : "E-mailinstellingen konden niet worden geladen.",
+          );
+        }
+        const emailData = await emailResponse.json();
+        if (actief) setEmailAan(emailData.emailMeldingenAan !== false);
+      } catch (error) {
+        if (actief) {
+          setMelding(
+            error instanceof Error
+              ? error.message
+              : "E-mailinstellingen konden niet worden geladen.",
+          );
         }
       } finally {
-        setEmailBezig(false);
+        if (actief) setEmailBezig(false);
       }
 
-      if (!beschikbaar) {
-        setBezig(false);
-        return;
+      // Pushstatus mag de rest van de instellingenpagina nooit blokkeren.
+      try {
+        if (beschikbaar) {
+          const huidigeToestemming = Notification.permission;
+          if (actief) setToestemming(huidigeToestemming);
+
+          if (huidigeToestemming === "granted") {
+            // Gebruik getRegistration in plaats van .ready: .ready kan
+            // onbeperkt wachten wanneer registratie mislukt of ontbreekt.
+            const registratie = await navigator.serviceWorker.getRegistration("/");
+            if (registratie) {
+              const subscription =
+                await registratie.pushManager.getSubscription();
+              if (actief) setIngeschakeld(Boolean(subscription));
+            }
+          }
+        }
+      } catch (error) {
+        if (actief) {
+          setMelding(
+            error instanceof Error
+              ? `Pushstatus kon niet worden gecontroleerd: ${error.message}`
+              : "Pushstatus kon niet worden gecontroleerd.",
+          );
+        }
+      } finally {
+        if (actief) setBezig(false);
       }
-
-      const huidigeToestemming = Notification.permission;
-      setToestemming(huidigeToestemming);
-
-      if (huidigeToestemming === "granted") {
-        const registratie = await navigator.serviceWorker.ready;
-        const subscription =
-          await registratie.pushManager.getSubscription();
-        setIngeschakeld(Boolean(subscription));
-      }
-
-      setBezig(false);
     }
 
     void laad();
+    return () => {
+      actief = false;
+    };
   }, []);
 
   async function inschakelen() {
@@ -219,14 +253,6 @@ export default function PushNotificationSettings() {
     );
   }
 
-  if (!ondersteund) {
-    return (
-      <div className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-800">
-        Deze browser ondersteunt geen pushmeldingen. E-mailmeldingen blijven gewoon beschikbaar.
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-5">
       <div className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -253,69 +279,77 @@ export default function PushNotificationSettings() {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div
-          className={[
-            "inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold",
-            ingeschakeld
-              ? "bg-emerald-50 text-emerald-700"
-              : "bg-slate-100 text-slate-600",
-          ].join(" ")}
-        >
-          {ingeschakeld ? <Bell size={17} /> : <BellOff size={17} />}
-          {ingeschakeld ? "Meldingen ingeschakeld" : "Meldingen uitgeschakeld"}
+      {ondersteund ? (
+        <>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div
+                    className={[
+                      "inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold",
+                      ingeschakeld
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "bg-slate-100 text-slate-600",
+                    ].join(" ")}
+                  >
+                    {ingeschakeld ? <Bell size={17} /> : <BellOff size={17} />}
+                    {ingeschakeld ? "Meldingen ingeschakeld" : "Meldingen uitgeschakeld"}
+                  </div>
+          
+                  {ingeschakeld ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => void uitschakelen()}
+                        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+                      >
+                        Meldingen uitschakelen
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void testPush()}
+                        disabled={testBezig}
+                        className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-wait disabled:opacity-60"
+                      >
+                        {testBezig ? "Testen..." : "Test pushmelding"}
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void inschakelen()}
+                      className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
+                    >
+                      Meldingen inschakelen
+                    </button>
+                  )}
+                </div>
+          
+                {toestemming === "denied" && !ingeschakeld && (
+                  <p className="text-sm text-amber-700">
+                    Je browser blokkeert meldingen. Zet meldingen voor erp.iselto.nl
+                    eerst weer aan via de site-instellingen van je browser.
+                  </p>
+                )}
+          
+                {melding && (
+                  <p className="text-sm text-slate-600" role="status">
+                    {melding}
+                  </p>
+                )}
+          
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="text-sm font-semibold text-slate-900">Pushmeldingen</p>
+                  <p className="mt-1 text-sm leading-5 text-slate-500">
+                    Push is optioneel en werkt alleen als je dit op je apparaat en in je
+                    browser toestaat. Gebruik je Clevers op meerdere apparaten, dan stel
+                    je pushmeldingen per apparaat afzonderlijk in.
+                  </p>
+                </div>
+        </>
+      ) : (
+        <div className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-800">
+          Deze browser ondersteunt geen pushmeldingen. Je persoonlijke e-mailinstellingen blijven gewoon beschikbaar.
         </div>
-
-        {ingeschakeld ? (
-          <>
-            <button
-              type="button"
-              onClick={() => void uitschakelen()}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
-            >
-              Meldingen uitschakelen
-            </button>
-            <button
-              type="button"
-              onClick={() => void testPush()}
-              disabled={testBezig}
-              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-wait disabled:opacity-60"
-            >
-              {testBezig ? "Testen..." : "Test pushmelding"}
-            </button>
-          </>
-        ) : (
-          <button
-            type="button"
-            onClick={() => void inschakelen()}
-            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
-          >
-            Meldingen inschakelen
-          </button>
-        )}
-      </div>
-
-      {toestemming === "denied" && !ingeschakeld && (
-        <p className="text-sm text-amber-700">
-          Je browser blokkeert meldingen. Zet meldingen voor erp.iselto.nl
-          eerst weer aan via de site-instellingen van je browser.
-        </p>
       )}
-
-      {melding && (
-        <p className="text-sm text-slate-600" role="status">
-          {melding}
-        </p>
-      )}
-
-      <div className="rounded-2xl bg-slate-50 p-4">
-        <p className="text-sm font-semibold text-slate-900">Pushmeldingen</p>
-        <p className="mt-1 text-sm leading-5 text-slate-500">
-          Push is optioneel en werkt alleen als je dit op je apparaat en in je
-          browser toestaat. Gebruik je Clevers op meerdere apparaten, dan stel
-          je pushmeldingen per apparaat afzonderlijk in.
-        </p>
-      </div>
     </div>
   );
 }
