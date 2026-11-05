@@ -34,6 +34,19 @@ export async function POST(request: NextRequest) {
     const omzet = Number(body.omzet);
     const doelPercentage = Number(body.doelPercentage);
 
+    const bevestigingen = body.bevestigingen;
+    if (
+      !bevestigingen ||
+      bevestigingen.urenAkkoord !== true ||
+      bevestigingen.planningDefinitief !== true ||
+      bevestigingen.weekAfsluiten !== true
+    ) {
+      return NextResponse.json(
+        { error: "Bevestig eerst alle drie de controlepunten voordat je de week afsluit." },
+        { status: 400 },
+      );
+    }
+
     if (
       !vestigingId ||
       !Number.isInteger(jaar) ||
