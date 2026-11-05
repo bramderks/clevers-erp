@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 import { verstuurPushNaarGebruiker } from "@/lib/push/service";
 
 import {
@@ -25,6 +26,42 @@ type RuilActie =
   | "ANNULEREN"
   | "GOEDKEUREN";
 
+
+
+async function stuurEigenaarPushVoorRuil(
+  organisatieId: string,
+  dienstBezettingId: string,
+  ruilverzoekId: string,
+  aanvragerNaam: string,
+  datum: Date,
+  begintijd: Date,
+  eindtijd: Date,
+  vestigingNaam: string,
+) {
+  const eigenaren = await prisma.organisatieGebruiker.findMany({
+    where: {
+      organisatieId,
+      actief: true,
+      rol: { naam: { equals: "eigenaar", mode: "insensitive" } },
+      systeemGebruiker: { actief: true },
+    },
+    select: { systeemGebruikerId: true },
+  });
+  const dienstTekst = formatDienstDatum(datum) + ", " +
+    formatDienstTijd(begintijd) + "–" + formatDienstTijd(eindtijd) +
+    " in " + vestigingNaam + ".";
+  for (const eigenaar of eigenaren) {
+    await stuurPush(
+      eigenaar.systeemGebruikerId,
+      "RUIL_INGEDIEND",
+      "ruil-ingediend:" + ruilverzoekId,
+      "Ruilverzoek ingediend",
+      aanvragerNaam + " heeft een dienst ter ruil aangeboden: " + dienstTekst,
+      "/app/ruilen",
+      dienstBezettingId,
+    );
+  }
+}
 
 async function synchroniseerRuilMarkering(dienstBezettingId: string) {
   const actieveVerzoeken = await prisma.ruilverzoek.count({
@@ -176,6 +213,7 @@ async function haalBezettingOp(
                 select: {
                   id: true,
                   organisatieId: true,
+                  naam: true,
                   actief: true,
                 },
               },
@@ -625,6 +663,17 @@ export async function POST(
 
       await prisma.dienstBezetting.update({ where: { id: dienstBezettingId }, data: { isRuilAangeboden: true } });
 
+      await stuurEigenaarPushVoorRuil(
+        vestiging.organisatieId,
+        dienstBezettingId,
+        ruilverzoeken[0].id,
+        [gebruiker.medewerker.voornaam, gebruiker.medewerker.tussenvoegsel, gebruiker.medewerker.achternaam].filter(Boolean).join(" "),
+        bezetting.dienst.datum,
+        bezetting.dienst.begintijd,
+        bezetting.dienst.eindtijd,
+        vestiging.naam,
+      );
+
       for (const ruilverzoek of ruilverzoeken) {
         const ontvanger =
           await prisma.medewerker.findUnique({
@@ -636,8 +685,8 @@ export async function POST(
             ontvanger.systeemGebruikerId,
             "RUIL_AANBOD",
             `ruil-aanbod:${dienstBezettingId}:${ruilverzoek.ruilMedewerkerId}`,
-            "Clevers — dienst ter ruil",
-            "Er is een dienst ter ruil aangeboden voor jouw functie.",
+            "Dienst ter ruil aangeboden",
+            "Er is een dienst ter ruil aangeboden voor jouw functie op " + formatDienstDatum(bezetting.dienst.datum) + ", " + formatDienstTijd(bezetting.dienst.begintijd) + "–" + formatDienstTijd(bezetting.dienst.eindtijd) + " in " + vestiging.naam + ".",
             "/app/ruilen",
             dienstBezettingId,
           );
@@ -835,13 +884,23 @@ export async function POST(
         ontvanger.systeemGebruikerId,
         "RUIL_UITNODIGING",
         `ruil-uitnodiging:${ruilverzoek.id}`,
-        "Ruilverzoek",
-        "Je bent uitgenodigd om een dienst over te nemen. Open Ruilverzoeken om te reageren.",
+        "Dienst rechtstreeks aan jou aangeboden",
+        [gebruiker.medewerker.voornaam, gebruiker.medewerker.tussenvoegsel, gebruiker.medewerker.achternaam].filter(Boolean).join(" ") + " biedt je een dienst aan op " + formatDienstDatum(bezetting.dienst.datum) + ", " + formatDienstTijd(bezetting.dienst.begintijd) + "–" + formatDienstTijd(bezetting.dienst.eindtijd) + " in " + vestiging.naam + ". Open Ruilverzoeken om te reageren.",
         "/app/ruilen",
         dienstBezettingId,
       );
     }
 
+    await stuurEigenaarPushVoorRuil(
+      vestiging.organisatieId,
+      dienstBezettingId,
+      ruilverzoek.id,
+      [gebruiker.medewerker.voornaam, gebruiker.medewerker.tussenvoegsel, gebruiker.medewerker.achternaam].filter(Boolean).join(" "),
+      bezetting.dienst.datum,
+      bezetting.dienst.begintijd,
+      bezetting.dienst.eindtijd,
+      vestiging.naam,
+    );
     await prisma.dienstBezetting.update({ where: { id: dienstBezettingId }, data: { isRuilAangeboden: true } });
     return NextResponse.json(ruilverzoek, { status: 201 });
   } catch (error) {

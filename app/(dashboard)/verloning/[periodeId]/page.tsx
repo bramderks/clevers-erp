@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { verstuurPushNaarGebruiker } from "@/lib/push/service";
 import { controleerVerloning } from "@/lib/verloning/controleerVerloning";
 import { verwerkVerloning } from "@/lib/verloning/verwerkVerloning";
 
@@ -306,6 +307,7 @@ export default async function VerloningDetailPage({
       select: {
         id: true,
         status: true,
+        periodeStart: true,
         regels: {
           select: {
             vestiging: {
@@ -350,6 +352,37 @@ export default async function VerloningDetailPage({
         gecontroleerdOp: null,
       },
     });
+
+    if (actuelePeriode.status !== "KLAAR") {
+      const periodeOrganisatieIds = [...new Set(
+        actuelePeriode.regels.map((regel) => regel.vestiging.organisatieId),
+      )];
+      const eigenaarGebruikers = await prisma.organisatieGebruiker.findMany({
+        where: {
+          organisatieId: { in: periodeOrganisatieIds },
+          actief: true,
+          rol: { naam: { equals: "eigenaar", mode: "insensitive" } },
+          systeemGebruiker: { actief: true },
+        },
+        select: { systeemGebruikerId: true },
+      });
+      const ontvangers = [...new Set(eigenaarGebruikers.map((item) => item.systeemGebruikerId))];
+      const periodeNaam = new Intl.DateTimeFormat("nl-NL", {
+        month: "long",
+        year: "numeric",
+      }).format(actuelePeriode.periodeStart);
+
+      for (const systeemGebruikerId of ontvangers) {
+        await verstuurPushNaarGebruiker({
+          systeemGebruikerId,
+          type: "EIGENAAR_VERLONING_KLAAR",
+          sleutel: "eigenaar-verloning-klaar:" + periodeId,
+          titel: "Verloning staat klaar",
+          body: "De verloning voor " + periodeNaam + " staat klaar om te controleren en ter goedkeuring naar medewerkers te versturen.",
+          href: "/verloning/" + periodeId,
+        });
+      }
+    }
 
     revalidatePath(`/verloning/${periodeId}`);
     revalidatePath("/verloning");
