@@ -244,15 +244,6 @@ export default function PushNotificationSettings() {
     }
   }
 
-  if (bezig) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Loader2 size={18} className="animate-spin" />
-        Instellingen controleren...
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-5">
       <div className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -280,6 +271,12 @@ export default function PushNotificationSettings() {
       </div>
 
       {ondersteund ? (
+        bezig ? (
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <Loader2 size={18} className="animate-spin" />
+            Pushinstellingen controleren...
+          </div>
+        ) : (
         <>
                 <div className="flex flex-wrap items-center gap-3">
                   <div
@@ -345,6 +342,7 @@ export default function PushNotificationSettings() {
                   </p>
                 </div>
         </>
+        )
       ) : (
         <div className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-800">
           Deze browser ondersteunt geen pushmeldingen. Je persoonlijke e-mailinstellingen blijven gewoon beschikbaar.
