@@ -354,9 +354,12 @@ export default async function VerloningDetailPage({
     });
 
     if (actuelePeriode.status !== "KLAAR") {
+      const periodeOrganisatieIds = [...new Set(
+        actuelePeriode.regels.map((regel) => regel.vestiging.organisatieId),
+      )];
       const eigenaarGebruikers = await prisma.organisatieGebruiker.findMany({
         where: {
-          organisatieId: { in: organisatieIds },
+          organisatieId: { in: periodeOrganisatieIds },
           actief: true,
           rol: { naam: { equals: "eigenaar", mode: "insensitive" } },
           systeemGebruiker: { actief: true },
