@@ -31,6 +31,7 @@ type RuilActie =
 async function stuurEigenaarPushVoorRuil(
   organisatieId: string,
   dienstBezettingId: string,
+  ruilverzoekId: string,
   aanvragerNaam: string,
   datum: Date,
   begintijd: Date,
@@ -53,7 +54,7 @@ async function stuurEigenaarPushVoorRuil(
     await stuurPush(
       eigenaar.systeemGebruikerId,
       "RUIL_INGEDIEND",
-      "ruil-ingediend:" + dienstBezettingId,
+      "ruil-ingediend:" + ruilverzoekId,
       "Ruilverzoek ingediend",
       aanvragerNaam + " heeft een dienst ter ruil aangeboden: " + dienstTekst,
       "/app/ruilen",
@@ -665,6 +666,7 @@ export async function POST(
       await stuurEigenaarPushVoorRuil(
         vestiging.organisatieId,
         dienstBezettingId,
+        ruilverzoeken[0].id,
         [gebruiker.medewerker.voornaam, gebruiker.medewerker.tussenvoegsel, gebruiker.medewerker.achternaam].filter(Boolean).join(" "),
         bezetting.dienst.datum,
         bezetting.dienst.begintijd,
@@ -892,6 +894,7 @@ export async function POST(
     await stuurEigenaarPushVoorRuil(
       vestiging.organisatieId,
       dienstBezettingId,
+      ruilverzoek.id,
       [gebruiker.medewerker.voornaam, gebruiker.medewerker.tussenvoegsel, gebruiker.medewerker.achternaam].filter(Boolean).join(" "),
       bezetting.dienst.datum,
       bezetting.dienst.begintijd,
