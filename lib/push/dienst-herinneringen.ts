@@ -100,7 +100,7 @@ export async function verstuurDienstHerinneringen() {
         systeemGebruikerId: bezetting.medewerker.systeemGebruikerId,
         type: herinnering.type,
         sleutel: "dienst:" + bezetting.id + ":" + herinnering.type,
-        titel: "Clevers — dienstherinnering",
+        titel: "Dienstherinnering",
         body:
           herinnering.type === "DIENST_24U"
             ? "Je dienst begint over ongeveer 24 uur."
