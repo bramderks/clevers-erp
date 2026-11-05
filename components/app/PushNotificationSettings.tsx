@@ -10,6 +10,18 @@ function base64UrlNaarUint8Array(waarde: string) {
   return Uint8Array.from(raw, (karakter) => karakter.charCodeAt(0));
 }
 
+function wachtOpServiceWorker(): Promise<ServiceWorkerRegistration> {
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(
+      () => reject(new Error("De Clevers-serviceworker is niet gestart. Sluit de app volledig af en open deze opnieuw.")),
+      10000,
+    );
+    navigator.serviceWorker.ready.then(
+      (registratie) => { window.clearTimeout(timeout); resolve(registratie); },
+      (error) => { window.clearTimeout(timeout); reject(error); },
+    );
+  });
+}
 export default function PushNotificationSettings() {
   const [ondersteund, setOndersteund] = useState(false);
   const [toestemming, setToestemming] =
@@ -131,7 +143,8 @@ export default function PushNotificationSettings() {
         throw new Error("VAPID public key ontbreekt.");
       }
 
-      const registratie = await navigator.serviceWorker.ready;
+      await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+      const registratie = await wachtOpServiceWorker();
       const bestaande =
         await registratie.pushManager.getSubscription();
 
@@ -173,7 +186,7 @@ export default function PushNotificationSettings() {
     setMelding(null);
 
     try {
-      const registratie = await navigator.serviceWorker.ready;
+      const registratie = await wachtOpServiceWorker();
       const subscription =
         await registratie.pushManager.getSubscription();
 
@@ -302,6 +315,7 @@ export default function PushNotificationSettings() {
                       <button
                         type="button"
                         onClick={() => void uitschakelen()}
+                        disabled={bezig}
                         className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
                       >
                         Meldingen uitschakelen
@@ -319,9 +333,10 @@ export default function PushNotificationSettings() {
                     <button
                       type="button"
                       onClick={() => void inschakelen()}
-                      className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
+                      disabled={bezig}
+                      className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 disabled:cursor-wait disabled:opacity-60"
                     >
-                      Meldingen inschakelen
+                      {bezig ? "Bezig met inschakelen..." : "Meldingen inschakelen"}
                     </button>
                   )}
                 </div>
