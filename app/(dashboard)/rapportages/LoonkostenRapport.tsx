@@ -211,33 +211,7 @@ export default function LoonkostenRapport(p: {
     }
   };
 
-  const afsluiten = async () => {
-    if (gesloten || !p.weekBestaat) return;
-    if (!window.confirm("Week afsluiten? De geplande loonkosten, omzet en personeelsmix worden definitief opgeslagen als historische waarde.")) return;
 
-    setBusy(true);
-    setMelding("");
-    try {
-      const response = await fetch("/api/rapportages/loonkosten/afsluiten", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          vestigingId: p.vestigingId,
-          jaar: p.jaar,
-          weeknummer: p.weeknummer,
-          omzet: parseNummer(omzet),
-          doelPercentage: parseNummer(doel),
-        }),
-      });
-      const resultaat = await response.json();
-      if (!response.ok) throw new Error(resultaat.error || "Afsluiten mislukt.");
-      window.location.reload();
-    } catch (error) {
-      setMelding(error instanceof Error ? error.message : "Afsluiten mislukt.");
-    } finally {
-      setBusy(false);
-    }
-  };
 
   return (
     <section className="space-y-5">
@@ -509,14 +483,9 @@ export default function LoonkostenRapport(p: {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="font-semibold text-slate-900">Week definitief afsluiten</p>
-            <p className="mt-1 text-sm text-slate-500">Hiermee worden de geplande uren, loonkosten, omzet, norm en personeelsmix als historische waarden opgeslagen.</p>
-          </div>
-          <button onClick={afsluiten} disabled={busy || !p.weekBestaat} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">
-            <Lock size={17} /> Week afsluiten
-          </button>
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+          <p className="font-semibold text-slate-900">Week afsluiten via Planning</p>
+          <p className="mt-1 text-sm text-slate-600">De eigenaar sluit de week af vanuit de planning, na bevestiging van alle drie de controlepunten.</p>
         </div>
       )}
 
