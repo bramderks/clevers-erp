@@ -17,12 +17,22 @@ export default async function Sidebar() {
         relatie.organisatie.actief,
     ) ?? [];
 
+  const heeftSuperAdminRol = actieveRelaties.some(
+    (relatie) => relatie.rol?.naam?.trim().toLowerCase() === "super admin",
+  );
+  const heeftEigenaarRol = actieveRelaties.some(
+    (relatie) => relatie.rol?.naam?.trim().toLowerCase() === "eigenaar",
+  );
   const relatie =
-    actieveRelaties[0] ?? null;
+    actieveRelaties.find((relatie) =>
+      ["super admin", "eigenaar"].includes(relatie.rol?.naam?.trim().toLowerCase() ?? ""),
+    ) ?? actieveRelaties[0] ?? null;
 
-  const rolNaam =
-    relatie?.rol?.naam ??
-    "Gebruiker";
+  const rolNaam = heeftSuperAdminRol
+    ? "Super Admin"
+    : heeftEigenaarRol
+      ? "Eigenaar"
+      : relatie?.rol?.naam ?? "Gebruiker";
 
   const rolKey = (
     Object.keys(roles) as Array<
@@ -34,20 +44,16 @@ export default async function Sidebar() {
       rolNaam.toLowerCase(),
   );
 
+  // Super Admin heeft dezelfde volledige navigatierechten als Eigenaar,
+  // onafhankelijk van de volgorde van organisatie-relaties.
   const gebruikersPermissions =
-    rolKey
-      ? Array.from(
-          roles[rolKey].permissions,
-        )
-      : [];
+    heeftSuperAdminRol || heeftEigenaarRol
+      ? Array.from(roles.eigenaar.permissions)
+      : rolKey
+        ? Array.from(roles[rolKey].permissions)
+        : [];
 
-  const isEigenaar =
-    actieveRelaties.some(
-      (relatie) =>
-        relatie.rol?.naam
-          ?.toLowerCase() ===
-        "eigenaar",
-    );
+  const isEigenaar = heeftEigenaarRol || heeftSuperAdminRol;
 
   const isTeamleider =
     actieveRelaties.some(
