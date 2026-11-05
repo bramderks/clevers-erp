@@ -1,4 +1,5 @@
 import webPushClient from "web-push";
+import { prisma } from "@/lib/prisma";
 
 type WebPushSubscription = { endpoint: string; keys: { p256dh: string; auth: string } };
 type WebPushOptions = Parameters<typeof webPushClient.sendNotification>[2];
@@ -55,7 +56,89 @@ export async function verstuurCentralePush(
   throw new Error("Pushmelding kon na meerdere pogingen niet worden verstuurd.");
 }
 
-/** Compatibele transportadapter; bestaande verzendroutes lopen via deze centrale module. */
+
+export type CentralePushInput = {
+  systeemGebruikerId: string;
+  type: string;
+  sleutel: string;
+  titel: string;
+  body: string;
+  href: string;
+  geplandVoor?: Date;
+  dienstBezettingId?: string;
+};
+
+export async function verstuurPushNaarGebruiker(input: CentralePushInput) {
+  if (!configureerCentralePush()) {
+    throw new Error("VAPID-configuratie ontbreekt.");
+  }
+
+  const subscriptions = await prisma.pushSubscription.findMany({
+    where: { systeemGebruikerId: input.systeemGebruikerId, actief: true },
+  });
+
+  let verstuurd = 0;
+  let fouten = 0;
+  let overgeslagen = 0;
+
+  for (const subscription of subscriptions) {
+    const sleutel = `${input.sleutel}:${subscription.id}`;
+    const melding = await prisma.pushMelding.upsert({
+      where: { sleutel },
+      create: {
+        type: input.type,
+        sleutel,
+        pushSubscriptionId: subscription.id,
+        systeemGebruikerId: input.systeemGebruikerId,
+        dienstBezettingId: input.dienstBezettingId,
+        geplandVoor: input.geplandVoor ?? new Date(),
+      },
+      update: {},
+    });
+
+    if (melding.verstuurdOp) {
+      overgeslagen += 1;
+      continue;
+    }
+
+    try {
+      await verstuurCentralePush(
+        {
+          endpoint: subscription.endpoint,
+          keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+        },
+        JSON.stringify({ title: input.titel, body: input.body, href: input.href }),
+      );
+      await prisma.pushMelding.update({
+        where: { id: melding.id },
+        data: { verstuurdOp: new Date(), foutmelding: null },
+      });
+      verstuurd += 1;
+    } catch (error) {
+      const statusCode =
+        typeof error === "object" && error !== null && "statusCode" in error
+          ? Number((error as { statusCode?: unknown }).statusCode)
+          : null;
+      await prisma.pushMelding.update({
+        where: { id: melding.id },
+        data: {
+          foutmelding: error instanceof Error ? error.message : "Onbekende pushfout.",
+        },
+      });
+      if (statusCode === 404 || statusCode === 410) {
+        await prisma.pushSubscription.update({
+          where: { id: subscription.id },
+          data: { actief: false, laatsteFoutOp: new Date() },
+        });
+      }
+      fouten += 1;
+    }
+  }
+
+  return { verstuurd, fouten, overgeslagen, apparaten: subscriptions.length };
+}
+
+ bestaande verzendroutes lopen via deze centrale module. */
 export const webpush = {
   setVapidDetails: configureerVapidDetails,
   sendNotification: verstuurCentralePush,

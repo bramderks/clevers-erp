@@ -1,4 +1,4 @@
-import { webpush } from "@/lib/push/service";
+import { configureerCentralePush, verstuurPushNaarGebruiker } from "@/lib/push/service";
 import { prisma } from "@/lib/prisma";
 import { kalenderDatumUTC, lokaleDatumSleutel } from "@/lib/planning/tijd";
 
@@ -10,16 +10,6 @@ const VENSTERS: Array<{ type: OpenDienstHerinneringType; minuten: number }> = [
   { type: "OPEN_DIENST_24U", minuten: 24 * 60 },
 ];
 
-function vapidInstellen() {
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  const privateKey = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT;
-
-  if (!publicKey || !privateKey || !subject) return false;
-  webpush.setVapidDetails(subject, publicKey, privateKey);
-  return true;
-}
-
 function binnenVenster(nu: Date, doel: Date) {
   // De cron draait ieder uur. Een melding is verschuldigd
   // vanaf het doelmoment tot 65 minuten daarna, zodat een
@@ -29,7 +19,7 @@ function binnenVenster(nu: Date, doel: Date) {
 }
 
 export async function verstuurOpenDienstMeldingen() {
-  if (!vapidInstellen()) {
+  if (!configureerCentralePush()) {
     throw new Error("VAPID-configuratie ontbreekt.");
   }
 
@@ -107,65 +97,19 @@ export async function verstuurOpenDienstMeldingen() {
       for (const medewerker of medewerkers) {
         if (!medewerker.systeemGebruikerId) continue;
 
-        const subscriptions = await prisma.pushSubscription.findMany({
-          where: {
-            systeemGebruikerId: medewerker.systeemGebruikerId,
-            actief: true,
-          },
+        const result = await verstuurPushNaarGebruiker({
+          systeemGebruikerId: medewerker.systeemGebruikerId,
+          type: venster.type,
+          sleutel: "open-dienst:" + bezetting.id + ":" + venster.type,
+          titel: "Clevers — open dienst",
+          body: dienst.week.vestiging.naam + ": er staat een open dienst klaar. Je kunt je beschikbaarheid doorgeven.",
+          href: "/dashboard",
+          dienstBezettingId: bezetting.id,
+          geplandVoor: doel,
         });
-
-        for (const subscription of subscriptions) {
-          const sleutel = `open-dienst:${bezetting.id}:${venster.type}:${subscription.id}`;
-          const melding = await prisma.pushMelding.upsert({
-          where: { sleutel },
-          create: {
-              type: venster.type,
-              sleutel,
-              pushSubscriptionId: subscription.id,
-              systeemGebruikerId: medewerker.systeemGebruikerId,
-              dienstBezettingId: bezetting.id,
-              geplandVoor: doel,
-            },
-          update: {},
-        });
-        if (melding.verstuurdOp) { overgeslagen += 1; continue; }
-
-          try {
-            await webpush.sendNotification(
-              {
-                endpoint: subscription.endpoint,
-                keys: { p256dh: subscription.p256dh, auth: subscription.auth },
-              },
-              JSON.stringify({
-                title: "Clevers — open dienst",
-                body: `${dienst.week.vestiging.naam}: er staat een open dienst klaar. Je kunt je beschikbaarheid doorgeven.`,
-                href: "/dashboard",
-              }),
-            );
-
-            await prisma.pushMelding.update({
-              where: { id: melding.id },
-              data: { verstuurdOp: new Date(), foutmelding: null },
-            });
-            verstuurd += 1;
-          } catch (error) {
-            const statusCode =
-              typeof error === "object" && error !== null && "statusCode" in error
-                ? Number((error as { statusCode?: unknown }).statusCode)
-                : null;
-            await prisma.pushMelding.update({
-              where: { id: melding.id },
-              data: { foutmelding: error instanceof Error ? error.message : "Onbekende pushfout." },
-            });
-            if (statusCode === 404 || statusCode === 410) {
-              await prisma.pushSubscription.update({
-                where: { id: subscription.id },
-                data: { actief: false, laatsteFoutOp: new Date() },
-              });
-            }
-            fouten += 1;
-          }
-        }
+        verstuurd += result.verstuurd;
+        fouten += result.fouten;
+        overgeslagen += result.overgeslagen;
       }
     }
   }
@@ -182,7 +126,7 @@ export async function verstuurOpenDienstMeldingen() {
 export async function verstuurDirecteOpenDienstMelding(
   dienstBezettingId: string,
 ) {
-  if (!vapidInstellen()) return { verstuurd: 0, fouten: 0 };
+  if (!configureerCentralePush()) return { verstuurd: 0, fouten: 0 };
 
   const bezetting = await prisma.dienstBezetting.findUnique({
     where: { id: dienstBezettingId },
@@ -225,67 +169,17 @@ export async function verstuurDirecteOpenDienstMelding(
   for (const medewerker of medewerkers) {
     if (!medewerker.systeemGebruikerId) continue;
 
-    const subscriptions = await prisma.pushSubscription.findMany({
-      where: {
-        systeemGebruikerId: medewerker.systeemGebruikerId,
-        actief: true,
-      },
+    const result = await verstuurPushNaarGebruiker({
+      systeemGebruikerId: medewerker.systeemGebruikerId,
+      type: "OPEN_DIENST_DIRECT",
+      sleutel: "open-dienst-direct:" + bezetting.id,
+      titel: "Clevers — open dienst",
+      body: bezetting.dienst.week.vestiging.naam + ": er is een open dienst voor jouw functie.",
+      href: "/dashboard",
+      dienstBezettingId: bezetting.id,
     });
-
-    for (const subscription of subscriptions) {
-      const sleutel = `open-dienst-direct:${bezetting.id}:${subscription.id}`;
-      const melding = await prisma.pushMelding.upsert({
-          where: { sleutel },
-          create: {
-          type: "OPEN_DIENST_DIRECT",
-          sleutel,
-          pushSubscriptionId: subscription.id,
-          systeemGebruikerId: medewerker.systeemGebruikerId,
-          dienstBezettingId: bezetting.id,
-          geplandVoor: new Date(),
-        },
-          update: {},
-        });
-        if (melding.verstuurdOp) continue;
-
-      try {
-        await webpush.sendNotification(
-          {
-            endpoint: subscription.endpoint,
-            keys: { p256dh: subscription.p256dh, auth: subscription.auth },
-          },
-          JSON.stringify({
-            title: "Clevers — open dienst",
-            body: `${bezetting.dienst.week.vestiging.naam}: er is een open dienst voor jouw functie.`,
-            href: "/dashboard",
-          }),
-        );
-
-        await prisma.pushMelding.update({
-          where: { id: melding.id },
-          data: { verstuurdOp: new Date(), foutmelding: null },
-        });
-        verstuurd += 1;
-      } catch (error) {
-        fouten += 1;
-        const statusCode =
-          typeof error === "object" && error !== null && "statusCode" in error
-            ? Number((error as { statusCode?: unknown }).statusCode)
-            : null;
-        await prisma.pushMelding.update({
-          where: { id: melding.id },
-          data: {
-            foutmelding: error instanceof Error ? error.message : "Onbekende pushfout.",
-          },
-        });
-        if (statusCode === 404 || statusCode === 410) {
-          await prisma.pushSubscription.update({
-            where: { id: subscription.id },
-            data: { actief: false, laatsteFoutOp: new Date() },
-          });
-        }
-      }
-    }
+    verstuurd += result.verstuurd;
+    fouten += result.fouten;
   }
 
   return { verstuurd, fouten };
@@ -304,13 +198,9 @@ export async function verstuurNieuweTaakMeldingen(
     actie: string;
   }>,
 ) {
-  if (!vapidInstellen() || taken.length === 0) {
+  if (!configureerCentralePush() || taken.length === 0) {
     return { verstuurd: 0, fouten: 0 };
   }
-
-  const subscriptions = await prisma.pushSubscription.findMany({
-    where: { systeemGebruikerId, actief: true },
-  });
 
   let verstuurd = 0;
   let fouten = 0;
@@ -318,67 +208,16 @@ export async function verstuurNieuweTaakMeldingen(
   for (const taak of taken) {
     if (taak.actie === "EIGENAAR_AANKOMENDE_DIENSTEN") continue;
 
-    for (const subscription of subscriptions) {
-      const sleutel = `taak-nieuw:${systeemGebruikerId}:${taak.id}:${subscription.id}`;
-      const melding = await prisma.pushMelding.upsert({
-          where: { sleutel },
-          create: {
-          type: "TAAK_NIEUW",
-          sleutel,
-          pushSubscriptionId: subscription.id,
-          systeemGebruikerId,
-          geplandVoor: new Date(),
-        },
-          update: {},
-        });
-        if (melding.verstuurdOp) continue;
-
-      try {
-        await webpush.sendNotification(
-          {
-            endpoint: subscription.endpoint,
-            keys: {
-              p256dh: subscription.p256dh,
-              auth: subscription.auth,
-            },
-          },
-          JSON.stringify({
-            title: "Clevers — nieuwe taak",
-            body: "Er staat een nieuwe taak voor je klaar.",
-            href: "/dashboard",
-          }),
-        );
-
-        await prisma.pushMelding.update({
-          where: { id: melding.id },
-          data: { verstuurdOp: new Date(), foutmelding: null },
-        });
-        verstuurd += 1;
-      } catch (error) {
-        fouten += 1;
-        const statusCode =
-          typeof error === "object" &&
-          error !== null &&
-          "statusCode" in error
-            ? Number((error as { statusCode?: unknown }).statusCode)
-            : null;
-
-        await prisma.pushMelding.update({
-          where: { id: melding.id },
-          data: {
-            foutmelding:
-              error instanceof Error ? error.message : "Onbekende pushfout.",
-          },
-        });
-
-        if (statusCode === 404 || statusCode === 410) {
-          await prisma.pushSubscription.update({
-            where: { id: subscription.id },
-            data: { actief: false, laatsteFoutOp: new Date() },
-          });
-        }
-      }
-    }
+    const result = await verstuurPushNaarGebruiker({
+      systeemGebruikerId,
+      type: "TAAK_NIEUW",
+      sleutel: "taak-nieuw:" + systeemGebruikerId + ":" + taak.id,
+      titel: "Clevers — nieuwe taak",
+      body: "Er staat een nieuwe taak voor je klaar.",
+      href: "/dashboard",
+    });
+    verstuurd += result.verstuurd;
+    fouten += result.fouten;
   }
 
   return { verstuurd, fouten };

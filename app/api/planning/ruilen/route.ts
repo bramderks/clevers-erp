@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { webpush } from "@/lib/push/service";
+import { verstuurPushNaarGebruiker } from "@/lib/push/service";
 
 import {
   getCurrentUser,
@@ -36,15 +36,6 @@ async function synchroniseerRuilMarkering(dienstBezettingId: string) {
   });
 }
 
-function configureerPush() {
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  const privateKey = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT;
-  if (!publicKey || !privateKey || !subject) return false;
-  webpush.setVapidDetails(subject, publicKey, privateKey);
-  return true;
-}
-
 async function stuurPush(
   systeemGebruikerId: string,
   type: string,
@@ -54,60 +45,15 @@ async function stuurPush(
   href: string,
   dienstBezettingId?: string,
 ) {
-  if (!configureerPush()) return;
-  const subscriptions = await prisma.pushSubscription.findMany({
-    where: { systeemGebruikerId, actief: true },
+  await verstuurPushNaarGebruiker({
+    systeemGebruikerId,
+    type,
+    sleutel,
+    titel,
+    body,
+    href,
+    dienstBezettingId,
   });
-  for (const subscription of subscriptions) {
-    const meldingSleutel = `${sleutel}:${subscription.id}`;
-    const melding = await prisma.pushMelding.upsert({
-      where: { sleutel: meldingSleutel },
-      create: {
-        type,
-        sleutel: meldingSleutel,
-        pushSubscriptionId: subscription.id,
-        systeemGebruikerId,
-        dienstBezettingId,
-        geplandVoor: new Date(),
-      },
-      update: {},
-    });
-    if (melding.verstuurdOp) continue;
-    try {
-      await webpush.sendNotification(
-        {
-          endpoint: subscription.endpoint,
-          keys: {
-            p256dh: subscription.p256dh,
-            auth: subscription.auth,
-          },
-        },
-        JSON.stringify({ title: titel, body, href }),
-      );
-      await prisma.pushMelding.update({
-        where: { id: melding.id },
-        data: { verstuurdOp: new Date(), foutmelding: null },
-      });
-    } catch (error) {
-      const statusCode =
-        typeof error === "object" && error !== null && "statusCode" in error
-          ? Number((error as { statusCode?: unknown }).statusCode)
-          : null;
-      await prisma.pushMelding.update({
-        where: { id: melding.id },
-        data: {
-          foutmelding:
-            error instanceof Error ? error.message : "Onbekende pushfout.",
-        },
-      });
-      if (statusCode === 404 || statusCode === 410) {
-        await prisma.pushSubscription.update({
-          where: { id: subscription.id },
-          data: { actief: false, laatsteFoutOp: new Date() },
-        });
-      }
-    }
-  }
 }
 
 function fout(

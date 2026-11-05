@@ -1,4 +1,4 @@
-import { webpush } from "@/lib/push/service";
+import { configureerCentralePush, verstuurPushNaarGebruiker } from "@/lib/push/service";
 import { prisma } from "@/lib/prisma";
 import { verstuurMail, webAppUrl } from "@/lib/mail";
 import {
@@ -25,19 +25,6 @@ const HERINNERINGEN: Array<{
   { type: "BESCHIKBAARHEID_6U", minuten: 6 * 60, tekst: "over 6 uur" },
   { type: "BESCHIKBAARHEID_2U", minuten: 2 * 60, tekst: "over 2 uur" },
 ];
-
-function vapidInstellen() {
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  const privateKey = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT;
-
-  if (!publicKey || !privateKey || !subject) {
-    return false;
-  }
-
-  webpush.setVapidDetails(subject, publicKey, privateKey);
-  return true;
-}
 
 function binnenVenster(nu: Date, doel: Date) {
   const verschil = Math.abs(doel.getTime() - nu.getTime());
@@ -145,17 +132,6 @@ export async function verstuurBeschikbaarheidDeadlineHerinneringen() {
                       email: true,
                       actief: true,
                       emailMeldingenAan: true,
-                      pushSubscriptions: {
-                        where: {
-                          actief: true,
-                        },
-                        select: {
-                          id: true,
-                          endpoint: true,
-                          p256dh: true,
-                          auth: true,
-                        },
-                      },
                     },
                   },
                 },
@@ -171,7 +147,7 @@ export async function verstuurBeschikbaarheidDeadlineHerinneringen() {
   let mailVerstuurd = 0;
   let overgeslagen = 0;
   let fouten = 0;
-  const pushBeschikbaar = vapidInstellen();
+  const pushBeschikbaar = configureerCentralePush();
 
   for (const week of weken) {
     if (week.status === "AFGESLOTEN") {
@@ -322,86 +298,18 @@ Clevers`;
 
         if (!pushBeschikbaar) continue;
 
-        for (const subscription of gebruiker.pushSubscriptions) {
-          const pushSleutel =
-            `${sleutelBasis}:push:${subscription.id}`;
-
-          const pushMelding = await prisma.pushMelding.upsert({
-            where: { sleutel: pushSleutel },
-            create: {
-              type: herinnering.type,
-              sleutel: pushSleutel,
-              pushSubscriptionId: subscription.id,
-              systeemGebruikerId: gebruiker.id,
-              geplandVoor: doel,
-            },
-            update: {},
-          });
-
-          if (pushMelding.verstuurdOp) {
-            overgeslagen += 1;
-            continue;
-          }
-
-          try {
-            await webpush.sendNotification(
-              {
-                endpoint: subscription.endpoint,
-                keys: {
-                  p256dh: subscription.p256dh,
-                  auth: subscription.auth,
-                },
-              },
-              JSON.stringify({
-                title: "Clevers — beschikbaarheid",
-                body:
-                  `De deadline voor ${weeknaam} is ${herinnering.tekst}. Geef je beschikbaarheid door.`,
-                href,
-              }),
-            );
-
-            await prisma.pushMelding.update({
-              where: { id: pushMelding.id },
-              data: {
-                verstuurdOp: new Date(),
-                foutmelding: null,
-              },
-            });
-
-            pushVerstuurd += 1;
-          } catch (error) {
-            const statusCode =
-              typeof error === "object" &&
-              error !== null &&
-              "statusCode" in error
-                ? Number(
-                    (error as { statusCode?: unknown }).statusCode,
-                  )
-                : null;
-
-            await prisma.pushMelding.update({
-              where: { id: pushMelding.id },
-              data: {
-                foutmelding:
-                  error instanceof Error
-                    ? error.message
-                    : "Onbekende pushfout.",
-              },
-            });
-
-            if (statusCode === 404 || statusCode === 410) {
-              await prisma.pushSubscription.update({
-                where: { id: subscription.id },
-                data: {
-                  actief: false,
-                  laatsteFoutOp: new Date(),
-                },
-              });
-            }
-
-            fouten += 1;
-          }
-        }
+        const pushResult = await verstuurPushNaarGebruiker({
+          systeemGebruikerId: gebruiker.id,
+          type: herinnering.type,
+          sleutel: sleutelBasis + ":push",
+          titel: "Clevers — beschikbaarheid",
+          body: "De deadline voor " + weeknaam + " is " + herinnering.tekst + ". Geef je beschikbaarheid door.",
+          href,
+          geplandVoor: doel,
+        });
+        pushVerstuurd += pushResult.verstuurd;
+        overgeslagen += pushResult.overgeslagen;
+        fouten += pushResult.fouten;
       }
     }
   }

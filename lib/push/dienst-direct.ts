@@ -1,19 +1,10 @@
-import { webpush } from "@/lib/push/service";
+import { configureerCentralePush, verstuurPushNaarGebruiker } from "@/lib/push/service";
 import { prisma } from "@/lib/prisma";
 import { formatDienstDatum, formatDienstTijd } from "@/lib/planning/tijd";
 import { verstuurMail, webAppUrl } from "@/lib/mail";
 
-function vapidInstellen() {
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  const privateKey = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT;
-  if (!publicKey || !privateKey || !subject) return false;
-  webpush.setVapidDetails(subject, publicKey, privateKey);
-  return true;
-}
-
 export async function verstuurDirecteDienstMelding(dienstBezettingId: string) {
-  if (!vapidInstellen()) return { verstuurd: 0, fouten: 0 };
+  if (!configureerCentralePush()) return { verstuurd: 0, fouten: 0 };
 
   const bezetting = await prisma.dienstBezetting.findUnique({
     where: { id: dienstBezettingId },
@@ -39,10 +30,6 @@ export async function verstuurDirecteDienstMelding(dienstBezettingId: string) {
   }
 
   const systeemGebruikerId = bezetting.medewerker.systeemGebruikerId;
-  const subscriptions = await prisma.pushSubscription.findMany({
-    where: { systeemGebruikerId, actief: true },
-  });
-
   const datum = formatDienstDatum(bezetting.dienst.datum);
   const begintijd = formatDienstTijd(bezetting.dienst.begintijd);
   const eindtijd = formatDienstTijd(bezetting.dienst.eindtijd);
@@ -94,52 +81,17 @@ export async function verstuurDirecteDienstMelding(dienstBezettingId: string) {
       }
     }
   }
-  for (const subscription of subscriptions) {
-    const sleutel = "dienst-direct:" + bezetting.id + ":" + subscription.id;
-    const melding = await prisma.pushMelding.upsert({
-          where: { sleutel },
-          create: {
-        type: "DIENST_DIRECT",
-        sleutel,
-        pushSubscriptionId: subscription.id,
-        systeemGebruikerId,
-        dienstBezettingId: bezetting.id,
-        geplandVoor: new Date(),
-      },
-          update: {},
-        });
-        if (melding.verstuurdOp) continue;
+  const pushResult = await verstuurPushNaarGebruiker({
+    systeemGebruikerId,
+    type: "DIENST_DIRECT",
+    sleutel: "dienst-direct:" + bezetting.id,
+    titel: "Clevers — je bent ingepland",
+    body: datum + ", " + begintijd + "–" + eindtijd + " in " + vestigingNaam + ".",
+    href: "/app/planning",
+    dienstBezettingId: bezetting.id,
+  });
+  verstuurd += pushResult.verstuurd;
+  fouten += pushResult.fouten;
 
-    try {
-      await webpush.sendNotification(
-        { endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } },
-        JSON.stringify({
-          title: "Clevers — je bent ingepland",
-          body: datum + ", " + begintijd + "–" + eindtijd + " in " + bezetting.dienst.week.vestiging.naam + ".",
-          href: "/app/planning",
-        }),
-      );
-      await prisma.pushMelding.update({
-        where: { id: melding.id },
-        data: { verstuurdOp: new Date(), foutmelding: null },
-      });
-      verstuurd += 1;
-    } catch (error) {
-      fouten += 1;
-      const statusCode = typeof error === "object" && error !== null && "statusCode" in error
-        ? Number((error as { statusCode?: unknown }).statusCode)
-        : null;
-      await prisma.pushMelding.update({
-        where: { id: melding.id },
-        data: { foutmelding: error instanceof Error ? error.message : "Onbekende pushfout." },
-      });
-      if (statusCode === 404 || statusCode === 410) {
-        await prisma.pushSubscription.update({
-          where: { id: subscription.id },
-          data: { actief: false, laatsteFoutOp: new Date() },
-        });
-      }
-    }
-  }
   return { verstuurd, fouten };
 }
