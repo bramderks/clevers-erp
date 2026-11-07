@@ -550,7 +550,7 @@ export default function Topbar({
           </button>
 
           {takenOpen && (
-            <div className="absolute right-0 top-[calc(100%+8px)] z-[100] w-[390px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <div className="fixed right-3 top-[84px] z-[100] w-[390px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl sm:absolute sm:right-0 sm:top-[calc(100%+8px)]">
               {/* Header */}
               <div className="border-b border-slate-100 px-4 py-3">
                 <div className="flex items-center justify-between">
@@ -573,7 +573,7 @@ export default function Topbar({
               </div>
 
               {/* Takenlijst */}
-              <div className="max-h-[460px] overflow-y-auto">
+              <div className="max-h-[calc(100dvh-180px)] overflow-y-auto sm:max-h-[460px]">
                 {takenLaden ? (
                   <div className="px-4 py-8 text-center text-xs text-slate-500">
                     Taken laden...
