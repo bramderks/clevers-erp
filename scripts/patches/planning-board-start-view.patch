@@ -1,0 +1,434 @@
+diff --git a/app/(dashboard)/instellingen/page.tsx b/app/(dashboard)/instellingen/page.tsx
+index 7f094af..ac70ef4 100644
+--- a/app/(dashboard)/instellingen/page.tsx
++++ b/app/(dashboard)/instellingen/page.tsx
+@@ -1,8 +1,9 @@
+ import { redirect } from "next/navigation";
+-import { Bell, Settings } from "lucide-react";
++import { Bell, CalendarDays, Settings } from "lucide-react";
+ 
+ import { vereisInloggen } from "@/lib/requirePermission";
+ import PushNotificationSettings from "@/components/app/PushNotificationSettings";
++import PlanningWeergaveSettings from "@/components/app/PlanningWeergaveSettings";
+ 
+ export const dynamic = "force-dynamic";
+ 
+@@ -31,6 +32,29 @@ export default async function InstellingenPage() {
+         </div>
+       </div>
+ 
++      <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
++        <div className="flex items-start gap-4">
++          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
++            <CalendarDays size={20} />
++          </div>
++          <div className="min-w-0 flex-1">
++            <h2 className="text-lg font-bold text-slate-900">
++              Startweergave van het planbord
++            </h2>
++            <p className="mt-1 text-sm leading-6 text-slate-500">
++              Kies waar het planbord naartoe gaat wanneer je Planning opent.
++              Deze keuze wordt alleen voor jouw account opgeslagen en geldt
++              niet voor andere onderdelen van Clevers ERP.
++            </p>
++            <div className="mt-5">
++              <PlanningWeergaveSettings
++                initialValue={gebruiker.planningWeergave}
++              />
++            </div>
++          </div>
++        </div>
++      </section>
++
+       <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+         <div className="flex items-start gap-4">
+           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+diff --git a/app/(dashboard)/planning/page.tsx b/app/(dashboard)/planning/page.tsx
+index 0a21b0e..ff5f75c 100644
+--- a/app/(dashboard)/planning/page.tsx
++++ b/app/(dashboard)/planning/page.tsx
+@@ -110,6 +110,7 @@ export default async function PlanningPage() {
+             isTeamleider={false}
+             isMedewerker
+             huidigeMedewerkerId={gebruiker.medewerker!.id}
++            planningWeergave={gebruiker.planningWeergave}
+           />
+         );
+       }
+@@ -137,6 +138,7 @@ export default async function PlanningPage() {
+       isTeamleider={isTeamleider}
+       isMedewerker={isMedewerker}
+       huidigeMedewerkerId={gebruiker.medewerker?.id ?? null}
++      planningWeergave={gebruiker.planningWeergave}
+     />
+   );
+ }
+diff --git a/app/api/instellingen/planning-weergave/route.ts b/app/api/instellingen/planning-weergave/route.ts
+new file mode 100644
+index 0000000..d30f330
+--- /dev/null
++++ b/app/api/instellingen/planning-weergave/route.ts
+@@ -0,0 +1,59 @@
++import { NextRequest, NextResponse } from "next/server";
++
++import { getCurrentUser } from "@/lib/auth";
++import { prisma } from "@/lib/prisma";
++
++const TOEGESTANE_WEERGAVES = [
++  "VANDAAG",
++  "LAATSTE_POSITIE",
++  "HUIDIGE_WEEK",
++] as const;
++
++export async function GET() {
++  const gebruiker = await getCurrentUser();
++
++  if (!gebruiker) {
++    return NextResponse.json(
++      { fout: "Je moet ingelogd zijn." },
++      { status: 401 },
++    );
++  }
++
++  return NextResponse.json({
++    planningWeergave: gebruiker.planningWeergave ?? "HUIDIGE_WEEK",
++  });
++}
++
++export async function PATCH(request: NextRequest) {
++  const gebruiker = await getCurrentUser();
++
++  if (!gebruiker) {
++    return NextResponse.json(
++      { fout: "Je moet ingelogd zijn." },
++      { status: 401 },
++    );
++  }
++
++  const body = await request.json().catch(() => null);
++  const planningWeergave = body?.planningWeergave;
++
++  if (
++    typeof planningWeergave !== "string" ||
++    !TOEGESTANE_WEERGAVES.includes(
++      planningWeergave as (typeof TOEGESTANE_WEERGAVES)[number],
++    )
++  ) {
++    return NextResponse.json(
++      { fout: "Kies een geldige planningweergave." },
++      { status: 400 },
++    );
++  }
++
++  const account = await prisma.systeemGebruiker.update({
++    where: { id: gebruiker.id },
++    data: { planningWeergave },
++    select: { planningWeergave: true },
++  });
++
++  return NextResponse.json(account);
++}
+diff --git a/components/app/PlanningWeergaveSettings.tsx b/components/app/PlanningWeergaveSettings.tsx
+new file mode 100644
+index 0000000..25a0ec2
+--- /dev/null
++++ b/components/app/PlanningWeergaveSettings.tsx
+@@ -0,0 +1,153 @@
++"use client";
++
++import { useState } from "react";
++import { CalendarDays, Check, Clock3, History } from "lucide-react";
++
++const OPTIES = [
++  {
++    waarde: "VANDAAG",
++    nummer: "1",
++    titel: "Spring naar vandaag",
++    omschrijving:
++      "Het planbord opent automatisch bij de huidige dag. Ideaal om direct de personeelsbezetting van vandaag te controleren.",
++    Icon: CalendarDays,
++  },
++  {
++    waarde: "LAATSTE_POSITIE",
++    nummer: "2",
++    titel: "Onthoud mijn laatste positie",
++    omschrijving:
++      "Je keert terug naar de week waar je tijdens je vorige bezoek bent gebleven. Handig als je vaak vooruit of terug plant.",
++    Icon: History,
++  },
++  {
++    waarde: "HUIDIGE_WEEK",
++    nummer: "3",
++    titel: "Spring naar de huidige week",
++    omschrijving:
++      "Het planbord opent standaard op maandag van de huidige kalenderweek, ongeacht waar je de vorige keer bent gebleven.",
++    Icon: Clock3,
++  },
++] as const;
++
++type PlanningWeergave = (typeof OPTIES)[number]["waarde"];
++
++type Props = {
++  initialValue: string;
++};
++
++export default function PlanningWeergaveSettings({ initialValue }: Props) {
++  const geldigeBeginwaarde = OPTIES.some(
++    (optie) => optie.waarde === initialValue,
++  )
++    ? (initialValue as PlanningWeergave)
++    : "HUIDIGE_WEEK";
++
++  const [waarde, setWaarde] = useState<PlanningWeergave>(geldigeBeginwaarde);
++  const [opslaan, setOpslaan] = useState(false);
++  const [melding, setMelding] = useState<string | null>(null);
++  const [fout, setFout] = useState<string | null>(null);
++
++  async function wijzigInstelling(nieuweWaarde: PlanningWeergave) {
++    if (nieuweWaarde === waarde || opslaan) return;
++
++    setOpslaan(true);
++    setMelding(null);
++    setFout(null);
++
++    try {
++      const response = await fetch("/api/instellingen/planning-weergave", {
++        method: "PATCH",
++        credentials: "include",
++        headers: { "Content-Type": "application/json" },
++        body: JSON.stringify({ planningWeergave: nieuweWaarde }),
++      });
++      const data = await response.json().catch(() => null);
++
++      if (!response.ok) {
++        throw new Error(
++          data?.fout ?? "De planningweergave kon niet worden opgeslagen.",
++        );
++      }
++
++      setWaarde(nieuweWaarde);
++      setMelding("Je voorkeur is opgeslagen.");
++    } catch (error) {
++      setFout(
++        error instanceof Error
++          ? error.message
++          : "De planningweergave kon niet worden opgeslagen.",
++      );
++    } finally {
++      setOpslaan(false);
++    }
++  }
++
++  return (
++    <div className="space-y-3">
++      <div className="grid gap-3">
++        {OPTIES.map(({ waarde: optieWaarde, nummer, titel, omschrijving, Icon }) => {
++          const geselecteerd = waarde === optieWaarde;
++          const stijl = geselecteerd
++            ? "border-slate-900 bg-slate-50 ring-1 ring-slate-900"
++            : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50";
++
++          return (
++            <label
++              key={optieWaarde}
++              className={"flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition " + stijl + (opslaan ? " pointer-events-none opacity-70" : "")}
++            >
++              <input
++                type="radio"
++                name="planningWeergave"
++                value={optieWaarde}
++                checked={geselecteerd}
++                onChange={() => void wijzigInstelling(optieWaarde)}
++                disabled={opslaan}
++                className="mt-1 h-4 w-4 shrink-0 border-slate-300 text-slate-900 focus:ring-slate-500"
++              />
++              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-slate-700 ring-1 ring-slate-200">
++                <Icon size={18} />
++              </span>
++              <span className="min-w-0 flex-1">
++                <span className="flex flex-wrap items-center gap-2">
++                  <span className="text-xs font-bold text-slate-400">
++                    OPTIE {nummer}
++                  </span>
++                  <span className="text-sm font-semibold text-slate-900">
++                    {titel}
++                  </span>
++                  {geselecteerd && (
++                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-900 px-2 py-0.5 text-[11px] font-semibold text-white">
++                      <Check size={12} />
++                      Gekozen
++                    </span>
++                  )}
++                </span>
++                <span className="mt-1 block text-sm leading-5 text-slate-500">
++                  {omschrijving}
++                </span>
++              </span>
++            </label>
++          );
++        })}
++      </div>
++
++      {opslaan && (
++        <p className="text-sm text-slate-500" role="status">
++          Je voorkeur wordt opgeslagen...
++        </p>
++      )}
++      {melding && (
++        <p className="text-sm font-medium text-emerald-700" role="status">
++          {melding}
++        </p>
++      )}
++      {fout && (
++        <p className="text-sm font-medium text-red-700" role="alert">
++          {fout}
++        </p>
++      )}
++    </div>
++  );
++}
+diff --git a/components/planning/PlanningOverzicht.tsx b/components/planning/PlanningOverzicht.tsx
+index 76b60c4..5ec83be 100644
+--- a/components/planning/PlanningOverzicht.tsx
++++ b/components/planning/PlanningOverzicht.tsx
+@@ -37,6 +37,7 @@ type PlanningOverzichtProps = {
+ 
+   onGewijzigd?: () => void;
+   initialWeekSleutel?: string | null;
++  planningWeergave?: string;
+ };
+ 
+ type PlanningTag = {
+@@ -769,6 +770,7 @@ export default function PlanningOverzicht({
+ 
+   onGewijzigd,
+   initialWeekSleutel = null,
++  planningWeergave = "HUIDIGE_WEEK",
+ }: PlanningOverzichtProps) {
+   const router = useRouter();
+   const gesorteerdeWeken =
+@@ -919,15 +921,17 @@ export default function PlanningOverzicht({
+      */
+     const opgeslagenWeekSleutel =
+       geselecteerdeWeekSleutel ??
+-      (() => {
+-        try {
+-          return sessionStorage.getItem(
+-            "clevers-erp-planweek:" + vestigingId,
+-          );
+-        } catch {
+-          return null;
+-        }
+-      })();
++      (planningWeergave === "LAATSTE_POSITIE"
++        ? (() => {
++            try {
++              return sessionStorage.getItem(
++                "clevers-erp-planweek:" + vestigingId,
++              );
++            } catch {
++              return null;
++            }
++          })()
++        : null);
+ 
+     if (
+       opgeslagenWeekSleutel
+@@ -993,6 +997,7 @@ export default function PlanningOverzicht({
+     gesorteerdeWeken,
+     geselecteerdeWeekSleutel,
+     vestigingId,
++    planningWeergave,
+   ]);
+ 
+   const huidigeWeek =
+@@ -1000,6 +1005,26 @@ export default function PlanningOverzicht({
+       geselecteerdeWeekIndex
+     ] ?? null;
+ 
++  useEffect(() => {
++    if (planningWeergave !== "VANDAAG" || !huidigeWeek) return;
++
++    const vandaag = new Date();
++    const datumSleutel = [
++      vandaag.getFullYear(),
++      String(vandaag.getMonth() + 1).padStart(2, "0"),
++      String(vandaag.getDate()).padStart(2, "0"),
++    ].join("-");
++    const vandaagElement = document.getElementById(
++      "planning-dag-" + datumSleutel,
++    );
++
++    vandaagElement?.scrollIntoView({
++      behavior: "instant",
++      block: "nearest",
++      inline: "center",
++    });
++  }, [huidigeWeek, planningWeergave]);
++
+   useEffect(() => {
+     setWeekAfsluitBevestigingen({
+       urenAkkoord: false,
+diff --git a/components/planning/PlanningPagina.tsx b/components/planning/PlanningPagina.tsx
+index 46a7935..2e778a9 100644
+--- a/components/planning/PlanningPagina.tsx
++++ b/components/planning/PlanningPagina.tsx
+@@ -23,6 +23,7 @@ type PlanningPaginaProps = {
+   isTeamleider?: boolean;
+   isMedewerker?: boolean;
+   huidigeMedewerkerId?: string | null;
++  planningWeergave?: string;
+ };
+ 
+ export default function PlanningPagina({
+@@ -31,6 +32,7 @@ export default function PlanningPagina({
+   isTeamleider = false,
+   isMedewerker = false,
+   huidigeMedewerkerId = null,
++  planningWeergave = "HUIDIGE_WEEK",
+ }: PlanningPaginaProps) {
+   const searchParams = useSearchParams();
+   const weekParam = searchParams.get("week");
+@@ -136,6 +138,7 @@ export default function PlanningPagina({
+           weken={weken}
+           vestigingId={vestigingId}
+           initialWeekSleutel={weekParam}
++          planningWeergave={planningWeergave}
+           isEigenaar={isEigenaar}
+           isTeamleider={isTeamleider}
+           isMedewerker={isMedewerker}
+diff --git a/components/planning/PlanningWeekOverzicht.tsx b/components/planning/PlanningWeekOverzicht.tsx
+index b8fe6a3..58ffd28 100644
+--- a/components/planning/PlanningWeekOverzicht.tsx
++++ b/components/planning/PlanningWeekOverzicht.tsx
+@@ -890,6 +890,7 @@ export default function PlanningWeekOverzicht({
+                 return (
+                   <div
+                     key={dag.datum}
++                    id={"planning-dag-" + dag.datum}
+                     className="flex min-h-[760px] min-w-[300px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
+                   >
+                     {/* ==========================================
+diff --git a/prisma/migrations/20261108130000_add_planning_display_preference/migration.sql b/prisma/migrations/20261108130000_add_planning_display_preference/migration.sql
+new file mode 100644
+index 0000000..3de698a
+--- /dev/null
++++ b/prisma/migrations/20261108130000_add_planning_display_preference/migration.sql
+@@ -0,0 +1,2 @@
++ALTER TABLE "SysteemGebruiker"
++ADD COLUMN "planningWeergave" TEXT NOT NULL DEFAULT 'HUIDIGE_WEEK';
+diff --git a/prisma/schema/01-platform.prisma b/prisma/schema/01-platform.prisma
+index f786c36..52cdb73 100644
+--- a/prisma/schema/01-platform.prisma
++++ b/prisma/schema/01-platform.prisma
+@@ -124,6 +124,10 @@ model SysteemGebruiker {
+   /// Persoonlijke e-mailmeldingen voor het account.
+   emailMeldingenAan Boolean @default(true)
+ 
++  /// Startweergave van het persoonlijke planbord.
++  /// VANDAAG, LAATSTE_POSITIE of HUIDIGE_WEEK.
++  planningWeergave String @default("HUIDIGE_WEEK")
++
+   medewerker Medewerker?
+ 
+   organisaties OrganisatieGebruiker[]
