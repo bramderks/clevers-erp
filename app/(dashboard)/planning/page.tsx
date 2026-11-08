@@ -110,6 +110,7 @@ export default async function PlanningPage() {
             isTeamleider={false}
             isMedewerker
             huidigeMedewerkerId={gebruiker.medewerker!.id}
+            planningWeergave={gebruiker.planningWeergave}
           />
         );
       }
@@ -137,6 +138,7 @@ export default async function PlanningPage() {
       isTeamleider={isTeamleider}
       isMedewerker={isMedewerker}
       huidigeMedewerkerId={gebruiker.medewerker?.id ?? null}
+      planningWeergave={gebruiker.planningWeergave}
     />
   );
 }

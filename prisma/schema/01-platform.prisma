@@ -124,6 +124,10 @@ model SysteemGebruiker {
   /// Persoonlijke e-mailmeldingen voor het account.
   emailMeldingenAan Boolean @default(true)
 
+  /// Startweergave van het persoonlijke planbord.
+  /// VANDAAG, LAATSTE_POSITIE of HUIDIGE_WEEK.
+  planningWeergave String @default("HUIDIGE_WEEK")
+
   medewerker Medewerker?
 
   organisaties OrganisatieGebruiker[]

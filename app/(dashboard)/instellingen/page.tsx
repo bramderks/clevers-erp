@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
-import { Bell, Settings } from "lucide-react";
+import { Bell, CalendarDays, Settings } from "lucide-react";
 
 import { vereisInloggen } from "@/lib/requirePermission";
 import PushNotificationSettings from "@/components/app/PushNotificationSettings";
+import PlanningWeergaveSettings from "@/components/app/PlanningWeergaveSettings";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,29 @@ export default async function InstellingenPage() {
           </div>
         </div>
       </div>
+
+      <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div className="flex items-start gap-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+            <CalendarDays size={20} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg font-bold text-slate-900">
+              Startweergave van het planbord
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-slate-500">
+              Kies waar het planbord naartoe gaat wanneer je Planning opent.
+              Deze keuze wordt alleen voor jouw account opgeslagen en geldt
+              niet voor andere onderdelen van Clevers ERP.
+            </p>
+            <div className="mt-5">
+              <PlanningWeergaveSettings
+                initialValue={gebruiker.planningWeergave}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
 
       <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
         <div className="flex items-start gap-4">

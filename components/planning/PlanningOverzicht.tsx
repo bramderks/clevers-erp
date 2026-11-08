@@ -37,6 +37,7 @@ type PlanningOverzichtProps = {
 
   onGewijzigd?: () => void;
   initialWeekSleutel?: string | null;
+  planningWeergave?: string;
 };
 
 type PlanningTag = {
@@ -769,6 +770,7 @@ export default function PlanningOverzicht({
 
   onGewijzigd,
   initialWeekSleutel = null,
+  planningWeergave = "HUIDIGE_WEEK",
 }: PlanningOverzichtProps) {
   const router = useRouter();
   const gesorteerdeWeken =
@@ -919,15 +921,17 @@ export default function PlanningOverzicht({
      */
     const opgeslagenWeekSleutel =
       geselecteerdeWeekSleutel ??
-      (() => {
-        try {
-          return sessionStorage.getItem(
-            "clevers-erp-planweek:" + vestigingId,
-          );
-        } catch {
-          return null;
-        }
-      })();
+      (planningWeergave === "LAATSTE_POSITIE"
+        ? (() => {
+            try {
+              return sessionStorage.getItem(
+                "clevers-erp-planweek:" + vestigingId,
+              );
+            } catch {
+              return null;
+            }
+          })()
+        : null);
 
     if (
       opgeslagenWeekSleutel
@@ -993,12 +997,33 @@ export default function PlanningOverzicht({
     gesorteerdeWeken,
     geselecteerdeWeekSleutel,
     vestigingId,
+    planningWeergave,
   ]);
 
   const huidigeWeek =
     gesorteerdeWeken[
       geselecteerdeWeekIndex
     ] ?? null;
+
+  useEffect(() => {
+    if (planningWeergave !== "VANDAAG" || !huidigeWeek) return;
+
+    const vandaag = new Date();
+    const datumSleutel = [
+      vandaag.getFullYear(),
+      String(vandaag.getMonth() + 1).padStart(2, "0"),
+      String(vandaag.getDate()).padStart(2, "0"),
+    ].join("-");
+    const vandaagElement = document.getElementById(
+      "planning-dag-" + datumSleutel,
+    );
+
+    vandaagElement?.scrollIntoView({
+      behavior: "instant",
+      block: "nearest",
+      inline: "center",
+    });
+  }, [huidigeWeek, planningWeergave]);
 
   useEffect(() => {
     setWeekAfsluitBevestigingen({
