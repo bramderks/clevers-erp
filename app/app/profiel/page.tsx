@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Bell, CalendarDays, Palmtree, WalletCards } from "lucide-react";
+import { Bell, CalendarDays, Palmtree, Settings, WalletCards } from "lucide-react";
 
 import { getCurrentUser } from "@/lib/auth";
 
@@ -29,6 +29,7 @@ export default async function AppProfielPage() {
             { href: "/app/planning", label: "Mijn planning", icon: CalendarDays },
             { href: "/app/verloning", label: "Mijn verloning", icon: WalletCards },
             { href: "/app/vakantie", label: "Vakantieplanning", icon: Palmtree },
+            { href: "/app/instellingen", label: "Instellingen", icon: Settings },
             { href: "/app", label: "Meldingen beheren", icon: Bell },
           ].map(({ href, label, icon: Icon }) => (
             <Link
