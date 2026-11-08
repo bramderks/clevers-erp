@@ -890,6 +890,7 @@ export default function PlanningWeekOverzicht({
                 return (
                   <div
                     key={dag.datum}
+                    id={"planning-dag-" + dag.datum}
                     className="flex min-h-[760px] min-w-[300px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
                   >
                     {/* ==========================================

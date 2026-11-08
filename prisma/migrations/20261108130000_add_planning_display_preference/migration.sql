@@ -1,0 +1,2 @@
+ALTER TABLE "SysteemGebruiker"
+ADD COLUMN "planningWeergave" TEXT NOT NULL DEFAULT 'HUIDIGE_WEEK';

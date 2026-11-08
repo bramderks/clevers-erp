@@ -23,6 +23,7 @@ type PlanningPaginaProps = {
   isTeamleider?: boolean;
   isMedewerker?: boolean;
   huidigeMedewerkerId?: string | null;
+  planningWeergave?: string;
 };
 
 export default function PlanningPagina({
@@ -31,6 +32,7 @@ export default function PlanningPagina({
   isTeamleider = false,
   isMedewerker = false,
   huidigeMedewerkerId = null,
+  planningWeergave = "HUIDIGE_WEEK",
 }: PlanningPaginaProps) {
   const searchParams = useSearchParams();
   const weekParam = searchParams.get("week");
@@ -136,6 +138,7 @@ export default function PlanningPagina({
           weken={weken}
           vestigingId={vestigingId}
           initialWeekSleutel={weekParam}
+          planningWeergave={planningWeergave}
           isEigenaar={isEigenaar}
           isTeamleider={isTeamleider}
           isMedewerker={isMedewerker}
