@@ -179,7 +179,7 @@ export default async function ManagementbarometerPage({
         dagenPerMedewerker.set(medewerker.medewerkerId, dagen);
       }
     }
-    for (const medewerker of snapshot.medewerkers) {
+    for (const medewerker of snapshot.medewerkers ?? []) {
       const huidig = medewerkersMap.get(medewerker.medewerkerId) ?? {
         medewerkerId: medewerker.medewerkerId, naam: medewerker.naam, uren: 0, dagen: new Set<string>(),
       };
