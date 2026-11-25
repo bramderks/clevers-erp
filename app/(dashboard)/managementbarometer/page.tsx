@@ -3,6 +3,10 @@ import { BarChart3, CalendarDays, Clock3, Euro, Users, Wallet } from "lucide-rea
 import { getCurrentUser, heeftRol, hasPermissionForVestiging, isEigenaar } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { permissions } from "@/lib/permissions";
+import { berekenGewerkteUren } from "@/lib/verloning/pauze";
+import { berekenUniekeUrenPerInterval } from "@/lib/verloning/overlappendeUren";
+import { begrensRapportageRegels } from "@/lib/contracturen/berekening";
+import LiveRefresh from "./LiveRefresh";
 
 type SnapshotMedewerker = { medewerkerId: string; naam: string; uren: number };
 type SnapshotDienst = { datum: string; medewerkers: { medewerkerId: string; naam: string }[] };
@@ -57,8 +61,17 @@ export default async function ManagementbarometerPage({
   const vestigingIds = geselecteerdeVestiging === "alle" ? toegankelijkeVestigingen.map((item) => item.id) : [geselecteerdeVestiging];
 
   const weken = await prisma.week.findMany({
-    where: { jaar, status: "AFGESLOTEN", vestigingId: { in: vestigingIds } },
-    include: { vestiging: { select: { id: true, naam: true } }, loonkostenWeek: true },
+    where: { jaar, vestigingId: { in: vestigingIds } },
+    include: {
+      vestiging: { select: { id: true, naam: true } }, loonkostenWeek: true,
+      diensten: { orderBy: { datum: "asc" }, include: { bezetting: {
+        where: { medewerkerId: { not: null }, status: { not: "AFGEZEGD" } },
+        include: { medewerker: { select: {
+          id: true, voornaam: true, achternaam: true, uurloon: true, contractType: true, contractUren: true,
+          loonperiodes: { where: { actief: true }, select: { uurloon: true, periodeStart: true, periodeEinde: true }, orderBy: { periodeStart: "desc" } },
+        } } },
+      } } },
+    },
     orderBy: [{ weeknummer: "asc" }, { vestiging: { naam: "asc" } }],
   });
 
@@ -70,16 +83,55 @@ export default async function ManagementbarometerPage({
 
   for (const week of weken) {
     const loonkosten = week.loonkostenWeek;
-    if (!loonkosten?.afgeslotenOp || !loonkosten.snapshot || typeof loonkosten.snapshot !== "object") continue;
-    const snapshot = loonkosten.snapshot as unknown as WeekSnapshot;
-    if ((snapshot.versie ?? 0) < 6 || !Array.isArray(snapshot.medewerkers)) continue;
+    const omzet = Number(loonkosten?.omzet) || 0;
+    let totaalUren = 0;
+    let kosten = 0;
+    let gemiddeldUurloon = 0;
+    let ontbrekendUurloon = 0;
+    let snapshot: WeekSnapshot = {};
 
-    const omzet = Number(loonkosten.omzet) || 0;
-    const totaalUren = Number(loonkosten.totaalUren) || 0;
-    const kosten = Number(loonkosten.totaalKosten) || 0;
-    const gemiddeldUurloon = Number(loonkosten.gemiddeldUurloon) || (totaalUren > 0 ? kosten / totaalUren : 0);
-    const ontbrekendUurloon = Number(snapshot.ontbrekendUurloon ?? 0);
-    const compleet = ontbrekendUurloon === 0 && gemiddeldUurloon > 0;
+    if (week.status === "AFGESLOTEN") {
+      if (!loonkosten?.afgeslotenOp || !loonkosten.snapshot || typeof loonkosten.snapshot !== "object") continue;
+      snapshot = loonkosten.snapshot as unknown as WeekSnapshot;
+      if ((snapshot.versie ?? 0) < 6 || !Array.isArray(snapshot.medewerkers)) continue;
+      totaalUren = Number(loonkosten.totaalUren) || 0;
+      kosten = Number(loonkosten.totaalKosten) || 0;
+      gemiddeldUurloon = Number(loonkosten.gemiddeldUurloon) || (totaalUren > 0 ? kosten / totaalUren : 0);
+      ontbrekendUurloon = Number(snapshot.ontbrekendUurloon ?? 0);
+    } else {
+      const bezettingen = week.diensten.flatMap((dienst) => dienst.bezetting.filter((b) => b.medewerker).map((b) => ({
+        id: b.id, medewerkerId: b.medewerker!.id, vestigingId: week.vestigingId,
+        datum: dienst.datum, begintijd: dienst.begintijd, eindtijd: dienst.eindtijd,
+      })));
+      const urenPerBezetting = berekenUniekeUrenPerInterval(bezettingen, berekenGewerkteUren);
+      const regels = week.diensten.flatMap((dienst) => dienst.bezetting.filter((b) => b.medewerker).map((b) => {
+        const m = b.medewerker!;
+        const actief = m.loonperiodes.find((p) => p.periodeStart <= dienst.datum && p.periodeEinde >= dienst.datum);
+        const uurloon = actief ? Number(actief.uurloon) : m.uurloon == null ? null : Number(m.uurloon);
+        const uren = urenPerBezetting.get(b.id) ?? 0;
+        return { datum: dienst.datum.toISOString().slice(0, 10), medewerkerId: m.id,
+          medewerkerNaam: [m.voornaam, m.achternaam].filter(Boolean).join(" "), uren, uurloon,
+          kosten: uurloon == null ? null : uren * uurloon, contractType: m.contractType,
+          contractUren: m.contractUren == null ? null : Number(m.contractUren) };
+      }));
+      begrensRapportageRegels(regels);
+      totaalUren = regels.reduce((sum, r) => sum + r.uren, 0);
+      kosten = regels.reduce((sum, r) => sum + (r.kosten ?? 0), 0);
+      const urenMetLoon = regels.reduce((sum, r) => sum + (r.kosten == null ? 0 : r.uren), 0);
+      gemiddeldUurloon = urenMetLoon > 0 ? kosten / urenMetLoon : 0;
+      ontbrekendUurloon = regels.filter((r) => r.kosten == null).length;
+      snapshot = {
+        medewerkers: Array.from(regels.reduce((map, r) => {
+          const row = map.get(r.medewerkerId) ?? { medewerkerId: r.medewerkerId, naam: r.medewerkerNaam, uren: 0 };
+          row.uren += r.uren; map.set(r.medewerkerId, row); return map;
+        }, new Map<string, SnapshotMedewerker>()).values()),
+        diensten: week.diensten.map((d) => ({ datum: d.datum.toISOString(), medewerkers: d.bezetting.filter((b) => b.medewerker).map((b) => ({
+          medewerkerId: b.medewerker!.id, naam: [b.medewerker!.voornaam, b.medewerker!.achternaam].filter(Boolean).join(" "),
+        })) })),
+        ontbrekendUurloon,
+      };
+    }
+    const compleet = ontbrekendUurloon === 0 && gemiddeldUurloon > 0 && omzet > 0;
     const budget = omzet * 0.20;
     const besparingEuro = compleet ? budget - kosten : 0;
     const besparingUren = compleet ? besparingEuro / gemiddeldUurloon : 0;
@@ -155,10 +207,12 @@ export default async function ManagementbarometerPage({
   const percentage = totaal.omzet > 0 ? totaal.kosten / totaal.omzet * 100 : null;
   const gemiddeldeUurkosten = totaal.uren > 0 ? totaal.kosten / totaal.uren : 0;
   const aantalOnvolledig = vestigingWeken.filter((week) => week.ontbrekendUurloon > 0).length;
+  const aantalOpenWeken = weken.filter((week) => week.status !== "AFGESLOTEN").length;
 
   return (
     <main className="space-y-6">
       <header>
+        <div className="mb-2 flex justify-end"><LiveRefresh /></div>
         <p className="text-sm font-medium text-slate-500">Management · Personeelsinzet</p>
         <h1 className="mt-1 text-2xl font-bold text-slate-900">Managementbarometer</h1>
         <p className="mt-1 max-w-3xl text-sm text-slate-600">Stuur op slimme personeelsinzet: ruimte creëren op rustige dagen en capaciteit inzetten wanneer de omzet daarom vraagt. De norm is 20% personeelskosten van de omzet.</p>
@@ -180,7 +234,7 @@ export default async function ManagementbarometerPage({
       </form>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div><h2 className="text-lg font-bold text-slate-900">Resultaat {jaar}</h2><p className="text-sm text-slate-500">Uitsluitend afgesloten weken · norm 20% · {weekRijen.length} afgesloten weken</p></div>
+        <div><h2 className="text-lg font-bold text-slate-900">Resultaat {jaar}</h2><p className="text-sm text-slate-500">Afgesloten weken zijn historisch vastgezet; open weken volgen de actuele planning · norm 20% · {weekRijen.length} weken met gegevens</p></div>
         <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">Cumulatief vanaf 1 januari {jaar}</span>
       </div>
 
@@ -188,7 +242,7 @@ export default async function ManagementbarometerPage({
         <Kpi label="Bespaarde uren" value={uren(totaal.besparingUren)} detail="Ruimte onder de 20%-norm, omgerekend tegen gemiddelde uurkosten" icon={Clock3} positive={totaal.besparingUren >= 0} />
         <Kpi label="Bespaarde loonkosten" value={euro(totaal.besparingEuro)} detail="Verschil ten opzichte van 20% van de omzet" icon={Euro} positive={totaal.besparingEuro >= 0} />
         <Kpi label="Totale omzet" value={euro(totaal.omzet)} detail="Omzet uit afgesloten weken" icon={BarChart3} />
-        <Kpi label="Totaal ingezette uren" value={uren(totaal.uren)} detail="Uren uit afgesloten weekrapportages" icon={Clock3} />
+        <Kpi label="Totaal ingezette uren" value={uren(totaal.uren)} detail="Uren uit afgesloten rapportages en actuele open planning" icon={Clock3} />
         <Kpi label="Personeelskosten / omzet" value={pct(percentage)} detail="Gewogen jaarpercentage: totale kosten ÷ totale omzet" icon={Wallet} positive={percentage !== null && percentage <= 20} />
         <Kpi label="Gemiddelde loonkosten per uur" value={gemiddeldeUurkosten > 0 ? euro(gemiddeldeUurkosten) : "—"} detail="Totale loonkosten ÷ ingezette uren" icon={Users} />
       </section>
@@ -233,7 +287,7 @@ export default async function ManagementbarometerPage({
       )}
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-100 px-5 py-4"><h3 className="font-bold text-slate-900">Top 10 medewerkers · gewerkte uren en dagen</h3><p className="mt-1 text-xs text-slate-500">Uren en unieke werkdagen uit de bevroren medewerkers- en dienstenregistratie van afgesloten weken.</p></div>
+        <div className="border-b border-slate-100 px-5 py-4"><h3 className="font-bold text-slate-900">Top 10 medewerkers · gewerkte uren en dagen</h3><p className="mt-1 text-xs text-slate-500">Uren en unieke werkdagen uit historische snapshots en actuele planning.</p></div>
         {topMedewerkers.length === 0 ? <p className="p-6 text-sm text-slate-500">Nog geen medewerkersgegevens beschikbaar.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[560px] text-sm">
           <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3 text-left">#</th><th className="px-4 py-3 text-left">Medewerker</th><th className="px-4 py-3 text-right">Gewerkte dagen</th><th className="px-4 py-3 text-right">Gewerkte uren</th><th className="px-4 py-3 text-right">Gemiddeld per dag</th></tr></thead>
           <tbody className="divide-y divide-slate-100">{topMedewerkers.map((item, index) => <tr key={item.medewerkerId}>
@@ -241,7 +295,7 @@ export default async function ManagementbarometerPage({
           </tr>)}</tbody>
         </table></div>}
       </section>
-      <p className="text-xs leading-5 text-slate-500">Berekening: personeelsbudget = 20% van de omzet. Bespaarde loonkosten = personeelsbudget minus berekende loonkosten. Bespaarde uren = het verschil gedeeld door het gemiddelde uurloon van die afgesloten vestigingsweek. Bij ontbrekende uurlonen wordt voor die vestigingsweek geen besparing berekend. Bedragen zijn gebaseerd op de in Clevers ERP vastgelegde uurlonen.</p>
+      <p className="text-xs leading-5 text-slate-500">Berekening: personeelsbudget = 20% van de omzet. Bespaarde loonkosten = personeelsbudget minus berekende loonkosten. Bespaarde uren = het verschil gedeeld door het gemiddelde uurloon van die afgesloten vestigingsweek. Bij ontbrekende uurlonen wordt voor die vestigingsweek geen besparing berekend. Bedragen zijn gebaseerd op de in Clevers ERP vastgelegde uurlonen. {aantalOpenWeken} open/in-planning weken worden automatisch bijgewerkt.</p>
     </main>
   );
 }
