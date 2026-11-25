@@ -45,7 +45,7 @@ export default async function ManagementbarometerPage({
 
   const alleVestigingen = await prisma.vestiging.findMany({
     where: { actief: true, organisatie: { actief: true } },
-    select: { id: true, naam: true },
+    select: { id: true, naam: true, seizoenStart: true, seizoenEinde: true },
     orderBy: { naam: "asc" },
   });
   const toegankelijkeVestigingen = eigenaar ? alleVestigingen : (await Promise.all(
@@ -75,6 +75,27 @@ export default async function ManagementbarometerPage({
     orderBy: [{ weeknummer: "asc" }, { vestiging: { naam: "asc" } }],
   });
 
+  const historischeWeken = await prisma.week.findMany({
+    where: { jaar: { in: [jaar - 1, jaar - 2] }, vestigingId: { in: vestigingIds } },
+    select: { vestigingId: true, jaar: true, weeknummer: true, status: true, loonkostenWeek: { select: { omzet: true } } },
+  });
+  const vorigJaarOmzet = new Map<string, number>();
+  const groeiPerVestiging = new Map<string, number>();
+  const groeiWaarden = new Map<string, number[]>();
+  for (const vorig of historischeWeken) {
+    if (vorig.jaar === jaar - 1 && vorig.loonkostenWeek) vorigJaarOmzet.set(vorig.vestigingId + "-" + vorig.weeknummer, Number(vorig.loonkostenWeek.omzet) || 0);
+    if (vorig.jaar === jaar - 1 && vorig.status === "AFGESLOTEN" && vorig.loonkostenWeek) {
+      const tweeTerug = historischeWeken.find((x) => x.vestigingId === vorig.vestigingId && x.jaar === jaar - 2 && x.weeknummer === vorig.weeknummer && x.status === "AFGESLOTEN" && x.loonkostenWeek);
+      const vorigBedrag = Number(vorig.loonkostenWeek.omzet) || 0;
+      const tweeBedrag = tweeTerug?.loonkostenWeek ? Number(tweeTerug.loonkostenWeek.omzet) || 0 : 0;
+      if (vorigBedrag > 0 && tweeBedrag > 0) {
+        const waarden = groeiWaarden.get(vorig.vestigingId) ?? [];
+        waarden.push(vorigBedrag / tweeBedrag - 1);
+        groeiWaarden.set(vorig.vestigingId, waarden);
+      }
+    }
+  }
+  for (const [vestigingId, waarden] of groeiWaarden) groeiPerVestiging.set(vestigingId, waarden.reduce((sum, value) => sum + value, 0) / waarden.length);
   const normInstelling = await prisma.instelling.findUnique({ where: { sleutel: "loonkosten_doel_percentage" }, select: { waarde: true } });
   const doelPercentage = normInstelling ? Number(normInstelling.waarde) : 20;
 
@@ -86,7 +107,12 @@ export default async function ManagementbarometerPage({
 
   for (const week of weken) {
     const loonkosten = week.loonkostenWeek;
-    const omzet = Number(loonkosten?.omzet) || 0;
+    let omzet = Number(loonkosten?.omzet) || 0;
+    if (week.status !== "AFGESLOTEN" && loonkosten?.omzet == null) {
+      const vorig = vorigJaarOmzet.get(week.vestigingId + "-" + week.weeknummer);
+      const groei = groeiPerVestiging.get(week.vestigingId);
+      if (vorig != null && groei != null) omzet = vorig * (1 + groei);
+    }
     let totaalUren = 0;
     let kosten = 0;
     let gemiddeldUurloon = 0;
