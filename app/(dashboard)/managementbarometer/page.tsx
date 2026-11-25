@@ -285,18 +285,18 @@ export default async function ManagementbarometerPage({
         <Kpi label="Resterende inzetbare uren per week (gemiddeld)" value={resterendeUrenPerWeek == null ? "—" : uren(resterendeUrenPerWeek)} detail="Resterend jaarbudget gedeeld door gemiddelde uurkosten en resterende weken" icon={Clock3} positive={resterendeUrenPerWeek !== null && resterendeUrenPerWeek > 0} />
       </section>
 
-      {aantalOnvolledig > 0 && <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{aantalOnvolledig} afgesloten vestigingsweek/weken heeft/hebben ontbrekende uurlonen. Voor die weken wordt geen besparing berekend; het totale kostenpercentage kan daardoor onvolledig zijn.</div>}
+      {aantalOnvolledig > 0 && <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{aantalOnvolledig} vestigingsweek/weken heeft/hebben ontbrekende uurlonen. Voor die weken wordt geen besparing berekend; het totale kostenpercentage kan daardoor onvolledig zijn.</div>}
 
       {weekRijen.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
           <CalendarDays className="mx-auto text-slate-400" size={30} />
-          <h3 className="mt-3 font-semibold text-slate-900">Nog geen afgesloten weken in {jaar}</h3>
-          <p className="mt-1 text-sm text-slate-500">Zodra een week is afgesloten en de loonkostensnapshot compleet is, verschijnen de cijfers hier automatisch.</p>
+          <h3 className="mt-3 font-semibold text-slate-900">Nog geen weekgegevens in {jaar}</h3>
+          <p className="mt-1 text-sm text-slate-500">Zodra weekplanning en omzetgegevens beschikbaar zijn, verschijnen de cijfers hier automatisch.</p>
         </div>
       ) : (
         <>
           <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-100 px-5 py-4"><h3 className="font-bold text-slate-900">Wekelijkse ontwikkeling</h3><p className="mt-1 text-xs text-slate-500">Afgesloten vestigingen worden per week opgeteld. Positief betekent ruimte onder de norm; negatief betekent boven de norm.</p></div>
+            <div className="border-b border-slate-100 px-5 py-4"><h3 className="font-bold text-slate-900">Wekelijkse ontwikkeling</h3><p className="mt-1 text-xs text-slate-500">Cijfers worden per week en vestiging opgeteld. Open weken volgen de actuele planning. Positief betekent ruimte onder de norm; negatief betekent boven de norm.</p></div>
             <div className="overflow-x-auto"><table className="w-full min-w-[850px] text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Week</th><th className="px-4 py-3 text-right">Omzet</th><th className="px-4 py-3 text-right">Ingezette uren</th><th className="px-4 py-3 text-right">Loonkosten</th><th className="px-4 py-3 text-right">% omzet</th><th className="px-4 py-3 text-right">Verschil t.o.v. 20%</th><th className="px-4 py-3 text-right">Urenruimte</th></tr></thead>
               <tbody className="divide-y divide-slate-100">{weekRijen.map((week) => {
@@ -313,7 +313,7 @@ export default async function ManagementbarometerPage({
           </section>
 
           <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-100 px-5 py-4"><h3 className="font-bold text-slate-900">Resultaat per vestiging</h3><p className="mt-1 text-xs text-slate-500">De 20%-norm wordt per vestiging en per afgesloten week toegepast.</p></div>
+            <div className="border-b border-slate-100 px-5 py-4"><h3 className="font-bold text-slate-900">Resultaat per vestiging</h3><p className="mt-1 text-xs text-slate-500">De ingestelde loonkostennorm wordt per vestiging toegepast; open weken worden live berekend.</p></div>
             <div className="overflow-x-auto"><table className="w-full min-w-[650px] text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3 text-left">Vestiging</th><th className="px-4 py-3 text-right">Weken</th><th className="px-4 py-3 text-right">Omzet</th><th className="px-4 py-3 text-right">Uren</th><th className="px-4 py-3 text-right">% loonkosten</th><th className="px-4 py-3 text-right">Besparing</th></tr></thead>
               <tbody className="divide-y divide-slate-100">{vestigingTotalen.map((item) => <tr key={item.id}>
