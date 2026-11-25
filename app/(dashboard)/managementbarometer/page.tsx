@@ -208,6 +208,14 @@ export default async function ManagementbarometerPage({
   const gemiddeldeUurkosten = totaal.uren > 0 ? totaal.kosten / totaal.uren : 0;
   const aantalOnvolledig = vestigingWeken.filter((week) => week.ontbrekendUurloon > 0).length;
   const aantalOpenWeken = weken.filter((week) => week.status !== "AFGESLOTEN").length;
+  const huidig = new Date();
+  const isoDag = huidig.getDay() || 7;
+  const isoDonderdag = new Date(huidig);
+  isoDonderdag.setDate(huidig.getDate() + 4 - isoDag);
+  const huidigeIsoWeek = Math.ceil((((isoDonderdag.getTime() - new Date(isoDonderdag.getFullYear(), 0, 1).getTime()) / 86400000) + 1) / 7);
+  const resterendeWeken = jaar > huidig.getFullYear() ? 52 : jaar === huidig.getFullYear() ? Math.max(1, 52 - huidigeIsoWeek + 1) : 0;
+  const resterendPersoneelsbudget = Math.max(0, totaal.omzet * 0.20 - totaal.kosten);
+  const resterendeUrenPerWeek = resterendeWeken > 0 && gemiddeldeUurkosten > 0 && totaal.omzet > 0 ? resterendPersoneelsbudget / gemiddeldeUurkosten / resterendeWeken : null;
 
   return (
     <main className="space-y-6">
@@ -245,6 +253,7 @@ export default async function ManagementbarometerPage({
         <Kpi label="Totaal ingezette uren" value={uren(totaal.uren)} detail="Uren uit afgesloten rapportages en actuele open planning" icon={Clock3} />
         <Kpi label="Personeelskosten / omzet" value={pct(percentage)} detail="Gewogen jaarpercentage: totale kosten ÷ totale omzet" icon={Wallet} positive={percentage !== null && percentage <= 20} />
         <Kpi label="Gemiddelde loonkosten per uur" value={gemiddeldeUurkosten > 0 ? euro(gemiddeldeUurkosten) : "—"} detail="Totale loonkosten ÷ ingezette uren" icon={Users} />
+        <Kpi label="Resterende inzetbare uren per week (gemiddeld)" value={resterendeUrenPerWeek == null ? "—" : uren(resterendeUrenPerWeek)} detail="Resterend jaarbudget gedeeld door gemiddelde uurkosten en resterende weken" icon={Clock3} positive={resterendeUrenPerWeek !== null && resterendeUrenPerWeek > 0} />
       </section>
 
       {aantalOnvolledig > 0 && <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{aantalOnvolledig} afgesloten vestigingsweek/weken heeft/hebben ontbrekende uurlonen. Voor die weken wordt geen besparing berekend; het totale kostenpercentage kan daardoor onvolledig zijn.</div>}
