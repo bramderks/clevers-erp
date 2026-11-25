@@ -18,6 +18,7 @@ type NavigationItem = {
   icon: NavigationIcon;
   permission?: string;
   ownerOnly?: boolean;
+  managementOnly?: boolean;
   medewerkerOnly?: boolean;
 };
 
@@ -29,6 +30,7 @@ type NavigationGroup = {
 type NavigationProps = {
   permissions: string[];
   isEigenaar: boolean;
+  isTeamleider?: boolean;
   isMedewerker?: boolean;
   ingeklapt: boolean;
   onNavigate?: () => void;
@@ -37,6 +39,7 @@ type NavigationProps = {
 export default function Navigation({
   permissions,
   isEigenaar,
+  isTeamleider = false,
   isMedewerker = false,
   ingeklapt,
   onNavigate,
@@ -63,6 +66,10 @@ export default function Navigation({
 
     if (item.ownerOnly) {
       return isEigenaar;
+    }
+
+    if (item.managementOnly) {
+      return isEigenaar || isTeamleider;
     }
 
     if (

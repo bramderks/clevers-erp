@@ -162,6 +162,7 @@ export default function SidebarClient({
               <Navigation
                 permissions={permissions}
                 isEigenaar={isEigenaar}
+                isTeamleider={isTeamleider}
                 isMedewerker={isMedewerker}
                 ingeklapt={false}
                 onNavigate={() =>
@@ -300,6 +301,7 @@ export default function SidebarClient({
             <Navigation
               permissions={permissions}
               isEigenaar={isEigenaar}
+              isTeamleider={isTeamleider}
               isMedewerker={isMedewerker}
               ingeklapt={!hovered}
             />
