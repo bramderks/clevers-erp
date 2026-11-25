@@ -75,6 +75,9 @@ export default async function ManagementbarometerPage({
     orderBy: [{ weeknummer: "asc" }, { vestiging: { naam: "asc" } }],
   });
 
+  const normInstelling = await prisma.instelling.findUnique({ where: { sleutel: "loonkosten_doel_percentage" }, select: { waarde: true } });
+  const doelPercentage = normInstelling ? Number(normInstelling.waarde) : 20;
+
   const vestigingWeken: {
     vestigingId: string; vestigingNaam: string; weeknummer: number; omzet: number; uren: number;
     kosten: number; percentage: number | null; besparingEuro: number; besparingUren: number; ontbrekendUurloon: number;
@@ -132,7 +135,7 @@ export default async function ManagementbarometerPage({
       };
     }
     const compleet = ontbrekendUurloon === 0 && gemiddeldUurloon > 0 && omzet > 0;
-    const budget = omzet * 0.20;
+    const budget = omzet * (doelPercentage / 100);
     const besparingEuro = compleet ? budget - kosten : 0;
     const besparingUren = compleet ? besparingEuro / gemiddeldUurloon : 0;
     vestigingWeken.push({
@@ -214,7 +217,7 @@ export default async function ManagementbarometerPage({
   isoDonderdag.setDate(huidig.getDate() + 4 - isoDag);
   const huidigeIsoWeek = Math.ceil((((isoDonderdag.getTime() - new Date(isoDonderdag.getFullYear(), 0, 1).getTime()) / 86400000) + 1) / 7);
   const resterendeWeken = jaar > huidig.getFullYear() ? 52 : jaar === huidig.getFullYear() ? Math.max(1, 52 - huidigeIsoWeek + 1) : 0;
-  const resterendPersoneelsbudget = Math.max(0, totaal.omzet * 0.20 - totaal.kosten);
+  const resterendPersoneelsbudget = Math.max(0, totaal.omzet * (doelPercentage / 100) - totaal.kosten);
   const resterendeUrenPerWeek = resterendeWeken > 0 && gemiddeldeUurkosten > 0 && totaal.omzet > 0 ? resterendPersoneelsbudget / gemiddeldeUurkosten / resterendeWeken : null;
 
   return (
@@ -223,7 +226,7 @@ export default async function ManagementbarometerPage({
         <div className="mb-2 flex justify-end"><LiveRefresh /></div>
         <p className="text-sm font-medium text-slate-500">Management · Personeelsinzet</p>
         <h1 className="mt-1 text-2xl font-bold text-slate-900">Managementbarometer</h1>
-        <p className="mt-1 max-w-3xl text-sm text-slate-600">Stuur op slimme personeelsinzet: ruimte creëren op rustige dagen en capaciteit inzetten wanneer de omzet daarom vraagt. De norm is 20% personeelskosten van de omzet.</p>
+        <p className="mt-1 max-w-3xl text-sm text-slate-600">Stuur op slimme personeelsinzet: ruimte creëren op rustige dagen en capaciteit inzetten wanneer de omzet daarom vraagt. De norm volgt het ingestelde doelpercentage voor loonkosten (standaard 20%).</p>
       </header>
 
       <form method="GET" className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row">
@@ -242,13 +245,13 @@ export default async function ManagementbarometerPage({
       </form>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div><h2 className="text-lg font-bold text-slate-900">Resultaat {jaar}</h2><p className="text-sm text-slate-500">Afgesloten weken zijn historisch vastgezet; open weken volgen de actuele planning · norm 20% · {weekRijen.length} weken met gegevens</p></div>
+        <div><h2 className="text-lg font-bold text-slate-900">Resultaat {jaar}</h2><p className="text-sm text-slate-500">Afgesloten weken zijn historisch vastgezet; open weken volgen de actuele planning · norm {pct(doelPercentage)} · {weekRijen.length} weken met gegevens</p></div>
         <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">Cumulatief vanaf 1 januari {jaar}</span>
       </div>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <Kpi label="Bespaarde uren" value={uren(totaal.besparingUren)} detail="Ruimte onder de 20%-norm, omgerekend tegen gemiddelde uurkosten" icon={Clock3} positive={totaal.besparingUren >= 0} />
-        <Kpi label="Bespaarde loonkosten" value={euro(totaal.besparingEuro)} detail="Verschil ten opzichte van 20% van de omzet" icon={Euro} positive={totaal.besparingEuro >= 0} />
+        <Kpi label="Bespaarde uren" value={uren(totaal.besparingUren)} detail="Ruimte onder de ingestelde norm, omgerekend tegen gemiddelde uurkosten" icon={Clock3} positive={totaal.besparingUren >= 0} />
+        <Kpi label="Bespaarde loonkosten" value={euro(totaal.besparingEuro)} detail="Verschil ten opzichte van het ingestelde personeelsbudget" icon={Euro} positive={totaal.besparingEuro >= 0} />
         <Kpi label="Totale omzet" value={euro(totaal.omzet)} detail="Omzet uit afgesloten weken" icon={BarChart3} />
         <Kpi label="Totaal ingezette uren" value={uren(totaal.uren)} detail="Uren uit afgesloten rapportages en actuele open planning" icon={Clock3} />
         <Kpi label="Personeelskosten / omzet" value={pct(percentage)} detail="Gewogen jaarpercentage: totale kosten ÷ totale omzet" icon={Wallet} positive={percentage !== null && percentage <= 20} />
@@ -304,7 +307,7 @@ export default async function ManagementbarometerPage({
           </tr>)}</tbody>
         </table></div>}
       </section>
-      <p className="text-xs leading-5 text-slate-500">Berekening: personeelsbudget = 20% van de omzet. Bespaarde loonkosten = personeelsbudget minus berekende loonkosten. Bespaarde uren = het verschil gedeeld door het gemiddelde uurloon van die afgesloten vestigingsweek. Bij ontbrekende uurlonen wordt voor die vestigingsweek geen besparing berekend. Bedragen zijn gebaseerd op de in Clevers ERP vastgelegde uurlonen. {aantalOpenWeken} open/in-planning weken worden automatisch bijgewerkt.</p>
+      <p className="text-xs leading-5 text-slate-500">Berekening: personeelsbudget = het ingestelde doelpercentage van de omzet. Bespaarde loonkosten = personeelsbudget minus berekende loonkosten. Bespaarde uren = het verschil gedeeld door het gemiddelde uurloon van die afgesloten vestigingsweek. Bij ontbrekende uurlonen wordt voor die vestigingsweek geen besparing berekend. Bedragen zijn gebaseerd op de in Clevers ERP vastgelegde uurlonen. {aantalOpenWeken} open/in-planning weken worden automatisch bijgewerkt.</p>
     </main>
   );
 }
