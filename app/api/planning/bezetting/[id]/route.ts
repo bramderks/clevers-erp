@@ -9,6 +9,7 @@ import { permissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { lokaleDagGrenzen, lokaleKalenderDatumUTC } from "@/lib/planning/tijd";
 import { berekenGewerkteUren } from "@/lib/verloning/pauze";
+import { verstuurDirecteDienstMelding } from "@/lib/push/dienst-direct";
 
 const TOEGESTANE_STATUSSEN = [
   "OPEN",
@@ -197,9 +198,71 @@ export async function PATCH(
      * wijzigen.
      */
 
-    const eigenaar = await isEigenaar(
-      organisatieId,
-    );
+    const eigenaar = await isEigenaar(organisatieId);
+
+    // Reservebezetting activeren: eigenaar of de ingeplande teamleider
+    // (medewerker met de diensttag "Leidinggevende") tot uiterlijk 2 uur
+    // voor aanvang. Dit is bewust een aparte, beperkte actie.
+    const isReserveActivering =
+      body.status === "GEPLAND" &&
+      bestaandeBezetting.status === "OPEN" &&
+      bestaandeBezetting.medewerkerId !== null &&
+      Object.keys(body).every((key) => key === "status");
+
+    if (isReserveActivering) {
+      const deadline = bestaandeBezetting.dienst.begintijd.getTime() - 2 * 60 * 60 * 1000;
+      if (Date.now() > deadline) {
+        return NextResponse.json({ fout: "Een reservedienst kan uiterlijk 2 uur voor aanvang worden geactiveerd." }, { status: 409 });
+      }
+
+      const isTeamleider = gebruiker.organisaties.some(
+        (relatie) => relatie.actief && relatie.organisatie.actief &&
+          relatie.organisatieId === organisatieId &&
+          relatie.rol.naam.trim().toLowerCase() === "teamleider",
+      );
+
+      let isIngeplandeLeidinggevende = false;
+      if (!eigenaar && isTeamleider && eigenMedewerkerId) {
+        const dienst = await prisma.dienst.findUnique({
+          where: { id: bestaandeBezetting.dienstId },
+          select: {
+            tags: { include: { tag: { select: { naam: true } } } },
+            bezetting: {
+              where: { status: { in: ["GEPLAND", "BEVESTIGD"] } },
+              select: { medewerkerId: true },
+            },
+          },
+        });
+        const heeftLeidinggevendeTag = dienst?.tags.some(
+          (item) => item.tag.naam.trim().toLowerCase() === "leidinggevende",
+        ) ?? false;
+        isIngeplandeLeidinggevende = Boolean(
+          heeftLeidinggevendeTag &&
+          dienst?.bezetting.some((item) => item.medewerkerId === eigenMedewerkerId),
+        );
+      }
+
+      if (!eigenaar && !isIngeplandeLeidinggevende) {
+        return NextResponse.json({ fout: "Alleen de eigenaar of de ingeplande leidinggevende kan deze reservedienst activeren." }, { status: 403 });
+      }
+
+      const toegangReserve = await hasPermissionForVestiging(permissions.planning.view, vestigingId);
+      if (!toegangReserve) {
+        return NextResponse.json({ fout: "Je hebt geen toegang tot deze vestiging." }, { status: 403 });
+      }
+
+      const geactiveerd = await prisma.dienstBezetting.update({
+        where: { id },
+        data: { status: "GEPLAND" },
+        include: { medewerker: { select: { id: true, personeelsnummer: true, aanhef: true, voornaam: true, tussenvoegsel: true, achternaam: true } } },
+      });
+      try {
+        await verstuurDirecteDienstMelding(id);
+      } catch (meldingError) {
+        console.error("Pushmelding reserveactivering mislukt:", meldingError);
+      }
+      return NextResponse.json(geactiveerd);
+    }
 
     if (!eigenaar) {
       return NextResponse.json(
